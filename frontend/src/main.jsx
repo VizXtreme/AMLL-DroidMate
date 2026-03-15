@@ -79,6 +79,13 @@ function ensureUnblurStyle() {
   s.id = UNBLUR_STYLE_ID
   s.textContent = `[class*="_lyricLine_"] .amll-line-unblur, [class*="_lyricLine_"].amll-line-unblur {
   filter: none !important;
+}
+
+/* Background-lyric lines should be hidden when not active (avoid blurred ghost text) */
+[class*="_lyricBgLine_"]:not([class*="_active_"]) {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }`
   document.head.appendChild(s)
 }
