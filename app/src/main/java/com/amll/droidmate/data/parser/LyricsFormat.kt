@@ -32,7 +32,9 @@ enum class LyricsFormat(val extension: String, val displayName: String) {
          * 根据文件扩展名或内容特征检测格式
          */
         fun detect(content: String): LyricsFormat {
-            val trimmed = content.trim()
+            // Some lyrics sources may include a leading BOM (U+FEFF) which breaks regex-based format detection.
+            // Normalize by trimming whitespace and stripping a leading BOM so format detection works consistently.
+            val trimmed = content.trim().trimStart('\uFEFF')
             
             // TTML
             if (trimmed.startsWith("<?xml") || trimmed.startsWith("<tt")) {

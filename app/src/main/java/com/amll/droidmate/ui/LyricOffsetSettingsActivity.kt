@@ -21,11 +21,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -101,7 +100,8 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
     }
 
     // Update input values when song/device changes
-    LaunchedEffect(nowPlaying, currentDeviceName) {
+    // Note: MediaInfoService frequently emits updates (position/timestamp), so only react to title/artist changes
+    LaunchedEffect(nowPlaying?.title, nowPlaying?.artist, currentDeviceName) {
         songOffsetText = AppSettings.getLyricTimingOffset(context, nowPlaying?.title, nowPlaying?.artist, "*")
             ?.toString() ?: "0"
         deviceOffsetText = AppSettings.getLyricTimingOffset(context, "*", "*", currentDeviceName)
@@ -140,15 +140,15 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "返回")
                     }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        context.startActivity(Intent(context, LyricOffsetManagementActivity::class.java))
+                    }) {
+                        Icon(Icons.Default.Storage, contentDescription = "管理")
+                    }
                 }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                context.startActivity(Intent(context, LyricOffsetManagementActivity::class.java))
-            }) {
-                Icon(Icons.Default.Add, contentDescription = "管理")
-            }
         }
     ) { padding ->
         LazyColumn(
@@ -254,24 +254,6 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                         deviceOffsetError?.takeIf { it.isNotBlank() }?.let {
                             Text(text = it, color = MaterialTheme.colorScheme.error)
                         }
-                    }
-                }
-            }
-
-            item {
-                Text(
-                    text = "已保存偏移规则（可在“管理”界面查看/编辑）",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-            }
-
-            items(offsets, key = { "${it.title}-${it.artist}-${it.device}" }) { entry ->
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("${entry.title} — ${entry.artist}", style = MaterialTheme.typography.bodyMedium)
-                        Text("设备: ${entry.device}", style = MaterialTheme.typography.bodySmall)
-                        Text("偏移: ${entry.offsetMs} ms", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

@@ -52,33 +52,41 @@ object UnifiedLyricsParser {
             Timber.w("Empty lyrics content")
             return null
         }
-        
-        Timber.d("Lyrics content preview (first 300 chars): ${content.take(300)}")
+
+        // Some lyric payloads (especially QQ Music) may include a leading BOM (U+FEFF), which can
+        // interfere with format detection regexes. Normalize the input by trimming whitespace and
+        // stripping a leading BOM before further processing.
+        val normalizedContent = content.trim().trimStart('\uFEFF')
+        if (normalizedContent != content) {
+            Timber.d("Normalized lyrics content by stripping leading BOM/whitespace")
+        }
+
+        Timber.d("Lyrics content preview (first 300 chars): ${normalizedContent.take(300)}")
         Timber.d("[BG-LYRICS-DEBUG] UnifiedLyricsParser.parse caller trace: ${callerTrace()}")
         
         return try {
-            // 检测格式
-            val format = LyricsFormat.detect(content)
+            // 检测格式（使用归一化内容来避免 BOM 等前缀影响检测）
+            val format = LyricsFormat.detect(normalizedContent)
             Timber.i("Detected lyrics format: $format")
             
             // 使用相应的解析器解析
             val lines = when (format) {
                 LyricsFormat.QRC -> {
-                    val parsed = QrcParser.parse(content)
+                    val parsed = QrcParser.parse(normalizedContent)
                     Timber.d("QRC parsed ${parsed.size} lines")
                     parsed
                 }
                 LyricsFormat.KRC -> {
-                    val parsed = KrcParser.parse(content)
+                    val parsed = KrcParser.parse(normalizedContent)
                     Timber.d("KRC parsed ${parsed.size} lines, first line words: ${parsed.firstOrNull()?.words?.size ?: 0}")
                     parsed
                 }
                 LyricsFormat.YRC -> {
-                    val parsed = YrcParser.parse(content)
+                    val parsed = YrcParser.parse(normalizedContent)
                     Timber.d("YRC parsed ${parsed.size} lines")
                     if (parsed.isEmpty()) {
                         Timber.w("YRC parsing returned no lines, falling back to LRC parser")
-                        val lrcFallback = LrcParser.parse(content)
+                        val lrcFallback = LrcParser.parse(normalizedContent)
                         Timber.d("LRC fallback parsed ${lrcFallback.size} lines")
                         lrcFallback
                     } else {
@@ -86,26 +94,26 @@ object UnifiedLyricsParser {
                     }
                 }
                 LyricsFormat.ENHANCED_LRC -> {
-                    val parsed = EnhancedLrcParser.parse(content)
+                    val parsed = EnhancedLrcParser.parse(normalizedContent)
                     Timber.d("Enhanced LRC parsed ${parsed.size} lines")
                     parsed
                 }
                 LyricsFormat.LRC -> {
-                    val parsed = LrcParser.parse(content)
+                    val parsed = LrcParser.parse(normalizedContent)
                     Timber.d("LRC parsed ${parsed.size} lines")
                     parsed
                 }
                 LyricsFormat.TTML -> {
                     // TTML 格式使用专用解析器
                     Timber.i("Parsing TTML format")
-                    Timber.d("[BG-LYRICS-DEBUG] Unified TTML input has x-bg=${content.contains("ttm:role=\"x-bg\"")}, x-translation=${content.contains("ttm:role=\"x-translation\"")}, length=${content.length}")
-                    val parsed = TTMLParser.parse(content)
+                    Timber.d("[BG-LYRICS-DEBUG] Unified TTML input has x-bg=${normalizedContent.contains("ttm:role=\"x-bg\"")}, x-translation=${normalizedContent.contains("ttm:role=\"x-translation\"")}, length=${normalizedContent.length}")
+                    val parsed = TTMLParser.parse(normalizedContent)
                     Timber.d("[BG-LYRICS-DEBUG] Unified TTML parsed summary: ${summarizeBgLines(parsed)}")
                     parsed
                 }
                 LyricsFormat.PLAIN_TEXT -> {
                     // 纯文本格式转换为简单行
-                    val parsed = parsePlainText(content)
+                    val parsed = parsePlainText(normalizedContent)
                     Timber.d("Plain text parsed ${parsed.size} lines")
                     parsed
                 }

@@ -17,9 +17,11 @@ import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -343,6 +345,12 @@ open class LyricsRepository(
      *   "98765" -> ("ncm","98765")  // default to ncm for backward compatibility
      */
     private fun parseAmlLId(raw: String): Pair<String, String> {
+        // If the raw string is already a URL (e.g. from the AMLL search "file" field),
+        // treat it as a direct download link.
+        if (raw.startsWith("http://") || raw.startsWith("https://")) {
+            return "url" to raw
+        }
+
         val parts = raw.split(":", limit = 2)
         return if (parts.size == 2 && parts[0].isNotBlank()) {
             parts[0].lowercase() to parts[1]
@@ -643,65 +651,92 @@ open class LyricsRepository(
 
             // Debug: log the outgoing request payload
             Timber.d("AMLL DB search request payload: ${payload.toString()}")
-            val response = httpClient.post("https://amlldb.bikonoo.com/api/search-lyrics") {
-                contentType(ContentType.Application.Json)
-                setBody(payload.toString())
+
+            // Search mirrors in parallel to improve robustness and speed
+            val endpoints = listOf(
+                "https://amlldb.bikonoo.com/api/search-lyrics"
+            )
+
+            val joined = coroutineScope {
+                val deferreds: List<Deferred<List<LyricsSearchResult>>> = endpoints.map { endpoint ->
+                    async<List<LyricsSearchResult>> {
+                        runCatching {
+                            val response = httpClient.post(endpoint) {
+                                contentType(ContentType.Application.Json)
+                                setBody(payload.toString())
+                            }
+
+                            if (!response.status.isSuccess()) {
+                                Timber.w("AMLL DB search failed on $endpoint: ${response.status}")
+                                return@runCatching emptyList<LyricsSearchResult>()
+                            }
+
+                            val responseBody = response.body<String>()
+                            Timber.d("AMLL DB search response from $endpoint (len=${responseBody.length}): ${responseBody.take(200)}")
+
+                            val resultArray = Json.parseToJsonElement(responseBody).jsonArray
+                            if (resultArray.isEmpty()) return@runCatching emptyList<LyricsSearchResult>()
+
+                            // helper to extract a string from either a primitive or a single-element array
+                            fun JsonElement?.firstStringOrNull(): String? = when (this) {
+                                null -> null
+                                is JsonPrimitive -> contentOrNull
+                                is JsonArray -> this.firstOrNull()?.let { (it as? JsonPrimitive)?.contentOrNull }
+                                else -> null
+                            }
+
+                            resultArray.mapNotNull { item ->
+                                val itemObj = item.jsonObject
+                                val platform = itemObj["platform"].firstStringOrNull() ?: return@mapNotNull null
+                                val id = itemObj["id"].firstStringOrNull() ?: return@mapNotNull null
+                                val titleRes = itemObj["title"].firstStringOrNull() ?: return@mapNotNull null
+                                val artistRes = itemObj["artist"].firstStringOrNull() ?: return@mapNotNull null
+                                val albumRes = itemObj["album"].firstStringOrNull()
+                                val fileRes = itemObj["file"].firstStringOrNull()
+                                val actualId = fileRes?.takeIf { it.isNotBlank() } ?: id
+
+                                // Use local scoring (Unilyric-like matching) instead of the score returned by the AMLL DB API.
+                                // The API’s `score` field is only used for rough filtering; our client-side match evaluation
+                                // gives a more consistent experience across different providers.
+                                val matchEval = evaluateMatch(
+                                    searchTitle = title,
+                                    searchArtist = artist,
+                                    resultTitle = titleRes,
+                                    resultArtist = artistRes,
+                                    searchAlbum = null,
+                                    resultAlbum = albumRes
+                                )
+                                val confidence = matchEval.confidence
+                                val matchType = matchEval.matchType
+
+                                LyricsSearchResult(
+                                    provider = "amll",
+                                    songId = "$platform:$actualId",
+                                    title = titleRes,
+                                    artist = artistRes,
+                                    album = albumRes,
+                                    confidence = confidence,
+                                    matchType = matchType,
+                                    metadataMatch = true
+                                )
+                            }
+                        }.getOrElse {
+                            Timber.w(it, "AMLL DB search failed on $endpoint")
+                            emptyList()
+                        }
+                    }
+                }
+
+                // Wait for all mirror queries to complete (with a bounded timeout)
+                withTimeoutOrNull(15_000) {
+                    deferreds.map { it.await() }.flatten()
+                } ?: emptyList()
             }
 
-            if (!response.status.isSuccess()) {
-                Timber.w("AMLL DB search failed: ${response.status}")
-                return emptyList()
-            }
-
-            // Debug: log full response for troubleshooting
-            val responseBody = response.body<String>()
-            Timber.d("AMLL DB search response body: $responseBody")
-
-            val resultArray = Json.parseToJsonElement(responseBody).jsonArray
-            if (resultArray.isEmpty()) return emptyList()
-
-            // helper to extract a string from either a primitive or a single-element array
-            fun JsonElement?.firstStringOrNull(): String? = when (this) {
-                null -> null
-                is JsonPrimitive -> contentOrNull
-                is JsonArray -> this.firstOrNull()?.let { (it as? JsonPrimitive)?.contentOrNull }
-                else -> null
-            }
-
-            resultArray.mapNotNull { item ->
-                val itemObj = item.jsonObject
-                val platform = itemObj["platform"].firstStringOrNull() ?: return@mapNotNull null
-                val id = itemObj["id"].firstStringOrNull() ?: return@mapNotNull null
-                val titleRes = itemObj["title"].firstStringOrNull() ?: return@mapNotNull null
-                val artistRes = itemObj["artist"].firstStringOrNull() ?: return@mapNotNull null
-                val albumRes = itemObj["album"].firstStringOrNull()
-                val fileRes = itemObj["file"].firstStringOrNull()
-                val actualId = fileRes?.takeIf { it.isNotBlank() } ?: id
-                // Use local scoring (Unilyric-like matching) instead of the score returned by the AMLL DB API.
-                // The API’s `score` field is only used for rough filtering; our client-side match evaluation
-                // gives a more consistent experience across different providers.
-                val matchEval = evaluateMatch(
-                    searchTitle = title,
-                    searchArtist = artist,
-                    resultTitle = titleRes,
-                    resultArtist = artistRes,
-                    searchAlbum = null,
-                    resultAlbum = albumRes
-                )
-                val confidence = matchEval.confidence
-                val matchType = matchEval.matchType
-
-                LyricsSearchResult(
-                    provider = "amll",
-                    songId = "$platform:$actualId",
-                    title = titleRes,
-                    artist = artistRes,
-                    album = albumRes,
-                    confidence = confidence,
-                    matchType = matchType,
-                    metadataMatch = true
-                )
-            }.take(20)
+            // Deduplicate by provider+songId and limit size
+            joined
+                .distinctBy { "${it.provider}:${it.songId}" }
+                .take(20)
         } catch (e: Exception) {
             Timber.w(e, "AMLL DB search failed")
             emptyList()
@@ -1561,13 +1596,21 @@ open class LyricsRepository(
     ): TTMLLyrics? {
         // allow callers to pass a platform prefix (e.g. "qq:12345") or omit for
         // backwards compatibility.  default platform is ncm (网易云).
+        // If the "songId" is a direct URL (from AMLL search "file" field), we treat it as
+        // a direct download link.
         val (platform, rawId) = parseAmlLId(songId)
+
+        // some AMLL search results return native file names like "....ttml".
+        // For mirror endpoints we need to avoid appending ".ttml" twice.
+        val normalizedId = rawId.removeSuffix(".ttml")
+        val hasTtmlSuffix = rawId.endsWith(".ttml")
+
         // for QQ IDs we may receive "id1::id2".
         // which is the typical Unilyric format, so split on
         // "::" first to avoid producing an empty string for the second part.
         val candidateIds = when {
-            platform == "qq" && rawId.contains("::") -> rawId.split("::", limit = 2)
-            else -> listOf(rawId)
+            platform == "qq" && normalizedId.contains("::") -> normalizedId.split("::", limit = 2)
+            else -> listOf(normalizedId)
         }
 
         var unknownHostCount = 0
@@ -1576,15 +1619,28 @@ open class LyricsRepository(
 
         for (normalizedSongId in candidateIds) {
             // build the list of endpoints; the mirrors we had before only host the ncm
-            // archive so they should only be used when platform == "ncm".  the new
-            // public service covers all supported platforms.
+            // archive so they should only be used when platform == "ncm".
+            // If the rawId is a direct URL (platform="url"), use it directly.
             val endpoints = mutableListOf<String>()
-            endpoints += "https://amll-ttml-db.stevexmh.net/$platform/$normalizedSongId"
-            if (platform == "ncm") {
-                endpoints += "https://amlldb.bikonoo.com/ncm-lyrics/$normalizedSongId.ttml"
-                endpoints += "https://amll.mirror.dimeta.top/api/db/ncm-lyrics/$normalizedSongId.ttml"
-                endpoints += "https://raw.githubusercontent.com/amll-dev/amll-ttml-db/refs/heads/main/ncm-lyrics/$normalizedSongId.ttml"
+            if (platform == "url") {
+                endpoints += rawId
+            } else {
+                // For the main AMLL endpoint we should use the raw ID as provided.
+                // (some platforms like raw-lyrics include the .ttml suffix in the ID)
+                endpoints += "https://amll-ttml-db.stevexmh.net/$platform/$rawId"
+
+                // Mirror endpoints exist for multiple platforms (not just `ncm`).
+                // Determine the mirror folder name:
+                // - if the platform already ends with "-lyrics" (e.g. raw-lyrics), keep it
+                // - otherwise append "-lyrics" (e.g. ncm -> ncm-lyrics)
+                val mirrorFolder = if (platform.endsWith("-lyrics")) platform else "${platform}-lyrics"
+                val idWithSuffix = if (hasTtmlSuffix) rawId else "$normalizedSongId.ttml"
+                endpoints += "https://amlldb.bikonoo.com/$mirrorFolder/$idWithSuffix"
+                endpoints += "https://amll.mirror.dimeta.top/api/db/$mirrorFolder/$idWithSuffix"
+                endpoints += "https://raw.githubusercontent.com/amll-dev/amll-ttml-db/refs/heads/main/$mirrorFolder/$idWithSuffix"
             }
+
+            Timber.d("AMLL probe for songId=$songId (platform=$platform, rawId=$rawId, normalized=$normalizedSongId, hasTtml=$hasTtmlSuffix) -> endpoints=$endpoints")
 
             totalEndpoints += endpoints.size
 
@@ -1593,7 +1649,10 @@ open class LyricsRepository(
             val jobs = endpoints.map { url ->
                 amllProbeScope.launch {
                     try {
+                        Timber.d("Fetching AMLL endpoint: $url")
                         val response = httpClient.get(url)
+                        Timber.d("AMLL endpoint response ${response.status.value}: $url")
+
                         if (!response.status.isSuccess()) {
                             Timber.w("AMLL endpoint non-success status ${response.status.value}: $url")
                         } else {
@@ -1618,12 +1677,22 @@ open class LyricsRepository(
                 }
             }
 
-            // wait for first successful lyrics or for all jobs to finish
+            // wait for first successful lyrics result, but avoid hanging forever if all
+            // endpoints fail / time out. The HTTP client already enforces timeouts, but if
+            // none of the probes ever writes to the channel we must still unblock.
             val pair = try {
-                channel.receiveCatching().getOrNull()
+                // give a generous but bounded wait time to allow slow endpoints
+                withTimeoutOrNull(20_000) {
+                    channel.receiveCatching().getOrNull()
+                }.also {
+                    if (it == null) {
+                        Timber.d("AMLL probe timeout: no successful endpoint responded within 20s (endpoints=${endpoints.size})")
+                    }
+                }
             } catch (e: CancellationException) {
                 // Cancellation may occur when the caller gives up (e.g., timeout or
                 // viewmodel clears). Treat it as a clean stop and return null.
+                Timber.d(e, "AMLL probe cancelled")
                 jobs.forEach { job -> job.cancel() }
                 channel.close()
                 return null
@@ -1643,7 +1712,7 @@ open class LyricsRepository(
         lastAmlLError = if (unknownHostCount == totalEndpoints) {
             "All AMLL hosts are unreachable (DNS)."
         } else {
-            "Lyrics not found on AMLL mirrors for songId=$rawId"
+            "Lyrics not found on AMLL mirrors for songId=$normalizedId (raw:$rawId)"
         }
 
         Timber.w("Error fetching AMLL TTML lyrics: $lastAmlLError")
