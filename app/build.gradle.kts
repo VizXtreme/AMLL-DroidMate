@@ -20,7 +20,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "Alpha $buildTimestamp"
+        versionName = "Alpha $buildTimestamp" // 版本号
         vectorDrawables.useSupportLibrary = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -54,7 +54,7 @@ androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
             (output as? com.android.build.api.variant.impl.VariantOutputImpl)?.outputFileName?.set(
-                "AMLL-DroidMate-Alpha-$buildTimestamp.apk"
+                "AMLL-DroidMate-Alpha-$buildTimestamp.apk" //版本号
             )
         }
     }
