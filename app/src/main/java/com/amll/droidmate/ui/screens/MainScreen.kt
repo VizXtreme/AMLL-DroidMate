@@ -41,6 +41,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.ripple
+import com.amll.droidmate.ui.screens.AMLLLyricsView
+import com.amll.droidmate.ui.screens.AMLLRenderMode
 import androidx.compose.runtime.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -529,7 +532,7 @@ fun MainScreen() {
                     ) {
                         val leftInteractionSource = remember { MutableInteractionSource() }
                         Box(
-                            modifier = Modifier.size(80.dp).clip(RoundedCornerShape(50)).indication(leftInteractionSource, ripple(color = Color.White))
+                            modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(50)).indication(leftInteractionSource, ripple())
                                 .pointerInput(Unit) {
                                     detectTapGestures(
                                         onTap = {
@@ -550,7 +553,7 @@ fun MainScreen() {
                         ) { Icon(Icons.Default.FastRewind, null, Modifier.size(40.dp), Color.White.copy(0.9f)) }
 
                         Box(
-                            modifier = Modifier.size(100.dp).clip(RoundedCornerShape(50))
+                            modifier = Modifier.weight(1.5f).fillMaxHeight().clip(RoundedCornerShape(50))
                                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = ripple(color = Color.White)) {
                                     if (currentPlaying.isPlaying) viewModel.pause() else viewModel.play()
                                     resetHideTimer()
@@ -560,7 +563,7 @@ fun MainScreen() {
 
                         val rightInteractionSource = remember { MutableInteractionSource() }
                         Box(
-                            modifier = Modifier.size(80.dp).clip(RoundedCornerShape(50)).indication(rightInteractionSource, ripple(color = Color.White))
+                            modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(50)).indication(rightInteractionSource, ripple())
                                 .pointerInput(Unit) {
                                     detectTapGestures(
                                         onTap = { viewModel.skipToNext(); resetHideTimer() },
@@ -602,8 +605,8 @@ private fun LyricsVisualLayer(
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(0.28f), Color.Black.copy(0.55f), Color.Black.copy(0.68f)))))
         // only create the WebView if we actually have lyrics; avoids unnecessary page loads
         if (lyrics != null) {
-            androidx.compose.runtime.key(webViewReloadKey, amllDebugSource) {
-                AMLLLyricsWebView(lyrics = lyrics, currentTime = currentTime, isPlaying = nowPlaying?.isPlaying == true, albumArtUri = nowPlaying?.albumArtUri, renderMode = AMLLRenderMode.DOM, debugSource = amllDebugSource, onLineSeek = onLineSeek, modifier = Modifier.fillMaxSize())
+            key(webViewReloadKey, amllDebugSource) {
+                AMLLLyricsView(lyrics = lyrics, currentTime = currentTime, albumArtUri = nowPlaying?.albumArtUri, renderMode = AMLLRenderMode.DOM, debugSource = amllDebugSource, onLineSeek = onLineSeek, modifier = Modifier.fillMaxSize())
             }
         }
         if (onFullscreenTap != null) {

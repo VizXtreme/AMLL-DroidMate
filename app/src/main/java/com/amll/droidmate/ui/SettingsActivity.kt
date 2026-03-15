@@ -238,6 +238,25 @@ private fun SettingsPage(
             }
 
             Text(
+                text = "歌词时间轴偏移",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("歌曲偏移 + 设备偏移")
+                    Button(onClick = {
+                        context.startActivity(Intent(context, LyricOffsetSettingsActivity::class.java))
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Text("歌词时间轴偏移设置")
+                    }
+                }
+            }
+
+            Text(
                 text = "字体设置",
                 style = MaterialTheme.typography.titleMedium
             )

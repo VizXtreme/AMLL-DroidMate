@@ -263,14 +263,20 @@ open class LyricsRepository(
                 return null
             }
             
-            // QQ音乐歌词是base64编码的LRC/QRC格式，使用新的统一解析器
-            // 添加错误处理，以防Base64数据无效
+            // QQ音乐歌词可能是 Base64 编码的 LRC/QRC，也可能是 HEX + 3DES + Zlib 的 QRC 数据。
+            // 尝试检测并使用正确的解码方式。
             val decodedLyric = try {
-                String(android.util.Base64.decode(contentToUse, android.util.Base64.DEFAULT))
-            } catch (e: IllegalArgumentException) {
-                Timber.e(e, "Failed to decode Base64 content from QQ Music. Content length: ${contentToUse.length}")
+                if (QqMusicQrcCrypto.looksLikeHex(contentToUse)) {
+                    Timber.d("QRC content detected as hex, using QqMusicQrcCrypto.decryptQrcHex")
+                    QqMusicQrcCrypto.decryptQrcHex(contentToUse)
+                } else {
+                    // 当内容不是 HEX 时，大多数情况是 Base64 编码的 LRC/QRC
+                    String(android.util.Base64.decode(contentToUse, android.util.Base64.DEFAULT))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to decode QQ Music lyrics content. Content length: ${contentToUse.length}")
                 Timber.d("First 200 chars of content: ${contentToUse.take(200)}")
-                // 尝试直接使用原始内容（可能不是Base64编码）
+                // 尝试直接使用原始内容（可能本身就是未经编码的歌词）
                 contentToUse
             }
             
@@ -671,17 +677,19 @@ open class LyricsRepository(
                 val albumRes = itemObj["album"].firstStringOrNull()
                 val fileRes = itemObj["file"].firstStringOrNull()
                 val actualId = fileRes?.takeIf { it.isNotBlank() } ?: id
-                val score = itemObj["score"]?.jsonPrimitive?.intOrNull ?: 0
-                val confidence = (score / 1000f).coerceIn(0f, 1f)
-                val matchType = when {
-                    confidence >= 0.99f -> MatchType.PERFECT.name
-                    confidence >= 0.95f -> MatchType.VERY_HIGH.name
-                    confidence >= 0.9f -> MatchType.HIGH.name
-                    confidence >= 0.7f -> MatchType.PRETTY_HIGH.name
-                    confidence >= 0.5f -> MatchType.MEDIUM.name
-                    confidence >= 0.3f -> MatchType.LOW.name
-                    else -> MatchType.VERY_LOW.name
-                }
+                // Use local scoring (Unilyric-like matching) instead of the score returned by the AMLL DB API.
+                // The API’s `score` field is only used for rough filtering; our client-side match evaluation
+                // gives a more consistent experience across different providers.
+                val matchEval = evaluateMatch(
+                    searchTitle = title,
+                    searchArtist = artist,
+                    resultTitle = titleRes,
+                    resultArtist = artistRes,
+                    searchAlbum = null,
+                    resultAlbum = albumRes
+                )
+                val confidence = matchEval.confidence
+                val matchType = matchEval.matchType
 
                 LyricsSearchResult(
                     provider = "amll",

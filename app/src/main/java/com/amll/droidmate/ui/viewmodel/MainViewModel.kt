@@ -14,6 +14,7 @@ import com.amll.droidmate.domain.model.TTMLLyrics
 import com.amll.droidmate.service.LyricNotificationManager
 import com.amll.droidmate.service.MediaInfoService
 import com.amll.droidmate.ui.AppSettings
+import com.amll.droidmate.util.AudioDeviceHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -125,7 +126,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         // compute current line first, since we'll need it in both branches
-        val time = music.currentPosition
+        val time = getLyricTimeWithDeviceOffset(music)
         val currentLine = lyrics.lines.firstOrNull { time in it.startTime..it.endTime }
             ?: lyrics.lines.lastOrNull { it.startTime <= time }
 
@@ -147,7 +148,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         updateLyricNotification(_lyrics.value, _nowPlayingMusic.value)
     }
 
-    
+    internal fun getLyricTimeWithDeviceOffset(music: NowPlayingMusic?): Long {
+        if (music == null) return 0L
+        val base = music.currentPosition
+        val device = AudioDeviceHelper.getCurrentOutputDeviceName(context)
+        val offset = AppSettings.getLyricTimingOffset(context, music.title, music.artist, device) ?: 0L
+        if (offset == 0L) return base
+        Timber.d("Applying lyric offset: ${'$'}offset ms (song='${'$'}{music.title}' artist='${'$'}{music.artist}' device='${'$'}device')")
+        return base + offset
+    }
+
     /**
      * 设置媒体监听
      */

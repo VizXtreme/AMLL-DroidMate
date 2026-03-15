@@ -349,4 +349,103 @@ object AppSettings {
     fun setAgentRecognizerEnabled(context: Context, enabled: Boolean) {
         prefs(context).putBoolean(KEY_AGENT_RECOGNIZER_ENABLED, enabled)
     }
+
+    // === 歌词时间轴偏移设置（基于歌曲 + 输出设备） ===
+    private const val KEY_LYRIC_TIMING_OFFSETS = "lyric_timing_offsets"
+    private const val WILDCARD = "*"
+
+    data class LyricTimingOffset(
+        val title: String,
+        val artist: String,
+        val device: String,
+        val offsetMs: Long
+    )
+
+    fun getLyricTimingOffsets(context: Context): List<LyricTimingOffset> {
+        val raw = prefs(context).getString(KEY_LYRIC_TIMING_OFFSETS, null)
+        if (raw.isNullOrBlank()) return emptyList()
+
+        return try {
+            val json = JSONArray(raw)
+            buildList {
+                for (i in 0 until json.length()) {
+                    val obj = json.optJSONObject(i) ?: continue
+                    val title = obj.optString("title").trim().ifBlank { WILDCARD }
+                    val artist = obj.optString("artist").trim().ifBlank { WILDCARD }
+                    val device = obj.optString("device").trim().ifBlank { WILDCARD }
+                    val offsetMs = obj.optLong("offsetMs", 0L)
+                    add(LyricTimingOffset(title, artist, device, offsetMs))
+                }
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    fun getLyricTimingOffset(context: Context, title: String?, artist: String?, device: String): Long? {
+        // Normalize for lookup
+        val normalizedTitle = title?.trim().takeIf { !it.isNullOrBlank() } ?: WILDCARD
+        val normalizedArtist = artist?.trim().takeIf { !it.isNullOrBlank() } ?: WILDCARD
+        val normalizedDevice = device.trim().ifBlank { WILDCARD }
+
+        val entries = getLyricTimingOffsets(context)
+
+        // Sum all matching entries (支持叠加)
+        return entries
+            .filter { entry ->
+                (entry.title == WILDCARD || entry.title.equals(normalizedTitle, ignoreCase = true)) &&
+                    (entry.artist == WILDCARD || entry.artist.equals(normalizedArtist, ignoreCase = true)) &&
+                    (entry.device == WILDCARD || entry.device.equals(normalizedDevice, ignoreCase = true))
+            }
+            .sumOf { it.offsetMs }
+            .takeIf { it != 0L }
+    }
+
+    fun setLyricTimingOffset(context: Context, title: String, artist: String, device: String, offsetMs: Long) {
+        val existing = getLyricTimingOffsets(context).toMutableList()
+        val normalizedTitle = title.trim().ifBlank { WILDCARD }
+        val normalizedArtist = artist.trim().ifBlank { WILDCARD }
+        val normalizedDevice = device.trim().ifBlank { WILDCARD }
+        val existingIndex = existing.indexOfFirst {
+            it.title.equals(normalizedTitle, ignoreCase = true) &&
+                it.artist.equals(normalizedArtist, ignoreCase = true) &&
+                it.device.equals(normalizedDevice, ignoreCase = true)
+        }
+        val entry = LyricTimingOffset(normalizedTitle, normalizedArtist, normalizedDevice, offsetMs)
+        if (existingIndex >= 0) {
+            existing[existingIndex] = entry
+        } else {
+            existing.add(entry)
+        }
+        saveLyricTimingOffsets(context, existing)
+    }
+
+    fun removeLyricTimingOffset(context: Context, title: String, artist: String, device: String) {
+        val existing = getLyricTimingOffsets(context).toMutableList()
+        val normalizedTitle = title.trim().ifBlank { WILDCARD }
+        val normalizedArtist = artist.trim().ifBlank { WILDCARD }
+        val normalizedDevice = device.trim().ifBlank { WILDCARD }
+        val remaining = existing.filterNot {
+            it.title.equals(normalizedTitle, ignoreCase = true) &&
+                it.artist.equals(normalizedArtist, ignoreCase = true) &&
+                it.device.equals(normalizedDevice, ignoreCase = true)
+        }
+        saveLyricTimingOffsets(context, remaining)
+    }
+
+    private fun saveLyricTimingOffsets(context: Context, entries: List<LyricTimingOffset>) {
+        val json = JSONArray().apply {
+            entries.forEach { entry ->
+                put(
+                    JSONObject().apply {
+                        put("title", entry.title)
+                        put("artist", entry.artist)
+                        put("device", entry.device)
+                        put("offsetMs", entry.offsetMs)
+                    }
+                )
+            }
+        }
+        prefs(context).putString(KEY_LYRIC_TIMING_OFFSETS, json.toString())
+    }
 }

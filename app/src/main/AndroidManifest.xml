@@ -46,6 +46,16 @@
             android:theme="@style/Theme.DroidMate" />
 
         <activity
+            android:name="com.amll.droidmate.ui.LyricOffsetSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DroidMate" />
+
+        <activity
+            android:name="com.amll.droidmate.ui.LyricOffsetManagementActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DroidMate" />
+
+        <activity
             android:name="com.amll.droidmate.ui.FontSettingsActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
