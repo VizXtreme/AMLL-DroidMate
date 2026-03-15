@@ -28,6 +28,10 @@ data class CustomLyricsCandidate(
     val matchType: String,
     val displayName: String,
     /**
+     * 是否通过元数据（歌名/歌手）搜索得到的结果。
+     */
+    val metadataMatch: Boolean = false,
+    /**
      * 特性集合, e.g. 对唱/背景/重叠/翻译/音译/逐字
      * UI 需要在候选列表中显示这些功能。
      */
@@ -113,6 +117,16 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             val res = if (aAml) -1 else 1
             Timber.d("compareCandidates amll db pref: $a vs $b -> $res")
             return res
+        }
+
+        // 3b. Among AMLL results, prefer ID-based matches over metadata-based ones.
+        //      Metadata-based matches are those found by searching via title/artist.
+        if (aAml && bAml) {
+            if (a.metadataMatch != b.metadataMatch) {
+                val res = if (!a.metadataMatch) -1 else 1
+                Timber.d("compareCandidates amll id-vs-metadata: $a vs $b -> $res")
+                return res
+            }
         }
 
         // 4. current source bias
@@ -353,7 +367,8 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                                 provider = candidate.provider,
                                 title = candidate.title,
                                 artist = candidate.artist,
-                                id = candidate.songId
+                                id = candidate.songId,
+                                metadataMatch = candidate.metadataMatch
                             )
                             _appliedLyricsText.value = TTMLConverter.toTTMLString(result.lyrics)
                         }
@@ -398,10 +413,15 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             provider: String,
             title: String,
             artist: String,
-            id: String?
+            id: String?,
+            metadataMatch: Boolean = false
         ): String {
             // every provider uses the same template: 服务商：歌曲名 - 歌手名(id)
-            val providerName = providerDisplayName(provider)
+            val providerName = if (provider.equals("amll", true) && metadataMatch) {
+                "AMLL TTML DB (基于歌名)"
+            } else {
+                providerDisplayName(provider)
+            }
             return "$providerName：$title - $artist(${id ?: ""})"
         }
 
@@ -529,6 +549,11 @@ class CustomLyricsViewModel @JvmOverloads constructor(
     private fun LyricsSearchResult.toCandidate(): CustomLyricsCandidate {
         // matchType may contain verbose labels such as PERFECT/VERY_HIGH
         // those are not useful in the UI, so clear them.
+        val displayName = if (provider.equals("amll", true) && metadataMatch) {
+            "AMLL TTML DB (基于歌名)"
+        } else {
+            Companion.providerDisplayName(provider)
+        }
         return CustomLyricsCandidate(
             provider = provider,
             songId = songId,
@@ -536,7 +561,8 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             artist = artist,
             confidence = confidence,
             matchType = "",
-            displayName = Companion.providerDisplayName(provider)
+            displayName = displayName,
+            metadataMatch = metadataMatch
         )
     }
 

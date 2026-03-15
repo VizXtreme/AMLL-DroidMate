@@ -16,6 +16,7 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -623,21 +624,20 @@ open class LyricsRepository(
      */
     suspend fun searchAmlldb(title: String, artist: String): List<LyricsSearchResult> {
         return try {
-            val query = listOf(title, artist)
-                .filter { it.isNotBlank() }
-                .joinToString(" ")
-                .trim()
-
+            // AMLL DB search API only supports searching by title (not title+artist)
+            val query = title.trim()
             if (query.isEmpty()) return emptyList()
 
-            Timber.i("AMLL DB search starting for query: $query")
+            Timber.i("AMLL DB search starting for title: $query")
 
             val payload = buildJsonObject {
                 put("query", query)
                 put("type", "all")
             }
 
-            val response = httpClient.post("https://amildb.bikonoo.com/api/search-lyrics") {
+            // Debug: log the outgoing request payload
+            Timber.d("AMLL DB search request payload: ${payload.toString()}")
+            val response = httpClient.post("https://amlldb.bikonoo.com/api/search-lyrics") {
                 contentType(ContentType.Application.Json)
                 setBody(payload.toString())
             }
@@ -647,16 +647,30 @@ open class LyricsRepository(
                 return emptyList()
             }
 
-            val resultArray = Json.parseToJsonElement(response.body<String>()).jsonArray
+            // Debug: log full response for troubleshooting
+            val responseBody = response.body<String>()
+            Timber.d("AMLL DB search response body: $responseBody")
+
+            val resultArray = Json.parseToJsonElement(responseBody).jsonArray
             if (resultArray.isEmpty()) return emptyList()
+
+            // helper to extract a string from either a primitive or a single-element array
+            fun JsonElement?.firstStringOrNull(): String? = when (this) {
+                null -> null
+                is JsonPrimitive -> contentOrNull
+                is JsonArray -> this.firstOrNull()?.let { (it as? JsonPrimitive)?.contentOrNull }
+                else -> null
+            }
 
             resultArray.mapNotNull { item ->
                 val itemObj = item.jsonObject
-                val platform = itemObj["platform"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                val id = itemObj["id"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                val titleRes = itemObj["title"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                val artistRes = itemObj["artist"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                val albumRes = itemObj["album"]?.jsonPrimitive?.contentOrNull
+                val platform = itemObj["platform"].firstStringOrNull() ?: return@mapNotNull null
+                val id = itemObj["id"].firstStringOrNull() ?: return@mapNotNull null
+                val titleRes = itemObj["title"].firstStringOrNull() ?: return@mapNotNull null
+                val artistRes = itemObj["artist"].firstStringOrNull() ?: return@mapNotNull null
+                val albumRes = itemObj["album"].firstStringOrNull()
+                val fileRes = itemObj["file"].firstStringOrNull()
+                val actualId = fileRes?.takeIf { it.isNotBlank() } ?: id
                 val score = itemObj["score"]?.jsonPrimitive?.intOrNull ?: 0
                 val confidence = (score / 1000f).coerceIn(0f, 1f)
                 val matchType = when {
@@ -671,12 +685,13 @@ open class LyricsRepository(
 
                 LyricsSearchResult(
                     provider = "amll",
-                    songId = "$platform:$id",
+                    songId = "$platform:$actualId",
                     title = titleRes,
                     artist = artistRes,
                     album = albumRes,
                     confidence = confidence,
-                    matchType = matchType
+                    matchType = matchType,
+                    metadataMatch = true
                 )
             }.take(20)
         } catch (e: Exception) {
@@ -1596,7 +1611,16 @@ open class LyricsRepository(
             }
 
             // wait for first successful lyrics or for all jobs to finish
-            val pair = channel.receiveCatching().getOrNull()
+            val pair = try {
+                channel.receiveCatching().getOrNull()
+            } catch (e: CancellationException) {
+                // Cancellation may occur when the caller gives up (e.g., timeout or
+                // viewmodel clears). Treat it as a clean stop and return null.
+                jobs.forEach { job -> job.cancel() }
+                channel.close()
+                return null
+            }
+
             jobs.forEach { job -> job.cancel() }
             channel.close()
 
@@ -1826,7 +1850,8 @@ open class LyricsRepository(
                                 provider = candidate.provider,
                                 title = candidate.title,
                                 artist = candidate.artist,
-                                songId = candidate.songId
+                                songId = candidate.songId,
+                                metadataMatch = candidate.metadataMatch
                             )
                         )
                     }
@@ -1851,7 +1876,8 @@ open class LyricsRepository(
                         provider = top.provider,
                         title = top.title,
                         artist = top.artist,
-                        songId = top.songId
+                        songId = top.songId,
+                        metadataMatch = top.metadataMatch
                     )
                 )
             }
@@ -2098,7 +2124,8 @@ open class LyricsRepository(
             provider: String,
             title: String,
             artist: String,
-            songId: String? = null
+            songId: String? = null,
+            metadataMatch: Boolean = false
         ): String {
             var providerName = when (provider.lowercase()) {
                 "amll" -> "AMLL TTML DB"
@@ -2113,6 +2140,9 @@ open class LyricsRepository(
                 val plat = parts[0].uppercase()
                 idPart = parts[1]
                 providerName = "$providerName($plat)"
+            }
+            if (provider.lowercase() == "amll" && metadataMatch) {
+                providerName = "$providerName (基于歌名)"
             }
             return "自动识别:$providerName：$title - $artist($idPart)"
         }

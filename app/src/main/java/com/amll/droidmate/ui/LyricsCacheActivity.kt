@@ -211,8 +211,16 @@ private fun CacheEntryItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                val displaySource = if (entry.source.contains("AMLL TTML DB(") && !entry.source.contains("(基于歌名)")) {
+                    entry.source.replaceFirst(
+                        Regex("AMLL TTML DB\\([^)]*\\)"),
+                        "$0 (基于歌名)"
+                    )
+                } else {
+                    entry.source
+                }
                 Text(
-                    text = "来源: ${entry.source}",
+                    text = "来源: $displaySource",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )

@@ -48,6 +48,48 @@ private class AmllAssetsPathHandler(private val context: Context) : androidx.web
     private val delegate = androidx.webkit.WebViewAssetLoader.AssetsPathHandler(context)
 
     override fun handle(path: String): WebResourceResponse? {
+        // Some requests are for local resources (fonts / cached album art) that are
+        // served via our custom URL scheme. Handle those directly here so they don't
+        // fall through to the default AssetsPathHandler.
+        if (path.startsWith("/assets/amll-local-cache/")) {
+            val encoded = path.removePrefix("/assets/amll-local-cache/")
+            val decoded = try {
+                Uri.decode(encoded)
+            } catch (_: Exception) {
+                return null
+            }
+
+            val cacheDir = File(context.cacheDir, "album_art")
+            val file = File(cacheDir, decoded)
+            if (!file.exists() || !file.isFile) return null
+
+            val mime = URLConnection.guessContentTypeFromName(file.name) ?: "application/octet-stream"
+            return try {
+                WebResourceResponse(mime, "UTF-8", file.inputStream())
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        if (path.startsWith("/assets/amll-local-fonts/")) {
+            val encoded = path.removePrefix("/assets/amll-local-fonts/")
+            val decoded = try {
+                Uri.decode(encoded)
+            } catch (_: Exception) {
+                return null
+            }
+
+            val file = File(context.filesDir, decoded)
+            if (!file.exists() || !file.isFile) return null
+
+            val mime = URLConnection.guessContentTypeFromName(file.name) ?: "application/octet-stream"
+            return try {
+                WebResourceResponse(mime, "UTF-8", file.inputStream())
+            } catch (_: Exception) {
+                null
+            }
+        }
+
         // The build output is under assets/amll/assets/, but WebViewAssetLoader serves
         // from /assets/. Rewrite requests of the form /assets/<name> to
         // /assets/amll/assets/<name> when the request is not already under /assets/amll/.
@@ -70,7 +112,7 @@ private fun amllInfo(message: String) {
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun AMLLLyricsView(
+fun AMLLLyricsWebView(
     lyrics: TTMLLyrics?,
     currentTime: Long,
     isPlaying: Boolean = true,
@@ -115,6 +157,10 @@ fun AMLLLyricsView(
                     .addPathHandler(
                         "/amll-local-fonts/",
                         LocalFilePathHandler(context)
+                    )
+                    .addPathHandler(
+                        "/amll-local-cache/",
+                        LocalCachePathHandler(context)
                     )
                     .build()
 
@@ -293,11 +339,12 @@ fun AMLLLyricsView(
                 lastLyrics = lyrics
             }
 
-            if (lastAlbumArtUri != albumArtUri) {
-                val escapedAlbumUri = escapeJsString(albumArtUri ?: "")
-                amllDebug("[$debugSource#$instanceId] Bridge call: updateAlbumArt(uri=${if (albumArtUri.isNullOrBlank()) "empty" else "present"})")
+            val albumArtUriForWeb = buildAlbumArtUri(view.context, albumArtUri)
+            if (lastAlbumArtUri != albumArtUriForWeb) {
+                val escapedAlbumUri = escapeJsString(albumArtUriForWeb ?: "")
+                amllDebug("[$debugSource#$instanceId] Bridge call: updateAlbumArt(uri=${if (albumArtUriForWeb.isNullOrBlank()) "empty" else "present"})")
                 view.evaluateJavascript("window.updateAlbumArt && window.updateAlbumArt(\"$escapedAlbumUri\");", null)
-                lastAlbumArtUri = albumArtUri
+                lastAlbumArtUri = albumArtUriForWeb
             }
 
             val configuredFontFamily = AppSettings.getAmllFontFamily(view.context)
@@ -478,6 +525,51 @@ private class LocalFilePathHandler(private val context: Context) : androidx.webk
         }
     }
 }
+
+private fun buildAlbumArtUri(context: Context, uri: String?): String? {
+    if (uri.isNullOrBlank()) return null
+
+    // If the URI is a file:// URI and points to our app cache directory, serve it via
+    // the WebViewAssetLoader so it can be loaded from an https origin.
+    if (uri.startsWith("file://")) {
+        val filePath = Uri.parse(uri).path ?: return uri
+        val file = File(filePath)
+        val cacheBase = File(context.cacheDir, "album_art")
+        if (file.canonicalPath.startsWith(cacheBase.canonicalPath)) {
+            val relativePath = file.canonicalPath.removePrefix(cacheBase.canonicalPath).trimStart(File.separatorChar)
+            val encoded = URLEncoder.encode(relativePath, StandardCharsets.UTF_8.toString())
+            return "https://appassets.androidplatform.net/assets/amll-local-cache/$encoded"
+        }
+    }
+
+    return uri
+}
+
+private class LocalCachePathHandler(private val context: Context) : androidx.webkit.WebViewAssetLoader.PathHandler {
+    override fun handle(path: String): WebResourceResponse? {
+        // The path passed here is the request path portion, e.g. "/amll-local-cache/<encoded>"
+        if (!path.startsWith("/amll-local-cache/")) return null
+
+        val encoded = path.removePrefix("/amll-local-cache/")
+        val decoded = try {
+            Uri.decode(encoded)
+        } catch (_: Exception) {
+            return null
+        }
+
+        val cacheDir = File(context.cacheDir, "album_art")
+        val file = File(cacheDir, decoded)
+        if (!file.exists() || !file.isFile) return null
+
+        val mime = URLConnection.guessContentTypeFromName(file.name) ?: "application/octet-stream"
+        return try {
+            WebResourceResponse(mime, "UTF-8", file.inputStream())
+        } catch (_: Exception) {
+            null
+        }
+    }
+}
+
 private fun buildLyricsJson(lyrics: TTMLLyrics): String {
     val bgLines = lyrics.lines.filter { it.isBG }
     val bgWithTranslation = bgLines.count { !it.translation.isNullOrBlank() }

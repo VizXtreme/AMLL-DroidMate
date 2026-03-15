@@ -94,7 +94,12 @@ data class LyricsSearchResult(
      * 匹配分档字符串（仅用于调试）。
      * UI 中不再展示这些词，如 "PERFECT"、"VERY_HIGH" 等。
      */
-    val matchType: String = "" 
+    val matchType: String = "",
+    /**
+     * Indicates this result was obtained via a metadata-based search (title/artist),
+     * rather than directly via a known ID.
+     */
+    val metadataMatch: Boolean = false
 )
 
 /**
