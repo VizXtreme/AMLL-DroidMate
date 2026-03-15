@@ -1913,30 +1913,6 @@ open class LyricsRepository(
                 )
             }
 
-            // 优先尝试来自 AMLL TTML 数据库的候选（provider=="amll"），
-            // 该库被视为高质量“缓存/权威来源”，但此时已经确认本地缓存不存在。
-            val localCandidates = searchResults.filter { it.provider.equals("amll", ignoreCase = true) }
-            if (localCandidates.isNotEmpty()) {
-                // 按置信度降序遍历，成功则直接返回
-                for (candidate in localCandidates.sortedByDescending { it.confidence }) {
-                    Timber.i("尝试使用本地缓存候选: ${candidate.songId} conf=${candidate.confidence}")
-                    val cached = getLyrics(candidate.provider, candidate.songId, candidate.title, candidate.artist)
-                    if (cached.isSuccess) {
-                        return cached.copy(
-                            source = formatAutoSource(
-                                provider = candidate.provider,
-                                title = candidate.title,
-                                artist = candidate.artist,
-                                songId = candidate.songId,
-                                metadataMatch = candidate.metadataMatch
-                            )
-                        )
-                    }
-                    Timber.w("本地缓存候选获取失败, 将尝试其它来源: id=${candidate.songId}")
-                }
-                // 如果所有本地候选都失败了，则继续走正常流程
-            }
-
             if (searchResults.size > 1) {
                 searchResults = adjustResultsForFeatures(searchResults, currentSourceName)
             }
@@ -2093,7 +2069,19 @@ open class LyricsRepository(
             val featureDiff = b.second.size - a.second.size
             if (featureDiff != 0) return@Comparator featureDiff
 
-            // 4. current source bias
+            // 4. prefer AMLL DB results (regardless of current source bias)
+            val aAml = a.first.provider.equals("amll", true)
+            val bAml = b.first.provider.equals("amll", true)
+            if (aAml != bAml) return@Comparator if (aAml) -1 else 1
+
+            // 4b. for AMLL results, prefer ID-based matches over metadata-based ones
+            if (aAml && bAml) {
+                if (a.first.metadataMatch != b.first.metadataMatch) {
+                    return@Comparator if (!a.first.metadataMatch) -1 else 1
+                }
+            }
+
+            // 5. current source bias
             if (!currentSourceName.isNullOrBlank()) {
                 val lower = currentSourceName.lowercase()
                 val priorityList = when {
@@ -2108,7 +2096,7 @@ open class LyricsRepository(
                     if (aIndex != bIndex) return@Comparator aIndex.compareTo(bIndex)
                 }
 
-                // 4b. AMLL prefix check
+                // 5b. AMLL prefix check
                 fun amllMatch(r: LyricsSearchResult): Boolean {
                     if (!r.provider.equals("amll", true)) return false
                     val parts = r.songId.split(":", limit = 2)
@@ -2126,7 +2114,7 @@ open class LyricsRepository(
                 if (aMatch != bMatch) return@Comparator if (aMatch) -1 else 1
             }
 
-            // 5. fixed provider priority with TME rules
+            // 6. fixed provider priority with TME rules
             val bothTme = setOf("qq", "kugou").contains(a.first.provider.lowercase()) &&
                     setOf("qq", "kugou").contains(b.first.provider.lowercase())
             val tmeSource = currentSourceName?.lowercase()?.let { it.contains("qq") || it.contains("酷狗") } ?: false
@@ -2157,7 +2145,7 @@ open class LyricsRepository(
                 if (pa != pb) return@Comparator pa - pb
             }
 
-            // 6. equal -> preserve arrival order
+            // 7. equal -> preserve arrival order
             0
         }).map { it.first }
     }

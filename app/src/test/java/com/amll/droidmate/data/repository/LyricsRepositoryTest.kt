@@ -513,6 +513,36 @@ class LyricsRepositoryTest {
     }
 
     @Test
+    fun `fetchLyricsAuto prefers AMLL over current source bias when candidates tie`() = runTest {
+        val fake = object : LyricsRepository(HttpClient((MockEngine { _ ->
+            respond("", HttpStatusCode.OK)
+        }) as HttpClientEngine)) {
+            override suspend fun searchLyrics(title: String, artist: String): List<LyricsSearchResult> {
+                return listOf(
+                    LyricsSearchResult(provider = "qq", songId = "q", title = "t", artist = "a", confidence = 0.90f),
+                    LyricsSearchResult(provider = "amll", songId = "qq:xxx", title = "t", artist = "a", confidence = 0.90f)
+                )
+            }
+
+            override suspend fun getAMLL_TTMLLyrics(songId: String, title: String?, artist: String?) =
+                com.amll.droidmate.domain.model.TTMLLyrics(
+                    metadata = com.amll.droidmate.domain.model.TTMLMetadata(title = "t", artist = "a"),
+                    lines = emptyList()
+                )
+
+            override suspend fun getQQMusicLyrics(songId: String, title: String?, artist: String?) =
+                com.amll.droidmate.domain.model.TTMLLyrics(
+                    metadata = com.amll.droidmate.domain.model.TTMLMetadata(title = "t", artist = "a"),
+                    lines = emptyList()
+                )
+        }
+
+        // Even though current source suggests QQ, AMLL should still win per manual lyrics sort order.
+        val r = fake.fetchLyricsAuto("t", "a", currentSourceName = "QQ Music")
+        assertTrue(r.source?.contains("AMLL") == true)
+    }
+
+    @Test
     fun `compareArtists handles ampersand and and equivalence`() {
         val fake = LyricsRepository(HttpClient((MockEngine { respond("", HttpStatusCode.OK) }) as HttpClientEngine))
         val res = fake.compareArtists("Simon & Garfunkel", "Simon and Garfunkel")
