@@ -2,9 +2,12 @@ package com.amll.droidmate.ui.screens
 
 import android.annotation.SuppressLint
 import android.graphics.Color
+import android.content.Context
+import android.net.Uri
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.view.View
@@ -23,6 +26,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.amll.droidmate.domain.model.TTMLLyrics
 import timber.log.Timber
 import java.io.File
+import java.net.URLConnection
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -38,6 +44,22 @@ enum class AMLLRenderMode {
 private const val AMLL_LOG_TAG = "AMLL"
 private val AMLL_VIEW_INSTANCE_COUNTER = AtomicInteger(0)
 
+private class AmllAssetsPathHandler(private val context: Context) : androidx.webkit.WebViewAssetLoader.PathHandler {
+    private val delegate = androidx.webkit.WebViewAssetLoader.AssetsPathHandler(context)
+
+    override fun handle(path: String): WebResourceResponse? {
+        // The build output is under assets/amll/assets/, but WebViewAssetLoader serves
+        // from /assets/. Rewrite requests of the form /assets/<name> to
+        // /assets/amll/assets/<name> when the request is not already under /assets/amll/.
+        val fixedPath = if (path.startsWith("/assets/") && !path.startsWith("/assets/amll/")) {
+            "/assets/amll/assets" + path.removePrefix("/assets")
+        } else {
+            path
+        }
+        return delegate.handle(fixedPath)
+    }
+}
+
 private fun amllDebug(message: String) {
     Timber.d(message)
 }
@@ -51,6 +73,7 @@ private fun amllInfo(message: String) {
 fun AMLLLyricsView(
     lyrics: TTMLLyrics?,
     currentTime: Long,
+    isPlaying: Boolean = true,
     albumArtUri: String? = null,
     renderMode: AMLLRenderMode = AMLLRenderMode.DOM,
     debugSource: String = "unknown",
@@ -81,7 +104,25 @@ fun AMLLLyricsView(
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
 
+                // Use WebViewAssetLoader to allow JS fetch() to load wasm and other assets from the Android asset directory.
+                // WebView does not support fetch() with the file:// scheme, so we serve assets via https://appassets.androidplatform.net.
+                // We also serve local font files via a custom handler so @font-face urls can load fonts from app internal storage.
+                val assetLoader = androidx.webkit.WebViewAssetLoader.Builder()
+                    .addPathHandler(
+                        "/assets/",
+                        AmllAssetsPathHandler(context)
+                    )
+                    .addPathHandler(
+                        "/amll-local-fonts/",
+                        LocalFilePathHandler(context)
+                    )
+                    .build()
+
                 webViewClient = object : WebViewClient() {
+                    override fun shouldInterceptRequest(view: WebView, url: String): WebResourceResponse? {
+                        return assetLoader.shouldInterceptRequest(Uri.parse(url))
+                    }
+
                     override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                         isPageReady = false
                         lastModeValue = null
@@ -186,7 +227,11 @@ fun AMLLLyricsView(
                     onLyricsClickState.value?.invoke()
                 }
 
-                loadUrl("file:///android_asset/amll/index.html")
+                // Load via the appassets:// host so fetch()/wasm can load resources reliably.
+                // See: https://developer.android.com/reference/androidx/webkit/WebViewAssetLoader
+                // React Router basename is computed from window.location, so we can still support router paths
+                // while loading the actual HTML file.
+                loadUrl("https://appassets.androidplatform.net/assets/amll/index.html#/embed/lyric")
 
                 post {
                     amllDebug("[$debugSource#$instanceId] WebView size after layout: width=$width, height=$height, measuredWidth=$measuredWidth, measuredHeight=$measuredHeight")
@@ -224,10 +269,16 @@ fun AMLLLyricsView(
                 lastBackgroundProfileValue = backgroundProfile
             }
 
-            // 先更新时间，确保 JS 层的 state.currentTime 是正确的，然后再更新歌词
-            // 这样可以避免在间奏/前奏/尾奏时切换全屏导致歌词位置重置的问题
+            // First sync playback state so the JS layer knows whether the host is paused.
+            // This prevents updateTime from auto-resuming playback when the host is already paused.
+            Timber.d("[$debugSource#$instanceId] Bridge call: setPlaybackState($isPlaying)")
+            view.evaluateJavascript("window.setPlaybackState && window.setPlaybackState($isPlaying);", null)
+
+            // Then update playback time. Keeping this after setPlaybackState ensures that
+            // updateTime sees the correct remotePlaybackState and doesn't auto-resume.
             Timber.d("[$debugSource#$instanceId] Bridge call: updateTime($currentTime)")
             view.evaluateJavascript("window.updateTime && window.updateTime($currentTime);", null)
+
 
             // 只在lyrics对象引用改变时才重新构建JSON（避免每秒都构建）
             if (lyrics !== lastLyrics) {
@@ -291,7 +342,7 @@ fun AMLLLyricsView(
             }
 
             if (lastFontConfigSignature != fontSignature) {
-                val script = buildApplyFontScript(effectiveFamily, fontFiles)
+                val script = buildApplyFontScript(view.context, effectiveFamily, fontFiles)
                 amllDebug(
                     "[$debugSource#$instanceId] Bridge call: applyFontSettings(enabled=${enabledFamilies.size}, files=${fontFiles.size})"
                 )
@@ -342,10 +393,10 @@ private fun normalizeFontToken(value: String): String {
         .replace(Regex("[^a-z0-9]"), "")
 }
 
-private fun buildApplyFontScript(effectiveFamily: String, files: List<FontWebEntry>): String {
+private fun buildApplyFontScript(context: Context, effectiveFamily: String, files: List<FontWebEntry>): String {
     val escapedFamily = escapeJsString(effectiveFamily)
     val filesJs = files.joinToString(",") {
-        "{id:\"${escapeJsString(it.id)}\",familyName:\"${escapeJsString(it.familyName)}\",uri:\"${escapeJsString(it.uri)}\"}"
+        "{id:\"${escapeJsString(it.id)}\",familyName:\"${escapeJsString(it.familyName)}\",uri:\"${escapeJsString(buildFontUri(context, it.uri))}\"}"
     }
 
     return """
@@ -387,6 +438,46 @@ private fun escapeJsString(value: String): String {
         .replace("\r", "")
 }
 
+private fun buildFontUri(context: Context, uri: String): String {
+    // The AMLL frontend may request user-selected fonts via file:// URIs.
+    // WebView blocks fetch() for file://, so we instead serve them via
+    // a secure custom path handler.
+    val file = File(Uri.parse(uri).path ?: uri)
+    val base = context.filesDir.absolutePath
+
+    // Only allow fonts inside the app's internal files directory.
+    if (!file.absolutePath.startsWith(base)) {
+        return uri
+    }
+
+    val relativePath = file.absolutePath.removePrefix(base).trimStart(File.separatorChar)
+    val encoded = URLEncoder.encode(relativePath, StandardCharsets.UTF_8.toString())
+    return "https://appassets.androidplatform.net/assets/amll-local-fonts/$encoded"
+}
+
+private class LocalFilePathHandler(private val context: Context) : androidx.webkit.WebViewAssetLoader.PathHandler {
+    override fun handle(path: String): WebResourceResponse? {
+        // The path passed here is the request path portion, e.g. "/amll-local-fonts/<encoded>"
+        if (!path.startsWith("/amll-local-fonts/")) return null
+
+        val encoded = path.removePrefix("/amll-local-fonts/")
+        val decoded = try {
+            Uri.decode(encoded)
+        } catch (_: Exception) {
+            return null
+        }
+
+        val file = File(context.filesDir, decoded)
+        if (!file.exists() || !file.isFile) return null
+
+        val mime = URLConnection.guessContentTypeFromName(file.name) ?: "application/octet-stream"
+        return try {
+            WebResourceResponse(mime, "UTF-8", file.inputStream())
+        } catch (_: Exception) {
+            null
+        }
+    }
+}
 private fun buildLyricsJson(lyrics: TTMLLyrics): String {
     val bgLines = lyrics.lines.filter { it.isBG }
     val bgWithTranslation = bgLines.count { !it.translation.isNullOrBlank() }

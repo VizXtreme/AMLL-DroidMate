@@ -22,4 +22,30 @@ class UnifiedLyricsParserTest {
         // make sure it didn't end up empty due to QRC parser
         assertEquals("ab", lyrics?.lines?.get(0)?.text)
     }
+
+    @Test
+    fun `parse should preserve metadata lines when processing disabled`() {
+        val sample = """
+            [00:00.000] 词：张三
+            [00:01.000] 作曲：李四
+            [00:02.000] Hello
+        """.trimIndent()
+
+        val lyrics = UnifiedLyricsParser.parse(
+            sample,
+            title = "Sample",
+            artist = "Artist",
+            processMetadata = false
+        )
+        assertNotNull(lyrics)
+        val linesText = lyrics!!.lines.map { it.text }
+        assertTrue(
+            "Expected metadata lines to be preserved, got: $linesText",
+            linesText.any { it.contains("词：") }
+        )
+        assertTrue(
+            "Expected metadata lines to be preserved, got: $linesText",
+            linesText.any { it.contains("作曲：") }
+        )
+    }
 }

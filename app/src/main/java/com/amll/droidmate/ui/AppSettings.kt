@@ -42,6 +42,8 @@ object AppSettings {
     private const val KEY_UPDATE_CHANNEL = "update_channel"
     private const val KEY_LAST_UPDATE_CHECK_AT = "last_update_check_at"
     private const val KEY_SKIP_PREVIOUS_REWINDS = "skip_previous_rewinds"
+    private const val KEY_PROCESS_METADATA_ENABLED = "process_metadata_enabled"
+    private const val KEY_AGENT_RECOGNIZER_ENABLED = "agent_recognizer_enabled"
 
     // helper to avoid repeating getSharedPreferences
     private fun prefs(context: Context) =
@@ -330,5 +332,21 @@ object AppSettings {
 
     fun setSkipPreviousRewindsEnabled(context: Context, enabled: Boolean) {
         prefs(context).putBoolean(KEY_SKIP_PREVIOUS_REWINDS, enabled)
+    }
+
+    fun isMetadataProcessingEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_PROCESS_METADATA_ENABLED, false)
+    }
+
+    fun setMetadataProcessingEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_PROCESS_METADATA_ENABLED, enabled)
+    }
+
+    fun isAgentRecognizerEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_AGENT_RECOGNIZER_ENABLED, false)
+    }
+
+    fun setAgentRecognizerEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_AGENT_RECOGNIZER_ENABLED, enabled)
     }
 }
