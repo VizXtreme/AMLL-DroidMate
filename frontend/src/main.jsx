@@ -68,6 +68,14 @@ let state = {
   },
 }
 
+// When playback is paused, the incoming time updates often stop, but the
+// mask animation can continue drifting. Detect this and pause the player
+// to freeze mask-relative animations.
+let __lastReportedTime = null
+let __lastTimeChangeAt = 0
+let __playerAutoPaused = false
+const AUTO_PAUSE_DELAY_MS = 500
+
 // insert a small stylesheet rule that lets us quickly un‑blur a single
 // line by adding the `amll-line-unblur` class. the core library already
 // applies per-line blur but this gives us a way to override a touched
@@ -542,7 +550,25 @@ function animationFrameLoop() {
     lastFrameTime = now
 
     settleSeekingIfNeeded(now)
-    callPlayer('setCurrentTime', Math.trunc(state.currentTime), state.isSeeking)
+
+    const currentTime = Math.trunc(state.currentTime)
+
+    // If incoming time stops changing, assume playback is paused.
+    // Use a time-based threshold to avoid false triggers when time updates infrequently.
+    if (__lastReportedTime === null || currentTime !== __lastReportedTime) {
+      __lastReportedTime = currentTime
+      __lastTimeChangeAt = now
+      if (__playerAutoPaused) {
+        callPlayer('resume')
+        callPlayer('setCurrentTime', currentTime, true)
+        __playerAutoPaused = false
+      }
+    } else if (now - __lastTimeChangeAt >= AUTO_PAUSE_DELAY_MS && !__playerAutoPaused) {
+      callPlayer('pause')
+      __playerAutoPaused = true
+    }
+
+    callPlayer('setCurrentTime', currentTime, state.isSeeking)
     callPlayer('update', delta)
   } catch (error) {
     logToAndroid(`[AMLL-ERROR] update loop error: ${error?.message || error}`)

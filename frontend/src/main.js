@@ -194,7 +194,13 @@ const state = {
     isMoved: false,
   },
 }
-
+// When the audio is paused, incoming time updates often stop. When that happens,
+// we want to pause the underlying player so the lyric mask animation also
+// freezes. When time starts changing again, we resume.
+let __lastReportedTime = null
+let __lastTimeChangeAt = 0
+let __playerAutoPaused = false
+const AUTO_PAUSE_DELAY_MS = 500
 let player = null
 let rafId = null
 let lastFrameTime = -1
@@ -500,7 +506,26 @@ function animationFrameLoop() {
     lastFrameTime = now
 
     settleSeekingIfNeeded(now)
-    callPlayer('setCurrentTime', Math.trunc(state.currentTime), state.isSeeking)
+
+    const currentTime = Math.trunc(state.currentTime)
+
+    // If the incoming time stops changing, assume playback is paused.
+    // We use a time-based threshold to avoid causing pause/resume oscillations
+    // when the time updates only occasionally.
+    if (__lastReportedTime === null || currentTime !== __lastReportedTime) {
+      __lastReportedTime = currentTime
+      __lastTimeChangeAt = now
+      if (__playerAutoPaused) {
+        callPlayer('resume')
+        callPlayer('setCurrentTime', currentTime, true)
+        __playerAutoPaused = false
+      }
+    } else if (now - __lastTimeChangeAt >= AUTO_PAUSE_DELAY_MS && !__playerAutoPaused) {
+      callPlayer('pause')
+      __playerAutoPaused = true
+    }
+
+    callPlayer('setCurrentTime', currentTime, state.isSeeking)
     callPlayer('update', delta)
   } catch (error) {
     logToAndroid(`[AMLL-ERROR] update loop error: ${error?.message || error}`)

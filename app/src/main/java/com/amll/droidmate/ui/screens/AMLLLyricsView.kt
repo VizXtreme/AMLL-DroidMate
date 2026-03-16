@@ -56,6 +56,7 @@ fun AMLLLyricsView(
     debugSource: String = "unknown",
     onLyricsClick: (() -> Unit)? = null,
     onLineSeek: ((Long) -> Unit)? = null,
+    isPlaying: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val instanceId = remember { AMLL_VIEW_INSTANCE_COUNTER.incrementAndGet() }
@@ -153,30 +154,31 @@ fun AMLLLyricsView(
                 val webViewRef = this
 
                 addJavascriptInterface(
-                    AMLLInterface(debugSource, instanceId) { seekTime ->
-                        amllInfo("[$debugSource#$instanceId] Bridge callback onLineSeek($seekTime), callbackPresent=${onLineSeekState.value != null}")
+                    AMLLInterface(
+                        debugSource,
+                        instanceId,
+                        onLineSeekState.value,
+                        onSeekRequested = { seekTime ->
+                            // schedule a UI-thread action so that the webview can immediately
+                            // acknowledge the seek and prevent the "lyrics running around" effect.
+                            webViewRef.post {
+                                // tell the JS player we are seeking so it can suspend auto-scroll
+                                webViewRef.evaluateJavascript(
+                                    "window.callPlayer && window.callPlayer('setIsSeeking', true);",
+                                    null
+                                )
 
-                        // schedule a UI-thread action so that the webview can immediately
-                        // acknowledge the seek and prevent the "lyrics running around" effect.
-                        webViewRef.post {
-                            // tell the JS player we are seeking so it can suspend auto-scroll
-                            webViewRef.evaluateJavascript(
-                                "window.callPlayer && window.callPlayer('setIsSeeking', true);",
-                                null
-                            )
-
-                            // update the webview time to the target position right away. this
-                            // reduces the window where the old time would cause the view to
-                            // scroll back to the previous line before the new position arrives
-                            webViewRef.evaluateJavascript(
-                                "window.updateTime && window.updateTime($seekTime);",
-                                null
-                            )
-                        }
-
-                        // finally notify host view model so the audio actually seeks
-                        onLineSeekState.value?.invoke(seekTime)
-                    },
+                                // update the webview time to the target position right away. this
+                                // reduces the window where the old time would cause the view to
+                                // scroll back to the previous line before the new position arrives
+                                webViewRef.evaluateJavascript(
+                                    "window.updateTime && window.updateTime($seekTime);",
+                                    null
+                                )
+                            }
+                        },
+                        isPlayingProvider = { isPlaying }
+                    ),
                     "Android"
                 )
                 amllDebug("[$debugSource#$instanceId] JavascriptInterface added as Android")
@@ -442,7 +444,9 @@ private fun buildLyricsJson(lyrics: TTMLLyrics): String {
 class AMLLInterface(
     private val debugSource: String,
     private val instanceId: Int,
-    private val onLineSeek: ((Long) -> Unit)? = null
+    private val onLineSeek: ((Long) -> Unit)? = null,
+    private val onSeekRequested: ((Long) -> Unit)? = null,
+    private val isPlayingProvider: () -> Boolean = { true }
 ) {
     @JavascriptInterface
     fun log(message: String) {
@@ -452,6 +456,12 @@ class AMLLInterface(
     @JavascriptInterface
     fun onLineClick(lineIndex: Int, startTime: Long) {
         amllInfo("[$debugSource#$instanceId] User clicked lyric line: index=$lineIndex, startTime=$startTime, callbackPresent=${onLineSeek != null}")
+        onSeekRequested?.invoke(startTime)
         onLineSeek?.invoke(startTime)
+    }
+
+    @JavascriptInterface
+    fun isPlaying(): Boolean {
+        return isPlayingProvider()
     }
 }

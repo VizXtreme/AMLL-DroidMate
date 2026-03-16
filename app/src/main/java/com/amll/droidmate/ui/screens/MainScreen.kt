@@ -614,7 +614,16 @@ private fun LyricsVisualLayer(
         // only create the WebView if we actually have lyrics; avoids unnecessary page loads
         if (lyrics != null) {
             key(webViewReloadKey, amllDebugSource) {
-                AMLLLyricsView(lyrics = lyrics, currentTime = currentTime, albumArtUri = nowPlaying?.albumArtUri, renderMode = AMLLRenderMode.DOM, debugSource = amllDebugSource, onLineSeek = onLineSeek, modifier = Modifier.fillMaxSize())
+                AMLLLyricsView(
+                    lyrics = lyrics,
+                    currentTime = currentTime,
+                    albumArtUri = nowPlaying?.albumArtUri,
+                    renderMode = AMLLRenderMode.DOM,
+                    debugSource = amllDebugSource,
+                    onLineSeek = onLineSeek,
+                    isPlaying = nowPlaying?.isPlaying ?: false,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
         if (onFullscreenTap != null) {
