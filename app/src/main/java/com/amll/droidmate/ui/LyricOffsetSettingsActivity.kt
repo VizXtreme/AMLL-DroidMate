@@ -33,7 +33,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -135,30 +134,26 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
         offsets = AppSettings.getLyricTimingOffsets(context)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("歌词时间轴偏移") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        context.startActivity(Intent(context, LyricOffsetManagementActivity::class.java))
-                    }) {
-                        Icon(Icons.Default.Storage, contentDescription = "管理")
-                    }
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+        TopAppBar(
+            title = { Text("歌词时间轴偏移") },
+            navigationIcon = {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                 }
-            )
-        }
-    ) { padding ->
+            },
+            actions = {
+                IconButton(onClick = {
+                    context.startActivity(Intent(context, LyricOffsetManagementActivity::class.java))
+                }) {
+                    Icon(Icons.Default.Storage, contentDescription = "管理")
+                }
+            }
+        )
+
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .statusBarsPadding(),
+                .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(16.dp)
         ) {
