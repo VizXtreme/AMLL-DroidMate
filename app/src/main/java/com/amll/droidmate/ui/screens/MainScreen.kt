@@ -262,7 +262,7 @@ fun MainScreen() {
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(cardBg)
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             // text/icons use onSurface same as the card
                             CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
