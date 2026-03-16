@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedButton
@@ -79,6 +80,18 @@ class FontSettingsActivity : ComponentActivity() {
 @Composable
 private fun FontSettingsPage(onBack: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
+
+    // use the global dynamic color scheme as the source of truth for accent
+    val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
+    val rippleColor = dynamicColorScheme?.primary ?: MaterialTheme.colorScheme.primary
+
+    // keep switch thumb/track consistent with the dynamic accent color
+    val switchColors = SwitchDefaults.colors(
+        checkedThumbColor = rippleColor,
+        checkedTrackColor = rippleColor.copy(alpha = 0.5f),
+        uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        uncheckedTrackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f)
+    )
     
     val loadExistingFonts = {
         val all = AppSettings.getAmllFontFiles(context)
@@ -257,7 +270,8 @@ private fun FontSettingsPage(onBack: () -> Unit) {
                                     } else {
                                         "已停用字体: ${font.displayName}"
                                     }
-                                }
+                                },
+                                colors = switchColors
                             )
                         }
                     }

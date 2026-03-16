@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -100,6 +101,14 @@ private fun SettingsPage(
     // use the global dynamic color scheme as the source of truth for accent
     val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
     val rippleColor = dynamicColorScheme?.primary ?: MaterialTheme.colorScheme.primary
+
+    // keep switch thumb/track consistent with the dynamic accent color
+    val switchColors = SwitchDefaults.colors(
+        checkedThumbColor = rippleColor,
+        checkedTrackColor = rippleColor.copy(alpha = 0.5f),
+        uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        uncheckedTrackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f)
+    )
 
     // we no longer need MainViewModel or album art extraction here; that work
     // is already performed in MainActivity and pushed to DynamicThemeManager
@@ -186,7 +195,8 @@ private fun SettingsPage(
                                     AppSettings.setLyricNotificationEnabled(context, true)
                                 }
                             }
-                        }
+                        },
+                        colors = switchColors
                     )
                 }
             }
@@ -290,7 +300,8 @@ private fun SettingsPage(
                         onCheckedChange = { enabled ->
                             skipPreviousRewinds = enabled
                             AppSettings.setSkipPreviousRewindsEnabled(context, enabled)
-                        }
+                        },
+                        colors = switchColors
                     )
                 }
             }
@@ -319,7 +330,8 @@ private fun SettingsPage(
                         onCheckedChange = { enabled ->
                             processMetadataEnabled = enabled
                             AppSettings.setMetadataProcessingEnabled(context, enabled)
-                        }
+                        },
+                        colors = switchColors
                     )
                 }
             }
@@ -348,7 +360,8 @@ private fun SettingsPage(
                         onCheckedChange = { enabled ->
                             agentRecognizerEnabled = enabled
                             AppSettings.setAgentRecognizerEnabled(context, enabled)
-                        }
+                        },
+                        colors = switchColors
                     )
                 }
             }
@@ -385,7 +398,8 @@ private fun SettingsPage(
                             onCheckedChange = { enabled ->
                                 autoCheckEnabled = enabled
                                 AppSettings.setAutoUpdateCheckEnabled(context, enabled)
-                            }
+                            },
+                            colors = switchColors
                         )
                     }
 
