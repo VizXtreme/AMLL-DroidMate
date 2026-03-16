@@ -63,9 +63,15 @@ object QrcParser {
 
         // Some QRC lines include only a line-level timestamp ([start,duration]) without per-word timings.
         // In that case, we still want to emit a lyric line rather than drop it.
+        // However, some files may include placeholder tokens like "(240410,1651)" where there is no actual lyric text.
+        // Do not treat these timestamp tokens as lyric text.
         if (words.isEmpty() && lineStartMs != null) {
             val fallbackText = lineContent.trim()
-            if (fallbackText.isNotEmpty()) {
+            // Normalize to catch hidden/zero-width characters or other noise that still renders as
+            // a timestamp-like token (e.g. "\u200B(240410,1651)").
+            val normalized = fallbackText.replace(Regex("[^\\d(),]"), "")
+            val isTimestampToken = Regex("^\\(\\d+,\\d+\\)(?:\\(\\d+,\\d+\\))*$").matches(normalized)
+            if (fallbackText.isNotEmpty() && !isTimestampToken) {
                 val lineEnd = lineStartMs + (lineDurationMs ?: 0)
                 words.add(
                     LyricWord(

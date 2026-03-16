@@ -50,6 +50,21 @@ class UnifiedLyricsParserTest {
     }
 
     @Test
+    fun `parse should ignore timestamp placeholder lines in QRC`() {
+        // Some QQ QRC payloads include lines like [240410,1651](240410,1651) which contain no actual lyrics.
+        // These should not become visible lyric lines.
+        val sample = """
+            [0,1000]<0,500,0>a<500,500,0>b
+            [240410,1651](240410,1651)
+        """.trimIndent()
+
+        val lyrics = UnifiedLyricsParser.parse(sample, title = "Sample", artist = "Artist")
+        assertNotNull(lyrics)
+        assertEquals(1, lyrics!!.lines.size)
+        assertEquals("ab", lyrics.lines[0].text)
+    }
+
+    @Test
     fun `parse should handle QQ QRC XML output`() {
         val sample = """
             <?xml version=\"1.0\" encoding=\"utf-8\"?>

@@ -196,7 +196,10 @@ object KrcParser {
         if (words.isEmpty()) {
             // 移除所有时间标签，获取纯文本
             val plainText = SYLLABLE_REGEX.replace(contentAfterTimestamp) { it.groupValues[3] }
-            if (plainText.isNotEmpty()) {
+            // 某些歌词源可能会在行中只包含时间戳占位符（例如 "(240410,1651)"），不应将其作为可见歌词展示。
+            val normalized = plainText.replace(Regex("[^\\d(),]"), "")
+            val isTimestampToken = Regex("^\\(\\d+,\\d+\\)(?:\\(\\d+,\\d+\\))*$").matches(normalized)
+            if (plainText.isNotEmpty() && !isTimestampToken) {
                 fullText = plainText
                 words.add(
                     LyricWord(
@@ -208,6 +211,8 @@ object KrcParser {
             }
         }
         
+        if (words.isEmpty()) return null
+
         return LyricLine(
             startTime = lineStartMs,
             endTime = lineEndMs,
