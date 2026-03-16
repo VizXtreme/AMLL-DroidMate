@@ -12,8 +12,9 @@ const DYNAMIC_FONT_STYLE_ID = 'amll-dynamic-font-face-style'
 
 const QUALITY_PROFILE = {
   alignAnchor: 'center',
-  // see comments in main.js: compensate for half‑screen blank area
-  alignPosition: -0.1,
+  // Align based on the active line's vertical center.
+  // Target the “upper golden-ratio” point (≈38.2%) of the visible area.
+  alignPosition: 0.382,
   enableSpring: true,
   enableScale: true,
   enableBlur: true,
@@ -1021,6 +1022,15 @@ window.addEventListener('DOMContentLoaded', () => {
   const styleTag = document.createElement('style')
   styleTag.id = 'amll-touch-bg-blur-style'
   styleTag.textContent = `
+    /* force the player to match viewport height and remove builtin vertical padding */
+    .amll-lyric-player {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      height: 100vh !important;
+      max-height: 100vh !important;
+      overflow: hidden !important;
+    }
+
     /* touch down: show background lyrics + dim the player, similar to pause */
     .amll-lyric-player.${PAUSE_STYLE_CLASS} {
       opacity: 0.85 !important;

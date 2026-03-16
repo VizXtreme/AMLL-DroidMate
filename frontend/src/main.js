@@ -9,10 +9,9 @@ const DYNAMIC_FONT_STYLE_ID = 'amll-dynamic-font-face-style'
 
 const QUALITY_PROFILE = {
   alignAnchor: 'center',
-  // active line will land at 40% of the viewport from top of the *visible area*
-  // we introduce a half-screen padding above the first line, so the
-  // effective offset needs to be reduced by that amount (40% - 50% = -10%).
-  alignPosition: -0.1,
+  // Align based on the active line's vertical center.
+  // Target the “upper golden-ratio” (≈38.2%) of the visible area.
+  alignPosition: 0.382,
   enableSpring: true,
   enableScale: true,
   enableBlur: true,
@@ -872,6 +871,15 @@ window.addEventListener('DOMContentLoaded', () => {
   const styleTag = document.createElement('style')
   styleTag.id = 'amll-touch-bg-blur-style'
   styleTag.textContent = `
+    /* force the player to match viewport height and remove builtin vertical padding */
+    .amll-lyric-player {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      height: 100vh !important;
+      max-height: 100vh !important;
+      overflow: hidden !important;
+    }
+
     .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} [class*="lyricBgLine"] {
       filter: blur(var(--amll-touch-bg-blur, 10px)) !important;
     }
