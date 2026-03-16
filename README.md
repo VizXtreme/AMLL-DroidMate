@@ -3,7 +3,8 @@
 
 即开即用 Android 端外置歌词显示器，集成 [AMLL](https://github.com/amll-dev/applemusic-like-lyrics) 风格渲染与多源歌词检索能力。
 
-<img src="https://github.com/user-attachments/assets/8921a8a3-6c19-4641-b633-89c8f2b11985" width="500">
+<img src="https://github.com/user-attachments/assets/3d34c9d8-37d5-4ca6-b45b-be02bc85e377" width="500">
+
 
 
 ## 核心特性
@@ -19,8 +20,10 @@
   - 应用内可直接拖动进度条，暂停/播放，上下首等，而无需回到音乐源
     - 可选功能：按“上一首”时回到0:00处
 - 多源歌词检索（[AMLL TTML DB](https://github.com/amll-dev/amll-ttml-db)、酷狗、网易云、QQ），找到最符合且功能最多的歌词文件
+  - 实验性：为非原生TTML歌词处理元数据和角色识别 
 - 常驻通知实时歌词：可选常驻通知实时显示当前句歌词，并支持锁屏显示
 - 应用全局颜色根据专辑图变换
+- 基于歌曲和输出设备的歌词偏移，轻松解决延迟问题
 
 ## 参考和接入的项目
 
