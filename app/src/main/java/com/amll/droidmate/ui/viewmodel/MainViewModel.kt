@@ -152,9 +152,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (music == null) return 0L
         val base = music.currentPosition
         val device = AudioDeviceHelper.getCurrentOutputDeviceName(context)
-        val offset = AppSettings.getLyricTimingOffset(context, music.title, music.artist, device) ?: 0L
+        val source = music.packageName ?: "*"
+        val offset = AppSettings.getLyricTimingOffset(context, music.title, music.artist, device, source) ?: 0L
         if (offset == 0L) return base
-        Timber.d("Applying lyric offset: ${'$'}offset ms (song='${'$'}{music.title}' artist='${'$'}{music.artist}' device='${'$'}device')")
+        Timber.d("Applying lyric offset: ${'$'}offset ms (song='${'$'}{music.title}' artist='${'$'}{music.artist}' device='${'$'}device' source='${'$'}source')")
         return base + offset
     }
 

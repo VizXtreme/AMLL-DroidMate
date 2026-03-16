@@ -105,6 +105,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
     var title by remember { mutableStateOf("") }
     var artist by remember { mutableStateOf("") }
     var device by remember { mutableStateOf("") }
+    var source by remember { mutableStateOf("") }
     var offsetMsText by remember { mutableStateOf("0") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -118,6 +119,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
         title = entry?.title?.takeIf { it != "*" } ?: ""
         artist = entry?.artist?.takeIf { it != "*" } ?: ""
         device = entry?.device?.takeIf { it != "*" } ?: ""
+        source = entry?.source?.takeIf { it != "*" } ?: ""
         offsetMsText = entry?.offsetMs?.toString() ?: "0"
         errorMessage = null
         showDialog = true
@@ -129,12 +131,19 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
             errorMessage = "请输入有效的毫秒值"
             return
         }
-        if (title.isBlank() || artist.isBlank() || device.isBlank()) {
-            errorMessage = "歌曲、歌手、输出设备均不能为空（可用 *）"
+        if (title.isBlank() || artist.isBlank() || device.isBlank() || source.isBlank()) {
+            errorMessage = "歌曲、歌手、输出设备、来源均不能为空（可用 *）"
             return
         }
         coroutineScope.launch {
-            AppSettings.setLyricTimingOffset(context, title.trim(), artist.trim(), device.trim(), ms)
+            AppSettings.setLyricTimingOffset(
+                context,
+                title.trim(),
+                artist.trim(),
+                device.trim(),
+                ms,
+                source.trim()
+            )
             offsets = AppSettings.getLyricTimingOffsets(context)
             showDialog = false
             editingEntry = null
@@ -181,7 +190,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(bottom = 88.dp)
                 ) {
-                    items(offsets, key = { "${it.title}-${it.artist}-${it.device}" }) { entry ->
+                    items(offsets, key = { "${it.title}-${it.artist}-${it.device}-${it.source}" }) { entry ->
                         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                             Row(
                                 modifier = Modifier
@@ -193,6 +202,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                                 Column(Modifier.weight(1f)) {
                                     Text("${entry.title} — ${entry.artist}", style = MaterialTheme.typography.bodyLarge)
                                     Text("设备: ${entry.device}", style = MaterialTheme.typography.bodySmall)
+                                    Text("来源: ${entry.source}", style = MaterialTheme.typography.bodySmall)
                                     Text("偏移: ${entry.offsetMs} ms", style = MaterialTheme.typography.bodySmall)
                                 }
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -201,7 +211,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                                     }
                                     IconButton(onClick = {
                                         coroutineScope.launch {
-                                            AppSettings.removeLyricTimingOffset(context, entry.title, entry.artist, entry.device)
+                                            AppSettings.removeLyricTimingOffset(context, entry.title, entry.artist, entry.device, entry.source)
                                             offsets = AppSettings.getLyricTimingOffsets(context)
                                         }
                                     }) {
@@ -222,7 +232,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            "填入歌曲、歌手、输出设备（支持 * 通配符）。所有匹配规则将叠加。",
+                            "填入歌曲、歌手、输出设备、来源（支持 * 通配符）。所有匹配规则将叠加。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -243,6 +253,12 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                             value = device,
                             onValueChange = { device = it },
                             label = { Text("输出设备 (如: Bluetooth, Speaker)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = source,
+                            onValueChange = { source = it },
+                            label = { Text("来源 (如: com.tencent.qqmusic)") },
                             modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(

@@ -350,7 +350,7 @@ object AppSettings {
         prefs(context).putBoolean(KEY_AGENT_RECOGNIZER_ENABLED, enabled)
     }
 
-    // === 歌词时间轴偏移设置（基于歌曲 + 输出设备） ===
+    // === 歌词时间轴偏移设置（基于歌曲 + 输出设备 + 音乐源） ===
     private const val KEY_LYRIC_TIMING_OFFSETS = "lyric_timing_offsets"
     private const val WILDCARD = "*"
 
@@ -358,6 +358,7 @@ object AppSettings {
         val title: String,
         val artist: String,
         val device: String,
+        val source: String,
         val offsetMs: Long
     )
 
@@ -373,8 +374,9 @@ object AppSettings {
                     val title = obj.optString("title").trim().ifBlank { WILDCARD }
                     val artist = obj.optString("artist").trim().ifBlank { WILDCARD }
                     val device = obj.optString("device").trim().ifBlank { WILDCARD }
+                    val source = obj.optString("source").trim().ifBlank { WILDCARD }
                     val offsetMs = obj.optLong("offsetMs", 0L)
-                    add(LyricTimingOffset(title, artist, device, offsetMs))
+                    add(LyricTimingOffset(title, artist, device, source, offsetMs))
                 }
             }
         } catch (_: Exception) {
@@ -382,11 +384,18 @@ object AppSettings {
         }
     }
 
-    fun getLyricTimingOffset(context: Context, title: String?, artist: String?, device: String): Long? {
+    fun getLyricTimingOffset(
+        context: Context,
+        title: String?,
+        artist: String?,
+        device: String,
+        source: String = WILDCARD
+    ): Long? {
         // Normalize for lookup
         val normalizedTitle = title?.trim().takeIf { !it.isNullOrBlank() } ?: WILDCARD
         val normalizedArtist = artist?.trim().takeIf { !it.isNullOrBlank() } ?: WILDCARD
         val normalizedDevice = device.trim().ifBlank { WILDCARD }
+        val normalizedSource = source.trim().ifBlank { WILDCARD }
 
         val entries = getLyricTimingOffsets(context)
 
@@ -395,23 +404,33 @@ object AppSettings {
             .filter { entry ->
                 (entry.title == WILDCARD || entry.title.equals(normalizedTitle, ignoreCase = true)) &&
                     (entry.artist == WILDCARD || entry.artist.equals(normalizedArtist, ignoreCase = true)) &&
-                    (entry.device == WILDCARD || entry.device.equals(normalizedDevice, ignoreCase = true))
+                    (entry.device == WILDCARD || entry.device.equals(normalizedDevice, ignoreCase = true)) &&
+                    (entry.source == WILDCARD || entry.source.equals(normalizedSource, ignoreCase = true))
             }
             .sumOf { it.offsetMs }
             .takeIf { it != 0L }
     }
 
-    fun setLyricTimingOffset(context: Context, title: String, artist: String, device: String, offsetMs: Long) {
+    fun setLyricTimingOffset(
+        context: Context,
+        title: String,
+        artist: String,
+        device: String,
+        offsetMs: Long,
+        source: String = WILDCARD
+    ) {
         val existing = getLyricTimingOffsets(context).toMutableList()
         val normalizedTitle = title.trim().ifBlank { WILDCARD }
         val normalizedArtist = artist.trim().ifBlank { WILDCARD }
         val normalizedDevice = device.trim().ifBlank { WILDCARD }
+        val normalizedSource = source.trim().ifBlank { WILDCARD }
         val existingIndex = existing.indexOfFirst {
             it.title.equals(normalizedTitle, ignoreCase = true) &&
                 it.artist.equals(normalizedArtist, ignoreCase = true) &&
-                it.device.equals(normalizedDevice, ignoreCase = true)
+                it.device.equals(normalizedDevice, ignoreCase = true) &&
+                it.source.equals(normalizedSource, ignoreCase = true)
         }
-        val entry = LyricTimingOffset(normalizedTitle, normalizedArtist, normalizedDevice, offsetMs)
+        val entry = LyricTimingOffset(normalizedTitle, normalizedArtist, normalizedDevice, normalizedSource, offsetMs)
         if (existingIndex >= 0) {
             existing[existingIndex] = entry
         } else {
@@ -420,15 +439,23 @@ object AppSettings {
         saveLyricTimingOffsets(context, existing)
     }
 
-    fun removeLyricTimingOffset(context: Context, title: String, artist: String, device: String) {
+    fun removeLyricTimingOffset(
+        context: Context,
+        title: String,
+        artist: String,
+        device: String,
+        source: String = WILDCARD
+    ) {
         val existing = getLyricTimingOffsets(context).toMutableList()
         val normalizedTitle = title.trim().ifBlank { WILDCARD }
         val normalizedArtist = artist.trim().ifBlank { WILDCARD }
         val normalizedDevice = device.trim().ifBlank { WILDCARD }
+        val normalizedSource = source.trim().ifBlank { WILDCARD }
         val remaining = existing.filterNot {
             it.title.equals(normalizedTitle, ignoreCase = true) &&
                 it.artist.equals(normalizedArtist, ignoreCase = true) &&
-                it.device.equals(normalizedDevice, ignoreCase = true)
+                it.device.equals(normalizedDevice, ignoreCase = true) &&
+                it.source.equals(normalizedSource, ignoreCase = true)
         }
         saveLyricTimingOffsets(context, remaining)
     }
@@ -441,6 +468,7 @@ object AppSettings {
                         put("title", entry.title)
                         put("artist", entry.artist)
                         put("device", entry.device)
+                        put("source", entry.source)
                         put("offsetMs", entry.offsetMs)
                     }
                 )

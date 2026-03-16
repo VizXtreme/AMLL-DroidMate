@@ -102,7 +102,8 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
     // Update input values when song/device changes
     // Note: MediaInfoService frequently emits updates (position/timestamp), so only react to title/artist changes
     LaunchedEffect(nowPlaying?.title, nowPlaying?.artist, currentDeviceName) {
-        songOffsetText = AppSettings.getLyricTimingOffset(context, nowPlaying?.title, nowPlaying?.artist, "*")
+        val currentSource = nowPlaying?.packageName ?: "*"
+        songOffsetText = AppSettings.getLyricTimingOffset(context, nowPlaying?.title, nowPlaying?.artist, "*", currentSource)
             ?.toString() ?: "0"
         deviceOffsetText = AppSettings.getLyricTimingOffset(context, "*", "*", currentDeviceName)
             ?.toString() ?: "0"
@@ -116,7 +117,8 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
         }
         songOffsetError = null
         nowPlaying?.let { current ->
-            AppSettings.setLyricTimingOffset(context, current.title, current.artist, "*", ms)
+            val currentSource = current.packageName ?: "*"
+            AppSettings.setLyricTimingOffset(context, current.title, current.artist, "*", ms, currentSource)
             offsets = AppSettings.getLyricTimingOffsets(context)
         }
     }
@@ -172,6 +174,10 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                         Text("基于当前歌曲", style = MaterialTheme.typography.titleMedium)
                         Text(
                             "当前歌曲：${nowPlaying?.title ?: "未知"} — ${nowPlaying?.artist ?: "未知"}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "来源：${nowPlaying?.packageName ?: "*"}",
                             style = MaterialTheme.typography.bodySmall
                         )
 
