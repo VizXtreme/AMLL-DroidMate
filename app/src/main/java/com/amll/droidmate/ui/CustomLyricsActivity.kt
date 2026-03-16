@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Storage
 
 // icons are deprecated but AutoMirrored is unavailable; suppress warnings where used
@@ -178,7 +178,7 @@ private fun CustomLyricsPage(
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     @Suppress("DEPRECATION")
-                    Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                 }
             },
             actions = {

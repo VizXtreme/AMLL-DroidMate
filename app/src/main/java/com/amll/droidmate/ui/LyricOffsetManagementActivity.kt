@@ -24,7 +24,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
@@ -157,7 +157,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                     title = { Text("管理时间轴偏移") },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                         }
                     },
                     modifier = Modifier.statusBarsPadding()

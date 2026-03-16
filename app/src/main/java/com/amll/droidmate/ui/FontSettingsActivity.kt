@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 
 // suppress icon deprecation where used
@@ -152,7 +152,7 @@ private fun FontSettingsPage(onBack: () -> Unit) {
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     @Suppress("DEPRECATION")
-                    Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                 }
             }
         )

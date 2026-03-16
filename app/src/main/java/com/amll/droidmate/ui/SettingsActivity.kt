@@ -23,7 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 // suppress icon deprecation where used
 import androidx.compose.material3.AlertDialog
@@ -143,7 +143,7 @@ private fun SettingsPage(
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     @Suppress("DEPRECATION")
-                    Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                 }
             }
         )
