@@ -14,6 +14,7 @@ import org.junit.Test
 import com.amll.droidmate.domain.model.LyricsSearchResult
 import com.amll.droidmate.domain.model.LyricsResult
 import com.amll.droidmate.domain.model.LyricsFeature
+import com.amll.droidmate.domain.model.LyricLine
 import com.amll.droidmate.domain.model.TTMLLyrics
 import com.amll.droidmate.domain.model.TTMLMetadata
 
@@ -281,6 +282,25 @@ class LyricsRepositoryTest {
 
         val features = repo.getLyricsFeatures("amll", "id", "t", "a")
         assertFalse(features.contains(com.amll.droidmate.domain.model.LyricsFeature.WORDS))
+    }
+
+    @Test
+    fun `getLyricsFeatures does not include OVERLAP for non AMll non TTML sources`() = runTest {
+        val repo = object : LyricsRepository(HttpClient((MockEngine { respond("", HttpStatusCode.OK) }) as HttpClientEngine)) {
+            override suspend fun getNeteaseLyrics(songId: String, title: String?, artist: String?): TTMLLyrics? {
+                // Overlapping timings would normally trigger the OVERLAP feature.
+                return TTMLLyrics(
+                    metadata = TTMLMetadata(title = "t", artist = "a", source = "DroidMate (LRC)"),
+                    lines = listOf(
+                        LyricLine(startTime = 0, endTime = 1000, text = "a"),
+                        LyricLine(startTime = 900, endTime = 2000, text = "b")
+                    )
+                )
+            }
+        }
+
+        val features = repo.getLyricsFeatures("netease", "id", "t", "a")
+        assertFalse(features.contains(LyricsFeature.OVERLAP))
     }
 
     @Test

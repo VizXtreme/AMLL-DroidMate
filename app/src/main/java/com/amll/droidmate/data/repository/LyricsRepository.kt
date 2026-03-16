@@ -1704,7 +1704,10 @@ open class LyricsRepository(
                             if (content.contains("<tt", ignoreCase = true)) {
                                 val parsed = parseTTML(content, title, artist)
                                 if (parsed != null && parsed.lines.isNotEmpty()) {
-                                    channel.trySend(url to parsed)
+                                    // Mark the source for AMLL lyrics so downstream feature analysis
+                                    // (e.g. overlap detection) can distinguish AMLL TTML DB content.
+                                    val withSource = parsed.copy(metadata = parsed.metadata.copy(source = "AMLL TTML DB"))
+                                    channel.trySend(url to withSource)
                                 } else {
                                     Timber.w("TTML parse yielded empty result: $url")
                                 }
@@ -2217,7 +2220,13 @@ open class LyricsRepository(
             }
         }
         if (hasRealWords) features.add(LyricsFeature.WORDS)
-        if (lines.zipWithNext().any { it.second.startTime < it.first.endTime }) {
+        // Only mark overlap as a feature for sources where it is expected to be
+        // meaningful (e.g. AMLL TTML DB results or a raw TTML file). Other sources
+        // may produce overlapping timings during conversion and should not be
+        // treated as a true “overlap” feature.
+        val sourceLower = lyrics.metadata.source.lowercase()
+        val shouldMarkOverlap = sourceLower.contains("amll") || sourceLower.contains("ttml")
+        if (shouldMarkOverlap && lines.zipWithNext().any { it.second.startTime < it.first.endTime }) {
             features.add(LyricsFeature.OVERLAP)
         }
         return features
