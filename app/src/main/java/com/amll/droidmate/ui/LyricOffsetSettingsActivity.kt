@@ -22,8 +22,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Scaffold
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -186,7 +187,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                                 val value = (songOffsetText.toLongOrNull() ?: 0L) - 100L
                                 songOffsetText = value.toString()
                             }) {
-                                Icon(Icons.Default.ArrowBack, contentDescription = "减 100ms")
+                                Icon(Icons.Default.Remove, contentDescription = "减 100ms")
                             }
 
                             OutlinedTextField(
@@ -201,7 +202,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                                 val value = (songOffsetText.toLongOrNull() ?: 0L) + 100L
                                 songOffsetText = value.toString()
                             }) {
-                                Icon(Icons.Default.ArrowForward, contentDescription = "加 100ms")
+                                Icon(Icons.Default.Add, contentDescription = "加 100ms")
                             }
 
                             Spacer(modifier = Modifier.weight(1f))
@@ -232,7 +233,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                                 val value = (deviceOffsetText.toLongOrNull() ?: 0L) - 100L
                                 deviceOffsetText = value.toString()
                             }) {
-                                Icon(Icons.Default.ArrowBack, contentDescription = "减 100ms")
+                                Icon(Icons.Default.Remove, contentDescription = "减 100ms")
                             }
 
                             OutlinedTextField(
@@ -247,7 +248,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                                 val value = (deviceOffsetText.toLongOrNull() ?: 0L) + 100L
                                 deviceOffsetText = value.toString()
                             }) {
-                                Icon(Icons.Default.ArrowForward, contentDescription = "加 100ms")
+                                Icon(Icons.Default.Add, contentDescription = "加 100ms")
                             }
 
                             Spacer(modifier = Modifier.weight(1f))
