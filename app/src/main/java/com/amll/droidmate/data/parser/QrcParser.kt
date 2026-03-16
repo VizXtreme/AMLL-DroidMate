@@ -2,17 +2,25 @@ package com.amll.droidmate.data.parser
 
 import com.amll.droidmate.domain.model.LyricLine
 import com.amll.droidmate.domain.model.LyricWord
+import timber.log.Timber
 
 object QrcParser {
 
     private val lyricTokenRegex = Regex("""(?<text>.*?)\((?<start>\d+),(?<duration>\d+)\)""")
-    private val qrcLineTimestampRegex = Regex("""^\[\d+,\d+]""")
+    private val qrcLineTimestampRegex = Regex("""^\[(\d+),(\d+)]""")
 
     fun parse(content: String): List<LyricLine> {
+        val rawContent = extractQrcFromXmlIfNeeded(content)
+
+        Timber.d("QRC raw content length=${rawContent.length}, lineCount=${rawContent.lines().size}, containsNewline=${rawContent.contains('\n')}")
+        rawContent.lines().take(10).forEachIndexed { index, line ->
+            Timber.d("QRC raw line $index: ${line.take(200)}")
+        }
+
         val finalLines = mutableListOf<LyricLine>()
         val metadata = mutableMapOf<String, MutableList<String>>()
 
-        for (raw in content.lines()) {
+        for (raw in rawContent.lines()) {
             val line = raw.trim()
             if (line.isEmpty()) continue
             if (parseAndStoreMetadata(line, metadata)) continue
@@ -20,10 +28,18 @@ object QrcParser {
             parseSingleLine(line)?.let { finalLines.add(it) }
         }
 
+        // Debug output to help diagnose why QRC may fall back to line-by-line (no words)
+        val totalWords = finalLines.sumOf { it.words.size }
+        Timber.d("QRC parser output: ${finalLines.size} lines, $totalWords words (avg=${if (finalLines.isNotEmpty()) totalWords.toDouble() / finalLines.size else 0.0})")
+
         return finalLines
     }
 
     private fun parseSingleLine(line: String): LyricLine? {
+        // QRC line header: [lineStart,lineDuration] (ms)
+        val lineStartMs = qrcLineTimestampRegex.find(line)?.groups?.get(1)?.value?.toLongOrNull()
+        val lineDurationMs = qrcLineTimestampRegex.find(line)?.groups?.get(2)?.value?.toLongOrNull()
+
         val lineContent = qrcLineTimestampRegex.replace(line, "")
         val words = mutableListOf<LyricWord>()
 
@@ -45,13 +61,98 @@ object QrcParser {
             )
         }
 
+        // Some QRC lines include only a line-level timestamp ([start,duration]) without per-word timings.
+        // In that case, we still want to emit a lyric line rather than drop it.
+        if (words.isEmpty() && lineStartMs != null) {
+            val fallbackText = lineContent.trim()
+            if (fallbackText.isNotEmpty()) {
+                val lineEnd = lineStartMs + (lineDurationMs ?: 0)
+                words.add(
+                    LyricWord(
+                        word = fallbackText,
+                        startTime = lineStartMs,
+                        endTime = lineEnd
+                    )
+                )
+            }
+        }
+
         if (words.isEmpty()) return null
 
+        val lineStart = lineStartMs ?: words.first().startTime
+        val lineEnd = lineStart + (lineDurationMs ?: (words.last().endTime - lineStart))
+
         return LyricLine(
-            startTime = words.first().startTime,
-            endTime = words.last().endTime,
+            startTime = lineStart,
+            endTime = lineEnd,
             text = words.joinToString(separator = "") { it.word }.trimEnd(),
             words = words
         )
+    }
+
+    private fun extractQrcFromXmlIfNeeded(content: String): String {
+        if (!content.contains("<QrcInfos", ignoreCase = true) &&
+            !content.contains("<LyricInfo", ignoreCase = true) &&
+            !Regex("""<Lyric_\d+\b""", RegexOption.IGNORE_CASE).containsMatchIn(content)
+        ) {
+            return content
+        }
+
+        // QQ QRC output uses LyricContent="..." attributes, and XML parsers normalize whitespace
+        // (newlines become spaces), which breaks line splitting. We prefer regex extraction to
+        // preserve original newlines.
+        val regex = Regex("""<Lyric_\d+\b[^>]*\bLyricContent=[\"'](.*?)[\"']""", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+        val extracted = regex.findAll(content).mapNotNull { match ->
+            match.groups[1]?.value?.let { unescapeXmlAttribute(it) }
+        }.toList()
+
+        if (extracted.isNotEmpty()) {
+            Timber.d("Extracted ${extracted.size} LyricContent entries from QRC XML (regex)")
+            return extracted.joinToString(separator = "\n")
+        }
+
+        // Fallback to DOM parsing if regex failed (very rare)
+        return try {
+            val builder = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder()
+            val doc = builder.parse(content.byteInputStream())
+            val lyricContents = mutableListOf<String>()
+
+            val allElements = doc.getElementsByTagName("*")
+            for (i in 0 until allElements.length) {
+                val node = allElements.item(i)
+                if (node is org.w3c.dom.Element) {
+                    val lyricContent = node.getAttribute("LyricContent")
+                    if (!lyricContent.isNullOrBlank()) {
+                        lyricContents.add(lyricContent)
+                    }
+                }
+            }
+
+            if (lyricContents.isEmpty()) {
+                Timber.d("Detected QRC XML but no LyricContent attributes found; falling back to raw content")
+                return content
+            }
+
+            Timber.d("Extracted ${lyricContents.size} LyricContent entries from QRC XML (DOM)")
+            lyricContents.joinToString(separator = "\n")
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to parse QRC XML content; falling back to raw content")
+            content
+        }
+    }
+
+    private fun unescapeXmlAttribute(value: String): String {
+        return value
+            .replace("&quot;", "\"")
+            .replace("&apos;", "'")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&amp;", "&")
+            .replace(Regex("&#(\\d+);")) { match ->
+                match.groups[1]?.value?.toIntOrNull()?.toChar()?.toString() ?: match.value
+            }
+            .replace(Regex("&#x([0-9A-Fa-f]+);")) { match ->
+                match.groups[1]?.value?.toIntOrNull(16)?.toChar()?.toString() ?: match.value
+            }
     }
 }

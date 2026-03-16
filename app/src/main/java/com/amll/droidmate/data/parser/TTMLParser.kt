@@ -484,7 +484,13 @@ object TTMLParser {
 
     private fun normalizeAuxiliaryText(text: String): String {
         if (text.isEmpty()) return ""
-        return text.replace(Regex("[\\t\\r\\n]+"), " ").trim()
+
+        // QQ TTML sometimes uses "//" (or repeated slashes) to mean "no translation".
+        // Treat it as empty so the UI doesn't show it as literal text.
+        val normalized = text.replace(Regex("[\\t\\r\\n]+"), " ").trim()
+        // QQ TTML may use "//" to indicate no translation; keep a single slash.
+        if (normalized == "//") return ""
+        return normalized
     }
 
     private fun normalizeLyricTextPreservingSpaces(text: String): String {

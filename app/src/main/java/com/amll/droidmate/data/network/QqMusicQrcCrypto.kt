@@ -3,6 +3,7 @@ package com.amll.droidmate.data.network
 import timber.log.Timber
 import java.io.ByteArrayInputStream
 import java.util.Locale
+import java.util.zip.Inflater
 import java.util.zip.InflaterInputStream
 
 /**
@@ -18,7 +19,19 @@ object QqMusicQrcCrypto {
     fun decryptQrcHex(encryptedText: String): String {
         Timber.tag("QqMusicQrcCrypto").d("Starting Hex+3DES+Zlib decryption, input length: ${encryptedText.length}")
         Timber.tag("QqMusicQrcCrypto").d("Input preview (first 200 chars): ${encryptedText.take(200)}")
-        
+
+        // Prefer the native Rust decoder when available, as it matches the upstream Unilyric logic.
+        runCatching {
+            QqMusicQrcNative.decryptQrcHex(encryptedText)
+        }.getOrNull()?.let { nativeResult ->
+            if (nativeResult.isNotBlank()) {
+                Timber.tag("QqMusicQrcCrypto").d("Decoded using native Rust decoder (length=${nativeResult.length})")
+                return nativeResult
+            }
+        }
+
+        Timber.tag("QqMusicQrcCrypto").w("Native Rust decoder returned empty or failed; falling back to Kotlin implementation")
+
         val encryptedBytes = decodeHex(encryptedText)
         Timber.tag("QqMusicQrcCrypto").d("After Hex decode: ${encryptedBytes.size} bytes")
         
@@ -32,11 +45,33 @@ object QqMusicQrcCrypto {
             codec.decryptBlock(encryptedBytes, offset, decrypted, offset)
             offset += DES_BLOCK_SIZE
         }
-        
-        Timber.tag("QqMusicQrcCrypto").d("After 3DES decrypt: ${decrypted.size} bytes, first 32 bytes: ${decrypted.take(32).joinToString(",") { "%02X".format(it) }}")
-        Timber.tag("QqMusicQrcCrypto").w("WARNING: Valid Zlib data should start with 0x78 (120), but first byte is: 0x${"%02X".format(decrypted[0])} (${decrypted[0].toInt() and 0xFF})")
 
-        val decompressed = decompress(decrypted)
+        Timber.tag("QqMusicQrcCrypto").d("After 3DES decrypt: ${decrypted.size} bytes, first 32 bytes: ${decrypted.take(32).joinToString(",") { "%02X".format(it) }}")
+
+        // Some QQ payloads are not compressed but are instead base64 / plain text after 3DES.
+        // If the decrypted output looks like printable ASCII, attempt to decode it as base64 first.
+        if (looksLikeMostlyPrintable(decrypted)) {
+            val candidate = String(decrypted, Charsets.UTF_8).trim()
+            Timber.tag("QqMusicQrcCrypto").d("Decrypted output looks like text (len=${candidate.length}), preview=${candidate.take(200)}")
+            val base64Regex = Regex("^[A-Za-z0-9+/=\\s]+$")
+            if (candidate.length % 4 == 0 && base64Regex.matches(candidate)) {
+                try {
+                    val decoded = android.util.Base64.decode(candidate, android.util.Base64.DEFAULT)
+                    val decodedText = String(decoded, Charsets.UTF_8)
+                    Timber.tag("QqMusicQrcCrypto").d("Interpreted decrypted output as Base64; decoded text preview=${decodedText.take(200)}")
+                    return decodedText
+                } catch (e: Exception) {
+                    Timber.tag("QqMusicQrcCrypto").w(e, "Base64 decode of decrypted content failed")
+                }
+            }
+        }
+
+        val decompressed = if (decrypted.isNotEmpty() && decrypted[0] != 0x78.toByte()) {
+            Timber.tag("QqMusicQrcCrypto").w("First byte is 0x${"%02X".format(decrypted[0])} (not 0x78), attempting to locate zlib header")
+            attemptDecompressFromPossibleZlibOffset(decrypted)
+        } else {
+            decompress(decrypted)
+        }
         Timber.tag("QqMusicQrcCrypto").d("After Zlib decompress: ${decompressed.size} bytes")
         Timber.tag("QqMusicQrcCrypto").d("Decompressed preview (first 200 chars): ${String(decompressed.take(200).toByteArray(), Charsets.UTF_8)}")
         
@@ -72,7 +107,49 @@ object QqMusicQrcCrypto {
     }
 
     private fun decompress(data: ByteArray): ByteArray {
-        return InflaterInputStream(ByteArrayInputStream(data)).use { it.readBytes() }
+        return try {
+            InflaterInputStream(ByteArrayInputStream(data)).use { it.readBytes() }
+        } catch (e: Exception) {
+            Timber.tag("QqMusicQrcCrypto").w(e, "Zlib decompression failed, retrying as raw deflate")
+            // Some QQ QRC payloads appear to be raw DEFLATE without zlib headers.
+            InflaterInputStream(ByteArrayInputStream(data), Inflater(/* nowrap */ true)).use { it.readBytes() }
+        }
+    }
+
+    private fun looksLikeMostlyPrintable(bytes: ByteArray): Boolean {
+        if (bytes.isEmpty()) return false
+        val printable = bytes.count { b ->
+            val c = b.toInt() and 0xFF
+            (c in 0x20..0x7E) || c == 0x0A || c == 0x0D || c == 0x09
+        }
+        return printable.toDouble() / bytes.size >= 0.75
+    }
+
+    private fun attemptDecompressFromPossibleZlibOffset(data: ByteArray): ByteArray {
+        // zlib header validity check: (CMF*256 + FLG) % 31 == 0
+        // CMF is fixed to 0x78 for deflate, but FLG varies.
+        val candidateOffsets = data.withIndex().filter { it.value == 0x78.toByte() }.map { it.index }
+        Timber.tag("QqMusicQrcCrypto").d("Found ${candidateOffsets.size} potential 0x78 zlib start bytes")
+
+        for (offset in candidateOffsets) {
+            if (offset + 1 >= data.size) continue
+            val second = data[offset + 1].toInt() and 0xFF
+            val combined = (0x78 shl 8) or second
+            val valid = combined % 31 == 0
+            Timber.tag("QqMusicQrcCrypto").d("Candidate @ $offset: header=0x78 0x${"%02X".format(second)} valid=$valid")
+            if (!valid) continue
+
+            try {
+                Timber.tag("QqMusicQrcCrypto").d("Attempt decompress at offset $offset (header=0x78 0x${"%02X".format(second)})")
+                return decompress(data.copyOfRange(offset, data.size))
+            } catch (e: Exception) {
+                Timber.tag("QqMusicQrcCrypto").w(e, "Decompress attempt failed at offset $offset")
+            }
+        }
+
+        // As a last resort, try decompress from the very start using raw deflate
+        Timber.tag("QqMusicQrcCrypto").w("No valid zlib header found; falling back to raw deflate from start")
+        return InflaterInputStream(ByteArrayInputStream(data), Inflater(/* nowrap */ true)).use { it.readBytes() }
     }
 
     private class QqMusicCodec {
@@ -107,7 +184,7 @@ object QqMusicQrcCrypto {
         )
         private val SBOX2 = intArrayOf(
             15,1,8,14,6,11,3,4,9,7,2,13,12,0,5,10,
-            3,13,4,7,15,2,8,14,12,0,1,10,6,9,11,5,  // 修复：第8个数从 15 改为 14
+            3,13,4,7,15,2,8,15,12,0,1,10,6,9,11,5,
             0,14,7,11,10,4,13,1,5,8,12,6,9,3,2,15,
             13,8,10,1,3,15,4,2,11,6,7,12,0,5,14,9
         )

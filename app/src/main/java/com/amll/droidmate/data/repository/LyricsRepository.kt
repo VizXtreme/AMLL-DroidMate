@@ -202,6 +202,7 @@ open class LyricsRepository(
             
             val json = Json { ignoreUnknownKeys = true }
             val responseBody = response.body<String>()
+            Timber.d("QQ Music lyrics API response length=${responseBody.length}, preview='${responseBody.take(2000)}'")
             val responseJson = json.parseToJsonElement(responseBody).jsonObject
             
             // 获取标准LRC格式歌词
@@ -215,6 +216,16 @@ open class LyricsRepository(
                 ?.jsonObject?.get("data")
                 ?.jsonObject?.get("qrc")
                 ?.jsonPrimitive?.contentOrNull
+
+            // 额外 debug：输出一下内容长度和前缀，方便排查 “QRC 变成 0” 以及其他无效数据的情况
+            if (!qrcContent.isNullOrBlank()) {
+                Timber.d("QQ Music QRC raw content length=${qrcContent.length}, preview='${qrcContent.take(80)}'")
+            } else {
+                Timber.d("QQ Music QRC raw content is blank or '0' (len=${qrcContent?.length ?: 0})")
+            }
+            if (!lyricContent.isNullOrBlank()) {
+                Timber.d("QQ Music LRC raw content length=${lyricContent.length}, preview='${lyricContent.take(80)}'")
+            }
 
             val transContent = responseJson["req_1"]
                 ?.jsonObject?.get("data")
@@ -230,9 +241,25 @@ open class LyricsRepository(
                 Timber.e("No lyrics content from QQ Music for: $fallbackMid")
                 return null
             }
-            
+
+            // 如果 QQ 接口返回 qrc=0（或者空），我们尝试使用 lyric_download.fcg 接口获取更完整的歌词（可能包含逐字信息）
+            val songIdFromResponse = responseJson["req_1"]
+                ?.jsonObject?.get("data")
+                ?.jsonObject?.get("songID")
+                ?.jsonPrimitive?.longOrNull
+
+            val shouldTryLyricDownload = qrcContent.isNullOrBlank() || qrcContent == "0"
+            if (shouldTryLyricDownload && songIdFromResponse != null) {
+                Timber.i("QQ Music qrc is missing/invalid, trying lyric_download.fcg fallback with songID=$songIdFromResponse")
+                val fallback = getQQMusicLyricsViaLyricDownload(songIdFromResponse, title, artist)
+                if (fallback != null) {
+                    return fallback
+                }
+                Timber.w("lyric_download.fcg fallback did not yield lyrics for songID=$songIdFromResponse")
+            }
+
             // 优先使用QRC逐字格式，如果不存在则使用LRC格式
-            val contentToUse = if (!qrcContent.isNullOrBlank()) {
+            val contentToUse = if (!qrcContent.isNullOrBlank() && qrcContent != "0") {
                 Timber.i("Using QRC (word-by-word) format for QQ Music")
                 qrcContent
             } else {
@@ -292,6 +319,9 @@ open class LyricsRepository(
                 artist = artist ?: "Unknown",
                 processMetadata = processMetadata
             ) ?: return null
+
+            // Debug: 记录解析后首行 word 数量，以便确认是否是 "逐字" 解析结果
+            Timber.d("Parsed main lyrics: lines=${mainLyrics.lines.size}, firstLineWords=${mainLyrics.lines.firstOrNull()?.words?.size ?: 0}")
 
             val translationLines = transContent
                 ?.takeIf { it.isNotBlank() && it != "0" && it.length >= 5 }
@@ -375,12 +405,24 @@ open class LyricsRepository(
                 }))
             }
 
-            if (!response.status.isSuccess()) return null
+            if (!response.status.isSuccess()) {
+                Timber.w("lyric_download.fcg returned HTTP ${response.status}")
+                return null
+            }
             val body = response.body<String>().trim().removePrefix("<!--").removeSuffix("-->").trim()
+            Timber.d("lyric_download.fcg response length=${body.length}, preview='${body.take(2000)}'")
 
-            val mainEncrypted = extractXmlCData(body, "content") ?: return null
+            val mainEncrypted = extractXmlCData(body, "content")
             val transEncrypted = extractXmlCData(body, "contentts")
             val romaEncrypted = extractXmlCData(body, "contentroma")
+
+            // Debug: log full encrypted payload so we can inspect the exact hex string returned by QQ.
+            Timber.d("lyric_download.fcg payload (content) length=${mainEncrypted?.length ?: 0}, payload=$mainEncrypted")
+
+            if (mainEncrypted.isNullOrBlank()) {
+                Timber.w("lyric_download.fcg returned no <content> CDATA (mainEncrypted empty)")
+                return null
+            }
 
             val mainLyrics = com.amll.droidmate.data.parser.UnifiedLyricsParser.parse(
                 content = decodeQqLyricPayload(mainEncrypted),
@@ -411,7 +453,9 @@ open class LyricsRepository(
     }
 
     private fun extractXmlCData(xml: String, tagName: String): String? {
-        val regex = Regex("""<$tagName><!\\[CDATA\\[(.*?)]]></$tagName>""", RegexOption.DOT_MATCHES_ALL)
+        // Some QQ responses include attributes on the <content> tag (e.g. <content type="file" ...>).
+        // Use a more flexible regex to match the tag even when it has attributes.
+        val regex = Regex("""<$tagName\b[^>]*><!\[CDATA\[(.*?)]]></$tagName>""", RegexOption.DOT_MATCHES_ALL)
         return regex.find(xml)?.groupValues?.getOrNull(1)?.takeIf { it.isNotBlank() }
     }
 

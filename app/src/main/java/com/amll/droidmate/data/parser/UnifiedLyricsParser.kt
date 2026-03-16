@@ -73,7 +73,8 @@ object UnifiedLyricsParser {
             val lines = when (format) {
                 LyricsFormat.QRC -> {
                     val parsed = QrcParser.parse(normalizedContent)
-                    Timber.d("QRC parsed ${parsed.size} lines")
+                    val firstLineWords = parsed.firstOrNull()?.words?.size ?: 0
+                    Timber.d("QRC parsed ${parsed.size} lines, first line word count=$firstLineWords")
                     parsed
                 }
                 LyricsFormat.KRC -> {

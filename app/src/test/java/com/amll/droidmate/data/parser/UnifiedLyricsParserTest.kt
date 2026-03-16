@@ -48,4 +48,22 @@ class UnifiedLyricsParserTest {
             linesText.any { it.contains("作曲：") }
         )
     }
+
+    @Test
+    fun `parse should handle QQ QRC XML output`() {
+        val sample = """
+            <?xml version=\"1.0\" encoding=\"utf-8\"?>
+            <QrcInfos>
+              <QrcHeadInfo SaveTime=\"253\" Version=\"100\"/>
+              <LyricInfo LyricCount=\"1\">
+                <Lyric_1 LyricType=\"1\" LyricContent=\"[ti:唯一]\n[ar:G.E.M. 邓紫棋]\n[al:T.I.M.E.]\n[offset:0]\n[205,1638]唯(205,232)一(437,105)\"/>
+              </LyricInfo>
+            </QrcInfos>
+        """.trimIndent()
+
+        val lyrics = UnifiedLyricsParser.parse(sample, title = "Sample", artist = "Artist")
+        assertNotNull(lyrics)
+        assertTrue("Expected some parsed lines", lyrics!!.lines.isNotEmpty())
+        assertTrue("Expected lyric text to contain the character '唯'", lyrics.lines.any { it.text.contains("唯") })
+    }
 }

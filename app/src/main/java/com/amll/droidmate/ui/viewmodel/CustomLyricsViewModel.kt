@@ -129,20 +129,26 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             }
         }
 
-        // 4. current source bias
-        currentSourceName?.let { source ->
-            val lower = source.lowercase()
-            val priorityList = when {
-                lower.contains("网易") -> listOf("netease")
-                lower.contains("qq") -> listOf("qq", "kugou")
-                lower.contains("酷狗") -> listOf("kugou", "qq")
-                else -> emptyList()
-            }
-            if (priorityList.isNotEmpty()) {
-                val ai = priorityList.indexOf(a.provider.lowercase()).let { if (it < 0) Int.MAX_VALUE else it }
-                val bi = priorityList.indexOf(b.provider.lowercase()).let { if (it < 0) Int.MAX_VALUE else it }
-                if (ai != bi) {
-                    val res = ai - bi
+// 4. current source bias (favor candidates from the same source app)
+            currentSourceName?.let { source ->
+                val lower = source.lowercase()
+
+                // If user is playing from QQ/QQ音乐, prefer QQ candidates first.
+                // If playing from 酷狗, prefer Kugou candidates first.
+                // If the source string mentions both, prefer QQ then Kugou.
+                val preferredProviders = when {
+                    lower.contains("qq") && !lower.contains("酷狗") -> setOf("qq", "qqmusic")
+                    lower.contains("酷狗") && !lower.contains("qq") -> setOf("kugou")
+                    lower.contains("qq") && lower.contains("酷狗") -> setOf("qq", "qqmusic", "kugou")
+                    lower.contains("网易") -> setOf("netease", "ncm")
+                    else -> emptySet()
+                }
+
+                if (preferredProviders.isNotEmpty()) {
+                    val aIn = preferredProviders.contains(a.provider.lowercase())
+                    val bIn = preferredProviders.contains(b.provider.lowercase())
+                    if (aIn != bIn) {
+                        val res = if (aIn) -1 else 1
                     Timber.d("compareCandidates source bias: $a vs $b -> $res")
                     return res
                 }

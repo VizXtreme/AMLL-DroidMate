@@ -35,12 +35,21 @@ enum class LyricsFormat(val extension: String, val displayName: String) {
             // Some lyrics sources may include a leading BOM (U+FEFF) which breaks regex-based format detection.
             // Normalize by trimming whitespace and stripping a leading BOM so format detection works consistently.
             val trimmed = content.trim().trimStart('\uFEFF')
-            
+
+            // QQ Music QRC XML (encoded as XML with <QrcInfos>/<LyricInfo> tags)
+            // This is a specially formatted QRC output (not TTML) and should be treated as QRC.
+            if (trimmed.contains("<QrcInfos", ignoreCase = true) ||
+                trimmed.contains("<LyricInfo", ignoreCase = true) ||
+                Regex("""<Lyric_\d+\b""", RegexOption.IGNORE_CASE).containsMatchIn(trimmed)
+            ) {
+                return QRC
+            }
+
             // TTML
             if (trimmed.startsWith("<?xml") || trimmed.startsWith("<tt")) {
                 return TTML
             }
-            
+
             // YRC: 元数据 JSON 行或 [start,duration] + (start,duration,0)
             if (trimmed.lines().any { it.trim().startsWith("{\"t\":") } ||
                 (Regex("""^\[\d+,\d+]""", RegexOption.MULTILINE).containsMatchIn(trimmed) &&
