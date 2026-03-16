@@ -49,6 +49,8 @@ const DEFAULT_BG_PROFILE = {
 }
 
 const TOUCH_BG_BLUR_CLASS = 'amll-touch-unblur'
+const PAUSE_STYLE_CLASS = 'amll-paused'
+const PLAYING_CLASS = 'playing'
 
 // --- shared state & globals (moved to top to avoid TDZ errors) ---
 let state = {
@@ -74,6 +76,7 @@ let state = {
 let __lastReportedTime = null
 let __lastTimeChangeAt = 0
 let __playerAutoPaused = false
+let __playerTouchPaused = false
 const AUTO_PAUSE_DELAY_MS = 500
 
 // insert a small stylesheet rule that lets us quickly un‑blur a single
@@ -96,6 +99,20 @@ function ensureUnblurStyle() {
   pointer-events: none !important;
 }`
   document.head.appendChild(s)
+}
+
+function applyPauseStyle() {
+  const el = player?.getElement?.()
+  if (!el) return
+  el.classList.add(PAUSE_STYLE_CLASS)
+  el.classList.remove(PLAYING_CLASS)
+}
+
+function cancelPauseStyle() {
+  const el = player?.getElement?.()
+  if (!el) return
+  el.classList.remove(PAUSE_STYLE_CLASS)
+  el.classList.add(PLAYING_CLASS)
 }
 
 let player = null
@@ -346,6 +363,14 @@ function resetBlurTimeout() {
       callPlayer('setEnableBlur', true)
       state.blur.enabled = true
       player.getElement?.().classList.remove(TOUCH_BG_BLUR_CLASS)
+
+      if (__playerTouchPaused) {
+        callPlayer('resume')
+        __playerTouchPaused = false
+        __playerAutoPaused = false
+      }
+
+      cancelPauseStyle()
       logToAndroid('[AMLL-BLUR] Blur restored after 5s inactivity')
 
       // also cleanup any lingering line-specific overrides
@@ -369,6 +394,16 @@ function handleTouchStart(e) {
     state.blur.enabled = false
     player.getElement?.().classList.add(TOUCH_BG_BLUR_CLASS)
     logToAndroid('[AMLL-BLUR] Blur disabled on touch, keep BG blurred')
+  }
+
+  // Apply the same visual “paused” style that shows background lyrics.
+  applyPauseStyle()
+
+  // Pause the player so the main lyric stops moving and the background can “expand”.
+  if (player) {
+    callPlayer('pause')
+    __playerTouchPaused = true
+    __playerAutoPaused = false
   }
 
   // also unblur just the line under the finger so that the user can
@@ -442,10 +477,7 @@ function handleTouchEnd(e) {
     }
   }
 
-  // remove any temporary per-line unblur classes now that the touch has ended
-  document.querySelectorAll('.amll-line-unblur').forEach(el => el.classList.remove('amll-line-unblur'))
-
-  resetBlurTimeout()
+  // (触摸结束后不清理样式，保持 touch pause/blur 状态)
 }
 
 function markSeeking(now) {
@@ -558,12 +590,18 @@ function animationFrameLoop() {
     if (__lastReportedTime === null || currentTime !== __lastReportedTime) {
       __lastReportedTime = currentTime
       __lastTimeChangeAt = now
-      if (__playerAutoPaused) {
+      if (__playerAutoPaused && !__playerTouchPaused) {
         callPlayer('resume')
         callPlayer('setCurrentTime', currentTime, true)
+        cancelPauseStyle()
         __playerAutoPaused = false
       }
-    } else if (now - __lastTimeChangeAt >= AUTO_PAUSE_DELAY_MS && !__playerAutoPaused) {
+    } else if (
+      now - __lastTimeChangeAt >= AUTO_PAUSE_DELAY_MS &&
+      !__playerAutoPaused &&
+      !__playerTouchPaused
+    ) {
+      applyPauseStyle()
       callPlayer('pause')
       __playerAutoPaused = true
     }
@@ -983,8 +1021,30 @@ window.addEventListener('DOMContentLoaded', () => {
   const styleTag = document.createElement('style')
   styleTag.id = 'amll-touch-bg-blur-style'
   styleTag.textContent = `
+    /* touch down: show background lyrics + dim the player, similar to pause */
+    .amll-lyric-player.${PAUSE_STYLE_CLASS} {
+      opacity: 0.85 !important;
+    }
+
+    /* when paused, make main lyrics fade so background lyrics can "expand" under them */
+    .amll-lyric-player.${PAUSE_STYLE_CLASS} [class*="lyricLine"]:not([class*="lyricBgLine"]) {
+      opacity: 0.85 !important;
+    }
+
+    .amll-lyric-player.${PAUSE_STYLE_CLASS} [class*="lyricBgLine"] {
+      opacity: 0.85 !important;
+      visibility: visible !important;
+    }
+
+    /* when touch interaction is ongoing, mimic pause style */
+    .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} {
+      opacity: 0.85 !important;
+    }
+
     .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} [class*="lyricBgLine"] {
-      filter: blur(var(--amll-touch-bg-blur, 10px)) !important;
+      opacity: 0.85 !important;
+      visibility: visible !important;
+      filter: none !important;
     }
 
     .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} [class*="lyricBgLine"][class*="active"] {
