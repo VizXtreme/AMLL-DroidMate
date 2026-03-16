@@ -19,6 +19,17 @@ class LrcParserOffsetTest {
     }
 
     @Test
+    fun lrc_strips_leading_double_slashes() {
+        val content = """
+            [00:00.00]// 这是 翻译
+        """.trimIndent()
+
+        val lines = LrcParser.parse(content)
+        assertEquals(1, lines.size)
+        assertEquals("这是 翻译", lines[0].text)
+    }
+
+    @Test
     fun enhanced_lrc_applies_global_offset() {
         val content = """
             [offset:300]

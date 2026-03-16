@@ -9,7 +9,13 @@ private const val TOLERANCE_MS: Long = 50
 fun normalizeTextWhitespace(text: String): String {
     val trimmed = text.trim()
     if (trimmed.isEmpty()) return ""
-    return trimmed.split(Regex("\\s+")).joinToString(" ")
+
+    // QQ 音乐翻译字段有时会以双斜杠开头（"//"），这会导致显示异常。
+    // 这里统一去掉行首的双斜杠及后续空白。
+    val withoutLeadingSlashes = trimmed.replaceFirst(Regex("^/{2,}\\s*"), "")
+    if (withoutLeadingSlashes.isEmpty()) return ""
+
+    return withoutLeadingSlashes.split(Regex("\\s+")).joinToString(" ")
 }
 
 fun parseAndStoreMetadata(line: String, rawMetadata: MutableMap<String, MutableList<String>>): Boolean {
