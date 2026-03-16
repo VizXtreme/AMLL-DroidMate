@@ -460,6 +460,10 @@ object AppSettings {
         saveLyricTimingOffsets(context, remaining)
     }
 
+    fun clearLyricTimingOffsets(context: Context) {
+        saveLyricTimingOffsets(context, emptyList())
+    }
+
     private fun saveLyricTimingOffsets(context: Context, entries: List<LyricTimingOffset>) {
         val json = JSONArray().apply {
             entries.forEach { entry ->

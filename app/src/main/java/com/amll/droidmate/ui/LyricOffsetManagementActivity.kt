@@ -100,8 +100,22 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
     val nowPlaying by mediaInfoService.nowPlayingMusic.collectAsState()
 
     var offsets by remember { mutableStateOf(AppSettings.getLyricTimingOffsets(context)) }
+    var query by remember { mutableStateOf("") }
+    var showClearDialog by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
     var editingEntry by remember { mutableStateOf<AppSettings.LyricTimingOffset?>(null) }
+
+    val displayOffsets = if (query.isBlank()) {
+        offsets
+    } else {
+        offsets.filter { entry ->
+            val lowerQuery = query.trim().lowercase()
+            entry.title.lowercase().contains(lowerQuery) ||
+                entry.artist.lowercase().contains(lowerQuery) ||
+                entry.device.lowercase().contains(lowerQuery) ||
+                entry.source.lowercase().contains(lowerQuery)
+        }
+    }
 
     var title by remember { mutableStateOf("") }
     var artist by remember { mutableStateOf("") }
@@ -160,6 +174,11 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                         }
                     },
+                    actions = {
+                        TextButton(onClick = { showClearDialog = true }) {
+                            Text("删除所有")
+                        }
+                    },
                     modifier = Modifier.statusBarsPadding()
                 )
             },
@@ -176,25 +195,39 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .statusBarsPadding()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Text(
                 "所有匹配的偏移规则将会叠加。",
                 style = MaterialTheme.typography.bodySmall
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                label = { Text("搜索") },
+                placeholder = { Text("输入 歌曲 / 歌手 / 设备 / 来源") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                singleLine = true
+            )
 
-            if (offsets.isEmpty()) {
+            Text(
+                text = "共 ${displayOffsets.size} 条",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(vertical = 4.dp),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+
+            if (displayOffsets.isEmpty()) {
                 Text("当前没有已保存的偏移设置。", style = MaterialTheme.typography.bodyMedium)
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = 88.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(offsets, key = { "${it.title}-${it.artist}-${it.device}-${it.source}" }) { entry ->
+                    items(displayOffsets, key = { "${it.title}-${it.artist}-${it.device}-${it.source}" }) { entry ->
                         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                             Row(
                                 modifier = Modifier
@@ -227,6 +260,32 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                     }
                 }
             }
+        }
+
+        if (showClearDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearDialog = false },
+                title = { Text("清空偏移设置") },
+                text = { Text("确认删除所有时间轴偏移设置吗？") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                AppSettings.clearLyricTimingOffsets(context)
+                                offsets = AppSettings.getLyricTimingOffsets(context)
+                                showClearDialog = false
+                            }
+                        }
+                    ) {
+                        Text("删除全部")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearDialog = false }) {
+                        Text("取消")
+                    }
+                }
+            )
         }
 
         if (showDialog) {
