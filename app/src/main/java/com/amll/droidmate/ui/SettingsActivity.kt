@@ -51,7 +51,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.SwitchDefaults
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import com.amll.droidmate.ui.theme.DroidMateTheme
@@ -187,13 +186,7 @@ private fun SettingsPage(
                                     AppSettings.setLyricNotificationEnabled(context, true)
                                 }
                             }
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = rippleColor,
-                            checkedTrackColor = rippleColor.copy(alpha = 0.5f),
-                            uncheckedThumbColor = rippleColor.copy(alpha = 0.3f),
-                            uncheckedTrackColor = rippleColor.copy(alpha = 0.3f)
-                        )
+                        }
                     )
                 }
             }
@@ -297,13 +290,7 @@ private fun SettingsPage(
                         onCheckedChange = { enabled ->
                             skipPreviousRewinds = enabled
                             AppSettings.setSkipPreviousRewindsEnabled(context, enabled)
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = rippleColor,
-                            checkedTrackColor = rippleColor.copy(alpha = 0.5f),
-                            uncheckedThumbColor = rippleColor.copy(alpha = 0.3f),
-                            uncheckedTrackColor = rippleColor.copy(alpha = 0.3f)
-                        )
+                        }
                     )
                 }
             }
@@ -332,13 +319,7 @@ private fun SettingsPage(
                         onCheckedChange = { enabled ->
                             processMetadataEnabled = enabled
                             AppSettings.setMetadataProcessingEnabled(context, enabled)
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = rippleColor,
-                            checkedTrackColor = rippleColor.copy(alpha = 0.5f),
-                            uncheckedThumbColor = rippleColor.copy(alpha = 0.3f),
-                            uncheckedTrackColor = rippleColor.copy(alpha = 0.3f)
-                        )
+                        }
                     )
                 }
             }
@@ -367,13 +348,7 @@ private fun SettingsPage(
                         onCheckedChange = { enabled ->
                             agentRecognizerEnabled = enabled
                             AppSettings.setAgentRecognizerEnabled(context, enabled)
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = rippleColor,
-                            checkedTrackColor = rippleColor.copy(alpha = 0.5f),
-                            uncheckedThumbColor = rippleColor.copy(alpha = 0.3f),
-                            uncheckedTrackColor = rippleColor.copy(alpha = 0.3f)
-                        )
+                        }
                     )
                 }
             }
@@ -410,13 +385,7 @@ private fun SettingsPage(
                             onCheckedChange = { enabled ->
                                 autoCheckEnabled = enabled
                                 AppSettings.setAutoUpdateCheckEnabled(context, enabled)
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = rippleColor,
-                                checkedTrackColor = rippleColor.copy(alpha = 0.5f),
-                                uncheckedThumbColor = rippleColor.copy(alpha = 0.3f),
-                                uncheckedTrackColor = rippleColor.copy(alpha = 0.3f)
-                            )
+                            }
                         )
                     }
 
