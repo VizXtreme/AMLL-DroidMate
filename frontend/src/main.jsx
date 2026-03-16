@@ -608,8 +608,9 @@ function mountPlayer() {
     }
 
     // ——— web-flow 布局调整 begin ———
-    // 关闭内部滚动，行的 y 位置完全由文档流决定
-    player.allowScroll = false
+    // 允许自由滚动（与 v3.1.1 行为一致），同时禁用内部的滚动边界约束
+    player.allowScroll = true
+    player.limitScrollOffset = function () {}
 
     // 保存原始函数以备需要恢复
     const originalCalcLayout = player.calcLayout.bind(player)

@@ -558,7 +558,10 @@ function mountPlayer() {
     }
 
     // web-flow layout patch
-    player.allowScroll = false
+    // Allow full free scrolling (like v3.1.1) by disabling the built-in
+    // scroll boundary clamp inside the player implementation.
+    player.allowScroll = true
+    player.limitScrollOffset = function () {}
     const originalCalcLayout = player.calcLayout.bind(player)
     // keep track of padding we have already applied so we don't repeatedly
     // add the same amount on each layout pass (which previously caused the
