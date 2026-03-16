@@ -232,6 +232,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false; editingEntry = null },
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 title = { Text("添加 / 编辑偏移") },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
