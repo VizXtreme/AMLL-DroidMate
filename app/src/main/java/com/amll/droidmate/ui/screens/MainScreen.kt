@@ -395,7 +395,7 @@ fun MainScreen() {
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(text = "正在匹配更优歌词", color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 14.sp)
+                                Text(text = "正在匹配更优歌词", color = MaterialTheme.colorScheme.onPrimary, fontSize = 14.sp)
                                 Button(
                                     onClick = {
                                         val intent = Intent(context, CustomLyricsActivity::class.java).apply {
