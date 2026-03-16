@@ -77,7 +77,6 @@ let state = {
 let __lastReportedTime = null
 let __lastTimeChangeAt = 0
 let __playerAutoPaused = false
-let __playerTouchPaused = false
 const AUTO_PAUSE_DELAY_MS = 500
 
 // insert a small stylesheet rule that lets us quickly un‑blur a single
@@ -365,12 +364,6 @@ function resetBlurTimeout() {
       state.blur.enabled = true
       player.getElement?.().classList.remove(TOUCH_BG_BLUR_CLASS)
 
-      if (__playerTouchPaused) {
-        callPlayer('resume')
-        __playerTouchPaused = false
-        __playerAutoPaused = false
-      }
-
       cancelPauseStyle()
       logToAndroid('[AMLL-BLUR] Blur restored after 5s inactivity')
 
@@ -398,14 +391,9 @@ function handleTouchStart(e) {
   }
 
   // Apply the same visual “paused” style that shows background lyrics.
+  // NOTE: we don't actually pause the player here; keeping the player "playing" allows
+  // mask-size updates to continue while the touch blur style is active.
   applyPauseStyle()
-
-  // Pause the player so the main lyric stops moving and the background can “expand”.
-  if (player) {
-    callPlayer('pause')
-    __playerTouchPaused = true
-    __playerAutoPaused = false
-  }
 
   // also unblur just the line under the finger so that the user can
   // tap a lyric and see it clearly without removing blur from every line.
@@ -591,7 +579,7 @@ function animationFrameLoop() {
     if (__lastReportedTime === null || currentTime !== __lastReportedTime) {
       __lastReportedTime = currentTime
       __lastTimeChangeAt = now
-      if (__playerAutoPaused && !__playerTouchPaused) {
+      if (__playerAutoPaused) {
         callPlayer('resume')
         callPlayer('setCurrentTime', currentTime, true)
         cancelPauseStyle()
@@ -599,8 +587,7 @@ function animationFrameLoop() {
       }
     } else if (
       now - __lastTimeChangeAt >= AUTO_PAUSE_DELAY_MS &&
-      !__playerAutoPaused &&
-      !__playerTouchPaused
+      !__playerAutoPaused
     ) {
       applyPauseStyle()
       callPlayer('pause')
@@ -1048,11 +1035,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
     /* when touch interaction is ongoing, mimic pause style */
     .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} {
-      opacity: 0.85 !important;
+      opacity: 1 !important;
     }
 
     .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} [class*="lyricBgLine"] {
-      opacity: 0.85 !important;
+      opacity: 1 !important;
       visibility: visible !important;
       filter: none !important;
     }
