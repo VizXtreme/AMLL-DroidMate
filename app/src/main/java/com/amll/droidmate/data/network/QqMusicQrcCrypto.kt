@@ -2,6 +2,7 @@ package com.amll.droidmate.data.network
 
 import timber.log.Timber
 import java.io.ByteArrayInputStream
+import java.nio.charset.Charset
 import java.util.Locale
 import java.util.zip.Inflater
 import java.util.zip.InflaterInputStream
@@ -87,9 +88,23 @@ object QqMusicQrcCrypto {
             decompressed
         }
 
-        val result = payload.toString(Charsets.UTF_8)
-        Timber.tag("QqMusicQrcCrypto").d("Final result length: ${result.length}, preview (first 300 chars): ${result.take(300)}")
-        return result
+        val utf8Result = payload.toString(Charsets.UTF_8)
+
+        // If UTF-8 decoding produces replacement characters, QQ may be using a different legacy
+        // encoding (e.g. GBK/GB18030). In that case, attempt a fallback decode.
+        if (utf8Result.contains('\uFFFD')) {
+            Timber.tag("QqMusicQrcCrypto").w("UTF-8 decoding produced replacement chars; retrying with GB18030")
+            try {
+                val gb18030 = payload.toString(Charset.forName("GB18030"))
+                Timber.tag("QqMusicQrcCrypto").d("Final result length (GB18030): ${gb18030.length}, preview (first 300 chars): ${gb18030.take(300)}")
+                return gb18030
+            } catch (e: Exception) {
+                Timber.tag("QqMusicQrcCrypto").w(e, "GB18030 decode failed; falling back to UTF-8")
+            }
+        }
+
+        Timber.tag("QqMusicQrcCrypto").d("Final result length: ${utf8Result.length}, preview (first 300 chars): ${utf8Result.take(300)}")
+        return utf8Result
     }
 
     private fun decodeHex(value: String): ByteArray {

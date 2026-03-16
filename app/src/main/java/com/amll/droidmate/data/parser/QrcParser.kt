@@ -101,9 +101,13 @@ object QrcParser {
         // QQ QRC output uses LyricContent="..." attributes, and XML parsers normalize whitespace
         // (newlines become spaces), which breaks line splitting. We prefer regex extraction to
         // preserve original newlines.
-        val regex = Regex("""<Lyric_\d+\b[^>]*\bLyricContent=[\"'](.*?)[\"']""", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+        //
+        // Note: QRC payloads often wrap LyricContent in double quotes, but the lyric text may
+        // contain apostrophes. The original regex did not enforce matching quote type, which
+        // could cause early termination when encountering a single quote.
+        val regex = Regex("""<Lyric_\d+\b[^>]*\bLyricContent=(['"])(.*?)\1""", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
         val extracted = regex.findAll(content).mapNotNull { match ->
-            match.groups[1]?.value?.let { unescapeXmlAttribute(it) }
+            match.groups[2]?.value?.let { unescapeXmlAttribute(it) }
         }.toList()
 
         if (extracted.isNotEmpty()) {
