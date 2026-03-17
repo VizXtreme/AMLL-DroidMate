@@ -206,15 +206,22 @@ object AlbumColorExtractor {
         android.graphics.Color.colorToHSV(this.toArgb(), hsv)
         
         // 如果太暗，提高亮度
-        if (hsv[2] < 0.5f) {
-            hsv[2] = hsv[2].coerceAtLeast(0.6f)
+        if (hsv[2] < 0.6f) {
+            hsv[2] = 0.6f
         }
         // 如果太鲜艳，降低饱和度
         if (hsv[1] > 0.8f) {
             hsv[1] = 0.7f
         }
         
-        return Color(android.graphics.Color.HSVToColor(hsv))
+        var adjusted = Color(android.graphics.Color.HSVToColor(hsv))
+
+        // 一些封面色彩非常暗，即使亮度已调高也可能仍不够明亮，进一步提亮以避免 primary 太深
+        if (adjusted.luminance() < 1f) {
+            adjusted = adjusted.lighten(1f)
+        }
+
+        return adjusted
     }
 
     /**
