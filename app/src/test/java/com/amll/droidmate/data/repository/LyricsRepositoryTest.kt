@@ -195,12 +195,10 @@ class LyricsRepositoryTest {
     @Test
     fun `normalizeForComparison removes accents and punctuation`() {
         val input = "Beyoncé - Halo (Acoustic Version)"
-        val normalized = runTest { 
-            // use repository without needing real client
-            val fake = LyricsRepository(HttpClient((MockEngine { respond("", HttpStatusCode.OK) }) as HttpClientEngine))
-            fake.normalizeForComparison(input)
-        }
-        assertEquals("beyonce - halo (acoustic)", normalized)
+        // use repository without needing real client
+        val fake = LyricsRepository(HttpClient((MockEngine { respond("", HttpStatusCode.OK) }) as HttpClientEngine))
+        val normalized = fake.normalizeForComparison(input)
+        assertEquals("Beyonce - Halo (acoustic)", normalized)
     }
 
     @Test
@@ -217,6 +215,38 @@ class LyricsRepositoryTest {
         val n1 = fake.compareName("测试", "測試")
         assertNotNull(n1)
         assertEquals("PERFECT", n1!!.name)
+    }
+
+    @Test
+    fun `compareArtists treats local artists subset as perfect match`() {
+        val fake = LyricsRepository(HttpClient((MockEngine { respond("", HttpStatusCode.OK) }) as HttpClientEngine))
+        val match = fake.compareArtists("A; B", "A; B; C")
+        assertNotNull(match)
+        assertEquals("PERFECT", match!!.name)
+    }
+
+    @Test
+    fun `searchAmlldb chooses best matching title among alternatives`() = runTest {
+        val responseJson = """[
+          {
+            "platform": "amll",
+            "id": "1",
+            "title": ["Hello (Live)", "Hello"],
+            "artist": ["Adele"],
+            "album": "25",
+            "file": "file1"
+          }
+        ]"""
+
+        val engine = MockEngine { _ ->
+            respond(responseJson, HttpStatusCode.OK, headers = headersOf("Content-Type" to listOf("application/json")))
+        }
+        val client = HttpClient(engine as HttpClientEngine)
+        val repo = LyricsRepository(client)
+
+        val results = repo.searchAmlldb("Hello", "Adele")
+        assertTrue("results should not be empty, got: $results", results.isNotEmpty())
+        assertEquals("Hello", results.first().title)
     }
 
     @Test

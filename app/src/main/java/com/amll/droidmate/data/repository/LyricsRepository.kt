@@ -717,47 +717,74 @@ open class LyricsRepository(
 
                             val responseBody = response.body<String>()
                             Timber.d("AMLL DB search response from $endpoint (len=${responseBody.length}): ${responseBody.take(200)}")
+                            println("[DEBUG] AMLL response body: $responseBody")
 
                             val resultArray = Json.parseToJsonElement(responseBody).jsonArray
+                            println("[DEBUG] AMLL parsed array size: ${resultArray.size}")
                             if (resultArray.isEmpty()) return@runCatching emptyList<LyricsSearchResult>()
 
-                            // helper to extract a string from either a primitive or a single-element array
-                            fun JsonElement?.firstStringOrNull(): String? = when (this) {
-                                null -> null
-                                is JsonPrimitive -> contentOrNull
-                                is JsonArray -> this.firstOrNull()?.let { (it as? JsonPrimitive)?.contentOrNull }
-                                else -> null
+                            // helper to extract a list of strings from either a primitive or an array
+                            fun JsonElement?.asStringList(): List<String> = when (this) {
+                                null -> emptyList()
+                                is JsonPrimitive -> listOfNotNull(contentOrNull)
+                                is JsonArray -> this.mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
+                                else -> emptyList()
                             }
 
+                            // Prefer a title candidate that best matches our query (AMLL DB sometimes returns multiple
+                            // alternative titles for the same song). This ensures we display the best-matching title.
                             resultArray.mapNotNull { item ->
                                 val itemObj = item.jsonObject
-                                val platform = itemObj["platform"].firstStringOrNull() ?: return@mapNotNull null
-                                val id = itemObj["id"].firstStringOrNull() ?: return@mapNotNull null
-                                val titleRes = itemObj["title"].firstStringOrNull() ?: return@mapNotNull null
-                                val artistRes = itemObj["artist"].firstStringOrNull() ?: return@mapNotNull null
-                                val albumRes = itemObj["album"].firstStringOrNull()
-                                val fileRes = itemObj["file"].firstStringOrNull()
+                                val platform = itemObj["platform"].asStringList().firstOrNull() ?: return@mapNotNull null
+                                val id = itemObj["id"].asStringList().firstOrNull() ?: return@mapNotNull null
+                                val titleCandidates = itemObj["title"].asStringList()
+                                val artistCandidates = itemObj["artist"].asStringList()
+
+                                // Require at least one title and one artist
+                                if (titleCandidates.isEmpty() || artistCandidates.isEmpty()) return@mapNotNull null
+
+                                val albumRes = itemObj["album"].asStringList().firstOrNull()
+                                val fileRes = itemObj["file"].asStringList().firstOrNull()
                                 val actualId = fileRes?.takeIf { it.isNotBlank() } ?: id
 
-                                // Use local scoring (Unilyric-like matching) instead of the score returned by the AMLL DB API.
-                                // The API’s `score` field is only used for rough filtering; our client-side match evaluation
-                                // gives a more consistent experience across different providers.
-                                val matchEval = evaluateMatch(
-                                    searchTitle = title,
-                                    searchArtist = artist,
-                                    resultTitle = titleRes,
-                                    resultArtist = artistRes,
-                                    searchAlbum = null,
-                                    resultAlbum = albumRes
-                                )
-                                val confidence = matchEval.confidence
-                                val matchType = matchEval.matchType
+                                // Use combined artist string for matching (allows multiple variants)
+                                val artistForMatch = artistCandidates.joinToString("/") { it }
+
+                                println("[DEBUG] AMLL item: platform=$platform id=$id actualId=$actualId titleCandidates=$titleCandidates artistCandidates=$artistCandidates album=$albumRes")
+
+                                // Evaluate each title candidate and pick the one with the highest confidence.
+                                val (bestTitle, bestEval) = titleCandidates
+                                    .map { candidate ->
+                                        candidate to evaluateMatch(
+                                            searchTitle = title,
+                                            searchArtist = artist,
+                                            resultTitle = candidate,
+                                            resultArtist = artistForMatch,
+                                            searchAlbum = null,
+                                            resultAlbum = albumRes
+                                        )
+                                    }
+                                    .maxByOrNull { it.second.confidence }
+                                    // should never be null because we guard for titleCandidates.isEmpty
+                                    ?: (titleCandidates.first() to evaluateMatch(
+                                        searchTitle = title,
+                                        searchArtist = artist,
+                                        resultTitle = titleCandidates.first(),
+                                        resultArtist = artistForMatch,
+                                        searchAlbum = null,
+                                        resultAlbum = albumRes
+                                    ))
+
+                                println("[DEBUG] AMLL bestTitle=$bestTitle confidence=${bestEval.confidence} matchType=${bestEval.matchType}")
+
+                                val confidence = bestEval.confidence
+                                val matchType = bestEval.matchType
 
                                 LyricsSearchResult(
                                     provider = "amll",
                                     songId = "$platform:$actualId",
-                                    title = titleRes,
-                                    artist = artistRes,
+                                    title = bestTitle,
+                                    artist = artistCandidates.firstOrNull().orEmpty(),
                                     album = albumRes,
                                     confidence = confidence,
                                     matchType = matchType,
@@ -778,6 +805,8 @@ open class LyricsRepository(
             }
 
             // Deduplicate by provider+songId and limit size
+            println("[DEBUG] AMLL joined size before dedupe: ${joined.size}")
+            println("[DEBUG] AMLL joined contents: $joined")
             joined
                 .distinctBy { "${it.provider}:${it.songId}" }
                 .take(20)
@@ -1369,6 +1398,12 @@ open class LyricsRepository(
                 used.add(matchedIdx)
             }
         }
+
+        // If every artist on one side is matched on the other side, treat as perfect.
+        // This helps handle cases where AMLL DB returns multiple alternate artist spellings;
+        // as long as the local artist list is fully covered by one of the API variants, we
+        // consider it an exact match.
+        if (intersection == n1.size || intersection == n2.size) return ArtistMatchType.PERFECT
 
         val union = n1.size + n2.size - intersection
         if (union == 0) return ArtistMatchType.PERFECT
