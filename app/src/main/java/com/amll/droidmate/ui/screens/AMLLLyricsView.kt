@@ -62,6 +62,7 @@ fun AMLLLyricsView(
     val instanceId = remember { AMLL_VIEW_INSTANCE_COUNTER.incrementAndGet() }
     val onLyricsClickState = rememberUpdatedState(onLyricsClick)
     val onLineSeekState = rememberUpdatedState(onLineSeek)
+    val isPlayingState = rememberUpdatedState(isPlaying)
     var isPageReady by remember { mutableStateOf(false) }
     var lastModeValue by remember { mutableStateOf<String?>(null) }
     var lastBackgroundProfileValue by remember { mutableStateOf<String?>(null) }
@@ -177,7 +178,7 @@ fun AMLLLyricsView(
                                 )
                             }
                         },
-                        isPlayingProvider = { isPlaying }
+                        isPlayingProvider = { isPlayingState.value }
                     ),
                     "Android"
                 )

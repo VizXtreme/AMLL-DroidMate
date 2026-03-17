@@ -71,13 +71,9 @@ let state = {
   },
 }
 
-// When playback is paused, the incoming time updates often stop, but the
-// mask animation can continue drifting. Detect this and pause the player
-// to freeze mask-relative animations.
-let __lastReportedTime = null
-let __lastTimeChangeAt = 0
-let __playerAutoPaused = false
-const AUTO_PAUSE_DELAY_MS = 500
+// Playback pause state is driven externally (e.g. from Kotlin).
+// We do not automatically pause based on time updates.
+let __playerPaused = false
 
 // insert a small stylesheet rule that lets us quickly un‑blur a single
 // line by adding the `amll-line-unblur` class. the core library already
@@ -114,6 +110,23 @@ function cancelPauseStyle() {
   el.classList.remove(PAUSE_STYLE_CLASS)
   el.classList.add(PLAYING_CLASS)
 }
+
+function setPaused(paused) {
+  const shouldPause = Boolean(paused)
+  if (shouldPause === __playerPaused) return
+
+  __playerPaused = shouldPause
+
+  if (shouldPause) {
+    applyPauseStyle()
+    callPlayer('pause')
+  } else {
+    cancelPauseStyle()
+    callPlayer('resume')
+  }
+}
+
+window.setPaused = setPaused
 
 let player = null
 let rafId = null
@@ -574,24 +587,14 @@ function animationFrameLoop() {
 
     const currentTime = Math.trunc(state.currentTime)
 
-    // If incoming time stops changing, assume playback is paused.
-    // Use a time-based threshold to avoid false triggers when time updates infrequently.
-    if (__lastReportedTime === null || currentTime !== __lastReportedTime) {
-      __lastReportedTime = currentTime
-      __lastTimeChangeAt = now
-      if (__playerAutoPaused) {
-        callPlayer('resume')
-        callPlayer('setCurrentTime', currentTime, true)
-        cancelPauseStyle()
-        __playerAutoPaused = false
+    // Playback pause/resume is controlled externally (e.g. by the host app).
+    // Kotlin can provide play state via Android.isPlaying(), so we sync here.
+    if (typeof Android !== 'undefined' && typeof Android.isPlaying === 'function') {
+      try {
+        setPaused(!Boolean(Android.isPlaying()))
+      } catch (_err) {
+        // ignore
       }
-    } else if (
-      now - __lastTimeChangeAt >= AUTO_PAUSE_DELAY_MS &&
-      !__playerAutoPaused
-    ) {
-      applyPauseStyle()
-      callPlayer('pause')
-      __playerAutoPaused = true
     }
 
     callPlayer('setCurrentTime', currentTime, state.isSeeking)

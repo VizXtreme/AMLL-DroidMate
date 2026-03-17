@@ -193,13 +193,9 @@ const state = {
     isMoved: false,
   },
 }
-// When the audio is paused, incoming time updates often stop. When that happens,
-// we want to pause the underlying player so the lyric mask animation also
-// freezes. When time starts changing again, we resume.
-let __lastReportedTime = null
-let __lastTimeChangeAt = 0
-let __playerAutoPaused = false
-const AUTO_PAUSE_DELAY_MS = 500
+// Playback pause state is driven externally (e.g. from Kotlin).
+// We do not auto-pause based on time updates.
+let __playerPaused = false
 let player = null
 let rafId = null
 let lastFrameTime = -1
@@ -279,6 +275,21 @@ function callPlayer(methodName, ...args) {
   if (!player || typeof player[methodName] !== 'function') return
   player[methodName](...args)
 }
+
+function setPaused(paused) {
+  const shouldPause = Boolean(paused)
+  if (shouldPause === __playerPaused) return
+
+  __playerPaused = shouldPause
+
+  if (shouldPause) {
+    callPlayer('pause')
+  } else {
+    callPlayer('resume')
+  }
+}
+
+window.setPaused = setPaused
 
 function applyMotionProfile(profile) {
   currentProfile = { ...profile }
@@ -508,20 +519,14 @@ function animationFrameLoop() {
 
     const currentTime = Math.trunc(state.currentTime)
 
-    // If the incoming time stops changing, assume playback is paused.
-    // We use a time-based threshold to avoid causing pause/resume oscillations
-    // when the time updates only occasionally.
-    if (__lastReportedTime === null || currentTime !== __lastReportedTime) {
-      __lastReportedTime = currentTime
-      __lastTimeChangeAt = now
-      if (__playerAutoPaused) {
-        callPlayer('resume')
-        callPlayer('setCurrentTime', currentTime, true)
-        __playerAutoPaused = false
+    // Playback pause/resume is controlled externally (e.g. by the host app).
+    // Kotlin provides the state via the injected Android interface.
+    if (typeof Android !== 'undefined' && typeof Android.isPlaying === 'function') {
+      try {
+        setPaused(!Boolean(Android.isPlaying()))
+      } catch (_err) {
+        // ignore
       }
-    } else if (now - __lastTimeChangeAt >= AUTO_PAUSE_DELAY_MS && !__playerAutoPaused) {
-      callPlayer('pause')
-      __playerAutoPaused = true
     }
 
     callPlayer('setCurrentTime', currentTime, state.isSeeking)
