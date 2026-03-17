@@ -203,13 +203,15 @@ private fun CacheEntryItem(
                     text = entry.title,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = entry.artist,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 val displaySource = if (entry.source.contains("AMLL TTML DB(") && !entry.source.contains("(基于歌名)")) {
                     entry.source.replaceFirst(
@@ -222,7 +224,7 @@ private fun CacheEntryItem(
                 Text(
                     text = "来源: $displaySource",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
                 Text(
                     text = "更新时间: ${formatTimestamp(entry.updatedAt)}",
@@ -239,8 +241,7 @@ private fun CacheEntryItem(
                 IconButton(onClick = onDelete) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "删除",
-                        tint = MaterialTheme.colorScheme.error
+                        contentDescription = "删除"
                     )
                 }
             }

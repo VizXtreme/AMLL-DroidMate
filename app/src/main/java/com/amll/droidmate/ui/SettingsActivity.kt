@@ -173,7 +173,7 @@ private fun SettingsPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.78f)) {
-                        Text("常驻通知实时歌词")
+                        Text("常驻通知实时歌词", color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             text = """需要通知权限。获得锁屏权限后可锁屏显示。""",
                             style = MaterialTheme.typography.bodySmall,
@@ -288,7 +288,7 @@ private fun SettingsPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("点击上一首回到 0:00")
+                        Text("点击上一首回到 0:00", color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             text = "点击上一首按钮会先回到歌曲开头，而不是直接跳转到上一首。",
                             style = MaterialTheme.typography.bodySmall,
@@ -318,7 +318,7 @@ private fun SettingsPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("处理元数据（实验性）")
+                        Text("处理元数据（实验性）", color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             text = "尝试自动移除歌词中的词/曲/编曲等元数据行，可能会误删。",
                             style = MaterialTheme.typography.bodySmall,
@@ -348,7 +348,7 @@ private fun SettingsPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("角色识别（实验性）")
+                        Text("角色识别（实验性）", color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             text = "尝试识别当前句角色，可能存在误报。",
                             style = MaterialTheme.typography.bodySmall,
@@ -386,7 +386,7 @@ private fun SettingsPage(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                            Text("自动检查更新")
+                            Text("自动检查更新", color = MaterialTheme.colorScheme.onSurface)
                             Text(
                                 text = "自动检查 GitHub Release",
                                 style = MaterialTheme.typography.bodySmall,
@@ -604,6 +604,10 @@ private fun CardClickActionOption(
         horizontalArrangement = Arrangement.Start
     ) {
         RadioButton(selected = selected, onClick = null)
-        Text(text = title, modifier = Modifier.padding(start = 8.dp))
+        Text(
+            text = title,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 8.dp)
+        )
     }
 }

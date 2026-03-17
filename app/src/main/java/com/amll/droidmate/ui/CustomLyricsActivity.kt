@@ -202,8 +202,8 @@ private fun CustomLyricsPage(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(text = if (title.isNotBlank()) title else "未识别歌曲", style = MaterialTheme.typography.titleMedium)
-                    Text(text = if (artist.isNotBlank()) artist else "未知歌手", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = if (title.isNotBlank()) title else "未识别歌曲", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(text = if (artist.isNotBlank()) artist else "未知歌手", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
 
@@ -344,14 +344,15 @@ private fun CandidateItem(
             Text(
                 text = candidate.displayName,
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
             Text(
                 text = "${candidate.title} - ${candidate.artist}",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 // 显示百分比、ID 以及支持的功能列表

@@ -167,7 +167,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("基于当前歌曲", style = MaterialTheme.typography.titleMedium)
+                        Text("基于当前歌曲", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             "当前歌曲：${nowPlaying?.title ?: "未知"} — ${nowPlaying?.artist ?: "未知"}",
                             style = MaterialTheme.typography.bodySmall
@@ -217,7 +217,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("基于输出设备", style = MaterialTheme.typography.titleMedium)
+                        Text("基于输出设备", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             "当前设备：$currentDeviceName",
                             style = MaterialTheme.typography.bodySmall
