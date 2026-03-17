@@ -678,8 +678,82 @@ function mountPlayer() {
     // track the previous padding so we can subtract it when re‑measuring
     // content height; this avoids accumulating padding in the element height.
     let __lastPadding = 0
+
+    // Ensure active (hot) lines stay in view even when there are multiple.
+    // The core player aligns a single line based on the golden ratio position,
+    // which can push additional active lines out of view when there are >3.
+    // We keep the golden-ratio behavior where possible, but adjust when the
+    // active group would overflow the viewport.
+    let __didAdjustActiveLines = false
+
     player.calcLayout = async function (animated = false) {
       await originalCalcLayout(animated)
+
+      if (!__didAdjustActiveLines) {
+        __didAdjustActiveLines = true
+        try {
+          const viewHeight = this.size[1] || (this.element?.clientHeight || 0)
+          if (viewHeight > 0 && this.hotLines && this.hotLines.size > 0) {
+            const activeSet = new Set(this.hotLines)
+
+            // Ensure nearby background lines are included too (they often show alongside the
+            // current lyric line but may not always be part of hotLines during update). This
+            // keeps active background lyrics in view.
+            Array.from(this.hotLines).forEach((idx) => {
+              const next = this.currentLyricLineObjects[idx + 1]
+              if (next?.getLine?.()?.isBG) activeSet.add(idx + 1)
+              const prev = this.currentLyricLineObjects[idx - 1]
+              if (prev?.getLine?.()?.isBG) activeSet.add(idx - 1)
+            })
+
+            const activeIndices = Array.from(activeSet).sort((a, b) => a - b)
+
+            // If any active line is still animating (spring/physics), don't adjust yet.
+            // Waiting avoids the “位置异常” glitch when layout is mid‑transition.
+            const isAnyAnimating = activeIndices.some((idx) => {
+              const lineObj = this.currentLyricLineObjects[idx]
+              return lineObj?.lineTransforms?.posY?.arrived && !lineObj.lineTransforms.posY.arrived()
+            })
+            if (isAnyAnimating) {
+              // Keep golden-ratio alignment until movement finishes.
+            } else {
+              let minY = Infinity
+              let maxY = -Infinity
+
+              for (const idx of activeIndices) {
+                const lineObj = this.currentLyricLineObjects[idx]
+                if (!lineObj) continue
+                const y = lineObj.lineTransforms.posY.getCurrentPosition()
+                const rawHeight = this.lyricLinesSize.get(lineObj)?.[1] ?? 0
+                const scale = (lineObj.lineTransforms.scale?.getCurrentPosition?.() ?? 100) / 100
+                const h = rawHeight * Math.max(0, scale)
+                minY = Math.min(minY, y)
+                maxY = Math.max(maxY, y + (h || 0))
+              }
+
+              if (minY !== Infinity) {
+                // Allow a tiny tolerance so we don't nudge the layout for sub-pixel differences.
+                const tolerance = Math.max(2, viewHeight * 0.01)
+                let shift = 0
+                if (minY < -tolerance) shift = -minY
+                if (maxY > viewHeight + tolerance) shift = shift || (viewHeight - maxY)
+
+                // Avoid tiny two-way shifts that would break golden-ratio alignment.
+                if (Math.abs(shift) > 1) {
+                  this.scrollOffset -= shift
+                  if (typeof this.limitScrollOffset === 'function') {
+                    this.limitScrollOffset()
+                  }
+                  await originalCalcLayout(animated)
+                }
+              }
+            }
+          }
+        } catch (error) {
+          logToAndroid(`[AMLL-DEBUG] ensure active lines visible failed: ${error?.message || error}`)
+        }
+        __didAdjustActiveLines = false
+      }
 
       // add half‑screen blank space at top/bottom
       const pad = this.size[1] * 0.5
