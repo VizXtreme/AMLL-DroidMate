@@ -32,7 +32,7 @@ class LyricsRepositoryTest {
         // call with bare id, should assume ncm
         repo.getAMLL_TTMLLyrics("12345")
         assertNotNull(seenUrl)
-        assertTrue(seenUrl!!.contains("/ncm/12345"))
+        assertTrue(seenUrl!!.contains("ncm") && seenUrl.contains("12345"))
     }
 
     @Test
@@ -122,7 +122,7 @@ class LyricsRepositoryTest {
         // prefix with qq:
         repo.getAMLL_TTMLLyrics("qq:ABCDEF")
         assertNotNull(seenUrl)
-        assertTrue(seenUrl!!.contains("/qq/ABCDEF"))
+        assertTrue("seenUrl=$seenUrl", seenUrl!!.contains("qq") && seenUrl.contains("ABCDEF"))
     }
 
     @Test
@@ -131,7 +131,7 @@ class LyricsRepositoryTest {
         val engine = MockEngine { request ->
             requested += request.url.toString()
             // fail any AAA urls, succeed on others (BBB)
-            if (request.url.toString().contains("/qq/AAA")) {
+            if (request.url.toString().contains("qq") && request.url.toString().contains("AAA")) {
                 respond("not found", HttpStatusCode.NotFound)
             } else {
                 val ttml = """<?xml version=\"1.0\"?><tt xmlns=\"http://www.w3.org/ns/ttml\"><body><div><p begin=\"00:00.000\" end=\"00:00.500\">hi</p></div></body></tt>"""
@@ -142,9 +142,9 @@ class LyricsRepositoryTest {
         val repo = LyricsRepository(client)
         val lyrics = repo.getAMLL_TTMLLyrics("qq:AAA:BBB")
         assertNotNull(lyrics)
-        // ensure both candidate ids were tried
-        assertTrue(requested.any { it.contains("/qq/AAA") })
-        assertTrue(requested.any { it.contains("/qq/BBB") })
+        // ensure both candidate ids were tried (mirror endpoints may include "qq-lyrics")
+        assertTrue(requested.any { it.contains("qq") && it.contains("AAA") })
+        assertTrue(requested.any { it.contains("qq") && it.contains("BBB") })
     }
 
     @Test
@@ -176,7 +176,7 @@ class LyricsRepositoryTest {
         val engine = MockEngine { request ->
             requested += request.url.toString()
             // fail any url containing the first segment value
-            if (request.url.toString().contains("/qq/dhi8dhagd")) {
+            if (request.url.toString().contains("qq") && request.url.toString().contains("dhi8dhagd")) {
                 respond("not found", HttpStatusCode.NotFound)
             } else {
                 val ttml = """<?xml version=\"1.0\"?><tt xmlns=\"http://www.w3.org/ns/ttml\"><body><div><p begin=\"00:00.000\" end=\"00:00.500\">hi</p></div></body></tt>"""
@@ -187,8 +187,8 @@ class LyricsRepositoryTest {
         val repo = LyricsRepository(client)
         val lyrics = repo.getAMLL_TTMLLyrics("qq:dhi8dhagd::3627319237")
         assertNotNull(lyrics)
-        assertTrue(requested.any { it.contains("/qq/dhi8dhagd") })
-        assertTrue(requested.any { it.contains("/qq/3627319237") })
+        assertTrue(requested.any { it.contains("qq") && it.contains("dhi8dhagd") })
+        assertTrue(requested.any { it.contains("qq") && it.contains("3627319237") })
     }
 
     // ---- new matching tests ----

@@ -19,6 +19,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -750,12 +751,19 @@ open class LyricsRepository(
                                 // Use combined artist string for matching (allows multiple variants)
                                 val artistForMatch = artistCandidates.joinToString("/") { it }
 
-                                println("[DEBUG] AMLL item: platform=$platform id=$id actualId=$actualId titleCandidates=$titleCandidates artistCandidates=$artistCandidates album=$albumRes")
+                                // Choose a display artist variant that best matches the local artist info.
+                                // AMLL DB may return multiple spellings/variants for the same artist.
+                                val bestDisplayArtist = artistCandidates
+                                    .maxByOrNull { candidate ->
+                                        compareArtists(artist, candidate)?.score ?: 0
+                                    } ?: artistCandidates.first()
+
+                                println("[DEBUG] AMLL item: platform=$platform id=$id actualId=$actualId titleCandidates=$titleCandidates artistCandidates=$artistCandidates album=$albumRes bestDisplayArtist=$bestDisplayArtist")
 
                                 // Evaluate each title candidate and pick the one with the highest confidence.
                                 val (bestTitle, bestEval) = titleCandidates
                                     .map { candidate ->
-                                        candidate to evaluateMatch(
+                                        val matchEval = evaluateMatch(
                                             searchTitle = title,
                                             searchArtist = artist,
                                             resultTitle = candidate,
@@ -763,22 +771,42 @@ open class LyricsRepository(
                                             searchAlbum = null,
                                             resultAlbum = albumRes
                                         )
+                                        Triple(candidate, matchEval, compareName(title, candidate)?.score ?: 0)
                                     }
-                                    .maxByOrNull { it.second.confidence }
+                                    .maxWithOrNull(Comparator { a, b ->
+                                        val diff = a.second.confidence.compareTo(b.second.confidence)
+                                        if (diff != 0) return@Comparator diff
+                                        a.third.compareTo(b.third)
+                                    })
                                     // should never be null because we guard for titleCandidates.isEmpty
-                                    ?: (titleCandidates.first() to evaluateMatch(
-                                        searchTitle = title,
-                                        searchArtist = artist,
-                                        resultTitle = titleCandidates.first(),
-                                        resultArtist = artistForMatch,
-                                        searchAlbum = null,
-                                        resultAlbum = albumRes
-                                    ))
+                                    ?: Triple(
+                                        titleCandidates.first(),
+                                        evaluateMatch(
+                                            searchTitle = title,
+                                            searchArtist = artist,
+                                            resultTitle = titleCandidates.first(),
+                                            resultArtist = artistForMatch,
+                                            searchAlbum = null,
+                                            resultAlbum = albumRes
+                                        ),
+                                        compareName(title, titleCandidates.first())?.score ?: 0
+                                    )
 
                                 println("[DEBUG] AMLL bestTitle=$bestTitle confidence=${bestEval.confidence} matchType=${bestEval.matchType}")
 
                                 val confidence = bestEval.confidence
                                 val matchType = bestEval.matchType
+
+                                LyricsSearchResult(
+                                    provider = "amll",
+                                    songId = "$platform:$actualId",
+                                    title = bestTitle,
+                                    artist = bestDisplayArtist,
+                                    album = albumRes,
+                                    confidence = confidence,
+                                    matchType = matchType,
+                                    metadataMatch = true
+                                )
 
                                 LyricsSearchResult(
                                     provider = "amll",
@@ -798,10 +826,9 @@ open class LyricsRepository(
                     }
                 }
 
-                // Wait for all mirror queries to complete (with a bounded timeout)
-                withTimeoutOrNull(15_000) {
-                    deferreds.map { it.await() }.flatten()
-                } ?: emptyList()
+                // Wait for all mirror queries to complete and combine results.
+                // Use awaitAll to ensure we observe any exceptions from child coroutines.
+                deferreds.awaitAll().flatten()
             }
 
             // Deduplicate by provider+songId and limit size
@@ -1723,71 +1750,42 @@ open class LyricsRepository(
 
             totalEndpoints += endpoints.size
 
-            // concurrently query all endpoints and take first successful parse
-            val channel = kotlinx.coroutines.channels.Channel<Pair<String, TTMLLyrics>>(capacity = 1)
-            val jobs = endpoints.map { url ->
-                amllProbeScope.launch {
-                    try {
-                        Timber.d("Fetching AMLL endpoint: $url")
-                        val response = httpClient.get(url)
-                        Timber.d("AMLL endpoint response ${response.status.value}: $url")
+            // Try each endpoint sequentially until we successfully fetch and parse lyrics.
+            for (url in endpoints) {
+                try {
+                    Timber.d("Fetching AMLL endpoint: $url")
+                    println("[DEBUG] getAMLL_TTMLLyrics requesting: $url")
+                    val response = httpClient.get(url)
+                    Timber.d("AMLL endpoint response ${response.status.value}: $url")
 
-                        if (!response.status.isSuccess()) {
-                            Timber.w("AMLL endpoint non-success status ${response.status.value}: $url")
-                        } else {
-                            val content = response.body<String>()
-                            if (content.contains("<tt", ignoreCase = true)) {
-                                val parsed = parseTTML(content, title, artist)
-                                if (parsed != null && parsed.lines.isNotEmpty()) {
-                                    // Mark the source for AMLL lyrics so downstream feature analysis
-                                    // (e.g. overlap detection) can distinguish AMLL TTML DB content.
-                                    val withSource = parsed.copy(metadata = parsed.metadata.copy(source = "AMLL TTML DB"))
-                                    channel.trySend(url to withSource)
-                                } else {
-                                    Timber.w("TTML parse yielded empty result: $url")
-                                }
-                            } else {
-                                Timber.w("AMLL endpoint returned non-TTML payload: $url")
-                            }
-                        }
-                    } catch (e: UnknownHostException) {
-                        unknownHostCount += 1
-                        Timber.w(e, "AMLL host unresolved: $url")
-                    } catch (e: Exception) {
-                        Timber.w(e, "AMLL endpoint failed: $url")
+                    if (!response.status.isSuccess()) {
+                        Timber.w("AMLL endpoint non-success status ${response.status.value}: $url")
+                        continue
                     }
-                }
-            }
 
-            // wait for first successful lyrics result, but avoid hanging forever if all
-            // endpoints fail / time out. The HTTP client already enforces timeouts, but if
-            // none of the probes ever writes to the channel we must still unblock.
-            val pair = try {
-                // give a generous but bounded wait time to allow slow endpoints
-                withTimeoutOrNull(20_000) {
-                    channel.receiveCatching().getOrNull()
-                }.also {
-                    if (it == null) {
-                        Timber.d("AMLL probe timeout: no successful endpoint responded within 20s (endpoints=${endpoints.size})")
+                    val content = response.body<String>()
+                    if (!content.contains("<tt", ignoreCase = true)) {
+                        Timber.w("AMLL endpoint returned non-TTML payload: $url")
+                        continue
                     }
+
+                    val parsed = parseTTML(content, title, artist)
+                    if (parsed != null && parsed.lines.isNotEmpty()) {
+                        // Mark the source for AMLL lyrics so downstream feature analysis
+                        // (e.g. overlap detection) can distinguish AMLL TTML DB content.
+                        val withSource = parsed.copy(metadata = parsed.metadata.copy(source = "AMLL TTML DB"))
+                        Timber.i("Fetched AMLL lyrics from: $url")
+                        lastAmlLError = null
+                        return withSource
+                    }
+
+                    Timber.w("TTML parse yielded empty result: $url")
+                } catch (e: UnknownHostException) {
+                    unknownHostCount += 1
+                    Timber.w(e, "AMLL host unresolved: $url")
+                } catch (e: Exception) {
+                    Timber.w(e, "AMLL endpoint failed: $url")
                 }
-            } catch (e: CancellationException) {
-                // Cancellation may occur when the caller gives up (e.g., timeout or
-                // viewmodel clears). Treat it as a clean stop and return null.
-                Timber.d(e, "AMLL probe cancelled")
-                jobs.forEach { job -> job.cancel() }
-                channel.close()
-                return null
-            }
-
-            jobs.forEach { job -> job.cancel() }
-            channel.close()
-
-            if (pair != null) {
-                val (url, parsed) = pair
-                Timber.i("Fetched AMLL lyrics from: $url")
-                lastAmlLError = null
-                return parsed
             }
         }
 
