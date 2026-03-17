@@ -218,7 +218,7 @@ object AlbumColorExtractor {
 
         // 一些封面色彩非常暗，即使亮度已调高也可能仍不够明亮，进一步提亮以避免 primary 太深
         if (adjusted.luminance() < 0.65f) {
-            adjusted = adjusted.lighten(0.65f)
+            adjusted = adjusted.withMinLuminance(0.65f)
         }
 
         return adjusted
@@ -233,14 +233,18 @@ object AlbumColorExtractor {
         
         // 如果太亮，降低亮度
         if (hsv[2] > 0.7f) {
-            hsv[2] = hsv[2].coerceAtMost(0.6f)
+            hsv[2] = hsv[2].coerceAtMost(0.65f)
         }
         // 增加饱和度使颜色更鲜明
         if (hsv[1] < 0.5f) {
             hsv[1] = 0.6f
         }
         
-        return Color(android.graphics.Color.HSVToColor(hsv))
+        var adjusted = Color(android.graphics.Color.HSVToColor(hsv))
+        if (adjusted.luminance() < 0.65f) {
+            adjusted = adjusted.withMinLuminance(0.65f)
+        }
+        return adjusted
     }
 
     /**
@@ -260,6 +264,16 @@ object AlbumColorExtractor {
         val hsv = FloatArray(3)
         android.graphics.Color.colorToHSV(this.toArgb(), hsv)
         hsv[2] = (hsv[2] + (1f - hsv[2]) * factor).coerceAtMost(1f)
+        return Color(android.graphics.Color.HSVToColor(hsv))
+    }
+
+    /**
+     * 保证颜色至少达到指定亮度（直接设置亮度值）
+     */
+    private fun Color.withMinLuminance(minLuminance: Float): Color {
+        val hsv = FloatArray(3)
+        android.graphics.Color.colorToHSV(this.toArgb(), hsv)
+        hsv[2] = hsv[2].coerceAtLeast(minLuminance.coerceIn(0f, 1f))
         return Color(android.graphics.Color.HSVToColor(hsv))
     }
 

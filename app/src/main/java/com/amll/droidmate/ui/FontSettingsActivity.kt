@@ -249,7 +249,8 @@ private fun FontSettingsPage(onBack: () -> Unit) {
                             ) {
                                 Icon(
                                     Icons.Default.Delete,
-                                    contentDescription = "删除"
+                                    contentDescription = "删除",
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                 )
                             }
 
