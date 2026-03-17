@@ -232,7 +232,7 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 wordFadeWidth = value
                                 AppSettings.setAmllAnimationWordFadeWidth(context, value)
                             },
-                            valueRange = 0.1f..1.0f,
+                            valueRange = 0.0f..2.0f,
                             colors = SliderDefaults.colors(
                                 thumbColor = rippleColor,
                                 activeTrackColor = rippleColor
