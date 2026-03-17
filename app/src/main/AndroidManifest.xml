@@ -61,6 +61,11 @@
             android:theme="@style/Theme.DroidMate" />
 
         <activity
+            android:name="com.amll.droidmate.ui.AnimationSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DroidMate" />
+
+        <activity
             android:name="com.amll.droidmate.ui.CustomLyricsActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />

@@ -70,6 +70,7 @@ fun AMLLLyricsView(
     var lastLyricsPayload by remember { mutableStateOf<String?>(null) }
     var lastAlbumArtUri by remember { mutableStateOf<String?>(null) }
     var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
+    var lastMotionConfigValue by remember { mutableStateOf<String?>(null) }
 
     AndroidView(
         modifier = modifier,
@@ -213,10 +214,13 @@ fun AMLLLyricsView(
                 lastModeValue = modeValue
             }
 
+            val configuredFps = AppSettings.getAmllAnimationFps(view.context).coerceIn(15, 60)
+            val fpsValue = if (renderMode == AMLLRenderMode.DOM_LITE) configuredFps.coerceAtMost(45) else configuredFps
+
             val backgroundProfile = if (renderMode == AMLLRenderMode.DOM) {
-                """{"renderer":"pixi","fps":60,"flowSpeed":2.35,"renderScale":0.9,"staticMode":false,"lowFreqVolume":1.0}"""
+                """{"renderer":"pixi","fps":$fpsValue,"flowSpeed":2.35,"renderScale":0.9,"staticMode":false,"lowFreqVolume":1.0}"""
             } else {
-                """{"renderer":"pixi","fps":30,"flowSpeed":1.4,"renderScale":0.65,"staticMode":false,"lowFreqVolume":1.0}"""
+                """{"renderer":"pixi","fps":$fpsValue,"flowSpeed":1.4,"renderScale":0.65,"staticMode":false,"lowFreqVolume":1.0}"""
             }
             if (lastBackgroundProfileValue != backgroundProfile) {
                 amllDebug("[$debugSource#$instanceId] Bridge call: configureBackgroundEffect(profile=$backgroundProfile)")
@@ -225,6 +229,20 @@ fun AMLLLyricsView(
                     null
                 )
                 lastBackgroundProfileValue = backgroundProfile
+            }
+
+            val motionConfig = """{
+                "enableSpring":${AppSettings.isAmllAnimationSpringEnabled(view.context)},
+                "enableScale":${AppSettings.isAmllAnimationScaleEnabled(view.context)},
+                "enableBlur":${AppSettings.isAmllAnimationBlurEnabled(view.context)},
+                "hidePassedLines":${AppSettings.isAmllAnimationHidePassedLinesEnabled(view.context)},
+                "wordFadeWidth":${AppSettings.getAmllAnimationWordFadeWidth(view.context)}
+            }""".trimIndent().replace("\n", "")
+
+            if (lastMotionConfigValue != motionConfig) {
+                amllDebug("[$debugSource#$instanceId] Bridge call: configureLyricMotion(profile=$motionConfig)")
+                view.evaluateJavascript("window.configureLyricMotion && window.configureLyricMotion($motionConfig);", null)
+                lastMotionConfigValue = motionConfig
             }
 
             // 先更新时间，确保 JS 层的 state.currentTime 是正确的，然后再更新歌词

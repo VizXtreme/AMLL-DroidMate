@@ -45,6 +45,21 @@ object AppSettings {
     private const val KEY_PROCESS_METADATA_ENABLED = "process_metadata_enabled"
     private const val KEY_AGENT_RECOGNIZER_ENABLED = "agent_recognizer_enabled"
 
+    // animation settings (controls lyrics motion/animation behavior)
+    private const val KEY_AMLL_ANIMATION_ENABLE_SPRING = "amll_animation_enable_spring"
+    private const val KEY_AMLL_ANIMATION_ENABLE_SCALE = "amll_animation_enable_scale"
+    private const val KEY_AMLL_ANIMATION_ENABLE_BLUR = "amll_animation_enable_blur"
+    private const val KEY_AMLL_ANIMATION_HIDE_PASSED_LINES = "amll_animation_hide_passed_lines"
+    private const val KEY_AMLL_ANIMATION_WORD_FADE_WIDTH = "amll_animation_word_fade_width"
+    private const val KEY_AMLL_ANIMATION_FPS = "amll_animation_fps"
+
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SPRING = true
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SCALE = true
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_BLUR = true
+    private const val DEFAULT_AMLL_ANIMATION_HIDE_PASSED_LINES = false
+    private const val DEFAULT_AMLL_ANIMATION_WORD_FADE_WIDTH = 0.5f
+    private const val DEFAULT_AMLL_ANIMATION_FPS = 60
+
     // helper to avoid repeating getSharedPreferences
     private fun prefs(context: Context) =
         PreferenceHelper(context, PREFS_NAME)
@@ -348,6 +363,55 @@ object AppSettings {
 
     fun setAgentRecognizerEnabled(context: Context, enabled: Boolean) {
         prefs(context).putBoolean(KEY_AGENT_RECOGNIZER_ENABLED, enabled)
+    }
+
+    fun isAmllAnimationSpringEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_AMLL_ANIMATION_ENABLE_SPRING, DEFAULT_AMLL_ANIMATION_ENABLE_SPRING)
+    }
+
+    fun setAmllAnimationSpringEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_AMLL_ANIMATION_ENABLE_SPRING, enabled)
+    }
+
+    fun isAmllAnimationScaleEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_AMLL_ANIMATION_ENABLE_SCALE, DEFAULT_AMLL_ANIMATION_ENABLE_SCALE)
+    }
+
+    fun setAmllAnimationScaleEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_AMLL_ANIMATION_ENABLE_SCALE, enabled)
+    }
+
+    fun isAmllAnimationBlurEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_AMLL_ANIMATION_ENABLE_BLUR, DEFAULT_AMLL_ANIMATION_ENABLE_BLUR)
+    }
+
+    fun setAmllAnimationBlurEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_AMLL_ANIMATION_ENABLE_BLUR, enabled)
+    }
+
+    fun isAmllAnimationHidePassedLinesEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_AMLL_ANIMATION_HIDE_PASSED_LINES, DEFAULT_AMLL_ANIMATION_HIDE_PASSED_LINES)
+    }
+
+    fun setAmllAnimationHidePassedLinesEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_AMLL_ANIMATION_HIDE_PASSED_LINES, enabled)
+    }
+
+    fun getAmllAnimationWordFadeWidth(context: Context): Float {
+        return prefs(context).getString(KEY_AMLL_ANIMATION_WORD_FADE_WIDTH, DEFAULT_AMLL_ANIMATION_WORD_FADE_WIDTH.toString())
+            ?.toFloatOrNull() ?: DEFAULT_AMLL_ANIMATION_WORD_FADE_WIDTH
+    }
+
+    fun setAmllAnimationWordFadeWidth(context: Context, value: Float) {
+        prefs(context).putString(KEY_AMLL_ANIMATION_WORD_FADE_WIDTH, value.toString())
+    }
+
+    fun getAmllAnimationFps(context: Context): Int {
+        return prefs(context).getLong(KEY_AMLL_ANIMATION_FPS, DEFAULT_AMLL_ANIMATION_FPS.toLong()).toInt()
+    }
+
+    fun setAmllAnimationFps(context: Context, value: Int) {
+        prefs(context).putLong(KEY_AMLL_ANIMATION_FPS, value.toLong())
     }
 
     // === 歌词时间轴偏移设置（基于歌曲 + 输出设备 + 音乐源） ===

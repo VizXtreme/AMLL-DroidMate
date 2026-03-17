@@ -260,6 +260,20 @@ private fun SettingsPage(
             }
 
             Text(
+                text = "动画设置（实验性）",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, AnimationSettingsActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("打开动画设置")
+            }
+
+            Text(
                 text = "字体设置",
                 style = MaterialTheme.typography.titleMedium
             )
