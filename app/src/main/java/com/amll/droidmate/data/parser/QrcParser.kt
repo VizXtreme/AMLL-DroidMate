@@ -109,12 +109,32 @@ object QrcParser {
         // preserve original newlines.
         //
         // Note: QRC payloads often wrap LyricContent in double quotes, but the lyric text may
-        // contain apostrophes. The original regex did not enforce matching quote type, which
-        // could cause early termination when encountering a single quote.
-        val regex = Regex("""<Lyric_\d+\b[^>]*\bLyricContent=(['"])(.*?)\1""", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
-        val extracted = regex.findAll(content).mapNotNull { match ->
-            match.groups[2]?.value?.let { unescapeXmlAttribute(it) }
-        }.toList()
+        // contain apostrophes or even internal quotation marks. We want to use the outermost
+        // quotes for the attribute value so that inner quotes don't truncate the match.
+        val extracted = mutableListOf<String>()
+        val tagStartRegex = Regex("""<Lyric_\d+\b[^>]*\bLyricContent=(['"])""", RegexOption.IGNORE_CASE)
+        var searchIndex = 0
+
+        while (true) {
+            val match = tagStartRegex.find(content, startIndex = searchIndex) ?: break
+            val quoteChar = match.groupValues[1].single()
+            val valueStart = match.range.last + 1
+
+            // Find the end of the current tag so we can pick the outermost closing quote inside it.
+            val tagEnd = content.indexOf('>', startIndex = valueStart).takeIf { it >= 0 } ?: content.length
+            val lastQuoteBeforeTagEnd = content.lastIndexOf(quoteChar, startIndex = tagEnd - 1)
+            val valueEnd = if (lastQuoteBeforeTagEnd >= valueStart) {
+                lastQuoteBeforeTagEnd
+            } else {
+                // Fallback: find the first quote after the start
+                content.indexOf(quoteChar, startIndex = valueStart).takeIf { it >= 0 } ?: content.length
+            }
+
+            val rawValue = content.substring(valueStart, valueEnd)
+            extracted.add(unescapeXmlAttribute(rawValue))
+
+            searchIndex = valueEnd + 1
+        }
 
         if (extracted.isNotEmpty()) {
             Timber.d("Extracted ${extracted.size} LyricContent entries from QRC XML (regex)")
