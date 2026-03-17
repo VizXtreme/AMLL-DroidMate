@@ -137,6 +137,8 @@ fun MainScreen() {
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val currentTime = nowPlaying?.currentPosition ?: 0L
+    // Apply user-configured lyric timing offsets when updating the lyric view
+    val lyricTime = viewModel.getLyricTimeWithDeviceOffset(nowPlaying)
     var notificationAccessGranted by remember { mutableStateOf(isNotificationAccessGranted(context)) }
 
     // update ripple color whenever album art changes or theme toggles
@@ -367,7 +369,7 @@ fun MainScreen() {
                         LyricsVisualLayer(
                             nowPlaying = nowPlaying,
                             lyrics = currentLyrics,
-                            currentTime = currentTime,
+                            currentTime = lyricTime,
                             webViewReloadKey = webViewReloadKey,
                             onLineSeek = { viewModel.seekTo(it) },
                             // 改进：无歌词显示文案时禁止进入全屏
@@ -515,7 +517,7 @@ fun MainScreen() {
                     LyricsVisualLayer(
                         nowPlaying = nowPlaying,
                         lyrics = lyrics,
-                        currentTime = currentTime,
+                        currentTime = lyricTime,
                         webViewReloadKey = webViewReloadKey,
                         onLineSeek = { viewModel.seekTo(it); resetHideTimer() },
                         amllDebugSource = "fullscreen",
