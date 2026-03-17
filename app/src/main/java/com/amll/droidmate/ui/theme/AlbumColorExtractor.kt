@@ -217,8 +217,8 @@ object AlbumColorExtractor {
         var adjusted = Color(android.graphics.Color.HSVToColor(hsv))
 
         // 一些封面色彩非常暗，即使亮度已调高也可能仍不够明亮，进一步提亮以避免 primary 太深
-        if (adjusted.luminance() < 1f) {
-            adjusted = adjusted.lighten(1f)
+        if (adjusted.luminance() < 0.65f) {
+            adjusted = adjusted.lighten(0.65f)
         }
 
         return adjusted
