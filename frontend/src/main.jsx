@@ -334,6 +334,9 @@ function rebuildBackgroundRender() {
   bgElement.style.width = '100%'
   bgElement.style.height = '100%'
   bgElement.style.zIndex = '0'
+  // Slightly dim the flow effect to keep lyrics readable on light artwork (white / light yellow)
+  // Note: this is applied unconditionally to avoid needing to detect image brightness.
+  bgElement.style.filter = 'brightness(0.80)'
   // insert before #app's other children so lyrics (z-index 1) float above
   app.prepend(bgElement)
 
