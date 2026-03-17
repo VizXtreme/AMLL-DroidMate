@@ -1,4 +1,6 @@
-
+> [!WARNING]
+> **服务通知**
+> 本项目前端有致命性问题！若您对前端掌握较好，我们邀请您对本项目添上神来一笔！
 # AMLL DroidMate
 
 即开即用 Android 端外置歌词显示器，集成 [AMLL](https://github.com/amll-dev/applemusic-like-lyrics) 风格渲染与多源歌词检索能力。
