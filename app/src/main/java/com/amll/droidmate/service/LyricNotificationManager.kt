@@ -17,13 +17,6 @@ import com.amll.droidmate.domain.model.LyricLine
 
 open class LyricNotificationManager(private val context: Context) {
 
-    /**
-     * Show or update the live lyric notification.
-     *
-     * @param currentLine the line to display (null clears text)
-     * @param ongoing if true the notification is marked ongoing (non-dismissable);
-     *                if false it may be swiped away by the user.
-     */
     open fun showOrUpdate(currentLine: LyricLine?, ongoing: Boolean = true) {
         if (!hasNotificationPermission()) return
 
@@ -36,13 +29,13 @@ open class LyricNotificationManager(private val context: Context) {
             .setContentText(safeLine)
             .setStyle(NotificationCompat.BigTextStyle().bigText(safeLine))
             .setContentIntent(contentIntent)
-            .setDeleteIntent(createDeleteIntent())                 // 监听用户滑动取消
+            .setDeleteIntent(createDeleteIntent())
             .setOnlyAlertOnce(true)
             .setSilent(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)        // 提升优先级以确保锁屏显示
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)     // 在锁屏上显示完整内容
-            .setShowWhen(false)                                      // 不显示时间戳
-            .setCategory(NotificationCompat.CATEGORY_STATUS)         // 分类为状态通知
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setShowWhen(false)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
 
         if (ongoing) {
             builder.setOngoing(true)
@@ -73,15 +66,8 @@ open class LyricNotificationManager(private val context: Context) {
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
     }
 
-    /**
-     * Create an intent that will be fired when the user explicitly dismisses
-     * the lyric notification (swipe away / clear all). The ViewModel registers
-     * a broadcast receiver to catch this and remember that the user doesn't
-     * want updates while paused.
-     */
     private fun createDeleteIntent(): PendingIntent {
         val intent = Intent(ACTION_LYRIC_NOTIFICATION_DISMISSED)
-        // broadcast to the app; use immutable flag for safety
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         return PendingIntent.getBroadcast(context, REQUEST_CODE_DELETE, intent, flags)
     }
@@ -115,13 +101,13 @@ open class LyricNotificationManager(private val context: Context) {
         val channel = NotificationChannel(
             CHANNEL_ID,
             "实时歌词",
-            NotificationManager.IMPORTANCE_DEFAULT           // 提升重要性以支持锁屏显示
+            NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
             description = "显示当前播放歌词行"
             setShowBadge(false)
-            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC  // 锁屏可见
-            setSound(null, null)                             // 静音
-            enableVibration(false)                           // 禁用震动
+            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            setSound(null, null)
+            enableVibration(false)
         }
 
         manager.createNotificationChannel(channel)

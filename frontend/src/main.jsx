@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import ReactDOM from 'react-dom'
 import { LyricPlayer, BackgroundRender, PixiRenderer, MeshGradientRenderer } from '@applemusic-like-lyrics/core'
 import '@applemusic-like-lyrics/core/style.css'
@@ -948,6 +948,13 @@ window.updateTime = function (timeMs) {
   const st = amllGet('state') || state
   st.currentTime = Number.isFinite(parsedTime) ? parsedTime : 0
   updateSeekingStateFromTime(now, st.currentTime)
+  
+  // 立即更新播放器状态，减少歌词行激活延迟
+  if (player) {
+    const currentTime = Math.trunc(st.currentTime)
+    callPlayer('setCurrentTime', currentTime, state.isSeeking)
+    callPlayer('update', 0)
+  }
 }
 
 window.configureLyricMotion = function (options) {
