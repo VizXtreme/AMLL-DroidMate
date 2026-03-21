@@ -318,6 +318,15 @@ fun AMLLLyricsView(
                 view.evaluateJavascript(script, null)
                 lastFontConfigSignature = fontSignature
             }
+        },
+        onRelease = { view ->
+            // 当组件被销毁时，销毁 WebView 以避免内存泄漏
+            amllInfo("[$debugSource] Destroying AMLL WebView")
+            view.stopLoading()
+            view.clearHistory()
+            view.clearCache(true)
+            view.removeJavascriptInterface("Android")
+            view.destroy()
         }
     )
 }

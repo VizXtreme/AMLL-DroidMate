@@ -615,7 +615,7 @@ private fun LyricsVisualLayer(
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(0.28f), Color.Black.copy(0.55f), Color.Black.copy(0.68f)))))
         // only create the WebView if we actually have lyrics; avoids unnecessary page loads
         if (lyrics != null) {
-            key(webViewReloadKey, amllDebugSource) {
+            key(webViewReloadKey) {
                 AMLLLyricsView(
                     lyrics = lyrics,
                     currentTime = currentTime,
