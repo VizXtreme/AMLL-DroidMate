@@ -1,7 +1,17 @@
-import React, { useState } from 'react'
-import ReactDOM from 'react-dom'
-import { LyricPlayer, BackgroundRender, PixiRenderer, MeshGradientRenderer } from '@applemusic-like-lyrics/core'
-import '@applemusic-like-lyrics/core/style.css'
+import React, { useEffect, useRef, useState } from 'react'
+import { createRoot } from 'react-dom/client'
+import { PrebuiltLyricPlayer } from '@applemusic-like-lyrics/react-full'
+import { BackgroundRender } from '@applemusic-like-lyrics/react'
+import '../../../applemusic-like-lyrics/packages/react-full/dist/amll-react-framework.css'
+import { useAtom, useSetAtom } from 'jotai'
+import {
+  musicLyricLinesAtom,
+  musicPlayingPositionAtom,
+  musicCoverAtom,
+  musicPlayingAtom,
+  lowFreqVolumeAtom,
+  isLyricPageOpenedAtom
+} from '@applemusic-like-lyrics/react-full'
 
 // --- existing constants unchanged ---
 const PLAYER_BACKGROUND = 'transparent'
@@ -81,10 +91,11 @@ let __playerPaused = false
 // line without turning off blur for the entire player.
 const UNBLUR_STYLE_ID = 'amll-unblur-style'
 function ensureUnblurStyle() {
-  if (document.getElementById(UNBLUR_STYLE_ID)) return
-  const s = document.createElement('style')
-  s.id = UNBLUR_STYLE_ID
-  s.textContent = `[class*="_lyricLine_"] .amll-line-unblur, [class*="_lyricLine_"].amll-line-unblur {
+  try {
+    if (document.getElementById(UNBLUR_STYLE_ID)) return
+    const s = document.createElement('style')
+    s.id = UNBLUR_STYLE_ID
+    s.textContent = `[class*="_lyricLine_"] .amll-line-unblur, [class*="_lyricLine_"].amll-line-unblur {
   filter: none !important;
 }
 
@@ -94,7 +105,12 @@ function ensureUnblurStyle() {
   visibility: hidden !important;
   pointer-events: none !important;
 }`
-  document.head.appendChild(s)
+    if (document.head) {
+      document.head.appendChild(s)
+    }
+  } catch (error) {
+    logToAndroid(`[AMLL-ERROR] ensureUnblurStyle error: ${error?.message || error}`)
+  }
 }
 
 function applyPauseStyle() {
@@ -292,79 +308,41 @@ function normalizeLyricLines(lines) {
 }
 
 function callBackground(methodName, ...args) {
-  const br = amllGet('backgroundRender') || backgroundRender
-  if (!br || typeof br[methodName] !== 'function') return
-  br[methodName](...args)
+  // React 组件版本的 BackgroundRender 不需要直接调用方法
+  // 我们通过 props 来传递配置
+  logToAndroid(`[AMLL-DEBUG] callBackground(${methodName}) called`)
 }
 
-function getBackgroundRendererCtor(mode) {
-  return String(mode ?? '').toLowerCase() === 'mesh' ? MeshGradientRenderer : PixiRenderer
-}
+// getBackgroundRendererCtor function is no longer needed as we're using React components
 
 function applyBackgroundProfile(profile) {
   currentBackgroundProfile = {
     ...currentBackgroundProfile,
     ...profile,
   }
-  callBackground('setFPS', Number(currentBackgroundProfile.fps || 60))
-  callBackground('setFlowSpeed', Number(currentBackgroundProfile.flowSpeed || 2.2))
-  callBackground('setRenderScale', Number(currentBackgroundProfile.renderScale || 0.8))
-  callBackground('setStaticMode', Boolean(currentBackgroundProfile.staticMode))
-  callBackground('setLowFreqVolume', Number(currentBackgroundProfile.lowFreqVolume || 1))
-  callBackground('setHasLyric', Boolean(currentBackgroundProfile.hasLyric))
-  callBackground('resume')
+  // React 组件版本的 BackgroundRender 不需要直接调用方法
+  // 我们通过 props 来传递配置
+  logToAndroid(`[AMLL-DEBUG] applyBackgroundProfile called with: ${JSON.stringify(profile)}`)
 }
 
 function rebuildBackgroundRender() {
-  const app = document.getElementById('app')
-  if (!app) return
-
-  if (backgroundRender) {
-    backgroundRender.dispose()
-    backgroundRender = null
-  }
-
-  backgroundRender = BackgroundRender.new(getBackgroundRendererCtor(currentBackgroundProfile.renderer))
-  const bgElement = backgroundRender.getElement()
-  // render should sit behind lyrics and stay locked to the viewport, not
-  // scroll with the document
-  bgElement.style.position = 'fixed'
-  bgElement.style.top = '0'
-  bgElement.style.left = '0'
-  bgElement.style.width = '100%'
-  bgElement.style.height = '100%'
-  bgElement.style.zIndex = '0'
-  // Slightly dim the flow effect to keep lyrics readable on light artwork (white / light yellow)
-  // Note: this is applied unconditionally to avoid needing to detect image brightness.
-  bgElement.style.filter = 'brightness(0.80)'
-  // insert before #app's other children so lyrics (z-index 1) float above
-  app.prepend(bgElement)
-
-  applyBackgroundProfile(currentBackgroundProfile)
-  const art = amllGet('lastAlbumArt') || lastAlbumArt
-  if (art) {
-    callBackground('setAlbum', art)
-  }
+  // React 组件版本的 BackgroundRender 不需要重建
+  // 组件会根据 props 的变化自动更新
+  logToAndroid('[AMLL-DEBUG] rebuildBackgroundRender called')
 }
 
 function callPlayer(methodName, ...args) {
-  const pl = amllGet('player') || player
-  if (!pl || typeof pl[methodName] !== 'function') return
-  pl[methodName](...args)
+  // React 组件版本的 LyricPlayer 不需要直接调用方法
+  // 我们通过 props 来传递配置
+  logToAndroid(`[AMLL-DEBUG] callPlayer(${methodName}) called with args: ${JSON.stringify(args)}`)
 }
 
 function applyMotionProfile(profile) {
   currentProfile = { ...profile }
   if (window.__amll) window.__amll.currentProfile = currentProfile
-  callPlayer('setAlignAnchor', currentProfile.alignAnchor)
-  callPlayer('setAlignPosition', currentProfile.alignPosition)
-  callPlayer('setEnableSpring', currentProfile.enableSpring)
-  callPlayer('setEnableScale', currentProfile.enableScale)
-  callPlayer('setEnableBlur', currentProfile.enableBlur)
-  callPlayer('setHidePassedLines', currentProfile.hidePassedLines)
-  callPlayer('setWordFadeWidth', currentProfile.wordFadeWidth)
-  callPlayer('setLinePosYSpringParams', currentProfile.linePosYSpringParams)
-  callPlayer('setLineScaleSpringParams', currentProfile.lineScaleSpringParams)
+  // React 组件版本的 LyricPlayer 不需要直接调用方法
+  // 我们通过 props 来传递配置
+  logToAndroid(`[AMLL-DEBUG] applyMotionProfile called with: ${JSON.stringify(profile)}`)
 }
 
 function resetBlurTimeout() {
@@ -561,7 +539,7 @@ function setFontSettings(fontFamily, activeFontFamilyNames = [], fontFiles = [])
   }
 
   const css = (Array.isArray(fontFiles) ? fontFiles : [])
-    .filter((item) => item && item.familyName && item.uri)
+    .filter((item) => item && item.familyName && item.uri && !item.uri.startsWith('data:image/svg+xml'))
     .map((item) => `@font-face{font-family:"${escapeCssString(item.familyName)}";src:url("${escapeCssString(item.uri)}");font-display:swap;}`)
     .join('')
   styleTag.textContent = css
@@ -579,16 +557,12 @@ function setFontSettings(fontFamily, activeFontFamilyNames = [], fontFiles = [])
 }
 
 function animationFrameLoop() {
-  if (!player) return
-
   try {
     const now = performance.now()
     const delta = lastFrameTime === -1 ? 0 : now - lastFrameTime
     lastFrameTime = now
 
     settleSeekingIfNeeded(now)
-
-    const currentTime = Math.trunc(state.currentTime)
 
     // Playback pause/resume is controlled externally (e.g. by the host app).
     // Kotlin can provide play state via Android.isPlaying(), so we sync here.
@@ -600,8 +574,8 @@ function animationFrameLoop() {
       }
     }
 
-    callPlayer('setCurrentTime', currentTime, state.isSeeking)
-    callPlayer('update', delta)
+    // React 组件版本的 LyricPlayer 不需要手动调用 update
+    // 组件会根据 props 的变化自动更新
   } catch (error) {
     logToAndroid(`[AMLL-ERROR] update loop error: ${error?.message || error}`)
   }
@@ -618,248 +592,7 @@ function startAnimationLoop() {
   rafId = window.requestAnimationFrame(animationFrameLoop)
 }
 
-function mountPlayer() {
-  const app = document.getElementById('app')
-  if (!app) {
-    logToAndroid('[AMLL-ERROR] #app container not found')
-    return
-  }
-
-  // make sure the document is allowed to scroll vertically; some
-  // embed hosts might set overflow hidden by default
-  document.documentElement.style.overflowY = 'auto'
-  document.body.style.overflowY = 'auto'
-
-  app.innerHTML = ''
-  app.style.background = PLAYER_BACKGROUND
-
-  // 重置专辑图缓存，确保新的 backgroundRender 实例会重新加载专辑图
-  amllSet('lastAlbumArt', '')
-  lastAlbumArt = ''
-
-  try {
-    // make sure the unblur helper stylesheet exists before we start
-    ensureUnblurStyle()
-
-    rebuildBackgroundRender()
-
-    player = new LyricPlayer()
-
-    // ensure every lyric line is buffered so scrolling can reach the very
-    // start/end regardless of playback position. the core library normally
-    // only keeps a few "hot" lines in memory, which caused the behaviour
-    // where only the nearby lines were rendered.
-    const originalSetLyricLines = player.setLyricLines.bind(player)
-    player.setLyricLines = function (lines, time = 0) {
-      originalSetLyricLines(lines, time)
-
-      if (this.bufferedLines) {
-        this.bufferedLines.clear()
-        for (let i = 0; i < lines.length; i++) {
-          this.bufferedLines.add(i)
-        }
-        // keep scroll index at start so user can immediately scroll upward
-        // and still reach the first line.
-        this.scrollToIndex = 0
-        this.calcLayout(true)
-      }
-    }
-
-    // ——— web-flow 布局调整 begin ———
-    // 允许自由滚动（与 v3.1.1 行为一致），同时禁用内部的滚动边界约束
-    player.allowScroll = true
-    player.limitScrollOffset = function () {}
-
-    // 保存原始函数以备需要恢复
-    const originalCalcLayout = player.calcLayout.bind(player)
-
-    // avoid accumulating padding and scrolling offsets every frame by
-    // remembering the last value we applied.
-    // track the previous padding so we can subtract it when re‑measuring
-    // content height; this avoids accumulating padding in the element height.
-    let __lastPadding = 0
-
-    // Ensure active (hot) lines stay in view even when there are multiple.
-    // The core player aligns a single line based on the golden ratio position,
-    // which can push additional active lines out of view when there are >3.
-    // We keep the golden-ratio behavior where possible, but adjust when the
-    // active group would overflow the viewport.
-    let __didAdjustActiveLines = false
-
-    player.calcLayout = async function (animated = false) {
-      await originalCalcLayout(animated)
-
-      if (!__didAdjustActiveLines) {
-        __didAdjustActiveLines = true
-        try {
-          const viewHeight = this.size[1] || (this.element?.clientHeight || 0)
-          if (viewHeight > 0 && this.hotLines && this.hotLines.size > 0) {
-            const activeSet = new Set(this.hotLines)
-
-            // Ensure nearby background lines are included too (they often show alongside the
-            // current lyric line but may not always be part of hotLines during update). This
-            // keeps active background lyrics in view.
-            Array.from(this.hotLines).forEach((idx) => {
-              const next = this.currentLyricLineObjects[idx + 1]
-              if (next?.getLine?.()?.isBG) activeSet.add(idx + 1)
-              const prev = this.currentLyricLineObjects[idx - 1]
-              if (prev?.getLine?.()?.isBG) activeSet.add(idx - 1)
-            })
-
-            const activeIndices = Array.from(activeSet).sort((a, b) => a - b)
-
-            // If any active line is still animating (spring/physics), don't adjust yet.
-            // Waiting avoids the “位置异常” glitch when layout is mid‑transition.
-            const isAnyAnimating = activeIndices.some((idx) => {
-              const lineObj = this.currentLyricLineObjects[idx]
-              return lineObj?.lineTransforms?.posY?.arrived && !lineObj.lineTransforms.posY.arrived()
-            })
-            if (isAnyAnimating) {
-              // Keep golden-ratio alignment until movement finishes.
-            } else {
-              let minY = Infinity
-              let maxY = -Infinity
-
-              for (const idx of activeIndices) {
-                const lineObj = this.currentLyricLineObjects[idx]
-                if (!lineObj) continue
-                const y = lineObj.lineTransforms.posY.getCurrentPosition()
-                const rawHeight = this.lyricLinesSize.get(lineObj)?.[1] ?? 0
-                const scale = (lineObj.lineTransforms.scale?.getCurrentPosition?.() ?? 100) / 100
-                const h = rawHeight * Math.max(0, scale)
-                minY = Math.min(minY, y)
-                maxY = Math.max(maxY, y + (h || 0))
-              }
-
-              if (minY !== Infinity) {
-                // Allow a tiny tolerance so we don't nudge the layout for sub-pixel differences.
-                const tolerance = Math.max(2, viewHeight * 0.01)
-                let shift = 0
-                if (minY < -tolerance) shift = -minY
-                if (maxY > viewHeight + tolerance) shift = shift || (viewHeight - maxY)
-
-                // Avoid tiny two-way shifts that would break golden-ratio alignment.
-                if (Math.abs(shift) > 1) {
-                  this.scrollOffset -= shift
-                  if (typeof this.limitScrollOffset === 'function') {
-                    this.limitScrollOffset()
-                  }
-                  await originalCalcLayout(animated)
-                }
-              }
-            }
-          }
-        } catch (error) {
-          logToAndroid(`[AMLL-DEBUG] ensure active lines visible failed: ${error?.message || error}`)
-        }
-        __didAdjustActiveLines = false
-      }
-
-      // add half‑screen blank space at top/bottom
-      const pad = this.size[1] * 0.5
-      if (this.element) {
-        this.element.style.boxSizing = 'border-box'
-        this.element.style.paddingTop = pad + 'px'
-        this.element.style.paddingBottom = pad + 'px'
-
-        // after originalCalcLayout the element height reflects just the
-        // lyric content (including whatever padding we added previously), so
-        // subtract the old padding to recover the true base height.
-        const computedHeight = parseFloat(this.element.style.height) || this.element.clientHeight || 0
-        const baseHeight = Math.max(0, computedHeight - __lastPadding * 2)
-
-        this.element.style.height = baseHeight + pad * 2 + 'px'
-        this.bottomLine.setTransform(0, baseHeight + pad, false, 0)
-      }
-
-      __lastPadding = pad
-    }
-    // ——— web-flow 布局调整 end ———
-
-    const playerElement = player.getElement()
-    applyPlayerStyle(playerElement)
-
-    // sometimes the class map from the core library fails to load and
-    // `be.lyricPlayer` becomes undefined; when that happens a stray
-    // "undefined" class gets added and it can interfere with CSS rules
-    // (in our case the element collapsed to height 0). clean it up here so
-    // the DOM node only carries real classes.
-    if (playerElement.classList.contains('undefined')) {
-      playerElement.classList.remove('undefined')
-    }
-
-    // ensure the container never collapses to zero height. "auto" works
-    // when there are lyric lines, but before any data arrives the element
-    // would have no content and the browser computes a zero height. dialing
-    // in a min-height avoids the empty‑state bug and mirrors #app's 100% rule.
-    playerElement.style.minHeight = '100vh'
-
-    // if we disabled the internal scrolling the element must remain in the
-    // normal document flow so its height can drive page scrolling; otherwise
-    // absolute positioning would collapse its parent height to zero.
-    if (player.allowScroll) {
-      playerElement.style.position = 'absolute'
-      playerElement.style.inset = '0'
-    } else {
-      playerElement.style.position = 'relative'
-      playerElement.style.inset = 'auto'
-    }
-    playerElement.style.zIndex = '1'
-    app.appendChild(playerElement)
-
-    logToAndroid(`[AMLL-INIT] Core LyricPlayer created, container width=${app.clientWidth}, height=${app.clientHeight}`)
-
-    applyMotionProfile(QUALITY_PROFILE)
-    if (typeof player.addEventListener === 'function') {
-      player.addEventListener('line-click', (evt) => {
-        try {
-          const lineIndex = Number(evt?.lineIndex ?? -1)
-          const line = evt?.line
-          let startTime = 0
-          
-          // 尝试多种方式获取 startTime
-          if (line && typeof line.getLine === 'function') {
-            const lineData = line.getLine()
-            startTime = Math.trunc(Number(lineData?.startTime ?? 0))
-            logToAndroid(`[AMLL-CLICK] Line ${lineIndex} found via getLine(), startTime=${startTime}ms`)
-          } else if (line?.startTime !== undefined) {
-            startTime = Math.trunc(Number(line.startTime))
-            logToAndroid(`[AMLL-CLICK] Line ${lineIndex} found via direct property, startTime=${startTime}ms`)
-          } else if (evt?.startTime !== undefined) {
-            startTime = Math.trunc(Number(evt.startTime))
-            logToAndroid(`[AMLL-CLICK] Line ${lineIndex} found via evt.startTime, startTime=${startTime}ms`)
-          } else {
-            logToAndroid(`[AMLL-CLICK] Line ${lineIndex} clicked but startTime not found, using 0`)
-          }
-          
-          if (typeof Android !== 'undefined' && Android?.onLineClick) {
-            Android.onLineClick(lineIndex, startTime)
-            logToAndroid(`[AMLL-CLICK] ✓ Called Android.onLineClick(${lineIndex}, ${startTime})`)
-          } else {
-            logToAndroid(`[AMLL-ERROR] Android.onLineClick not available`)
-          }
-        } catch (error) {
-          logToAndroid(`[AMLL-ERROR] line-click handler exception: ${error?.message || error}`)
-        }
-      })
-    }
-
-    // 为app容器添加触摸事件监听器
-    app.addEventListener('touchstart', handleTouchStart, false)
-    app.addEventListener('touchmove', handleTouchMove, false)
-    app.addEventListener('touchend', handleTouchEnd, false)
-
-    callPlayer('setLyricLines', [])
-    callPlayer('setCurrentTime', 0, false)
-    callPlayer('update', 0)
-    applyBackgroundProfile({ hasLyric: false })
-    startAnimationLoop()
-
-    logToAndroid('[AMLL-INIT] Core LyricPlayer mounted, ready for lyrics')
-  } catch (error) {
-    logToAndroid(`[AMLL-ERROR] Failed to create LyricPlayer: ${error?.message || error}`)
-  }
-}
+// mountPlayer function is no longer needed as we're using React components
 
 window.setRenderMode = function (mode) {
   const normalizedMode = String(mode ?? '').toLowerCase()
@@ -931,12 +664,12 @@ window.updateLyrics = function (lyricsPayload) {
 window.updateAlbumArt = async function (albumUri) {
   try {
     const uri = String(albumUri ?? '').trim()
-    if (!backgroundRender || uri.length === 0 || uri === amllGet('lastAlbumArt')) return
+    if (uri.length === 0 || uri === amllGet('lastAlbumArt')) return
 
-    await backgroundRender.setAlbum(uri)
     lastAlbumArt = uri
     amllSet('lastAlbumArt', uri)
     logToAndroid('[AMLL-SUCCESS] Background album art updated')
+    // React 组件版本的 BackgroundRender 会通过 props 自动更新
   } catch (error) {
     logToAndroid(`[AMLL-ERROR] updateAlbumArt error: ${error?.message || error}`)
   }
@@ -1055,87 +788,323 @@ window.onerror = function (msg, src, line, col, err) {
   logToAndroid(`[AMLL-ERROR] Uncaught JS: ${msg} at ${src}:${line}:${col} ${err?err.stack:''}`)
 }
 
+// monkey patch document.createElement to handle SVG data URLs
+const originalCreateElement = document.createElement;
+document.createElement = function(tagName, options) {
+  if (typeof tagName === 'string' && tagName.startsWith('data:image/svg+xml')) {
+    // If tagName is an SVG data URL, create a div instead
+    const div = originalCreateElement.call(document, 'div', options);
+    div.style.display = 'none';
+    return div;
+  }
+  return originalCreateElement.call(document, tagName, options);
+};
+
+// monkey patch document.createElementNS to handle SVG data URLs
+const originalCreateElementNS = document.createElementNS;
+document.createElementNS = function(namespaceURI, qualifiedName, options) {
+  if (typeof qualifiedName === 'string' && qualifiedName.startsWith('data:image/svg+xml')) {
+    // If qualifiedName is an SVG data URL, create a div instead
+    const div = originalCreateElementNS.call(document, namespaceURI, 'div', options);
+    div.style.display = 'none';
+    return div;
+  }
+  return originalCreateElementNS.call(document, namespaceURI, qualifiedName, options);
+};
+
 window.setFontSettings = setFontSettings
 
-window.addEventListener('DOMContentLoaded', () => {
-  document.documentElement.style.background = 'transparent'
-  document.body.style.background = 'transparent'
-  
-  // 检查 Android 接口是否可用
-  if (typeof Android !== 'undefined' && Android?.log) {
-    if (typeof Android.onLineClick === 'function') {
-      logToAndroid('[AMLL-INIT] Android.onLineClick interface is ready')
-    } else {
-      logToAndroid('[AMLL-INIT] WARNING: Android.onLineClick interface NOT found')
-    }
-  } else {
-    logToAndroid('[AMLL-INIT] WARNING: Android interface NOT available')
-  }
-  
-  mountPlayer()
+function App() {
+  const playerRef = useRef(null)
+  const audioRef = useRef(null)
+  const [lyricLines, setLyricLines] = useAtom(musicLyricLinesAtom)
+  const [currentTime, setCurrentTime] = useAtom(musicPlayingPositionAtom)
+  const [albumUri, setAlbumUri] = useAtom(musicCoverAtom)
+  const setIsPlaying = useSetAtom(musicPlayingAtom)
+  const setLowFreqVolume = useSetAtom(lowFreqVolumeAtom)
+  const setIsLyricPageOpened = useSetAtom(isLyricPageOpenedAtom)
+  const demoAlbumArt = 'https://example.com/your-album-art.png'
+  const demoAudioSrc = '' // 填写你的音频文件链接。例如: 'https://example.com/music.mp3'
 
-  // development-only: if no Android bridge, inject a sample lyric to verify layout
-  if (typeof Android === 'undefined') {
-    logToAndroid('[AMLL-DEV] no Android object, inserting demo lyric')
-    updateLyrics({
-      lines: [{
-        words: [
-          { word: 'Hello', startTime: 0, endTime: 2000 },
-          { word: 'world', startTime: 2000, endTime: 4000 }
-        ],
-        startTime: 0,
-        endTime: 4000,
-        translatedLyric: '',
-        romanLyric: '',
-        isBG: false,
-        isDuet: false
-      }]
+  useEffect(() => {
+    // 初始化全局状态
+    window.__amll = window.__amll || {}
+    Object.assign(window.__amll, {
+      player: null,
+      state: state,
+      lastAlbumArt: '',
+      currentProfile: { ...QUALITY_PROFILE }
     })
+
+    // 检查 Android 接口是否可用
+    if (typeof Android !== 'undefined' && Android?.log) {
+      if (typeof Android.onLineClick === 'function') {
+        logToAndroid('[AMLL-INIT] Android.onLineClick interface is ready')
+      } else {
+        logToAndroid('[AMLL-INIT] WARNING: Android.onLineClick interface NOT found')
+      }
+    } else {
+      logToAndroid('[AMLL-INIT] WARNING: Android interface NOT available')
+    }
+
+    // 启动动画循环
+    startAnimationLoop()
+
+    // 覆盖 updateLyrics 函数，使用 Jotai 状态
+    window.updateLyrics = function (lyricsPayload) {
+      try {
+        const rawLines = Array.isArray(lyricsPayload?.lines) ? lyricsPayload.lines : []
+        
+        // 调试：检查接收到的背景歌词原始数据
+        const bgLines = rawLines.filter(line => line?.isBG)
+        if (bgLines.length > 0) {
+          logToAndroid(`[BG-LYRICS-DEBUG] Received ${bgLines.length} BG lines from backend`)
+          bgLines.slice(0, 3).forEach((line, idx) => {
+            logToAndroid(`[BG-LYRICS-DEBUG] Raw BG line ${idx}: text="${line?.text}" translation="${line?.translatedLyric}" words=${line?.words?.length || 0}`)
+          })
+        }
+        
+        const normalizedLines = normalizeLyricLines(rawLines)
+
+        // Debug: inspect normalized results
+        if (normalizedLines.length > 0) {
+          normalizedLines.slice(0, 3).forEach((ln, idx) => {
+            const txt = ln.words.map(w => w.word).join('')
+            logToAndroid(`[AMLL-DEBUG] normalized line ${idx}: text="${txt}" len=${ln.words.length}`)
+          })
+        } else {
+          logToAndroid('[AMLL-WARN] normalizeLyricLines produced 0 lines')
+        }
+        logToAndroid(`[AMLL-DEBUG] lyricsPayload lines count=${rawLines.length}`)
+
+        // fallback when no lines at all
+        if (normalizedLines.length === 0) {
+          logToAndroid('[AMLL-DEV] injecting placeholder lyric because none provided')
+          setLyricLines([
+            { words: [{word:'Demo',startTime:0,endTime:2000}],translatedLyric:'',romanLyric:'',startTime:0,endTime:2000,isBG:false,isDuet:false }
+          ])
+        } else {
+          setLyricLines(normalizedLines)
+        }
+
+        logToAndroid(`[AMLL-SUCCESS] Updated lyrics (${normalizedLines.length} lines)`)
+      } catch (error) {
+        logToAndroid(`[AMLL-ERROR] updateLyrics error: ${error?.message || error}`)
+      }
+    }
+
+    // 覆盖 updateAlbumArt 函数，使用 Jotai 状态
+    window.updateAlbumArt = async function (albumUri) {
+      try {
+        const uri = String(albumUri ?? '').trim()
+        if (uri.length === 0 || uri === amllGet('lastAlbumArt')) return
+
+        lastAlbumArt = uri
+        amllSet('lastAlbumArt', uri)
+        setAlbumUri(uri)
+        logToAndroid('[AMLL-SUCCESS] Background album art updated')
+      } catch (error) {
+        logToAndroid(`[AMLL-ERROR] updateAlbumArt error: ${error?.message || error}`)
+      }
+    }
+
+    // 覆盖 updateTime 函数，使用 Jotai 状态
+    window.updateTime = function (timeMs) {
+  const now = performance.now()
+  const parsedTime = Number(timeMs)
+  const st = amllGet('state') || state
+  st.currentTime = Number.isFinite(parsedTime) ? parsedTime : 0
+  setCurrentTime(st.currentTime)
+  updateSeekingStateFromTime(now, st.currentTime)
+}
+
+    // 初始化其他状态
+    setIsPlaying(true)
+    setLowFreqVolume(1)
+    setIsLyricPageOpened(true)
+
+    // development-only: if no Android bridge, inject a sample lyric to verify layout
+    if (typeof Android === 'undefined') {
+      logToAndroid('[AMLL-DEV] no Android object, inserting demo lyric')
+      window.updateLyrics({
+        lines: [{
+          words: [
+            { word: 'Hello', startTime: 0, endTime: 2000 },
+            { word: 'world', startTime: 2000, endTime: 4000 }
+          ],
+          startTime: 0,
+          endTime: 4000,
+          translatedLyric: '',
+          romanLyric: '',
+          isBG: false,
+          isDuet: false
+        }]
+      })
+    }
+
+    return () => {
+      // 清理
+      if (rafId != null) {
+        window.cancelAnimationFrame(rafId)
+        rafId = null
+      }
+    }
+  }, [setLyricLines, setCurrentTime, setAlbumUri, setIsPlaying, setLowFreqVolume, setIsLyricPageOpened])
+
+  // 音频时间同步
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const onTimeUpdate = () => {
+      const nextTime = Math.trunc(audio.currentTime * 1000)
+      setCurrentTime(nextTime)
+      if (typeof window.updateTime === 'function') {
+        window.updateTime(nextTime)
+      }
+    }
+
+    audio.addEventListener('timeupdate', onTimeUpdate)
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+    }
+  }, [setCurrentTime])
+
+  const handleLineClick = (event) => {
+    try {
+      const lineIndex = Number(event?.lineIndex ?? -1)
+      const line = event?.line
+      let startTime = 0
+      
+      // 尝试多种方式获取 startTime
+      if (line && typeof line.getLine === 'function') {
+        const lineData = line.getLine()
+        startTime = Math.trunc(Number(lineData?.startTime ?? 0))
+        logToAndroid(`[AMLL-CLICK] Line ${lineIndex} found via getLine(), startTime=${startTime}ms`)
+      } else if (line?.startTime !== undefined) {
+        startTime = Math.trunc(Number(line.startTime))
+        logToAndroid(`[AMLL-CLICK] Line ${lineIndex} found via direct property, startTime=${startTime}ms`)
+      } else if (event?.startTime !== undefined) {
+        startTime = Math.trunc(Number(event.startTime))
+        logToAndroid(`[AMLL-CLICK] Line ${lineIndex} found via evt.startTime, startTime=${startTime}ms`)
+      } else {
+        logToAndroid(`[AMLL-CLICK] Line ${lineIndex} clicked but startTime not found, using 0`)
+      }
+      
+      if (typeof Android !== 'undefined' && Android?.onLineClick) {
+        Android.onLineClick(lineIndex, startTime)
+        logToAndroid(`[AMLL-CLICK] ✓ Called Android.onLineClick(${lineIndex}, ${startTime})`)
+      } else {
+        logToAndroid(`[AMLL-ERROR] Android.onLineClick not available`)
+      }
+
+      if (audioRef.current && Number.isFinite(startTime)) {
+        audioRef.current.currentTime = startTime / 1000
+      }
+    } catch (error) {
+      logToAndroid(`[AMLL-ERROR] line-click handler exception: ${error?.message || error}`)
+    }
   }
 
-  const styleTag = document.createElement('style')
-  styleTag.id = 'amll-touch-bg-blur-style'
-  styleTag.textContent = `
-    /* force the player to match viewport height and remove builtin vertical padding */
-    .amll-lyric-player {
-      padding-top: 0 !important;
-      padding-bottom: 0 !important;
-      height: 100vh !important;
-      max-height: 100vh !important;
-      overflow: hidden !important;
+  return (
+    <div id="app" style={{ position: 'relative', width: '100%', height: '100vh' }}>
+      <BackgroundRender
+        src={albumUri || demoAlbumArt}
+        style={{ position: 'absolute', inset: 0, zIndex: 0 }}
+        onError={(err) => logToAndroid(`[AMLL-BG] BackgroundRender error: ${err}`)}
+      />
+
+      <PrebuiltLyricPlayer
+        ref={playerRef}
+        lyricLines={lyricLines}
+        currentTime={currentTime}
+        onLineClick={handleLineClick}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 1,
+          width: '100%',
+          height: '100%',
+          background: PLAYER_BACKGROUND
+        }}
+      />
+
+      <audio
+        ref={audioRef}
+        src={demoAudioSrc}
+        controls
+        style={{ position: 'absolute', bottom: 10, left: 10, zIndex: 2, width: 'calc(100% - 20px)' }}
+      />
+    </div>
+  )
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    document.documentElement.style.background = 'transparent'
+    document.body.style.background = 'transparent'
+    
+    const root = document.getElementById('app') || document.createElement('div')
+    if (!document.getElementById('app')) {
+      root.id = 'app'
+      if (document.body) {
+        document.body.appendChild(root)
+      }
+    }
+    
+    // 使用 React 18 的渲染方式
+    if (root) {
+      createRoot(root).render(<App />)
     }
 
-    /* touch down: show background lyrics + dim the player, similar to pause */
-    .amll-lyric-player.${PAUSE_STYLE_CLASS} {
-      opacity: 0.85 !important;
-    }
+    const styleTag = document.createElement('style')
+    styleTag.id = 'amll-touch-bg-blur-style'
+    styleTag.textContent = `
+      /* force the player to match viewport height and remove builtin vertical padding */
+      .amll-lyric-player {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
+      }
 
-    /* when paused, make main lyrics fade so background lyrics can "expand" under them */
-    .amll-lyric-player.${PAUSE_STYLE_CLASS} [class*="lyricLine"]:not([class*="lyricBgLine"]) {
-      opacity: 0.85 !important;
-    }
+      /* touch down: show background lyrics + dim the player, similar to pause */
+      .amll-lyric-player.${PAUSE_STYLE_CLASS} {
+        opacity: 0.85 !important;
+      }
 
-    .amll-lyric-player.${PAUSE_STYLE_CLASS} [class*="lyricBgLine"] {
-      opacity: 0.85 !important;
-      visibility: visible !important;
-    }
+      /* when paused, make main lyrics fade so background lyrics can "expand" under them */
+      .amll-lyric-player.${PAUSE_STYLE_CLASS} [class*="lyricLine"]:not([class*="lyricBgLine"]) {
+        opacity: 0.85 !important;
+      }
 
-    /* when touch interaction is ongoing, mimic pause style */
-    .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} {
-      opacity: 1 !important;
-    }
+      .amll-lyric-player.${PAUSE_STYLE_CLASS} [class*="lyricBgLine"] {
+        opacity: 0.85 !important;
+        visibility: visible !important;
+      }
 
-    .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} [class*="lyricBgLine"] {
-      opacity: 1 !important;
-      visibility: visible !important;
-      filter: none !important;
-    }
+      /* when touch interaction is ongoing, mimic pause style */
+      .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} {
+        opacity: 1 !important;
+      }
 
-    .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} [class*="lyricBgLine"][class*="active"] {
-      filter: none !important;
+      .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} [class*="lyricBgLine"] {
+        opacity: 1 !important;
+        visibility: visible !important;
+        filter: none !important;
+      }
+
+      .amll-lyric-player.${TOUCH_BG_BLUR_CLASS} [class*="lyricBgLine"][class*="active"] {
+        filter: none !important;
+      }
+    `
+    if (document.head) {
+      document.head.appendChild(styleTag)
     }
-  `
-  document.head.appendChild(styleTag)
+  } catch (error) {
+    logToAndroid(`[AMLL-ERROR] DOMContentLoaded error: ${error?.message || error}`)
+  }
 })
 
 window.addEventListener('beforeunload', () => {

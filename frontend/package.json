@@ -13,14 +13,19 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "pnpm": {
+    "workspace": [
+      "../../applemusic-like-lyrics/packages/*"
+    ]
+  },
   "dependencies": {
-    "@applemusic-like-lyrics/core": "^0.2.0",
-    "@applemusic-like-lyrics/react": "^0.2.0",
+    "@applemusic-like-lyrics/react-full": "file:../../applemusic-like-lyrics/packages/react-full",
     "@pixi/core": "^7.4.3",
     "@pixi/utils": "^7.4.3",
     "@vitejs/plugin-react": "^5.1.4",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "jotai": "^2",
     "vite": "^7.3.1"
   }
 }

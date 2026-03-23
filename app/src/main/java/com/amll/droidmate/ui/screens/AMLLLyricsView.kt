@@ -393,6 +393,8 @@ private fun buildApplyFontScript(effectiveFamily: String, files: List<FontWebEnt
             for (var i = 0; i < files.length; i += 1) {
                 var item = files[i];
                 if (!item || !item.familyName || !item.uri) continue;
+                // 过滤掉SVG数据URL，只处理真正的字体文件
+                if (item.uri.indexOf('data:image/svg+xml') === 0) continue;
                 css += '@font-face{font-family:"' + item.familyName + '";src:url("' + item.uri + '");font-display:swap;}';
             }
             styleNode.textContent = css;
