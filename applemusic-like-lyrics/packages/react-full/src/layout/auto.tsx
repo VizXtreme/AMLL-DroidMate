@@ -1,6 +1,6 @@
-import type React from "react";
+import React from "react";
 import type { HTMLProps } from "react";
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, forwardRef } from "react";
 import styles from "./auto.module.css";
 import { HorizontalLayout } from "./horizontal";
 import { VerticalLayout } from "./vertical";
@@ -8,7 +8,7 @@ import { VerticalLayout } from "./vertical";
 /**
  * 会根据当前元素的宽高比自动选择横向或者纵向布局的组件
  */
-export const AutoLyricLayout: React.FC<
+export const AutoLyricLayout = forwardRef<HTMLDivElement, 
 	{
 		thumbSlot?: React.ReactNode;
 		controlsSlot?: React.ReactNode;
@@ -22,8 +22,9 @@ export const AutoLyricLayout: React.FC<
 		verticalImmerseCover?: boolean;
 		onLayoutChange?: (isVertical: boolean) => void;
 		onElementMounted?: (node: HTMLDivElement | null) => void;
-	} & HTMLProps<HTMLDivElement>
-> = ({
+	} & Omit<HTMLProps<HTMLDivElement>, 'thumbSlot' | 'controlsSlot' | 'horizontalBottomControls' | 'smallControlsSlot' | 'bigControlsSlot' | 'coverSlot' | 'lyricSlot' | 'backgroundSlot' | 'hideLyric' | 'verticalImmerseCover' | 'onLayoutChange' | 'onElementMounted'>
+>(
+	({
 	thumbSlot,
 	controlsSlot,
 	horizontalBottomControls,
@@ -37,19 +38,38 @@ export const AutoLyricLayout: React.FC<
 	onLayoutChange,
 	onElementMounted,
 	...rest
-}) => {
+}, ref) => {
 	const [isVertical, setIsVertical] = useState(false);
 	const rootRef = useRef<HTMLDivElement>(null);
+
+	// 过滤掉不应该传递给 DOM 元素的自定义 props
+	const { 
+		lyricLines, 
+		currentTime, 
+		onLyricLineClick, 
+		onLyricLineContextMenu,
+		...domProps 
+	} = rest as any;
+	// 这些变量已被提取，不会传递给 DOM
 
 	const setRefs = useCallback(
 		(node: HTMLDivElement | null) => {
 			rootRef.current = node;
+			
+			// Forward ref to parent
+			if (ref) {
+				if (typeof ref === 'function') {
+					ref(node);
+				} else {
+					(ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+				}
+			}
 
 			if (onElementMounted) {
 				onElementMounted(node);
 			}
 		},
-		[onElementMounted],
+		[onElementMounted, ref],
 	);
 
 	useLayoutEffect(() => {
@@ -75,7 +95,7 @@ export const AutoLyricLayout: React.FC<
 	// 故借助 display: contents 来融合布局
 
 	return (
-		<div {...rest} ref={setRefs}>
+		<div {...domProps} ref={setRefs}>
 			<div className={styles.background}>{backgroundSlot}</div>
 			{isVertical ? (
 				<VerticalLayout
@@ -99,4 +119,4 @@ export const AutoLyricLayout: React.FC<
 			)}
 		</div>
 	);
-};
+});

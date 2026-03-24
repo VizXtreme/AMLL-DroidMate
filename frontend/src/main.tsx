@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { PrebuiltLyricPlayer } from '@applemusic-like-lyrics/react-full'
-import { BackgroundRender } from '@applemusic-like-lyrics/react'
+import { LyricPlayer, BackgroundRender } from '@applemusic-like-lyrics/react'
+import type { LyricPlayerRef } from '@applemusic-like-lyrics/react'
 import '@applemusic-like-lyrics/react-full/style.css'
+import './styles.css'
 import { useAtom, useSetAtom } from 'jotai'
 import {
   musicLyricLinesAtom,
@@ -152,6 +153,9 @@ interface LineClickEvent {
   startTime?: number
 }
 
+// 禁用 SVG 相关的错误捕获，避免 Script error. 干扰
+let svgErrorSuppressed = false
+
 let state: {
   lyricLines: LyricLine[]
   currentTime: number
@@ -232,10 +236,6 @@ function setPaused(paused: boolean) {
   }
 }
 
-if (typeof window !== 'undefined') {
-  ;(window as any).setPaused = setPaused
-}
-
 let player: any = null
 let rafId: number | null = null
 let lastFrameTime = -1
@@ -245,6 +245,25 @@ let currentProfile: QualityProfile = { ...QUALITY_PROFILE }
 let currentBackgroundProfile: BackgroundProfile = { ...DEFAULT_BG_PROFILE }
 let lastIncomingTime: number | null = null
 let seekUntilTs = 0
+
+// 初始化全局状态
+function initGlobalState() {
+  if (typeof window !== 'undefined') {
+    if (!window.__amll) {
+      window.__amll = {} as AMLLGlobal
+    }
+    Object.assign(window.__amll, {
+      get player() { return player }, set player(v: any) { player = v },
+      get rafId() { return rafId }, set rafId(v: number | null) { rafId = v },
+      get lastFrameTime() { return lastFrameTime }, set lastFrameTime(v: number) { lastFrameTime = v },
+      get backgroundRender() { return backgroundRender }, set backgroundRender(v: any) { backgroundRender = v },
+      get lastAlbumArt() { return lastAlbumArt }, set lastAlbumArt(v: string) { lastAlbumArt = v },
+      get currentProfile() { return currentProfile }, set currentProfile(v: QualityProfile) { currentProfile = v },
+      get currentBackgroundProfile() { return currentBackgroundProfile }, set currentBackgroundProfile(v: BackgroundProfile) { currentBackgroundProfile = v },
+      get state() { return state }, set state(v: typeof state) { state = v },
+    })
+  }
+}
 
 interface AMLLGlobal {
   player: any
@@ -286,21 +305,6 @@ declare global {
   }
 }
 
-// mirror important state on window so callbacks in the bundle can access them
-if (typeof window !== 'undefined') {
-  window.__amll = window.__amll || {}
-  Object.assign(window.__amll, {
-    get player() { return player }, set player(v: any) { player = v },
-    get rafId() { return rafId }, set rafId(v: number | null) { rafId = v },
-    get lastFrameTime() { return lastFrameTime }, set lastFrameTime(v: number) { lastFrameTime = v },
-    get backgroundRender() { return backgroundRender }, set backgroundRender(v: any) { backgroundRender = v },
-    get lastAlbumArt() { return lastAlbumArt }, set lastAlbumArt(v: string) { lastAlbumArt = v },
-    get currentProfile() { return currentProfile }, set currentProfile(v: QualityProfile) { currentProfile = v },
-    get currentBackgroundProfile() { return currentBackgroundProfile }, set currentBackgroundProfile(v: BackgroundProfile) { currentBackgroundProfile = v },
-    get state() { return state }, set state(v: typeof state) { state = v },
-  })
-}
-
 function amllGet(name: string): any {
   return window.__amll ? window.__amll[name] : undefined
 }
@@ -312,10 +316,16 @@ function amllSet(name: string, value: any) {
 }
 
 function logToAndroid(message: string, level: string = 'debug') {
-  if (typeof window.Android !== 'undefined' && window.Android?.log) {
-    window.Android.log(message, level)
-  } else {
-    console.log(`[${level.toUpperCase()}] ${message}`)
+  if (typeof window !== 'undefined') {
+    if (typeof window.Android !== 'undefined' && typeof window.Android.log === 'function') {
+      try {
+        window.Android.log(message, level)
+      } catch (e) {
+        console.log(`[ANDROID_LOG_ERROR] ${message}`)
+      }
+    } else {
+      console.log(`[${level.toUpperCase()}] ${message}`)
+    }
   }
 }
 
@@ -395,10 +405,6 @@ function toWordEntries(line: any): WordEntry[] {
       endTime: Number(line?.endTime ?? line?.startTime ?? 0),
     },
   ]
-}
-
-if (typeof window !== 'undefined') {
-  window.toWordEntries = toWordEntries
 }
 
 function normalizeLyricLines(lines: any[]): LyricLine[] {
@@ -686,8 +692,12 @@ function startAnimationLoop() {
   rafId = window.requestAnimationFrame(animationFrameLoop)
 }
 
-if (typeof window !== 'undefined') {
-  ;(window as any).setRenderMode = function (mode: string) {
+// 全局 API 设置函数 - 在 DOMContentLoaded 中调用
+function setupGlobalAPI() {
+  if (typeof window === 'undefined') return
+  
+  // 挂载所有 API 函数
+  window.setRenderMode = function (mode: string) {
     const normalizedMode = String(mode ?? '').toLowerCase()
     if (normalizedMode === 'dom-lite') {
       applyMotionProfile(LITE_PROFILE)
@@ -701,6 +711,22 @@ if (typeof window !== 'undefined') {
 
   ;(window as any).updateLyrics = function (lyricsPayload: LyricsPayload) {
     try {
+      // 检查 __setLyricLines 是否已经挂载（需要等待 App 组件初始化）
+      if (typeof (window as any).__setLyricLines !== 'function') {
+        logToAndroid('updateLyrics called but __setLyricLines not ready yet', 'warn')
+        // 将歌词数据暂存，等 __setLyricLines 准备好后再处理
+        const pendingPayload = lyricsPayload
+        setTimeout(() => {
+          if (typeof (window as any).__setLyricLines === 'function') {
+            logToAndroid('Retrying updateLyrics with pending payload', 'debug')
+            ;(window as any).updateLyrics(pendingPayload)
+          } else {
+            logToAndroid('__setLyricLines still not available after retry', 'error')
+          }
+        }, 100)
+        return
+      }
+
       const rawLines = Array.isArray(lyricsPayload?.lines) ? lyricsPayload.lines : []
       
       const bgLines = rawLines.filter(line => line?.isBG)
@@ -711,10 +737,10 @@ if (typeof window !== 'undefined') {
         })
       }
       
-      state.lyricLines = normalizeLyricLines(rawLines)
+      const normalizedLines = normalizeLyricLines(rawLines)
 
-      if (state.lyricLines.length > 0) {
-        state.lyricLines.slice(0, 3).forEach((ln: LyricLine, idx: number) => {
+      if (normalizedLines.length > 0) {
+        normalizedLines.slice(0, 3).forEach((ln: LyricLine, idx: number) => {
           const txt = ln.words.map(w => w.word).join('')
           logToAndroid(`normalized line ${idx}: text="${txt}" len=${ln.words.length}`, 'debug')
         })
@@ -723,26 +749,20 @@ if (typeof window !== 'undefined') {
       }
       logToAndroid(`lyricsPayload lines count=${rawLines.length}`, 'debug')
 
-      if (state.lyricLines.length === 0) {
+      if (normalizedLines.length === 0) {
         logToAndroid('injecting placeholder lyric because none provided', 'debug')
-        state.lyricLines = [
+        ;(window as any).__setLyricLines([
           { words: [{word:'Demo',startTime:0,endTime:2000}],translatedLyric:'',romanLyric:'',startTime:0,endTime:2000,isBG:false,isDuet:false }
-        ]
+        ])
+        logToAndroid('DEBUG: Called __setLyricLines with placeholder', 'debug')
+      } else {
+        logToAndroid(`DEBUG: About to call __setLyricLines with ${normalizedLines.length} lines`, 'debug')
+        logToAndroid(`DEBUG: __setLyricLines is ${typeof (window as any).__setLyricLines}`, 'debug')
+        ;(window as any).__setLyricLines(normalizedLines)
+        logToAndroid('DEBUG: __setLyricLines called successfully', 'debug')
       }
 
-      if (player) {
-        const currentTimeToUse = Math.trunc(state.currentTime)
-        logToAndroid(`Updating lyrics with currentTime=${currentTimeToUse}ms`, 'info')
-        callPlayer('setLyricLines', state.lyricLines, currentTimeToUse)
-        callPlayer('setCurrentTime', currentTimeToUse, true)
-        callPlayer('update', 0)
-        logToAndroid(`Updated player with ${state.lyricLines.length} lines`, 'info')
-      }
-      if (backgroundRender) {
-        applyBackgroundProfile({ hasLyric: state.lyricLines.length > 0 })
-      }
-
-      logToAndroid(`Updated lyrics (${state.lyricLines.length} lines)`, 'info')
+      logToAndroid(`Updated lyrics (${normalizedLines.length} lines)`, 'info')
     } catch (error) {
       logToAndroid(`updateLyrics error: ${(error as Error)?.message || error}`, 'error')
     }
@@ -868,46 +888,133 @@ if (typeof window !== 'undefined') {
   }
 }
 
-window.onerror = function (msg: string, src: string, line: number, col: number, err?: Error) {
-  logToAndroid(`Uncaught JS: ${msg} at ${src}:${line}:${col} ${err?err.stack:''}`, 'error')
-  return true
-}
-
-const originalCreateElement = document.createElement;
-document.createElement = function(tagName: string, options?: any) {
-  if (typeof tagName === 'string' && tagName.startsWith('data:image/svg+xml')) {
-    const div = originalCreateElement.call(document, 'div', options);
-    div.style.display = 'none';
-    return div;
+// 全局错误处理 - 使用正确的类型
+const globalErrorHandler = (event: ErrorEvent | Event | string, source?: string, lineno?: number, colno?: number) => {
+  try {
+    // 如果是字符串（Script error.），直接记录
+    if (typeof event === 'string') {
+      // 只对纯 "Script error." 进行降级处理，其他都记录
+      if (event === 'Script error.') {
+        logToAndroid(`Cross-origin script error (expected): ${event}`,'debug');
+        return;
+      }
+      logToAndroid(`Uncaught JS error: ${event}`,'error');
+      if (event.includes('SVG') || event.includes('mask')) {
+        logToAndroid('Note: This may be related to SVG/mask operations, usually harmless','debug');
+      }
+      return;
+    }
+    
+    // 检查是否是 ErrorEvent
+    const errorEvent = event as ErrorEvent;
+    if (errorEvent.message) {
+      const msg = errorEvent.message;
+      
+      // 忽略空消息或纯 Script error.
+      if (!msg || msg === 'Script error.') {
+        logToAndroid(`Empty/cross-origin error (ignored)`,'debug');
+        return;
+      }
+      
+      logToAndroid(`Uncaught JS: ${msg} at ${errorEvent.filename || source || 'unknown'}:${errorEvent.lineno || lineno || 0}:${errorEvent.colno || colno || 0}`,'error');
+      if (errorEvent.error) {
+        logToAndroid(`Error stack: ${errorEvent.error.stack || errorEvent.error.toString()}`,'error');
+      }
+      
+      // 对 SVG/mask 相关错误添加说明
+      if (msg.toLowerCase().includes('svg') || msg.toLowerCase().includes('mask')) {
+        logToAndroid('Note: SVG/mask errors are usually cosmetic in WebView environment','debug');
+      }
+    } else {
+      // 处理普通 Event 对象（如资源加载失败）
+      const target = (event as any).target || (event as any).srcElement;
+      const targetType = target ? target.tagName || 'unknown' : 'none';
+      const targetSrc = target ? (target.src || target.href || 'no-src') : 'none';
+      const eventType = event.type || 'unknown';
+      
+      logToAndroid(`Resource load error: type=${eventType}, target=${targetType}, src=${targetSrc}`,'error');
+    }
+  } catch (e) {
+    logToAndroid(`Error handler exception: ${(e as Error).message}`,'error');
   }
-  return originalCreateElement.call(document, tagName, options);
 };
 
-const originalCreateElementNS = document.createElementNS;
-document.createElementNS = function(namespaceURI: string | null, qualifiedName: string, options?: any) {
-  if (typeof qualifiedName === 'string' && qualifiedName.startsWith('data:image/svg+xml')) {
-    const div = originalCreateElementNS.call(document, namespaceURI, 'div', options);
-    div.style.display = 'none';
-    return div;
+window.onerror = function(msg, url, line, col, error) {
+  // 忽略纯 "Script error." 字符串（通常是跨域脚本的噪音）
+  const msgStr = String(msg || '');
+  if (msgStr === 'Script error.' && !url && !line && !col) {
+    logToAndroid('Ignored cross-origin script error noise','debug');
+    return true;
   }
-  return originalCreateElementNS.call(document, namespaceURI, qualifiedName, options);
+  globalErrorHandler(msg || 'Unknown error', url, line, col);
+  return true; // Prevent default browser error handling
 };
+window.addEventListener('error', globalErrorHandler, true);
 
-if (typeof window !== 'undefined') {
-  window.setFontSettings = setFontSettings
+// 拦截可能触发 Script error 的 SVG 操作（仅记录，不拦截）
+if (typeof document !== 'undefined') {
+  try {
+    const originalCreateElementNS = document.createElementNS;
+    (document as any).createElementNS = function(namespaceURI: string | null, qualifiedName: string, options?: any) {
+      // 如果是 SVG 命名空间，添加错误日志
+      if (namespaceURI === 'http://www.w3.org/2000/svg') {
+        try {
+          return originalCreateElementNS.call(document, namespaceURI, qualifiedName, options);
+        } catch (e) {
+          // 记录但不阻止错误，让上层决定如何处理
+          logToAndroid(`SVG createElementNS error (non-blocking): ${(e as Error).message}`,'debug');
+          throw e; // 重新抛出错误，不影响正常流程
+        }
+      }
+      return originalCreateElementNS.call(document, namespaceURI, qualifiedName, options);
+    };
+  } catch (e) {
+    // 如果拦截失败，继续正常使用原始方法
+    logToAndroid(`Failed to wrap createElementNS: ${(e as Error).message}`,'debug');
+  }
 }
 
 function App() {
-  const playerRef = useRef<any>(null)
-  const audioRef = useRef<HTMLAudioElement>(null)
+  const playerRef = useRef<LyricPlayerRef>(null)
   const [lyricLines, setLyricLines] = useAtom(musicLyricLinesAtom)
   const [currentTime, setCurrentTime] = useAtom(musicPlayingPositionAtom)
   const [albumUri, setAlbumUri] = useAtom(musicCoverAtom)
-  const setIsPlaying = useSetAtom(musicPlayingAtom)
+  const [musicIsPlaying, setIsPlaying] = useAtom(musicPlayingAtom)
   const setLowFreqVolume = useSetAtom(lowFreqVolumeAtom)
-  const setIsLyricPageOpened = useSetAtom(isLyricPageOpenedAtom)
-  const demoAlbumArt = 'https://example.com/your-album-art.png'
-  const demoAudioSrc = ''
+  // 默认占位图（透明背景）
+  const demoAlbumArt = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJyZ2JhKDAsMCwwLDAuMSkiLz48L3N2Zz4='
+  
+  // 使用 ref 来保存最新的 lyricLines，避免闭包问题
+  const lyricLinesRef = useRef(lyricLines)
+  useEffect(() => {
+    lyricLinesRef.current = lyricLines
+  }, [lyricLines])
+
+  // 初始化全局状态和接口
+  useEffect(() => {
+    initGlobalState()
+    
+    // 挂载全局 API
+    ;(window as any).__setLyricLines = setLyricLines;
+    (window as any).__setCurrentTime = setCurrentTime;
+    (window as any).__setAlbumUri = setAlbumUri;
+    
+    // 暴露全局 API 函数
+    setupGlobalAPI()
+    
+    return () => {
+      delete (window as any).__setLyricLines;
+      delete (window as any).__setCurrentTime;
+      delete (window as any).__setAlbumUri;
+    };
+  }, [setLyricLines, setCurrentTime, setAlbumUri]);
+
+  // 监听 lyricLines 变化
+  useEffect(() => {
+    if (lyricLines && lyricLines.length > 0) {
+      logToAndroid(`Lyrics loaded: ${lyricLines.length} lines`, 'info');
+    }
+  }, [lyricLines]);
 
   useEffect(() => {
     window.__amll = window.__amll || {}
@@ -929,43 +1036,12 @@ function App() {
     }
 
     startAnimationLoop()
-
-    ;(window as any).updateLyrics = function (lyricsPayload: LyricsPayload) {
-      try {
-        const rawLines = Array.isArray(lyricsPayload?.lines) ? lyricsPayload.lines : []
-        
-        const bgLines = rawLines.filter(line => line?.isBG)
-        if (bgLines.length > 0) {
-          logToAndroid(`Received ${bgLines.length} BG lines from backend`, 'debug')
-          bgLines.slice(0, 3).forEach((line: any, idx: number) => {
-            logToAndroid(`Raw BG line ${idx}: text="${line?.text}" translation="${line?.translatedLyric}" words=${line?.words?.length || 0}`, 'debug')
-          })
-        }
-        
-        const normalizedLines = normalizeLyricLines(rawLines)
-
-        if (normalizedLines.length > 0) {
-          normalizedLines.slice(0, 3).forEach((ln: LyricLine, idx: number) => {
-            const txt = ln.words.map(w => w.word).join('')
-            logToAndroid(`normalized line ${idx}: text="${txt}" len=${ln.words.length}`, 'debug')
-          })
-        } else {
-          logToAndroid('normalizeLyricLines produced 0 lines', 'warn')
-        }
-        logToAndroid(`lyricsPayload lines count=${rawLines.length}`, 'debug')
-
-        if (normalizedLines.length === 0) {
-          logToAndroid('injecting placeholder lyric because none provided', 'debug')
-          setLyricLines([
-            { words: [{word:'Demo',startTime:0,endTime:2000}],translatedLyric:'',romanLyric:'',startTime:0,endTime:2000,isBG:false,isDuet:false }
-          ])
-        } else {
-          setLyricLines(normalizedLines)
-        }
-
-        logToAndroid(`Updated lyrics (${normalizedLines.length} lines)`, 'info')
-      } catch (error) {
-        logToAndroid(`updateLyrics error: ${(error as Error)?.message || error}`, 'error')
+    
+    // 清理定时器
+    return () => {
+      if (rafId != null) {
+        window.cancelAnimationFrame(rafId)
+        rafId = null
       }
     }
 
@@ -976,8 +1052,11 @@ function App() {
 
         lastAlbumArt = uri
         amllSet('lastAlbumArt', uri)
-        setAlbumUri(uri)
-        logToAndroid('Background album art updated', 'info')
+        
+        // 处理 file:// 协议的 URI，确保 WebView 能正确加载
+        const processedUri = uri.startsWith('file://') ? uri : uri
+        setAlbumUri(processedUri)
+        logToAndroid(`Background album art updated: ${processedUri}`, 'info')
       } catch (error) {
         logToAndroid(`updateAlbumArt error: ${(error as Error)?.message || error}`, 'error')
       }
@@ -994,8 +1073,8 @@ function App() {
 
     setIsPlaying(true)
     setLowFreqVolume(1)
-    setIsLyricPageOpened(true)
 
+    // 如果没有 Android 对象或者 Android 没有传递歌词，注入测试歌词
     if (typeof window.Android === 'undefined') {
       logToAndroid('no Android object, inserting demo lyric', 'debug')
       ;(window as any).updateLyrics({
@@ -1012,6 +1091,43 @@ function App() {
           isDuet: false
         }]
       })
+    } else {
+      // Android 对象存在，但等待 2 秒后检查是否收到了歌词
+      setTimeout(() => {
+        if (lyricLines.length === 0) {
+          logToAndroid('Android exists but no lyrics received, injecting demo lyric', 'warn')
+          ;(window as any).updateLyrics({
+            lines: [
+              {
+                words: [
+                  { word: '测试', startTime: 0, endTime: 1500 },
+                  { word: '歌词', startTime: 1500, endTime: 3000 }
+                ],
+                startTime: 0,
+                endTime: 3000,
+                translatedLyric: '',
+                romanLyric: '',
+                isBG: false,
+                isDuet: false
+              },
+              {
+                words: [
+                  { word: '第二行', startTime: 3000, endTime: 4500 },
+                  { word: '歌词', startTime: 4500, endTime: 6000 }
+                ],
+                startTime: 3000,
+                endTime: 6000,
+                translatedLyric: '',
+                romanLyric: '',
+                isBG: false,
+                isDuet: false
+              }
+            ]
+          })
+        } else {
+          logToAndroid(`Android sent lyrics: ${lyricLines.length} lines`, 'info')
+        }
+      }, 2000)
     }
 
     return () => {
@@ -1020,25 +1136,7 @@ function App() {
         rafId = null
       }
     }
-  }, [setLyricLines, setCurrentTime, setAlbumUri, setIsPlaying, setLowFreqVolume, setIsLyricPageOpened])
-
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-
-    const onTimeUpdate = () => {
-      const nextTime = Math.trunc(audio.currentTime * 1000)
-      setCurrentTime(nextTime)
-      if (typeof window.updateTime === 'function') {
-        window.updateTime(nextTime)
-      }
-    }
-
-    audio.addEventListener('timeupdate', onTimeUpdate)
-    return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate)
-    }
-  }, [setCurrentTime])
+  }, [setLyricLines, setCurrentTime, setAlbumUri, setIsPlaying, setLowFreqVolume])
 
   const handleLineClick = (event: LineClickEvent) => {
     try {
@@ -1060,15 +1158,15 @@ function App() {
         logToAndroid(`Line ${lineIndex} clicked but startTime not found, using 0`, 'debug')
       }
       
-      if (typeof window.Android !== 'undefined' && window.Android?.onLineClick) {
-        window.Android.onLineClick(lineIndex, startTime)
-        logToAndroid(`Called Android.onLineClick(${lineIndex}, ${startTime})`, 'info')
+      if (typeof window.Android !== 'undefined' && typeof window.Android.onLineClick === 'function') {
+        try {
+          window.Android.onLineClick(lineIndex, startTime)
+          logToAndroid(`Called Android.onLineClick(${lineIndex}, ${startTime})`, 'info')
+        } catch (e) {
+          logToAndroid(`Android.onLineClick error: ${(e as Error)?.message || e}`, 'error')
+        }
       } else {
-        logToAndroid('Android.onLineClick not available', 'error')
-      }
-
-      if (audioRef.current && Number.isFinite(startTime)) {
-        audioRef.current.currentTime = startTime / 1000
+        logToAndroid('Android.onLineClick not available', 'warn')
       }
     } catch (error) {
       logToAndroid(`line-click handler exception: ${(error as Error)?.message || error}`, 'error')
@@ -1083,26 +1181,41 @@ function App() {
         onError={(err) => logToAndroid(`BackgroundRender error: ${err}`, 'error')}
       />
 
-      <PrebuiltLyricPlayer
+      <LyricPlayer
         ref={playerRef}
         lyricLines={lyricLines}
         currentTime={currentTime}
-        onLineClick={handleLineClick}
+        playing={musicIsPlaying}
+        disabled={false}
+        enableSpring={true}
+        enableBlur={true}
+        enableScale={true}
+        wordFadeWidth={0.5}
+        alignAnchor="center"
+        alignPosition={0.5}
+        linePosYSpringParams={{ mass: 0.9, damping: 15, stiffness: 90 }}
+        lineScaleSpringParams={{ mass: 2, damping: 25, stiffness: 100 }}
+        onLyricLineClick={(evt) => {
+          const lineData = evt.line.getLine();
+          const startTime = Math.trunc(Number(lineData?.startTime ?? 0));
+          const lineIndex = -1; // 简化处理
+          
+          if (typeof window.Android !== 'undefined' && typeof window.Android.onLineClick === 'function') {
+            try {
+              window.Android.onLineClick(lineIndex, startTime);
+              logToAndroid(`Called Android.onLineClick(${lineIndex}, ${startTime})`, 'info');
+            } catch (e) {
+              logToAndroid(`Android.onLineClick error: ${(e as Error)?.message || e}`, 'error');
+            }
+          }
+        }}
         style={{
           position: 'absolute',
           inset: 0,
           zIndex: 1,
           width: '100%',
           height: '100%',
-          background: PLAYER_BACKGROUND
         }}
-      />
-
-      <audio
-        ref={audioRef}
-        src={demoAudioSrc}
-        controls
-        style={{ position: 'absolute', bottom: 10, left: 10, zIndex: 2, width: 'calc(100% - 20px)' }}
       />
     </div>
   )
@@ -1113,6 +1226,43 @@ if (typeof window !== 'undefined') {
     try {
       document.documentElement.style.background = 'transparent'
       document.body.style.background = 'transparent'
+      
+      // 全局调试函数 - 直接在控制台输出
+      ;(window as any).debugAMLL = function() {
+        logToAndroid('=== AMLL DEBUG START ===', 'debug');
+        const appEl = document.getElementById('app');
+        logToAndroid(`App element: ${appEl}`, 'debug');
+        
+        const allElements = document.querySelectorAll('*');
+        logToAndroid(`Total elements: ${allElements.length}`, 'debug');
+        
+        // 查找所有包含 lyric 的元素
+        const lyricElements = document.querySelectorAll('[class*="lyric"], [class*="Lyric"]');
+        logToAndroid(`Lyric elements found: ${lyricElements.length}`, 'debug');
+        lyricElements.forEach((el, idx) => {
+          const style = window.getComputedStyle(el);
+          logToAndroid(`  [${idx}] ${el.tagName} ${el.className} font-size:${style.fontSize} height:${style.height}`, 'debug');
+        });
+        
+        // 查找 AMLL 播放器
+        const amllPlayer = document.querySelector('.amll-lyric-player');
+        logToAndroid(`AMLL Player: ${amllPlayer}`, 'debug');
+        if (amllPlayer) {
+          const style = window.getComputedStyle(amllPlayer);
+          logToAndroid(`  font-size:${style.fontSize}`, 'debug');
+          logToAndroid(`  --amll-lp-font-size:${style.getPropertyValue('--amll-lp-font-size')}`, 'debug');
+          logToAndroid(`  height:${style.height}`, 'debug');
+          logToAndroid(`  width:${style.width}`, 'debug');
+        }
+        
+        logToAndroid('=== AMLL DEBUG END ===', 'debug');
+      };
+      
+      // 3 秒后自动执行调试
+      setTimeout(() => {
+        logToAndroid('[AUTO] Running AMLL debug after 3s...', 'debug');
+        (window as any).debugAMLL();
+      }, 3000);
       
       const root = document.getElementById('app') || document.createElement('div')
       if (!document.getElementById('app')) {

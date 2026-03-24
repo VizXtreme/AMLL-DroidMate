@@ -22,7 +22,9 @@ import {
 	useMemo,
 	useRef,
 	useState,
+	forwardRef,
 } from "react";
+import type { LyricLine } from "@applemusic-like-lyrics/core";
 import { AutoLyricLayout } from "../../layout/auto";
 import { toDuration } from "../../utils";
 import { AudioFFTVisualizer } from "../AudioFFTVisualizer";
@@ -509,10 +511,15 @@ const PrebuiltMusicControls: FC<
 /**
  * 已经部署好所有组件的歌词播放器组件，在正确设置所有的 Jotai 状态后可以开箱即用
  */
-export const PrebuiltLyricPlayer: FC<HTMLProps<HTMLDivElement>> = ({
-	className,
-	...rest
-}) => {
+export interface PrebuiltLyricPlayerProps extends Omit<HTMLProps<HTMLDivElement>, 'onLineClick' | 'onContextMenu'> {
+	lyricLines?: LyricLine[];
+	currentTime?: number;
+	onLineClick?: (event: any) => void;
+}
+
+export const PrebuiltLyricPlayer = forwardRef<HTMLDivElement, PrebuiltLyricPlayerProps>(
+	({ className, lyricLines: _lyricLines, currentTime: _currentTime, onLineClick: _onLineClick, ...rest }, ref) => {
+	// lyricLines, currentTime, onLineClick 是自定义 props，不应该传递给 DOM 元素，所以在这里被过滤掉
 	const [hideLyricView, setHideLyricView] = useAtom(hideLyricViewAtom);
 	const musicCover = useAtomValue(musicCoverAtom);
 	const musicCoverIsVideo = useAtomValue(musicCoverIsVideoAtom);
@@ -570,6 +577,7 @@ export const PrebuiltLyricPlayer: FC<HTMLProps<HTMLDivElement>> = ({
 	return (
 		<LayoutGroup>
 			<AutoLyricLayout
+				ref={ref}
 				onElementMounted={setLayoutEl}
 				className={classNames(styles.autoLyricLayout, className)}
 				onLayoutChange={setIsVertical}
@@ -701,4 +709,4 @@ export const PrebuiltLyricPlayer: FC<HTMLProps<HTMLDivElement>> = ({
 			/>
 		</LayoutGroup>
 	);
-};
+});

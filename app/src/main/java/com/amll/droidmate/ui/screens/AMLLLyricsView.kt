@@ -256,15 +256,26 @@ fun AMLLLyricsView(
 
             // 只在lyrics对象引用改变时才重新构建JSON（避免每秒都构建）
             if (lyrics !== lastLyrics) {
-                if (lyrics != null) {
+                amllDebug("[$debugSource#$instanceId] Lyrics changed: ${lyrics?.lines?.size ?: 0} lines")
+                if (lyrics != null && lyrics.lines.isNotEmpty()) {
                     val lyricsJson = buildLyricsJson(lyrics)
                     amllDebug("[$debugSource#$instanceId] Bridge call: updateLyrics(lines=${lyrics.lines.size})")
+                    // 添加详细日志，显示前几行歌词内容
+                    lyrics.lines.take(3).forEachIndexed { idx, line ->
+                        amllDebug("  Line $idx: text='${line.text}', words=${line.words.size}, isBG=${line.isBG}")
+                    }
                     view.evaluateJavascript("window.updateLyrics && window.updateLyrics($lyricsJson);", null)
                     lastLyricsPayload = lyricsJson
                 } else {
-                    lastLyricsPayload = null
+                    // 如果 lyrics 为空或 null，注入测试歌词以便调试
+                    amllDebug("[$debugSource#$instanceId] No lyrics provided, injecting test lyrics")
+                    val testLyricsJson = """{"metadata":{"title":"Test","artist":"AMLL"},"lines":[{"startTime":0,"endTime":3000,"text":"测试歌词","translatedLyric":"","romanLyric":"","words":[{"word":"测试","startTime":0,"endTime":1500},{"word":"歌词","startTime":1500,"endTime":3000}],"isBG":false,"isDuet":false},{"startTime":3000,"endTime":6000,"text":"第二行歌词","translatedLyric":"","romanLyric":"","words":[{"word":"第二行","startTime":3000,"endTime":4500},{"word":"歌词","startTime":4500,"endTime":6000}],"isBG":false,"isDuet":false}]}"""
+                    view.evaluateJavascript("window.updateLyrics && window.updateLyrics($testLyricsJson);", null)
+                    lastLyricsPayload = testLyricsJson
                 }
                 lastLyrics = lyrics
+            } else {
+                amllDebug("[$debugSource#$instanceId] Lyrics reference unchanged")
             }
 
             if (lastAlbumArtUri != albumArtUri) {

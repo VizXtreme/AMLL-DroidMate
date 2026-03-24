@@ -58,9 +58,13 @@
 </head>
 <body>
     <div id="app"></div>
-    <script>
-        if (typeof Android !== 'undefined' && Android?.log) {
-            Android.log('[AMLL-INIT] index.html loaded')
+    <script type="text/javascript">
+        try {
+            if (typeof Android !== 'undefined' && Android && typeof Android.log === 'function') {
+                Android.log('[AMLL-INIT] index.html loaded', 'info');
+            }
+        } catch (e) {
+            // Ignore Android interface errors
         }
     </script>
     <script src="./amll.bundle.js"></script>
