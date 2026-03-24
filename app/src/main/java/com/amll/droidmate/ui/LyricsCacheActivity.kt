@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 
 // suppress icon deprecation where used
 import androidx.compose.material3.AlertDialog
@@ -117,8 +118,8 @@ private fun LyricsCachePage(
                 containerColor = MaterialTheme.colorScheme.background
             ),
             actions = {
-                TextButton(onClick = { showClearDialog = true }) {
-                    Text("删除所有")
+                IconButton(onClick = { showClearDialog = true }) {
+                    Icon(Icons.Default.DeleteSweep, contentDescription = "删除所有")
                 }
             }
         )

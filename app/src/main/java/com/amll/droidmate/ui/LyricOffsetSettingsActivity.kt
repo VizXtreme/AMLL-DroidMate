@@ -28,7 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.outlined.Numbers
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -158,7 +158,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                 IconButton(onClick = {
                     context.startActivity(Intent(context, LyricOffsetManagementActivity::class.java))
                 }) {
-                    Icon(Icons.Default.Storage, contentDescription = "管理")
+                    Icon(Icons.Default.FormatListBulleted, contentDescription = "管理")
                 }
             }
         )

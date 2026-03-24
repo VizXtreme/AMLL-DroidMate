@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -179,8 +180,8 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                         containerColor = MaterialTheme.colorScheme.background
                     ),
                     actions = {
-                        TextButton(onClick = { showClearDialog = true }) {
-                            Text("删除所有")
+                        IconButton(onClick = { showClearDialog = true }) {
+                            Icon(Icons.Default.DeleteSweep, contentDescription = "删除所有")
                         }
                     },
                     modifier = Modifier.statusBarsPadding()
@@ -296,7 +297,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
             AlertDialog(
                 onDismissRequest = { showDialog = false; editingEntry = null },
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                title = { Text("添加 / 编辑偏移") },
+                title = { Text("编辑偏移") },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
