@@ -123,9 +123,14 @@ fun AMLLLyricsView(
                 }
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
-                        amllDebug(
-                            "[$debugSource#$instanceId] JS Console(${consoleMessage.messageLevel()} @${consoleMessage.sourceId()}:${consoleMessage.lineNumber()}): ${consoleMessage.message()}"
-                        )
+                        val logMessage = "[$debugSource#$instanceId] JS Console(@${consoleMessage.sourceId()}:${consoleMessage.lineNumber()}): ${consoleMessage.message()}"
+                        when (consoleMessage.messageLevel()) {
+                            ConsoleMessage.MessageLevel.DEBUG -> amllDebug(logMessage)
+                            ConsoleMessage.MessageLevel.LOG -> amllInfo(logMessage)
+                            ConsoleMessage.MessageLevel.WARNING -> Timber.w(logMessage)
+                            ConsoleMessage.MessageLevel.ERROR -> Timber.e(logMessage)
+                            else -> amllDebug(logMessage)
+                        }
                         return super.onConsoleMessage(consoleMessage)
                     }
                 }
@@ -478,8 +483,15 @@ class AMLLInterface(
     private val isPlayingProvider: () -> Boolean = { true }
 ) {
     @JavascriptInterface
-    fun log(message: String) {
-        amllDebug("[$debugSource#$instanceId] JS: $message")
+    fun log(message: String, level: String = "debug") {
+        val levelUpper = level.uppercase()
+        when (levelUpper) {
+            "DEBUG" -> amllDebug("JS: $message")
+            "INFO" -> amllInfo("JS: $message")
+            "WARN" -> Timber.w("JS: $message")
+            "ERROR" -> Timber.e("JS: $message")
+            else -> amllDebug("JS: $message")
+        }
     }
 
     @JavascriptInterface

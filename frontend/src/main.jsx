@@ -109,7 +109,7 @@ function ensureUnblurStyle() {
       document.head.appendChild(s)
     }
   } catch (error) {
-    logToAndroid(`[AMLL-ERROR] ensureUnblurStyle error: ${error?.message || error}`)
+    logToAndroid(`ensureUnblurStyle error: ${error?.message || error}`, 'error')
   }
 }
 
@@ -177,9 +177,11 @@ function amllSet(name, value) {
 }
 
 
-function logToAndroid(message) {
+function logToAndroid(message, level = 'debug') {
   if (typeof Android !== 'undefined' && Android?.log) {
-    Android.log(message)
+    Android.log(message, level)
+  } else {
+    console.log(`[${level.toUpperCase()}] ${message}`)
   }
 }
 
@@ -211,16 +213,16 @@ function toWordEntries(line) {
 
     // 背景歌词：去除第一个词开头的'('和最后一个词结尾的')'
     if (line?.isBG && normalized.length > 0) {
-      logToAndroid(`[BG-LYRICS-DEBUG] Processing background lyrics with ${normalized.length} words`)
+      logToAndroid(`Processing background lyrics with ${normalized.length} words`, 'debug')
       
       // 去除第一个词的开头括号
       const firstWord = normalized[0]
       const originalFirst = firstWord.word
       firstWord.word = stripLeadingBgBracket(firstWord.word)
       if (firstWord.word !== originalFirst) {
-        logToAndroid(`[BG-LYRICS-DEBUG] Removed leading bracket from first word: "${originalFirst}" -> "${firstWord.word}"`)
+        logToAndroid(`Removed leading bracket from first word: "${originalFirst}" -> "${firstWord.word}"`, 'debug')
       } else {
-        logToAndroid(`[BG-LYRICS-DEBUG] First word unchanged after bracket strip: "${originalFirst}"`)
+        logToAndroid(`First word unchanged after bracket strip: "${originalFirst}"`, 'debug')
       }
 
       // 去除最后一个词的结尾括号
@@ -228,13 +230,13 @@ function toWordEntries(line) {
       const originalLast = lastWord.word
       lastWord.word = stripTrailingBgBracket(lastWord.word)
       if (lastWord.word !== originalLast) {
-        logToAndroid(`[BG-LYRICS-DEBUG] Removed trailing bracket from last word: "${originalLast}" -> "${lastWord.word}"`)
+        logToAndroid(`Removed trailing bracket from last word: "${originalLast}" -> "${lastWord.word}"`, 'debug')
       } else {
-        logToAndroid(`[BG-LYRICS-DEBUG] Last word unchanged after bracket strip: "${originalLast}"`)
+        logToAndroid(`Last word unchanged after bracket strip: "${originalLast}"`, 'debug')
       }
 
       const afterText = normalized.map((w) => w.word).join('')
-      logToAndroid(`[BG-LYRICS-DEBUG] BG words after strip: "${afterText}"`)
+      logToAndroid(`BG words after strip: "${afterText}"`, 'debug')
 
       for (let i = normalized.length - 1; i >= 0; i -= 1) {
         if (String(normalized[i].word ?? '').length === 0) {
@@ -310,7 +312,7 @@ function normalizeLyricLines(lines) {
 function callBackground(methodName, ...args) {
   // React 组件版本的 BackgroundRender 不需要直接调用方法
   // 我们通过 props 来传递配置
-  logToAndroid(`[AMLL-DEBUG] callBackground(${methodName}) called`)
+  logToAndroid(`callBackground(${methodName}) called`, 'debug')
 }
 
 // getBackgroundRendererCtor function is no longer needed as we're using React components
@@ -322,19 +324,19 @@ function applyBackgroundProfile(profile) {
   }
   // React 组件版本的 BackgroundRender 不需要直接调用方法
   // 我们通过 props 来传递配置
-  logToAndroid(`[AMLL-DEBUG] applyBackgroundProfile called with: ${JSON.stringify(profile)}`)
+  logToAndroid(`applyBackgroundProfile called with: ${JSON.stringify(profile)}`, 'debug')
 }
 
 function rebuildBackgroundRender() {
   // React 组件版本的 BackgroundRender 不需要重建
   // 组件会根据 props 的变化自动更新
-  logToAndroid('[AMLL-DEBUG] rebuildBackgroundRender called')
+  logToAndroid('rebuildBackgroundRender called', 'debug')
 }
 
 function callPlayer(methodName, ...args) {
   // React 组件版本的 LyricPlayer 不需要直接调用方法
   // 我们通过 props 来传递配置
-  logToAndroid(`[AMLL-DEBUG] callPlayer(${methodName}) called with args: ${JSON.stringify(args)}`)
+  logToAndroid(`callPlayer(${methodName}) called with args: ${JSON.stringify(args)}`, 'debug')
 }
 
 function applyMotionProfile(profile) {
@@ -342,7 +344,7 @@ function applyMotionProfile(profile) {
   if (window.__amll) window.__amll.currentProfile = currentProfile
   // React 组件版本的 LyricPlayer 不需要直接调用方法
   // 我们通过 props 来传递配置
-  logToAndroid(`[AMLL-DEBUG] applyMotionProfile called with: ${JSON.stringify(profile)}`)
+  logToAndroid(`applyMotionProfile called with: ${JSON.stringify(profile)}`, 'debug')
 }
 
 function resetBlurTimeout() {
@@ -359,7 +361,7 @@ function resetBlurTimeout() {
       player.getElement?.().classList.remove(TOUCH_BG_BLUR_CLASS)
 
       cancelPauseStyle()
-      logToAndroid('[AMLL-BLUR] Blur restored after 5s inactivity')
+      logToAndroid('Blur restored after 5s inactivity', 'info')
 
       // also cleanup any lingering line-specific overrides
       document.querySelectorAll('.amll-line-unblur').forEach(el => el.classList.remove('amll-line-unblur'))
@@ -381,7 +383,7 @@ function handleTouchStart(e) {
     callPlayer('setEnableBlur', false)
     state.blur.enabled = false
     player.getElement?.().classList.add(TOUCH_BG_BLUR_CLASS)
-    logToAndroid('[AMLL-BLUR] Blur disabled on touch, keep BG blurred')
+    logToAndroid('Blur disabled on touch, keep BG blurred', 'info')
   }
 
   // Apply the same visual “paused” style that shows background lyrics.
@@ -427,13 +429,13 @@ function handleTouchEnd(e) {
     const x = e?.changedTouches?.[0]?.clientX ?? state.touch.startX
     const y = e?.changedTouches?.[0]?.clientY ?? state.touch.startY
     
-    logToAndroid(`[AMLL-TAP] Tap detected at coordinates (${x}, ${y}), duration=${touchDuration}ms`)
+    logToAndroid(`Tap detected at coordinates (${x}, ${y}), duration=${touchDuration}ms`, 'info')
     
     // 模拟点击事件
     try {
       const element = document.elementFromPoint(x, y)
       if (element) {
-        logToAndroid(`[AMLL-TAP] Clicked element: ${element.tagName}, class=${element.className}`)
+        logToAndroid(`Clicked element: ${element.tagName}, class=${element.className}`, 'info')
         
         // 尝试在其最近的歌词行容器上触发点击
         let lyricLine = element.closest('._lyricLine_1vq69_6, ._lyricLine_1ygrf_6')
@@ -442,7 +444,7 @@ function handleTouchEnd(e) {
         }
         
         if (lyricLine) {
-          logToAndroid(`[AMLL-TAP] Found lyric line element`)
+          logToAndroid('Found lyric line element', 'info')
           lyricLine.click?.()
           
           // 如果无法通过该方法触发，尝试手动分发click事件
@@ -452,11 +454,11 @@ function handleTouchEnd(e) {
             view: window
           })
           lyricLine.dispatchEvent(clickEvent)
-          logToAndroid(`[AMLL-TAP] Dispatched click event`)
+          logToAndroid('Dispatched click event', 'info')
         }
       }
     } catch (error) {
-      logToAndroid(`[AMLL-TAP-ERROR] ${error?.message || error}`)
+      logToAndroid(`${error?.message || error}`, 'error')
     }
   }
 
@@ -577,7 +579,7 @@ function animationFrameLoop() {
     // React 组件版本的 LyricPlayer 不需要手动调用 update
     // 组件会根据 props 的变化自动更新
   } catch (error) {
-    logToAndroid(`[AMLL-ERROR] update loop error: ${error?.message || error}`)
+    logToAndroid(`update loop error: ${error?.message || error}`, 'error')
   }
 
   rafId = window.requestAnimationFrame(animationFrameLoop)
@@ -598,7 +600,7 @@ window.setRenderMode = function (mode) {
   const normalizedMode = String(mode ?? '').toLowerCase()
   if (normalizedMode === 'dom-lite') {
     applyMotionProfile(LITE_PROFILE)
-    logToAndroid('[AMLL-CALL] setRenderMode(dom-lite) -> lite profile applied')
+    logToAndroid('setRenderMode(dom-lite) -> lite profile applied', 'info')
     return
   }
 
@@ -606,7 +608,7 @@ window.setRenderMode = function (mode) {
   // uninitialized currentProfile variable (which might not exist yet when
   // this function is invoked early in initialization)
   applyMotionProfile(QUALITY_PROFILE)
-  logToAndroid(`[AMLL-CALL] setRenderMode(${mode}) -> quality profile applied`)
+  logToAndroid(`setRenderMode(${mode}) -> quality profile applied`, 'info')
 }
 
 window.updateLyrics = function (lyricsPayload) {
@@ -616,9 +618,9 @@ window.updateLyrics = function (lyricsPayload) {
     // 调试：检查接收到的背景歌词原始数据
     const bgLines = rawLines.filter(line => line?.isBG)
     if (bgLines.length > 0) {
-      logToAndroid(`[BG-LYRICS-DEBUG] Received ${bgLines.length} BG lines from backend`)
+      logToAndroid(`Received ${bgLines.length} BG lines from backend`, 'debug')
       bgLines.slice(0, 3).forEach((line, idx) => {
-        logToAndroid(`[BG-LYRICS-DEBUG] Raw BG line ${idx}: text="${line?.text}" translation="${line?.translatedLyric}" words=${line?.words?.length || 0}`)
+        logToAndroid(`Raw BG line ${idx}: text="${line?.text}" translation="${line?.translatedLyric}" words=${line?.words?.length || 0}`, 'debug')
       })
     }
     
@@ -628,16 +630,16 @@ window.updateLyrics = function (lyricsPayload) {
     if (state.lyricLines.length > 0) {
       state.lyricLines.slice(0, 3).forEach((ln, idx) => {
         const txt = ln.words.map(w => w.word).join('')
-        logToAndroid(`[AMLL-DEBUG] normalized line ${idx}: text="${txt}" len=${ln.words.length}`)
+        logToAndroid(`normalized line ${idx}: text="${txt}" len=${ln.words.length}`, 'debug')
       })
     } else {
-      logToAndroid('[AMLL-WARN] normalizeLyricLines produced 0 lines')
+      logToAndroid('normalizeLyricLines produced 0 lines', 'warn')
     }
-    logToAndroid(`[AMLL-DEBUG] lyricsPayload lines count=${rawLines.length}`)
+    logToAndroid(`lyricsPayload lines count=${rawLines.length}`, 'debug')
 
     // fallback when no lines at all
     if (state.lyricLines.length === 0) {
-      logToAndroid('[AMLL-DEV] injecting placeholder lyric because none provided')
+      logToAndroid('injecting placeholder lyric because none provided', 'debug')
       state.lyricLines = [
         { words: [{word:'Demo',startTime:0,endTime:2000}],translatedLyric:'',romanLyric:'',startTime:0,endTime:2000,isBG:false,isDuet:false }
       ]
@@ -645,19 +647,19 @@ window.updateLyrics = function (lyricsPayload) {
 
     if (player) {
       const currentTimeToUse = Math.trunc(state.currentTime)
-      logToAndroid(`[AMLL-INFO] Updating lyrics with currentTime=${currentTimeToUse}ms`)
+      logToAndroid(`Updating lyrics with currentTime=${currentTimeToUse}ms`, 'info')
       callPlayer('setLyricLines', state.lyricLines, currentTimeToUse)
       callPlayer('setCurrentTime', currentTimeToUse, true)
       callPlayer('update', 0)
-      logToAndroid(`[AMLL-SUCCESS] Updated player with ${state.lyricLines.length} lines`)
+      logToAndroid(`Updated player with ${state.lyricLines.length} lines`, 'info')
     }
     if (backgroundRender) {
       applyBackgroundProfile({ hasLyric: state.lyricLines.length > 0 })
     }
 
-    logToAndroid(`[AMLL-SUCCESS] Updated lyrics (${state.lyricLines.length} lines)`)
+    logToAndroid(`Updated lyrics (${state.lyricLines.length} lines)`, 'info')
   } catch (error) {
-    logToAndroid(`[AMLL-ERROR] updateLyrics error: ${error?.message || error}`)
+    logToAndroid(`updateLyrics error: ${error?.message || error}`, 'error')
   }
 }
 
@@ -668,10 +670,10 @@ window.updateAlbumArt = async function (albumUri) {
 
     lastAlbumArt = uri
     amllSet('lastAlbumArt', uri)
-    logToAndroid('[AMLL-SUCCESS] Background album art updated')
+    logToAndroid('Background album art updated', 'info')
     // React 组件版本的 BackgroundRender 会通过 props 自动更新
   } catch (error) {
-    logToAndroid(`[AMLL-ERROR] updateAlbumArt error: ${error?.message || error}`)
+    logToAndroid(`updateAlbumArt error: ${error?.message || error}`, 'error')
   }
 }
 
@@ -705,7 +707,7 @@ window.configureLyricMotion = function (options) {
     },
   }
   applyMotionProfile(merged)
-  logToAndroid('[AMLL-CALL] configureLyricMotion applied')
+  logToAndroid('configureLyricMotion applied', 'info')
 }
 
 window.setBlurEnabled = function (enabled) {
@@ -713,7 +715,7 @@ window.setBlurEnabled = function (enabled) {
   if (player && state.blur.enabled !== shouldEnable) {
     callPlayer('setEnableBlur', shouldEnable)
     state.blur.enabled = shouldEnable
-    logToAndroid(`[AMLL-BLUR] setBlurEnabled(${shouldEnable})`)
+    logToAndroid(`setBlurEnabled(${shouldEnable})`, 'info')
     
     // 仅在启用模糊时清除计时器，禁用时不清除
     if (shouldEnable && state.blur.timeoutId !== null) {
@@ -727,7 +729,7 @@ window.setBlurTimeout = function (timeMs) {
   const ms = Number(timeMs)
   if (Number.isFinite(ms) && ms > 0) {
     state.blur.TIMEOUT_MS = ms
-    logToAndroid(`[AMLL-BLUR] Blur timeout set to ${ms}ms`)
+    logToAndroid(`Blur timeout set to ${ms}ms`, 'info')
   }
 }
 
@@ -735,7 +737,7 @@ window.setBackgroundRenderer = function (mode) {
   const normalized = String(mode ?? '').toLowerCase()
   const renderer = normalized === 'mesh' ? 'mesh' : 'pixi'
   if (renderer === currentBackgroundProfile.renderer && backgroundRender) {
-    logToAndroid(`[AMLL-CALL] setBackgroundRenderer(${renderer}) skipped (no change)`)
+    logToAndroid(`setBackgroundRenderer(${renderer}) skipped (no change)`, 'info')
     return
   }
 
@@ -744,7 +746,7 @@ window.setBackgroundRenderer = function (mode) {
     renderer,
   }
   rebuildBackgroundRender()
-  logToAndroid(`[AMLL-CALL] setBackgroundRenderer(${renderer}) applied`)
+  logToAndroid(`setBackgroundRenderer(${renderer}) applied`, 'info')
 }
 
 window.updateLowFreqVolume = function (value) {
@@ -776,16 +778,16 @@ window.configureBackgroundEffect = function (options) {
   } else {
     applyBackgroundProfile(currentBackgroundProfile)
   }
-  logToAndroid('[AMLL-CALL] configureBackgroundEffect applied')
+  logToAndroid('configureBackgroundEffect applied', 'info')
 }
 
 window.logFromKotlin = function (message) {
-  logToAndroid(`[JS] ${message}`)
+  logToAndroid(message, 'debug')
 }
 
 // capture uncaught errors in JS and forward to Android logcat
 window.onerror = function (msg, src, line, col, err) {
-  logToAndroid(`[AMLL-ERROR] Uncaught JS: ${msg} at ${src}:${line}:${col} ${err?err.stack:''}`)
+  logToAndroid(`Uncaught JS: ${msg} at ${src}:${line}:${col} ${err?err.stack:''}`, 'error')
 }
 
 // monkey patch document.createElement to handle SVG data URLs
@@ -839,12 +841,12 @@ function App() {
     // 检查 Android 接口是否可用
     if (typeof Android !== 'undefined' && Android?.log) {
       if (typeof Android.onLineClick === 'function') {
-        logToAndroid('[AMLL-INIT] Android.onLineClick interface is ready')
+        logToAndroid('Android.onLineClick interface is ready', 'info')
       } else {
-        logToAndroid('[AMLL-INIT] WARNING: Android.onLineClick interface NOT found')
+        logToAndroid('WARNING: Android.onLineClick interface NOT found', 'warn')
       }
     } else {
-      logToAndroid('[AMLL-INIT] WARNING: Android interface NOT available')
+      logToAndroid('WARNING: Android interface NOT available', 'warn')
     }
 
     // 启动动画循环
@@ -858,9 +860,9 @@ function App() {
         // 调试：检查接收到的背景歌词原始数据
         const bgLines = rawLines.filter(line => line?.isBG)
         if (bgLines.length > 0) {
-          logToAndroid(`[BG-LYRICS-DEBUG] Received ${bgLines.length} BG lines from backend`)
+          logToAndroid(`Received ${bgLines.length} BG lines from backend`, 'debug')
           bgLines.slice(0, 3).forEach((line, idx) => {
-            logToAndroid(`[BG-LYRICS-DEBUG] Raw BG line ${idx}: text="${line?.text}" translation="${line?.translatedLyric}" words=${line?.words?.length || 0}`)
+            logToAndroid(`Raw BG line ${idx}: text="${line?.text}" translation="${line?.translatedLyric}" words=${line?.words?.length || 0}`, 'debug')
           })
         }
         
@@ -870,16 +872,16 @@ function App() {
         if (normalizedLines.length > 0) {
           normalizedLines.slice(0, 3).forEach((ln, idx) => {
             const txt = ln.words.map(w => w.word).join('')
-            logToAndroid(`[AMLL-DEBUG] normalized line ${idx}: text="${txt}" len=${ln.words.length}`)
+            logToAndroid(`normalized line ${idx}: text="${txt}" len=${ln.words.length}`, 'debug')
           })
         } else {
-          logToAndroid('[AMLL-WARN] normalizeLyricLines produced 0 lines')
+          logToAndroid('normalizeLyricLines produced 0 lines', 'warn')
         }
-        logToAndroid(`[AMLL-DEBUG] lyricsPayload lines count=${rawLines.length}`)
+        logToAndroid(`lyricsPayload lines count=${rawLines.length}`, 'debug')
 
         // fallback when no lines at all
         if (normalizedLines.length === 0) {
-          logToAndroid('[AMLL-DEV] injecting placeholder lyric because none provided')
+          logToAndroid('injecting placeholder lyric because none provided', 'debug')
           setLyricLines([
             { words: [{word:'Demo',startTime:0,endTime:2000}],translatedLyric:'',romanLyric:'',startTime:0,endTime:2000,isBG:false,isDuet:false }
           ])
@@ -887,9 +889,9 @@ function App() {
           setLyricLines(normalizedLines)
         }
 
-        logToAndroid(`[AMLL-SUCCESS] Updated lyrics (${normalizedLines.length} lines)`)
+        logToAndroid(`Updated lyrics (${normalizedLines.length} lines)`, 'info')
       } catch (error) {
-        logToAndroid(`[AMLL-ERROR] updateLyrics error: ${error?.message || error}`)
+        logToAndroid(`updateLyrics error: ${error?.message || error}`, 'error')
       }
     }
 
@@ -902,9 +904,9 @@ function App() {
         lastAlbumArt = uri
         amllSet('lastAlbumArt', uri)
         setAlbumUri(uri)
-        logToAndroid('[AMLL-SUCCESS] Background album art updated')
+        logToAndroid('Background album art updated', 'info')
       } catch (error) {
-        logToAndroid(`[AMLL-ERROR] updateAlbumArt error: ${error?.message || error}`)
+        logToAndroid(`updateAlbumArt error: ${error?.message || error}`, 'error')
       }
     }
 
@@ -925,7 +927,7 @@ function App() {
 
     // development-only: if no Android bridge, inject a sample lyric to verify layout
     if (typeof Android === 'undefined') {
-      logToAndroid('[AMLL-DEV] no Android object, inserting demo lyric')
+      logToAndroid('no Android object, inserting demo lyric', 'debug')
       window.updateLyrics({
         lines: [{
           words: [
@@ -980,29 +982,29 @@ function App() {
       if (line && typeof line.getLine === 'function') {
         const lineData = line.getLine()
         startTime = Math.trunc(Number(lineData?.startTime ?? 0))
-        logToAndroid(`[AMLL-CLICK] Line ${lineIndex} found via getLine(), startTime=${startTime}ms`)
+        logToAndroid(`Line ${lineIndex} found via getLine(), startTime=${startTime}ms`, 'debug')
       } else if (line?.startTime !== undefined) {
         startTime = Math.trunc(Number(line.startTime))
-        logToAndroid(`[AMLL-CLICK] Line ${lineIndex} found via direct property, startTime=${startTime}ms`)
+        logToAndroid(`Line ${lineIndex} found via direct property, startTime=${startTime}ms`, 'debug')
       } else if (event?.startTime !== undefined) {
         startTime = Math.trunc(Number(event.startTime))
-        logToAndroid(`[AMLL-CLICK] Line ${lineIndex} found via evt.startTime, startTime=${startTime}ms`)
+        logToAndroid(`Line ${lineIndex} found via evt.startTime, startTime=${startTime}ms`, 'debug')
       } else {
-        logToAndroid(`[AMLL-CLICK] Line ${lineIndex} clicked but startTime not found, using 0`)
+        logToAndroid(`Line ${lineIndex} clicked but startTime not found, using 0`, 'debug')
       }
       
       if (typeof Android !== 'undefined' && Android?.onLineClick) {
         Android.onLineClick(lineIndex, startTime)
-        logToAndroid(`[AMLL-CLICK] ✓ Called Android.onLineClick(${lineIndex}, ${startTime})`)
+        logToAndroid(`Called Android.onLineClick(${lineIndex}, ${startTime})`, 'info')
       } else {
-        logToAndroid(`[AMLL-ERROR] Android.onLineClick not available`)
+        logToAndroid('Android.onLineClick not available', 'error')
       }
 
       if (audioRef.current && Number.isFinite(startTime)) {
         audioRef.current.currentTime = startTime / 1000
       }
     } catch (error) {
-      logToAndroid(`[AMLL-ERROR] line-click handler exception: ${error?.message || error}`)
+      logToAndroid(`line-click handler exception: ${error?.message || error}`, 'error')
     }
   }
 
@@ -1011,7 +1013,7 @@ function App() {
       <BackgroundRender
         src={albumUri || demoAlbumArt}
         style={{ position: 'absolute', inset: 0, zIndex: 0 }}
-        onError={(err) => logToAndroid(`[AMLL-BG] BackgroundRender error: ${err}`)}
+        onError={(err) => logToAndroid(`BackgroundRender error: ${err}`, 'error')}
       />
 
       <PrebuiltLyricPlayer
@@ -1103,7 +1105,7 @@ window.addEventListener('DOMContentLoaded', () => {
       document.head.appendChild(styleTag)
     }
   } catch (error) {
-    logToAndroid(`[AMLL-ERROR] DOMContentLoaded error: ${error?.message || error}`)
+    logToAndroid(`DOMContentLoaded error: ${error?.message || error}`, 'error')
   }
 })
 
