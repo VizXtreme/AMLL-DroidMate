@@ -15,24 +15,10 @@ export default defineConfig({
 		},
 		cssMinify: false, // 禁用 CSS 压缩
 		rollupOptions: {
-			external: [
-				"@pixi/display",
-				"@pixi/app",
-				"@pixi/filter-blur",
-				"@pixi/filter-color-matrix",
-				"@pixi/filter-bulge-pinch",
-				"@pixi/core",
-				"@pixi/sprite",
-			],
 			output: {
+				manualChunks: undefined, // 禁用代码分割，确保单一 CSS 输出
+				inlineDynamicImports: true, // 内联动态导入
 				minifyInternalExports: false, // 禁用内部导出的压缩
-				compact: false, // 保持多行格式
-				indent: '  ', // 设置缩进为 2 个空格
-				generatedCode: {
-					constBindings: true, // 使用 const 绑定
-					arrowFunctions: false, // 不使用箭头函数
-					objectShorthand: false // 不使用对象简写
-				}
 			}
 		},
 	},

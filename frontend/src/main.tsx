@@ -453,14 +453,62 @@ function applyBackgroundProfile(profile: Partial<BackgroundProfile>) {
     ...profile,
   }
   logToAndroid(`applyBackgroundProfile called with: ${JSON.stringify(profile)}`, 'debug')
+  
+  // 实际应用配置到 backgroundRender
+  if (backgroundRender) {
+    try {
+      if (profile.flowSpeed !== undefined && typeof backgroundRender.setFlowSpeed === 'function') {
+        backgroundRender.setFlowSpeed(profile.flowSpeed)
+      }
+      if (profile.renderScale !== undefined && typeof backgroundRender.setRenderScale === 'function') {
+        backgroundRender.setRenderScale(profile.renderScale)
+      }
+      if (profile.lowFreqVolume !== undefined && typeof backgroundRender.setLowFreqVolume === 'function') {
+        backgroundRender.setLowFreqVolume(profile.lowFreqVolume)
+      }
+    } catch (error) {
+      logToAndroid(`applyBackgroundProfile error: ${(error as Error)?.message || error}`, 'error')
+    }
+  }
 }
 
 function rebuildBackgroundRender() {
   logToAndroid('rebuildBackgroundRender called', 'debug')
+  
+  // 如果已经有 backgroundRender，先销毁
+  if (backgroundRender) {
+    try {
+      backgroundRender.dispose()
+      backgroundRender = null
+      logToAndroid('Previous backgroundRender disposed', 'debug')
+    } catch (error) {
+      logToAndroid(`Dispose backgroundRender error: ${(error as Error)?.message || error}`, 'error')
+    }
+  }
+  
+  // 重新创建背景渲染器
+  try {
+    const bgElement = document.querySelector('.amll-background-render')
+    if (bgElement && lastAlbumArt) {
+      logToAndroid('Creating new BackgroundRender instance', 'debug')
+      // BackgroundRender 会通过 React 组件自动创建
+    }
+  } catch (error) {
+    logToAndroid(`rebuildBackgroundRender error: ${(error as Error)?.message || error}`, 'error')
+  }
 }
 
 function callPlayer(methodName: string, ...args: any[]) {
   logToAndroid(`callPlayer(${methodName}) called with args: ${JSON.stringify(args)}`, 'debug')
+  
+  // 实际调用 player 对象的方法
+  if (player && typeof player[methodName] === 'function') {
+    try {
+      player[methodName](...args)
+    } catch (error) {
+      logToAndroid(`callPlayer ${methodName} error: ${(error as Error)?.message || error}`, 'error')
+    }
+  }
 }
 
 function applyMotionProfile(profile: QualityProfile) {
@@ -788,6 +836,18 @@ function setupGlobalAPI() {
     st.currentTime = Number.isFinite(parsedTime) ? parsedTime : 0
     updateSeekingStateFromTime(now, st.currentTime)
     
+    // 直接更新 Jotai state，这样 LyricPlayer 组件会收到最新的 currentTime
+    // 注意：这个函数在 setupGlobalAPI 中定义，此时 App 组件可能还未初始化
+    // 所以通过全局的 __setCurrentTime 来更新
+    if (typeof (window as any).__setCurrentTime === 'function') {
+      try {
+        (window as any).__setCurrentTime(st.currentTime)
+      } catch (error) {
+        logToAndroid(`__setCurrentTime error: ${(error as Error)?.message || error}`, 'error')
+      }
+    }
+    
+    // 同时调用 player 的方法（如果 player 已初始化）
     if (player) {
       const currentTime = Math.trunc(st.currentTime)
       callPlayer('setCurrentTime', currentTime, state.isSeeking)
