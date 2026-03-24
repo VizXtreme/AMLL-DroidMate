@@ -17,19 +17,21 @@ export default defineConfig({
     cssCodeSplit: false,
     minify: false, // 禁用代码压缩，保持代码可读性
     lib: {
-      entry: resolve(__dirname, 'src/main.jsx'),
+      entry: resolve(__dirname, 'src/main.tsx'),
       name: 'AMLLBundle',
       formats: ['iife'],
       fileName: () => 'amll.bundle.js',
-    }
+    },
+    rollupOptions: {
+      output: {
+        // 确保 IIFE 格式正确导出
+        exports: 'named',
+      },
+    },
   },
   resolve: {
     // 强制去重，确保运行时只有一个 React / React DOM 副本
     dedupe: ['react', 'react-dom', 'jotai'],
-    alias: {
-      '@applemusic-like-lyrics/react-full': resolve(__dirname, '../../applemusic-like-lyrics/packages/react-full/src'),
-      '@applemusic-like-lyrics/react': resolve(__dirname, '../../applemusic-like-lyrics/packages/react/src')
-    }
   },
   server: {
     port: 5173,

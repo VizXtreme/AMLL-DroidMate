@@ -13,13 +13,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "pnpm": {
-    "workspace": [
-      "applemusic-like-lyrics/packages/*"
-    ]
-  },
   "dependencies": {
-    "@applemusic-like-lyrics/react-full": "file:applemusic-like-lyrics/packages/react-full",
+    "@applemusic-like-lyrics/react": "link:..\\applemusic-like-lyrics\\packages\\react",
+    "@applemusic-like-lyrics/react-full": "../applemusic-like-lyrics/packages/react-full",
     "@pixi/core": "^7.4.3",
     "@pixi/utils": "^7.4.3",
     "@vitejs/plugin-react": "^5.1.4",
@@ -29,6 +25,9 @@
     "vite": "^7.3.1"
   },
   "devDependencies": {
-    "terser": "^5.46.1"
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "terser": "^5.46.1",
+    "typescript": "^5.3.0"
   }
 }
