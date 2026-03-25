@@ -48029,15 +48029,49 @@ void main(void)
   	const wrapperRef = reactExports.useRef(null);
   	const lastRendererRef = reactExports.useRef(null);
   	const curRenderer = renderer ?? MeshGradientRenderer;
+  	const canvasRef = reactExports.useRef(null);
+  	console.log("[BackgroundRender] Component rendered, curRenderer:", curRenderer?.name);
+  	console.log("[BackgroundRender] coreBGRenderRef.current:", coreBGRenderRef.current);
+  	console.log("[BackgroundRender] wrapperRef.current:", wrapperRef.current);
   	reactExports.useEffect(() => {
+  		console.log("[BackgroundRender] Renderer change effect triggered");
   		if (lastRendererRef.current !== curRenderer || coreBGRenderRef.current === void 0) {
+  			console.log("[BackgroundRender] Creating new renderer, old:", lastRendererRef.current, "new:", curRenderer?.name);
   			lastRendererRef.current = curRenderer;
+  			if (wrapperRef.current) {
+  				console.log("[BackgroundRender] Clearing old canvas from wrapper");
+  				wrapperRef.current.innerHTML = "";
+  			}
   			coreBGRenderRef.current?.dispose();
+  			console.log("[BackgroundRender] Creating new CoreBackgroundRender instance");
   			coreBGRenderRef.current = BackgroundRender$2.new(curRenderer);
   		}
   	}, [curRenderer]);
   	reactExports.useEffect(() => {
-  		if (curRenderer && album) coreBGRenderRef.current?.setAlbum(album, albumIsVideo);
+  		console.log("[BackgroundRender] setAlbum effect triggered, album:", album ? "exists" : "null");
+  		if (curRenderer && album) {
+  			console.log("[BackgroundRender] Calling setAlbum with:", album);
+  			console.log("[BackgroundRender] albumIsVideo:", albumIsVideo);
+  			console.log("[BackgroundRender] coreBGRenderRef.current:", coreBGRenderRef.current);
+  			console.log("[BackgroundRender] setAlbum function:", coreBGRenderRef.current?.setAlbum);
+  			coreBGRenderRef.current?.setAlbum(album, albumIsVideo);
+  			setTimeout(() => {
+  				const canvas = coreBGRenderRef.current?.getElement();
+  				if (canvas) {
+  					console.log("[BackgroundRender] Canvas after setAlbum:", {
+  						width: canvas.width,
+  						height: canvas.height,
+  						hasContext: !!canvas.getContext("webgl")
+  					});
+  					const renderer = coreBGRenderRef.current?.renderer;
+  					console.log("[BackgroundRender] Renderer state after setAlbum:", {
+  						paused: renderer?.paused,
+  						frameCount: renderer?.frameCount,
+  						texture: renderer?.fboTexture ? "exists" : "null"
+  					});
+  				}
+  			}, 500);
+  		} else console.log("[BackgroundRender] setAlbum NOT called - curRenderer:", !!curRenderer, "album:", !!album);
   	}, [
   		curRenderer,
   		album,
@@ -48069,28 +48103,137 @@ void main(void)
   	reactExports.useEffect(() => {
   		if (curRenderer && hasLyric !== void 0) coreBGRenderRef.current?.setHasLyric(hasLyric ?? true);
   	}, [curRenderer, hasLyric]);
-  	reactExports.useEffect(() => {
-  		if (coreBGRenderRef.current) {
+  	reactExports.useLayoutEffect(() => {
+  		console.log("[BackgroundRender] useLayoutEffect for canvas mounting triggered");
+  		console.log("[BackgroundRender] Checking conditions - coreBGRenderRef:", !!coreBGRenderRef.current, "wrapperRef:", !!wrapperRef.current);
+  		if (coreBGRenderRef.current && wrapperRef.current) {
   			const el = coreBGRenderRef.current.getElement();
-  			el.style.width = "100%";
-  			el.style.height = "100%";
-  			el.style.minHeight = "0";
-  			el.style.minWidth = "0";
-  			el.style.overflow = "hidden";
-  			wrapperRef.current?.appendChild(el);
-  		}
+  			console.log("[BackgroundRender] Got canvas element:", el);
+  			console.log("[BackgroundRender] Canvas tagName:", el?.tagName);
+  			console.log("[BackgroundRender] Canvas type:", typeof el);
+  			console.log("[BackgroundRender] Canvas parent before append:", el?.parentElement);
+  			const canvasEl = el;
+  			console.log("[BackgroundRender] Canvas dimensions:", {
+  				width: canvasEl?.width,
+  				height: canvasEl?.height
+  			});
+  			console.log("[BackgroundRender] Canvas attributes:", {
+  				width: canvasEl.getAttribute("width"),
+  				height: canvasEl.getAttribute("height"),
+  				styleWidth: canvasEl.style.width,
+  				styleHeight: canvasEl.style.height
+  			});
+  			if (el) {
+  				el.style.width = "100%";
+  				el.style.height = "100%";
+  				el.style.minHeight = "0";
+  				el.style.minWidth = "0";
+  				el.style.overflow = "hidden";
+  				canvasRef.current = el;
+  				console.log("[BackgroundRender] About to append canvas to wrapper");
+  				console.log("[BackgroundRender] Wrapper before append:", wrapperRef.current);
+  				console.log("[BackgroundRender] Wrapper children count before:", wrapperRef.current.children.length);
+  				wrapperRef.current.appendChild(el);
+  				console.log("[BackgroundRender] Canvas appended successfully");
+  				console.log("[BackgroundRender] Wrapper child count after:", wrapperRef.current.children.length);
+  				console.log("[BackgroundRender] Canvas parent after append:", el.parentElement);
+  				const computedStyle = window.getComputedStyle(el);
+  				console.log("[BackgroundRender] Canvas computed styles:", {
+  					display: computedStyle.display,
+  					visibility: computedStyle.visibility,
+  					position: computedStyle.position,
+  					width: computedStyle.width,
+  					height: computedStyle.height,
+  					zIndex: computedStyle.zIndex
+  				});
+  				console.log("[BackgroundRender] Canvas style attribute:", el.getAttribute("style"));
+  				console.log("[BackgroundRender] Canvas inline styles:", {
+  					width: el.style.width,
+  					height: el.style.height,
+  					position: el.style.position,
+  					display: el.style.display,
+  					minHeight: el.style.minHeight,
+  					minWidth: el.style.minWidth,
+  					overflow: el.style.overflow
+  				});
+  				console.log("[BackgroundRender] Canvas element offsetWidth:", el.offsetWidth, "offsetHeight:", el.offsetHeight);
+  				console.log("[BackgroundRender] Canvas element clientWidth:", el.clientWidth, "clientHeight:", el.clientHeight);
+  				const glContext = el.getContext("webgl") || el.getContext("2d");
+  				console.log("[BackgroundRender] Canvas context:", glContext ? "OK" : "NULL");
+  				console.log("[BackgroundRender] Renderer type:", coreBGRenderRef.current.constructor?.name);
+  				console.log("[BackgroundRender] Renderer object:", coreBGRenderRef.current);
+  			} else console.error("[BackgroundRender] ERROR: getElement() returned null!");
+  			return () => {
+  				console.log("[BackgroundRender] Cleanup: removing canvas");
+  				if (wrapperRef.current && canvasRef.current) {
+  					wrapperRef.current.removeChild(canvasRef.current);
+  					console.log("[BackgroundRender] Canvas removed");
+  					canvasRef.current = null;
+  				}
+  			};
+  		} else console.log("[BackgroundRender] useLayoutEffect skipped - coreBGRenderRef:", !!coreBGRenderRef.current, "wrapperRef:", !!wrapperRef.current);
   	}, [coreBGRenderRef.current]);
   	reactExports.useImperativeHandle(ref, () => ({
   		wrapperEl: wrapperRef.current,
   		bgRender: coreBGRenderRef.current
   	}), [wrapperRef.current, coreBGRenderRef.current]);
+  	reactExports.useEffect(() => {
+  		if (wrapperRef.current) {
+  			const computedStyle = window.getComputedStyle(wrapperRef.current);
+  			const parent = wrapperRef.current.parentElement;
+  			console.log("[BackgroundRender] Wrapper div mounted, dimensions:", {
+  				offsetWidth: wrapperRef.current.offsetWidth,
+  				offsetHeight: wrapperRef.current.offsetHeight,
+  				clientWidth: wrapperRef.current.clientWidth,
+  				clientHeight: wrapperRef.current.clientHeight,
+  				children: wrapperRef.current.children.length
+  			});
+  			console.log("[BackgroundRender] Wrapper computed styles:", {
+  				width: computedStyle.width,
+  				height: computedStyle.height,
+  				position: computedStyle.position,
+  				display: computedStyle.display,
+  				inset: computedStyle.inset
+  			});
+  			console.log("[BackgroundRender] Wrapper inline styles:", {
+  				width: wrapperRef.current.style.width,
+  				height: wrapperRef.current.style.height,
+  				position: wrapperRef.current.style.position,
+  				inset: wrapperRef.current.style.inset
+  			});
+  			if (parent) {
+  				const parentStyle = window.getComputedStyle(parent);
+  				console.log("[BackgroundRender] Parent element info:", {
+  					tagName: parent.tagName,
+  					id: parent.id,
+  					className: parent.className,
+  					offsetWidth: parent.offsetWidth,
+  					offsetHeight: parent.offsetHeight,
+  					width: parentStyle.width,
+  					height: parentStyle.height
+  				});
+  			}
+  			console.log("[BackgroundRender] Window size:", {
+  				innerWidth: window.innerWidth,
+  				innerHeight: window.innerHeight,
+  				documentElementWidth: document.documentElement?.clientWidth,
+  				documentElementHeight: document.documentElement?.clientHeight,
+  				bodyWidth: document.body?.clientWidth,
+  				bodyHeight: document.body?.clientHeight
+  			});
+  		} else console.log("[BackgroundRender] Wrapper div not ready");
+  	}, [wrapperRef.current]);
   	return /* @__PURE__ */ jsxRuntimeExports.jsx("div", {
+  		ref: wrapperRef,
   		style: {
-  			display: "contents",
+  			position: "absolute",
+  			inset: 0,
+  			width: "100%",
+  			height: "100%",
+  			overflow: "hidden",
   			...style
   		},
-  		...props,
-  		ref: wrapperRef
+  		...props
   	});
   });
   //#endregion
@@ -59700,6 +59843,35 @@ void main(void)
   const TOUCH_BG_BLUR_CLASS = "amll-touch-unblur";
   const PAUSE_STYLE_CLASS = "amll-paused";
   const PLAYING_CLASS = "playing";
+  let gSetAlbumUri = null;
+  let gLastAlbumArt = "";
+  let gAmllSet = null;
+  let gLogToAndroid = null;
+  window.updateAlbumArt = async function(albumUri) {
+    if (gLogToAndroid) gLogToAndroid(`[WINDOW] updateAlbumArt GLOBAL called`, "info");
+    try {
+      if (gLogToAndroid) gLogToAndroid(`updateAlbumArt called with: ${albumUri?.substring?.(0, 100) || "empty"}`, "info");
+      const uri = String(albumUri ?? "").trim();
+      if (gLogToAndroid) gLogToAndroid(`updateAlbumArt processed uri: ${uri?.substring?.(0, 100) || "empty"}`, "debug");
+      if (uri.length === 0 || uri === gLastAlbumArt) {
+        if (gLogToAndroid) gLogToAndroid(`updateAlbumArt skipped - uri empty or unchanged`, "debug");
+        return;
+      }
+      gLastAlbumArt = uri;
+      if (gAmllSet) gAmllSet("lastAlbumArt", uri);
+      const processedUri = uri.startsWith("file://") ? uri : uri;
+      if (gLogToAndroid) gLogToAndroid(`updateAlbumArt calling setAlbumUri`, "debug");
+      if (gSetAlbumUri) {
+        gSetAlbumUri(processedUri);
+        if (gLogToAndroid) gLogToAndroid(`Background album art updated: ${processedUri}`, "info");
+      } else {
+        if (gLogToAndroid) gLogToAndroid(`ERROR: setAlbumUri not ready yet!`, "error");
+      }
+    } catch (error) {
+      if (gLogToAndroid) gLogToAndroid(`updateAlbumArt error: ${error?.message || error}`, "error");
+    }
+  };
+  if (gLogToAndroid) gLogToAndroid("[WINDOW] updateAlbumArt global function registered", "info");
   let state = {
     lyricLines: [],
     currentTime: 0,
@@ -59959,10 +60131,8 @@ void main(void)
       }
     }
     try {
-      const bgElement = document.querySelector(".amll-background-render");
-      if (bgElement && lastAlbumArt) {
-        logToAndroid("Creating new BackgroundRender instance", "debug");
-      }
+      logToAndroid("Dispatching recreate-background event", "debug");
+      window.dispatchEvent(new CustomEvent("recreate-background", { detail: { albumUri: lastAlbumArt } }));
     } catch (error) {
       logToAndroid(`rebuildBackgroundRender error: ${error?.message || error}`, "error");
     }
@@ -60090,17 +60260,6 @@ void main(void)
         logToAndroid(`Updated lyrics (${normalizedLines.length} lines)`, "info");
       } catch (error) {
         logToAndroid(`updateLyrics error: ${error?.message || error}`, "error");
-      }
-    };
-    window.updateAlbumArt = async function(albumUri) {
-      try {
-        const uri = String(albumUri ?? "").trim();
-        if (uri.length === 0 || uri === amllGet("lastAlbumArt")) return;
-        lastAlbumArt = uri;
-        amllSet("lastAlbumArt", uri);
-        logToAndroid("Background album art updated", "info");
-      } catch (error) {
-        logToAndroid(`updateAlbumArt error: ${error?.message || error}`, "error");
       }
     };
     window.updateTime = function(timeMs) {
@@ -60299,6 +60458,24 @@ void main(void)
       }
     }, [lyricLines]);
     reactExports.useEffect(() => {
+      const handleRecreateBackground = (event) => {
+        logToAndroid("Received recreate-background event", "debug");
+        const newAlbumUri = event.detail?.albumUri || demoAlbumArt;
+        setAlbumUri("");
+        setTimeout(() => {
+          setAlbumUri(newAlbumUri);
+          logToAndroid("Background renderer recreated", "debug");
+        }, 50);
+      };
+      window.addEventListener("recreate-background", handleRecreateBackground);
+      return () => {
+        window.removeEventListener("recreate-background", handleRecreateBackground);
+      };
+    }, [demoAlbumArt]);
+    reactExports.useEffect(() => {
+      gSetAlbumUri = setAlbumUri;
+      gAmllSet = amllSet;
+      gLogToAndroid = logToAndroid;
       window.__amll = window.__amll || {};
       Object.assign(window.__amll, {
         player: null,
@@ -60324,10 +60501,20 @@ void main(void)
       };
     }, [setLyricLines, setCurrentTime, setAlbumUri, setIsPlaying, setLowFreqVolume]);
     return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "app", style: { position: "relative", width: "100%", height: "100vh" }, children: [
+      (() => {
+        logToAndroid(`App render - albumUri: ${albumUri ? "exists" : "null"}, value: ${albumUri?.substring?.(0, 50) || "empty"}`, "debug");
+        return null;
+      })(),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         BackgroundRender,
         {
-          src: albumUri || demoAlbumArt,
+          ref: (ref) => {
+            if (ref?.bgRender) {
+              backgroundRender = ref.bgRender;
+              logToAndroid("BackgroundRender instance attached to global", "debug");
+            }
+          },
+          album: albumUri || demoAlbumArt,
           style: { position: "absolute", inset: 0, zIndex: 0 },
           onError: (err) => logToAndroid(`BackgroundRender error: ${err}`, "error")
         }

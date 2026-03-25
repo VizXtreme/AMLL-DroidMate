@@ -1,7 +1,9 @@
 package com.amll.droidmate.ui.screens
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Color
+import android.net.Uri
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -279,8 +281,10 @@ fun AMLLLyricsView(
             }
 
             if (lastAlbumArtUri != albumArtUri) {
-                val escapedAlbumUri = escapeJsString(albumArtUri ?: "")
-                amllDebug("[$debugSource#$instanceId] Bridge call: updateAlbumArt(uri=${if (albumArtUri.isNullOrBlank()) "empty" else "present"})")
+                // 将 file:// URI 转换为 base64 data URL，因为 WebView 的 Fetch API 不支持 file:// 协议
+                val albumArtDataUrl = convertFileUriToDataUrl(view.context, albumArtUri ?: "")
+                val escapedAlbumUri = escapeJsString(albumArtDataUrl ?: "")
+                amllDebug("[$debugSource#$instanceId] Bridge call: updateAlbumArt(uri=${if (albumArtDataUrl.isNullOrBlank()) "empty" else "present (${albumArtDataUrl.length} chars)"})")
                 view.evaluateJavascript("window.updateAlbumArt && window.updateAlbumArt(\"$escapedAlbumUri\");", null)
                 lastAlbumArtUri = albumArtUri
             }
@@ -515,5 +519,54 @@ class AMLLInterface(
     @JavascriptInterface
     fun isPlaying(): Boolean {
         return isPlayingProvider()
+    }
+}
+
+/**
+ * 将 file:// URI 转换为 base64 data URL，以便 WebView 能够加载本地图片
+ */
+private fun convertFileUriToDataUrl(context: Context, uriString: String?): String? {
+    if (uriString.isNullOrBlank()) {
+        return null
+    }
+    
+    return try {
+        val inputStream = when {
+            uriString.startsWith("file://") -> {
+                val path = uriString.removePrefix("file://")
+                File(path).inputStream()
+            }
+            uriString.startsWith("content://") -> {
+                val uri = android.net.Uri.parse(uriString)
+                context.contentResolver.openInputStream(uri)
+            }
+            else -> {
+                Timber.w("Unsupported URI scheme: $uriString")
+                return uriString // 直接返回原始字符串（可能是 data URL）
+            }
+        }
+        
+        inputStream?.use { stream ->
+            val bytes = stream.readBytes()
+            val mimeType = getMimeType(uriString) ?: "image/jpeg"
+            val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+            "data:$mimeType;base64,$base64"
+        }
+    } catch (e: Exception) {
+        Timber.e(e, "Failed to convert file URI to data URL: $uriString")
+        null
+    }
+}
+
+/**
+ * 根据文件扩展名获取 MIME 类型
+ */
+private fun getMimeType(uriString: String): String? {
+    return when {
+        uriString.endsWith(".png", ignoreCase = true) -> "image/png"
+        uriString.endsWith(".jpg", ignoreCase = true) || uriString.endsWith(".jpeg", ignoreCase = true) -> "image/jpeg"
+        uriString.endsWith(".gif", ignoreCase = true) -> "image/gif"
+        uriString.endsWith(".webp", ignoreCase = true) -> "image/webp"
+        else -> "image/jpeg" // 默认为 JPEG
     }
 }

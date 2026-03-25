@@ -92,6 +92,42 @@ const TOUCH_BG_BLUR_CLASS = 'amll-touch-unblur'
 const PAUSE_STYLE_CLASS = 'amll-paused'
 const PLAYING_CLASS = 'playing'
 
+// 全局函数：在 App 组件外部定义，确保 Android 能随时调用
+let gSetAlbumUri: any = null
+let gLastAlbumArt = ''
+let gAmllSet: any = null
+let gAmllGet: any = null
+let gLogToAndroid: any = null
+
+;(window as any).updateAlbumArt = async function (albumUri: string) {
+  if (gLogToAndroid) gLogToAndroid(`[WINDOW] updateAlbumArt GLOBAL called`, 'info')
+  try {
+    if (gLogToAndroid) gLogToAndroid(`updateAlbumArt called with: ${albumUri?.substring?.(0, 100) || 'empty'}`, 'info')
+    const uri = String(albumUri ?? '').trim()
+    if (gLogToAndroid) gLogToAndroid(`updateAlbumArt processed uri: ${uri?.substring?.(0, 100) || 'empty'}`, 'debug')
+    if (uri.length === 0 || uri === gLastAlbumArt) {
+      if (gLogToAndroid) gLogToAndroid(`updateAlbumArt skipped - uri empty or unchanged`, 'debug')
+      return
+    }
+
+    gLastAlbumArt = uri
+    if (gAmllSet) gAmllSet('lastAlbumArt', uri)
+    
+    const processedUri = uri.startsWith('file://') ? uri : uri
+    if (gLogToAndroid) gLogToAndroid(`updateAlbumArt calling setAlbumUri`, 'debug')
+    if (gSetAlbumUri) {
+      gSetAlbumUri(processedUri)
+      if (gLogToAndroid) gLogToAndroid(`Background album art updated: ${processedUri}`, 'info')
+    } else {
+      if (gLogToAndroid) gLogToAndroid(`ERROR: setAlbumUri not ready yet!`, 'error')
+    }
+  } catch (error) {
+    if (gLogToAndroid) gLogToAndroid(`updateAlbumArt error: ${(error as Error)?.message || error}`, 'error')
+  }
+}
+
+if (gLogToAndroid) gLogToAndroid('[WINDOW] updateAlbumArt global function registered', 'info')
+
 // --- shared state & globals (moved to top to avoid TDZ errors) ---
 interface BlurState {
   enabled: boolean
@@ -486,13 +522,10 @@ function rebuildBackgroundRender() {
     }
   }
   
-  // 重新创建背景渲染器
+  // 触发自定义事件通知 React 组件重新创建背景渲染器
   try {
-    const bgElement = document.querySelector('.amll-background-render')
-    if (bgElement && lastAlbumArt) {
-      logToAndroid('Creating new BackgroundRender instance', 'debug')
-      // BackgroundRender 会通过 React 组件自动创建
-    }
+    logToAndroid('Dispatching recreate-background event', 'debug')
+    window.dispatchEvent(new CustomEvent('recreate-background', { detail: { albumUri: lastAlbumArt } }))
   } catch (error) {
     logToAndroid(`rebuildBackgroundRender error: ${(error as Error)?.message || error}`, 'error')
   }
@@ -816,19 +849,6 @@ function setupGlobalAPI() {
     }
   }
 
-  ;(window as any).updateAlbumArt = async function (albumUri: string) {
-    try {
-      const uri = String(albumUri ?? '').trim()
-      if (uri.length === 0 || uri === amllGet('lastAlbumArt')) return
-
-      lastAlbumArt = uri
-      amllSet('lastAlbumArt', uri)
-      logToAndroid('Background album art updated', 'info')
-    } catch (error) {
-      logToAndroid(`updateAlbumArt error: ${(error as Error)?.message || error}`, 'error')
-    }
-  }
-
   ;(window as any).updateTime = function (timeMs: number) {
     const now = performance.now()
     const parsedTime = Number(timeMs)
@@ -1076,7 +1096,34 @@ function App() {
     }
   }, [lyricLines]);
 
+  // 监听重新创建背景渲染器的事件
   useEffect(() => {
+    const handleRecreateBackground = (event: CustomEvent) => {
+      logToAndroid('Received recreate-background event', 'debug')
+      const newAlbumUri = event.detail?.albumUri || demoAlbumArt
+      
+      // 先清空再设置，强制 React 重新创建组件
+      setAlbumUri('')
+      setTimeout(() => {
+        setAlbumUri(newAlbumUri)
+        logToAndroid('Background renderer recreated', 'debug')
+      }, 50)
+    }
+
+    window.addEventListener('recreate-background', handleRecreateBackground as EventListener)
+    
+    return () => {
+      window.removeEventListener('recreate-background', handleRecreateBackground as EventListener)
+    }
+  }, [demoAlbumArt]);
+
+  useEffect(() => {
+    // 设置全局函数需要的引用
+    gSetAlbumUri = setAlbumUri
+    gAmllSet = amllSet
+    gAmllGet = amllGet
+    gLogToAndroid = logToAndroid
+    
     window.__amll = window.__amll || {}
     Object.assign(window.__amll, {
       player: null,
@@ -1102,23 +1149,6 @@ function App() {
       if (rafId != null) {
         window.cancelAnimationFrame(rafId)
         rafId = null
-      }
-    }
-
-    ;(window as any).updateAlbumArt = async function (albumUri: string) {
-      try {
-        const uri = String(albumUri ?? '').trim()
-        if (uri.length === 0 || uri === amllGet('lastAlbumArt')) return
-
-        lastAlbumArt = uri
-        amllSet('lastAlbumArt', uri)
-        
-        // 处理 file:// 协议的 URI，确保 WebView 能正确加载
-        const processedUri = uri.startsWith('file://') ? uri : uri
-        setAlbumUri(processedUri)
-        logToAndroid(`Background album art updated: ${processedUri}`, 'info')
-      } catch (error) {
-        logToAndroid(`updateAlbumArt error: ${(error as Error)?.message || error}`, 'error')
       }
     }
 
@@ -1235,8 +1265,18 @@ function App() {
 
   return (
     <div id="app" style={{ position: 'relative', width: '100%', height: '100vh' }}>
+      {(() => {
+        logToAndroid(`App render - albumUri: ${albumUri ? 'exists' : 'null'}, value: ${albumUri?.substring?.(0, 50) || 'empty'}`, 'debug')
+        return null
+      })()}
       <BackgroundRender
-        src={albumUri || demoAlbumArt}
+        ref={(ref) => {
+          if (ref?.bgRender) {
+            backgroundRender = ref.bgRender
+            logToAndroid('BackgroundRender instance attached to global', 'debug')
+          }
+        }}
+        album={albumUri || demoAlbumArt}
         style={{ position: 'absolute', inset: 0, zIndex: 0 }}
         onError={(err) => logToAndroid(`BackgroundRender error: ${err}`, 'error')}
       />
