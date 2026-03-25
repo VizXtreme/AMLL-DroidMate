@@ -146,8 +146,8 @@ fun AMLLLyricsView(
                     // Required for `file:///data/user/0/...` album art paths passed from Kotlin.
                     allowFileAccessFromFileURLs = true
                     allowUniversalAccessFromFileURLs = true
-                    // 性能优化配置
-                    cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+                    // 禁用缓存确保每次加载最新的文件
+                    cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
                     setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH)
                 }
 

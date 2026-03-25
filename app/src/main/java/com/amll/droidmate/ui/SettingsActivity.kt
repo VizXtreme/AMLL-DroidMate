@@ -397,7 +397,7 @@ private fun SettingsPage(
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text("当前版本: ${getCurrentVersionName(context)}")
+                    Text("当前版本: ${getCurrentVersionName(context)}", color = MaterialTheme.colorScheme.onSurface)
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),

@@ -222,12 +222,12 @@ const UNBLUR_STYLE_ID = 'amll-unblur-style'
 
 function ensureUnblurStyle() {
   try {
-    console.log('[CSS-FIX] ensureUnblurStyle called')
     logToAndroid('[CSS-FIX] ensureUnblurStyle called', 'info')
+    console.log('[CSS-FIX] ensureUnblurStyle called')
     
     if (document.getElementById(UNBLUR_STYLE_ID)) {
-      console.log('[CSS-FIX] Style already exists')
       logToAndroid('[CSS-FIX] Style already exists', 'info')
+      console.log('[CSS-FIX] Style already exists')
       return
     }
     
@@ -242,42 +242,46 @@ function ensureUnblurStyle() {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+/* Force apply base styles to lyric lines to override inline styles */
+[class*="_lyricLine_"] {
+  position: absolute !important;
+  backface-visibility: hidden !important;
+  transform-origin: left !important;
+  width: var(--amll-lp-width, 100%) !important;
+  min-width: var(--amll-lp-width, 100%) !important;
+  max-width: var(--amll-lp-width, 100%) !important;
+  height: fit-content !important;
+  padding: 0.5em 1em !important;
+  contain: content !important;
+  will-change: transform !important;
+  box-sizing: border-box !important;
+  border-radius: 0.25em !important;
+  padding-left: 1em !important;
+  padding-right: 1em !important;
 }`
-    
-    console.log('[CSS-FIX] Created style element with content:', s.textContent)
-    logToAndroid('[CSS-FIX] Style content: ' + s.textContent, 'info')
     
     if (document.head) {
       document.head.appendChild(s)
-      console.log('[CSS-FIX] Style injected to head')
-      logToAndroid('[CSS-FIX] Style injected to head', 'info')
-      
-      // 验证样式是否真的被添加了
-      setTimeout(() => {
-        const injectedStyle = document.getElementById(UNBLUR_STYLE_ID)
-        if (injectedStyle) {
-          console.log('[CSS-FIX] Style element exists in DOM, textContent length:', injectedStyle.textContent?.length)
-          logToAndroid('[CSS-FIX] Style element verified, content length: ' + injectedStyle.textContent?.length, 'info')
-        } else {
-          console.error('[CSS-FIX] Style element NOT found in DOM!')
-          logToAndroid('[CSS-FIX] ERROR: Style element not found in DOM!', 'error')
-        }
-      }, 100)
+      logToAndroid('[CSS-FIX] Style injected successfully', 'info')
+      console.log('[CSS-FIX] Style injected successfully')
+      console.log('[CSS-FIX] Style element:', s)
+      console.log('[CSS-FIX] Style content:', s.textContent)
     } else {
-      console.error('[CSS-FIX] document.head is null!')
       logToAndroid('[CSS-FIX] document.head is null!', 'error')
+      console.error('[CSS-FIX] document.head is null!')
     }
     
-    // Use MutationObserver to ensure style persists
+    // 使用 MutationObserver 监控样式变化，确保 !important 规则始终生效
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type === 'childList' && mutation.target === document.head) {
+          // 如果样式被移除，重新添加
           if (!document.getElementById(UNBLUR_STYLE_ID)) {
-            console.log('[CSS-FIX] Style was removed, re-injecting')
-            logToAndroid('[CSS-FIX] Style was removed, re-injecting', 'warn')
             document.head.appendChild(s)
-            console.log('[CSS-FIX] Style re-injected')
-            logToAndroid('[CSS-FIX] Style re-injected', 'info')
+            logToAndroid('[CSS-FIX] Style re-injected after removal', 'info')
+            console.log('[CSS-FIX] Style re-injected after removal')
           }
         }
       }
@@ -285,13 +289,13 @@ function ensureUnblurStyle() {
     
     if (document.head) {
       observer.observe(document.head, { childList: true })
-      console.log('[CSS-FIX] MutationObserver started')
       logToAndroid('[CSS-FIX] MutationObserver started', 'info')
+      console.log('[CSS-FIX] MutationObserver started')
     }
   } catch (error) {
     const errorMsg = `ensureUnblurStyle error: ${(error as Error)?.message || error}`
-    console.error('[CSS-FIX] Error:', error)
     logToAndroid(errorMsg, 'error')
+    console.error('[CSS-FIX] Error:', error)
   }
 }
 
@@ -1382,51 +1386,82 @@ if (typeof window !== 'undefined') {
       document.documentElement.style.background = 'transparent'
       document.body.style.background = 'transparent'
       
-      console.log('[CSS-FIX] Calling ensureUnblurStyle')
-      logToAndroid('[CSS-FIX] Calling ensureUnblurStyle', 'info')
+      console.log('[CSS-FIX] Calling ensureUnblurStyle from DOMContentLoaded')
+      logToAndroid('[CSS-FIX] Calling ensureUnblurStyle from DOMContentLoaded', 'info')
       
       // 确保歌词行基础样式被应用（覆盖内联样式）
       ensureUnblurStyle()
       console.log('[CSS-FIX] ensureUnblurStyle completed')
       
-      // 添加额外的调试：检查 frontend.css 是否加载
-      setTimeout(() => {
-        const styles = Array.from(document.styleSheets)
-        console.log('[CSS-DEBUG] Total stylesheets:', styles.length)
-        logToAndroid('[CSS-DEBUG] Total stylesheets: ' + styles.length, 'info')
+      // 全局调试函数 - 直接在控制台输出
+      ;(window as any).debugAMLL = function() {
+        console.log('[AMLL-DEBUG] Checking CSS rules...')
+        logToAndroid('[AMLL-DEBUG] Checking CSS rules...', 'info')
         
-        styles.forEach((sheet: any, idx: number) => {
+        // 检查样式表
+        const styleElement = document.getElementById(UNBLUR_STYLE_ID)
+        console.log('[CSS-FIX] Style element exists:', !!styleElement)
+        logToAndroid(`[CSS-FIX] Style element exists: ${!!styleElement}`, 'info')
+        
+        if (styleElement) {
+          console.log('[CSS-FIX] Style element:', styleElement)
+          console.log('[CSS-FIX] Style content:', (styleElement as HTMLStyleElement).textContent)
+          logToAndroid(`[CSS-FIX] Style element found with id: ${UNBLUR_STYLE_ID}`, 'info')
+        } else {
+          console.error('[CSS-FIX] Style element NOT found!')
+          logToAndroid('[CSS-FIX] Style element NOT found!', 'error')
+        }
+        
+        // 检查所有样式表
+        console.log('[CSS-FIX] All stylesheets:')
+        Array.from(document.styleSheets).forEach((sheet, idx) => {
+          console.log(`[CSS-FIX] Sheet ${idx}:`, sheet.href || 'inline')
           try {
-            const rules = sheet.cssRules || sheet.rules
-            console.log(`[CSS-DEBUG] Stylesheet ${idx}:`, sheet.href?.split('/').pop() || 'inline', 'rules:', rules?.length)
-            logToAndroid(`[CSS-DEBUG] Stylesheet ${idx}: ${sheet.href?.split('/').pop() || 'inline'}, rules: ${rules?.length}`, 'info')
-          } catch (e) {
-            console.log(`[CSS-DEBUG] Stylesheet ${idx}: cross-origin or inaccessible`)
-            logToAndroid(`[CSS-DEBUG] Stylesheet ${idx}: cross-origin`, 'info')
+            const rules = Array.from(sheet.cssRules || sheet.rules || [])
+            const lyricLineRules = rules.filter((rule: any) => 
+              rule.selectorText && rule.selectorText.includes('lyricLine')
+            )
+            if (lyricLineRules.length > 0) {
+              console.log(`[CSS-FIX] Sheet ${idx} has ${lyricLineRules.length} lyric line rules`)
+              lyricLineRules.forEach((rule: any, ruleIdx: number) => {
+                console.log(`  Rule ${ruleIdx}:`, rule.selectorText)
+                console.log(`  CSS text:`, rule.cssText.substring(0, 200))
+              })
+            }
+          } catch(e) {
+            console.log(`[CSS-FIX] Sheet ${idx}: Cannot access rules (CORS)`, e)
           }
         })
         
-        // 检查实际应用的 lyricLine 样式
-        const lyricLineElements = document.querySelectorAll('[class*="_lyricLine_"]')
-        console.log('[CSS-DEBUG] Found lyricLine elements:', lyricLineElements.length)
-        logToAndroid('[CSS-DEBUG] Found lyricLine elements: ' + lyricLineElements.length, 'info')
+        // 检查歌词行元素
+        const lyricLines = document.querySelectorAll('[class*="_lyricLine_"]')
+        console.log(`[CSS-FIX] Found ${lyricLines.length} lyric line elements`)
+        logToAndroid(`[CSS-FIX] Found ${lyricLines.length} lyric line elements`, 'info')
         
-        if (lyricLineElements.length > 0) {
-          const firstEl = lyricLineElements[0]
-          const computedStyle = window.getComputedStyle(firstEl)
-          console.log('[CSS-DEBUG] First lyricLine computed styles:')
-          console.log('  position:', computedStyle.position)
-          console.log('  padding:', computedStyle.padding)
-          console.log('  width:', computedStyle.width)
-          logToAndroid(`[CSS-DEBUG] First lyricLine: position=${computedStyle.position}, padding=${computedStyle.padding}`, 'info')
+        if (lyricLines.length > 0) {
+          const firstLine = lyricLines[0]
+          console.log('[CSS-FIX] First lyric line:', firstLine)
+          console.log('[CSS-FIX] First lyric line classes:', firstLine.className)
+          console.log('[CSS-FIX] First lyric line style:', firstLine.getAttribute('style'))
+          console.log('[CSS-FIX] First lyric line computed style:', window.getComputedStyle(firstLine))
+          
+          logToAndroid(`[CSS-FIX] First line class: ${firstLine.className}`, 'info')
+          logToAndroid(`[CSS-FIX] First line inline style: ${firstLine.getAttribute('style')}`, 'info')
         }
-      }, 500)
+        
+        // 检查 index.html 中的样式
+        const styles = Array.from(document.querySelectorAll('style'))
+        console.log(`[CSS-FIX] Found ${styles.length} <style> tags in document`)
+        styles.forEach((style, idx) => {
+          if (style.textContent && style.textContent.includes('Force apply base styles')) {
+            console.log(`[CSS-FIX] Found "Force apply" style in <style> tag #${idx}`)
+          }
+        })
+      }
       
-      // 全局调试函数 - 直接在控制台输出
-      ;(window as any).debugAMLL = function() {
-        logToAndroid('=== AMLL DEBUG START ===', 'debug');
-        const appEl = document.getElementById('app');
-        logToAndroid(`App element: ${appEl}`, 'debug');
+      logToAndroid('=== AMLL DEBUG START ===', 'debug');
+      const appEl = document.getElementById('app');
+      logToAndroid(`App element: ${appEl}`, 'debug');
         
         const allElements = document.querySelectorAll('*');
         logToAndroid(`Total elements: ${allElements.length}`, 'debug');

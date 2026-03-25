@@ -257,7 +257,7 @@ private fun CapsuleOffsetControl(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = RoundedCornerShape(50)
     ) {
         Row(
@@ -280,7 +280,7 @@ private fun CapsuleOffsetControl(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "减少 100ms",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -317,7 +317,7 @@ private fun CapsuleOffsetControl(
                         },
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "增加 100ms",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

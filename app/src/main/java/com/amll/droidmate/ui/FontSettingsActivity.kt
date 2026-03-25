@@ -191,7 +191,7 @@ private fun FontSettingsPage(onBack: () -> Unit) {
                     Text("保存font-family设置")
                 }
 
-                Button(
+                OutlinedButton(
                     onClick = {
                         importFontLauncher.launch(arrayOf("font/*"))
                     }

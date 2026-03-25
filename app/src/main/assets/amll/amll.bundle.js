@@ -59889,6 +59889,72 @@ void main(void)
     }
   };
   let __playerPaused = false;
+  const UNBLUR_STYLE_ID = "amll-unblur-style";
+  function ensureUnblurStyle() {
+    try {
+      console.log("[CSS-FIX] ensureUnblurStyle called");
+      logToAndroid("[CSS-FIX] ensureUnblurStyle called", "info");
+      if (document.getElementById(UNBLUR_STYLE_ID)) {
+        console.log("[CSS-FIX] Style already exists");
+        logToAndroid("[CSS-FIX] Style already exists", "info");
+        return;
+      }
+      const s = document.createElement("style");
+      s.id = UNBLUR_STYLE_ID;
+      s.textContent = `[class*="_lyricLine_"] .amll-line-unblur, [class*="_lyricLine_"].amll-line-unblur {
+  filter: none !important;
+}
+
+/* Background-lyric lines should be hidden when not active (avoid blurred ghost text) */
+[class*="_lyricBgLine_"]:not([class*="_active_"]) {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}`;
+      console.log("[CSS-FIX] Created style element with content:", s.textContent);
+      logToAndroid("[CSS-FIX] Style content: " + s.textContent, "info");
+      if (document.head) {
+        document.head.appendChild(s);
+        console.log("[CSS-FIX] Style injected to head");
+        logToAndroid("[CSS-FIX] Style injected to head", "info");
+        setTimeout(() => {
+          const injectedStyle = document.getElementById(UNBLUR_STYLE_ID);
+          if (injectedStyle) {
+            console.log("[CSS-FIX] Style element exists in DOM, textContent length:", injectedStyle.textContent?.length);
+            logToAndroid("[CSS-FIX] Style element verified, content length: " + injectedStyle.textContent?.length, "info");
+          } else {
+            console.error("[CSS-FIX] Style element NOT found in DOM!");
+            logToAndroid("[CSS-FIX] ERROR: Style element not found in DOM!", "error");
+          }
+        }, 100);
+      } else {
+        console.error("[CSS-FIX] document.head is null!");
+        logToAndroid("[CSS-FIX] document.head is null!", "error");
+      }
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.type === "childList" && mutation.target === document.head) {
+            if (!document.getElementById(UNBLUR_STYLE_ID)) {
+              console.log("[CSS-FIX] Style was removed, re-injecting");
+              logToAndroid("[CSS-FIX] Style was removed, re-injecting", "warn");
+              document.head.appendChild(s);
+              console.log("[CSS-FIX] Style re-injected");
+              logToAndroid("[CSS-FIX] Style re-injected", "info");
+            }
+          }
+        }
+      });
+      if (document.head) {
+        observer.observe(document.head, { childList: true });
+        console.log("[CSS-FIX] MutationObserver started");
+        logToAndroid("[CSS-FIX] MutationObserver started", "info");
+      }
+    } catch (error) {
+      const errorMsg = `ensureUnblurStyle error: ${error?.message || error}`;
+      console.error("[CSS-FIX] Error:", error);
+      logToAndroid(errorMsg, "error");
+    }
+  }
   function applyPauseStyle() {
     const el = player?.getElement?.();
     if (!el) return;
@@ -60561,9 +60627,42 @@ void main(void)
   }
   if (typeof window !== "undefined") {
     window.addEventListener("DOMContentLoaded", () => {
+      console.log("[AMLL-DEBUG] DOMContentLoaded fired");
+      logToAndroid("[AMLL-DEBUG] DOMContentLoaded fired", "info");
       try {
         document.documentElement.style.background = "transparent";
         document.body.style.background = "transparent";
+        console.log("[CSS-FIX] Calling ensureUnblurStyle");
+        logToAndroid("[CSS-FIX] Calling ensureUnblurStyle", "info");
+        ensureUnblurStyle();
+        console.log("[CSS-FIX] ensureUnblurStyle completed");
+        setTimeout(() => {
+          const styles = Array.from(document.styleSheets);
+          console.log("[CSS-DEBUG] Total stylesheets:", styles.length);
+          logToAndroid("[CSS-DEBUG] Total stylesheets: " + styles.length, "info");
+          styles.forEach((sheet, idx) => {
+            try {
+              const rules = sheet.cssRules || sheet.rules;
+              console.log(`[CSS-DEBUG] Stylesheet ${idx}:`, sheet.href?.split("/").pop() || "inline", "rules:", rules?.length);
+              logToAndroid(`[CSS-DEBUG] Stylesheet ${idx}: ${sheet.href?.split("/").pop() || "inline"}, rules: ${rules?.length}`, "info");
+            } catch (e) {
+              console.log(`[CSS-DEBUG] Stylesheet ${idx}: cross-origin or inaccessible`);
+              logToAndroid(`[CSS-DEBUG] Stylesheet ${idx}: cross-origin`, "info");
+            }
+          });
+          const lyricLineElements = document.querySelectorAll('[class*="_lyricLine_"]');
+          console.log("[CSS-DEBUG] Found lyricLine elements:", lyricLineElements.length);
+          logToAndroid("[CSS-DEBUG] Found lyricLine elements: " + lyricLineElements.length, "info");
+          if (lyricLineElements.length > 0) {
+            const firstEl = lyricLineElements[0];
+            const computedStyle = window.getComputedStyle(firstEl);
+            console.log("[CSS-DEBUG] First lyricLine computed styles:");
+            console.log("  position:", computedStyle.position);
+            console.log("  padding:", computedStyle.padding);
+            console.log("  width:", computedStyle.width);
+            logToAndroid(`[CSS-DEBUG] First lyricLine: position=${computedStyle.position}, padding=${computedStyle.padding}`, "info");
+          }
+        }, 500);
         window.debugAMLL = function() {
           logToAndroid("=== AMLL DEBUG START ===", "debug");
           const appEl = document.getElementById("app");

@@ -27,7 +27,8 @@
         <activity
             android:name="com.amll.droidmate.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.DroidMate">
+            android:theme="@style/Theme.DroidMate"
+            android:label="@string/activity_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

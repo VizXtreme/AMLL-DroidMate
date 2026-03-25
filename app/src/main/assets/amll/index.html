@@ -7,11 +7,6 @@
     <link rel="stylesheet" href="./frontend.css">
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
         :root {
             color-scheme: dark;
             font-family: "SF Pro Display", "PingFang SC", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -59,9 +54,11 @@
 <body>
     <div id="app"></div>
     <script type="text/javascript">
+        // 添加版本标识便于调试
+        console.log('[AMLL-INIT] index.html loaded - VERSION: 20260325-CSS-FIX');
         try {
             if (typeof Android !== 'undefined' && Android && typeof Android.log === 'function') {
-                Android.log('[AMLL-INIT] index.html loaded', 'info');
+                Android.log('[AMLL-INIT] index.html loaded - VERSION: 20260325-CSS-FIX', 'info');
             }
         } catch (e) {
             // Ignore Android interface errors
