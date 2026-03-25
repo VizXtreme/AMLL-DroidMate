@@ -44,6 +44,11 @@ function generateFadeGradient(
 	bright = "rgba(0,0,0,var(--bright-mask-alpha, 1.0))",
 	dark = "rgba(0,0,0,var(--dark-mask-alpha, 1.0))",
 ): [string, number] {
+	// 关键修复：防止 width 为 NaN、Infinity 或 0
+	if (!Number.isFinite(width) || width <= 0) {
+		console.warn('[AMLL] Invalid fade width:', width, 'using default 1.0');
+		width = 1.0;
+	}
 	const totalAspect = 2 + width + padding;
 	const widthInTotal = width / totalAspect;
 	const leftPos = (1 - widthInTotal) / 2;
@@ -769,9 +774,16 @@ export class LyricLineEl extends LyricLineBase {
 			if (wordEl) {
 				word.width = wordEl.clientWidth;
 				word.height = wordEl.clientHeight;
-				const fadeWidth = word.height * this.lyricPlayer.getWordFadeWidth();
+				
+				// 关键修复：防止除以 0 导致 NaN
+				// 当元素还未渲染或尺寸为 0 时，使用最小尺寸生成 mask-image
+				// 等元素真正渲染完成后，会在下一次 updateMaskImageSync 中更新
+				const safeWidth = word.width > 0 ? word.width : 1;
+				const safeHeight = word.height > 0 ? word.height : 1;
+				
+				const fadeWidth = safeHeight * this.lyricPlayer.getWordFadeWidth();
 				const [maskImage, totalAspect] = generateFadeGradient(
-					fadeWidth / word.width,
+					fadeWidth / safeWidth,
 				);
 				const totalAspectStr = `${totalAspect * 100}% 100%`;
 				if (this.lyricPlayer.supportMaskImage) {

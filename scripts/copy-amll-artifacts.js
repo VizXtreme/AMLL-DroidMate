@@ -42,6 +42,15 @@ try {
     console.error('✗ CSS file not found:', cssFile)
   }
   
+  // IMPORTANT: Override with amll-core.css for complete lyric styles
+  const amllCoreCss = resolve(projectRoot, 'applemusic-like-lyrics/packages/core/dist/amll-core.css')
+  if (existsSync(amllCoreCss)) {
+    copyFileSync(amllCoreCss, resolve(assetsDir, 'frontend.css'))
+    console.log('✓ Overridden with amll-core.css (complete lyric styles)')
+  } else {
+    console.warn('⚠ amll-core.css not found, using default CSS')
+  }
+  
   // Copy JS bundle
   const jsFile = resolve(sourceDistDir, 'amll.bundle.js')
   if (existsSync(jsFile)) {

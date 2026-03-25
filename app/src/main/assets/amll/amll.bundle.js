@@ -42823,6 +42823,7 @@ void main(void)
   }
   var Y = 32, tt$1 = (e7, t2) => (n2) => Math.min(1, Math.max(0, (n2 - e7) / (t2 - e7))), nt$1 = 0.5, rt$1 = tt$1(0, nt$1), it$1 = tt$1(nt$1, 1), at$1 = J$1(0.2, 0.4, 0.58, 1), ot$1 = J$1(0.3, 0, 0.58, 1), st$1 = (e7) => (t2) => t2 < e7 ? at$1(rt$1(t2)) : 1 - ot$1(it$1(t2));
   function ct$1(e7, t2 = 0, n2 = "rgba(0,0,0,var(--bright-mask-alpha, 1.0))", r2 = "rgba(0,0,0,var(--dark-mask-alpha, 1.0))") {
+    (!Number.isFinite(e7) || e7 <= 0) && (console.warn("[AMLL] Invalid fade width:", e7, "using default 1.0"), e7 = 1);
     let i2 = 2 + e7 + t2, a2 = e7 / i2, o2 = (1 - a2) / 2;
     return [`linear-gradient(to right,${n2} ${o2 * 100}%,${r2} ${(o2 + a2) * 100}%)`, i2];
   }
@@ -43114,10 +43115,10 @@ void main(void)
         let t2 = e7.mainElement;
         if (t2) {
           e7.width = t2.clientWidth, e7.height = t2.clientHeight;
-          let n2 = e7.height * this.lyricPlayer.getWordFadeWidth(), [r2, i2] = ct$1(n2 / e7.width), a2 = `${i2 * 100}% 100%`;
-          this.lyricPlayer.supportMaskImage ? (t2.style.maskImage = r2, t2.style.maskRepeat = "no-repeat", t2.style.maskOrigin = "left", t2.style.maskSize = a2) : (t2.style.webkitMaskImage = r2, t2.style.webkitMaskRepeat = "no-repeat", t2.style.webkitMaskOrigin = "left", t2.style.webkitMaskSize = a2);
-          let o2 = e7.width + n2, s2 = `clamp(${-o2}px,calc(${-o2}px + (var(--amll-player-time) - ${e7.startTime})*${o2 / Math.abs(e7.endTime - e7.startTime)}px),0px) 0px, left top`;
-          t2.style.maskPosition = s2, t2.style.webkitMaskPosition = s2;
+          let n2 = e7.width > 0 ? e7.width : 1, r2 = (e7.height > 0 ? e7.height : 1) * this.lyricPlayer.getWordFadeWidth(), [i2, a2] = ct$1(r2 / n2), o2 = `${a2 * 100}% 100%`;
+          this.lyricPlayer.supportMaskImage ? (t2.style.maskImage = i2, t2.style.maskRepeat = "no-repeat", t2.style.maskOrigin = "left", t2.style.maskSize = o2) : (t2.style.webkitMaskImage = i2, t2.style.webkitMaskRepeat = "no-repeat", t2.style.webkitMaskOrigin = "left", t2.style.webkitMaskSize = o2);
+          let s2 = e7.width + r2, c2 = `clamp(${-s2}px,calc(${-s2}px + (var(--amll-player-time) - ${e7.startTime})*${s2 / Math.abs(e7.endTime - e7.startTime)}px),0px) 0px, left top`;
+          t2.style.maskPosition = c2, t2.style.webkitMaskPosition = c2;
         }
       }
     }
@@ -51642,20 +51643,42 @@ void main(void)
     const [musicIsPlaying, setIsPlaying] = useAtom(Ah);
     const setLowFreqVolume = useSetAtom(zh);
     reactExports.useEffect(() => {
+      if (globalSetLyricLines) {
+        globalSetLyricLines = setLyricLines;
+      }
+      if (globalSetCurrentTime) {
+        globalSetCurrentTime = setCurrentTime;
+      }
+      if (globalSetAlbumUri) {
+        globalSetAlbumUri = setAlbumUri;
+      }
       if (window.__amll) {
         window.__amll.player = playerRef.current;
         window.__amll.backgroundRender = backgroundRender;
       }
+      const pendingLyrics = globalSetLyricLines;
+      const pendingTime = globalSetCurrentTime;
+      const pendingAlbum = globalSetAlbumUri;
       window.__setLyricLines = setLyricLines;
       window.__setCurrentTime = setCurrentTime;
       window.__setAlbumUri = setAlbumUri;
+      if (pendingLyrics && Array.isArray(pendingLyrics) && pendingLyrics.length > 0) {
+        setLyricLines(pendingLyrics);
+        logToAndroid(`Applied pending lyrics (${pendingLyrics.length} lines)`, "info");
+      }
+      if (pendingTime !== null && typeof pendingTime === "number") {
+        setCurrentTime(pendingTime);
+      }
+      if (pendingAlbum && typeof pendingAlbum === "string") {
+        setAlbumUri(pendingAlbum);
+      }
       window.updateLyrics = function(payload) {
         try {
           const rawLines = Array.isArray(payload?.lines) ? payload.lines : [];
           const normalizedLines = normalizeLyricLines(rawLines);
+          logToAndroid(`updateLyrics called with ${rawLines.length} raw lines, ${normalizedLines.length} normalized`, "info");
           if (normalizedLines.length === 0) {
-            ;
-            window.__setLyricLines([
+            setLyricLines([
               {
                 words: [{ word: "Demo", startTime: 0, endTime: 2e3 }],
                 translatedLyric: "",
@@ -51667,10 +51690,25 @@ void main(void)
               }
             ]);
           } else {
-            ;
-            window.__setLyricLines(normalizedLines);
+            normalizedLines.slice(0, 3).forEach((line, idx) => {
+              logToAndroid(`Line ${idx}: text="${line.words.map((w2) => w2.word).join("")}", words=${line.words.length}, startTime=${line.startTime}, endTime=${line.endTime}`, "info");
+              line.words.slice(0, 2).forEach((word, wIdx) => {
+                logToAndroid(`  Word ${wIdx}: "${word.word}" ${word.startTime}-${word.endTime}ms`, "debug");
+              });
+            });
+            setLyricLines(normalizedLines);
           }
           logToAndroid(`Updated lyrics (${normalizedLines.length} lines)`, "info");
+          if (playerRef.current?.lyricPlayer && currentTime > 0) {
+            logToAndroid(`Force update LyricPlayer time to ${currentTime} after setting lyrics`, "info");
+            playerRef.current.lyricPlayer.setCurrentTime(Math.trunc(currentTime), false);
+            setTimeout(() => {
+              if (playerRef.current?.lyricPlayer) {
+                logToAndroid("Triggering mask-image recalculation", "debug");
+                playerRef.current.lyricPlayer.setCurrentTime(Math.trunc(currentTime), true);
+              }
+            }, 100);
+          }
         } catch (error) {
           logToAndroid(`updateLyrics error: ${error.message}`, "error");
         }
@@ -51790,12 +51828,18 @@ void main(void)
       )
     ] });
   }
+  let globalSetLyricLines = null;
+  let globalSetCurrentTime = null;
+  let globalSetAlbumUri = null;
   if (typeof window !== "undefined") {
     window.__setLyricLines = (lines) => {
+      globalSetLyricLines = lines;
     };
     window.__setCurrentTime = (time) => {
+      globalSetCurrentTime = time;
     };
     window.__setAlbumUri = (uri2) => {
+      globalSetAlbumUri = uri2;
     };
     window.addEventListener("DOMContentLoaded", () => {
       try {

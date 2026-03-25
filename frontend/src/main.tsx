@@ -143,10 +143,27 @@ function App() {
       window.__amll.backgroundRender = backgroundRender
     }
 
-    // Expose global API for Android (redundant but safe)
+    // 关键修复：在替换全局 setter 之前，先检查是否有延迟的数据需要处理
+    const pendingLyrics = globalSetLyricLines
+    const pendingTime = globalSetCurrentTime
+    const pendingAlbum = globalSetAlbumUri
+    
+    // Expose global API for Android - 直接绑定到 Jotai 的 setter
     ;(window as any).__setLyricLines = setLyricLines
     ;(window as any).__setCurrentTime = setCurrentTime
     ;(window as any).__setAlbumUri = setAlbumUri
+
+    // 如果有延迟的数据，在替换 setter 后立即应用
+    if (pendingLyrics && Array.isArray(pendingLyrics) && pendingLyrics.length > 0) {
+      setLyricLines(pendingLyrics)
+      logToAndroid(`Applied pending lyrics (${pendingLyrics.length} lines)`, 'info')
+    }
+    if (pendingTime !== null && typeof pendingTime === 'number') {
+      setCurrentTime(pendingTime)
+    }
+    if (pendingAlbum && typeof pendingAlbum === 'string') {
+      setAlbumUri(pendingAlbum)
+    }
 
     // Global API functions
     window.updateLyrics = function (payload: LyricsPayload) {
@@ -154,9 +171,11 @@ function App() {
         const rawLines = Array.isArray(payload?.lines) ? payload.lines : []
         const normalizedLines = normalizeLyricLines(rawLines)
         
+        logToAndroid(`updateLyrics called with ${rawLines.length} raw lines, ${normalizedLines.length} normalized`, 'info')
+        
         if (normalizedLines.length === 0) {
           // Inject placeholder if no lyrics provided
-          ;(window as any).__setLyricLines([
+          setLyricLines([
             { 
               words: [{word:'Demo',startTime:0,endTime:2000}],
               translatedLyric:'',
@@ -168,10 +187,35 @@ function App() {
             }
           ])
         } else {
-          ;(window as any).__setLyricLines(normalizedLines)
+          // 调试：打印前几行歌词的详细信息
+          normalizedLines.slice(0, 3).forEach((line, idx) => {
+            logToAndroid(`Line ${idx}: text="${line.words.map(w => w.word).join('')}", words=${line.words.length}, startTime=${line.startTime}, endTime=${line.endTime}`, 'info')
+            line.words.slice(0, 2).forEach((word, wIdx) => {
+              logToAndroid(`  Word ${wIdx}: "${word.word}" ${word.startTime}-${word.endTime}ms`, 'debug')
+            })
+          })
+          
+          setLyricLines(normalizedLines)
         }
         
         logToAndroid(`Updated lyrics (${normalizedLines.length} lines)`, 'info')
+        
+        // 关键修复：在设置歌词后，如果当前已经有时间值，强制 LyricPlayer 立即更新进度
+        // 这是因为 Android 的 updateTime 可能在 updateLyrics 之前通过 evaluateJavascript 异步发送
+        // 导致 initialLayoutFinished 检查失败而被跳过
+        if (playerRef.current?.lyricPlayer && currentTime > 0) {
+          logToAndroid(`Force update LyricPlayer time to ${currentTime} after setting lyrics`, 'info')
+          playerRef.current.lyricPlayer.setCurrentTime(Math.trunc(currentTime), false)
+              
+          // 额外修复：触发一次 mask-image 更新，确保 CSS 变量正确初始化
+          // 这是因为 AMLL 的 mask-image 生成依赖于布局测量，可能在初始渲染时未完成
+          setTimeout(() => {
+            if (playerRef.current?.lyricPlayer) {
+              logToAndroid('Triggering mask-image recalculation', 'debug')
+              playerRef.current.lyricPlayer.setCurrentTime(Math.trunc(currentTime), true)
+            }
+          }, 100)
+        }
       } catch (error) {
         logToAndroid(`updateLyrics error: ${(error as Error).message}`, 'error')
       }
