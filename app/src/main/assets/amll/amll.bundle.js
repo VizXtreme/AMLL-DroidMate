@@ -59910,6 +59910,25 @@ void main(void)
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+/* Force apply base styles to lyric lines */
+[class*="_lyricLine_"] {
+  position: absolute !important;
+  backface-visibility: hidden !important;
+  transform-origin: left center !important;
+  width: var(--amll-lp-width, 100%) !important;
+  min-width: var(--amll-lp-width, 100%) !important;
+  max-width: var(--amll-lp-width, 100%) !important;
+  height: fit-content !important;
+  padding: 0.5em 1em !important;
+  contain: content !important;
+  will-change: transform !important;
+  box-sizing: border-box !important;
+  border-radius: 0.25em !important;
+  padding-left: 1em !important;
+  padding-right: 1em !important;
+  font-size: max(max(5vh, 2.5vw), 14px) !important;
 }`;
       console.log("[CSS-FIX] Created style element with content:", s.textContent);
       logToAndroid("[CSS-FIX] Style content: " + s.textContent, "info");

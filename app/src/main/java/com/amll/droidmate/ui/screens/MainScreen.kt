@@ -363,7 +363,7 @@ fun MainScreen() {
                 Card(
                     modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp, vertical = 8.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    colors = CardDefaults.cardColors(containerColor = Color.Black)
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         LyricsVisualLayer(
@@ -385,8 +385,7 @@ fun MainScreen() {
                                     text = "选择歌词来显示 AMLL",
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 16.sp,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.background(Color.Black.copy(0.35f), RoundedCornerShape(8.dp)).padding(12.dp)
+                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
