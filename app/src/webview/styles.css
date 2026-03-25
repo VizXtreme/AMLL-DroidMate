@@ -1,33 +1,19 @@
 /* Minimal Android-specific styles */
 /* Using AMLL upstream defaults */
 
-* {
+html, body {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-}
-
-html, body {
-  margin: 0 !important;
-  padding: 0 !important;
   width: 100%;
   height: 100%;
   background: transparent;
   overflow: hidden;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  display: block; /* Override any default display */
 }
 
 #app {
   width: 100%;
   height: 100%;
   position: relative;
-  margin: 0;
-  padding: 0;
 }
 
 /* Hide scrollbar for fullscreen lyrics */

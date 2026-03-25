@@ -22,9 +22,7 @@ import {
 	useMemo,
 	useRef,
 	useState,
-	forwardRef,
 } from "react";
-import type { LyricLine } from "@applemusic-like-lyrics/core";
 import { AutoLyricLayout } from "../../layout/auto";
 import { toDuration } from "../../utils";
 import { AudioFFTVisualizer } from "../AudioFFTVisualizer";
@@ -310,21 +308,12 @@ const PrebuiltProgressBar: FC = React.memo(() => {
 						)}
 					</AnimatePresence>
 				</div>
-				<button
-					type="button"
-					style={{
-						...fontStyle,
-						cursor: "pointer",
-						userSelect: "none",
-						background: "none",
-						border: "none",
-						padding: 0,
-						color: "inherit",
-					}}
+				<div
+					style={{ ...fontStyle, cursor: "pointer", userSelect: "none" }}
 					onClick={() => setShowRemaining(!showRemaining)}
 				>
 					{showRemaining ? <TimeLabel isRemaining /> : <TotalDurationLabel />}
-				</button>
+				</div>
 			</div>
 		</div>
 	);
@@ -511,15 +500,10 @@ const PrebuiltMusicControls: FC<
 /**
  * 已经部署好所有组件的歌词播放器组件，在正确设置所有的 Jotai 状态后可以开箱即用
  */
-export interface PrebuiltLyricPlayerProps extends Omit<HTMLProps<HTMLDivElement>, 'onLineClick' | 'onContextMenu'> {
-	lyricLines?: LyricLine[];
-	currentTime?: number;
-	onLineClick?: (event: any) => void;
-}
-
-export const PrebuiltLyricPlayer = forwardRef<HTMLDivElement, PrebuiltLyricPlayerProps>(
-	({ className, lyricLines: _lyricLines, currentTime: _currentTime, onLineClick: _onLineClick, ...rest }, ref) => {
-	// lyricLines, currentTime, onLineClick 是自定义 props，不应该传递给 DOM 元素，所以在这里被过滤掉
+export const PrebuiltLyricPlayer: FC<HTMLProps<HTMLDivElement>> = ({
+	className,
+	...rest
+}) => {
 	const [hideLyricView, setHideLyricView] = useAtom(hideLyricViewAtom);
 	const musicCover = useAtomValue(musicCoverAtom);
 	const musicCoverIsVideo = useAtomValue(musicCoverIsVideoAtom);
@@ -577,7 +561,6 @@ export const PrebuiltLyricPlayer = forwardRef<HTMLDivElement, PrebuiltLyricPlaye
 	return (
 		<LayoutGroup>
 			<AutoLyricLayout
-				ref={ref}
 				onElementMounted={setLayoutEl}
 				className={classNames(styles.autoLyricLayout, className)}
 				onLayoutChange={setIsVertical}
@@ -709,4 +692,4 @@ export const PrebuiltLyricPlayer = forwardRef<HTMLDivElement, PrebuiltLyricPlaye
 			/>
 		</LayoutGroup>
 	);
-});
+};

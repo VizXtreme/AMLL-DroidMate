@@ -86,7 +86,7 @@
 	},
 	"page": {
 		"about": {
-			"credits": "Được phát triển bởi SteveXMH và các cộng tác viên khác trên Github\nhttps://github.com/Steve-xmh/applemusic-like-lyrics",
+			"credits": "Được phát triển bởi SteveXMH và các cộng tác viên khác trên Github\nhttps://github.com/amll-dev/applemusic-like-lyrics",
 			"downloading": "Đang tải xuống bản cập nhật {progressText}",
 			"installing": "Đang cài đặt cập nhật, sẽ tự động khởi động lại, vui lòng chờ...",
 			"installUpdate": "Cập nhật và cài đặt",
@@ -121,6 +121,10 @@
 		"playlist": {
 			"addLocalMusic": {
 				"allFiles": "所有文件",
+				"dialog": {
+					"failedDescription": "以下 {count, plural, other {#}} 首歌曲添加失败：",
+					"failedTitle": "部分歌曲导入失败"
+				},
 				"filterName": "Tệp âm thanh",
 				"label": "Thêm bài hát từ bộ nhớ",
 				"toast": {

@@ -6,20 +6,23 @@ import path from "path";
 export default defineConfig({
 	build: {
 		sourcemap: true,
-		minify: false, // 禁用代码压缩，保持代码可读性
 		lib: {
 			entry: "src/index.ts",
 			name: "AppleMusicLikeLyricsCore",
 			fileName: "amll-core",
 			formats: ["es"],
 		},
-		cssMinify: false, // 禁用 CSS 压缩
+		cssMinify: "lightningcss",
 		rollupOptions: {
-			output: {
-				manualChunks: undefined, // 禁用代码分割，确保单一 CSS 输出
-				inlineDynamicImports: true, // 内联动态导入
-				minifyInternalExports: false, // 禁用内部导出的压缩
-			}
+			external: [
+				"@pixi/display",
+				"@pixi/app",
+				"@pixi/filter-blur",
+				"@pixi/filter-color-matrix",
+				"@pixi/filter-bulge-pinch",
+				"@pixi/core",
+				"@pixi/sprite",
+			],
 		},
 	},
 	resolve: {

@@ -126,24 +126,13 @@ function App() {
 
   // Initialize global state and Android bridge
   useEffect(() => {
-    // Connect global setters to Jotai atoms
-    if (globalSetLyricLines) {
-      globalSetLyricLines = setLyricLines
-    }
-    if (globalSetCurrentTime) {
-      globalSetCurrentTime = setCurrentTime
-    }
-    if (globalSetAlbumUri) {
-      globalSetAlbumUri = setAlbumUri
-    }
-    
     // Mount global references
     if (window.__amll) {
       window.__amll.player = playerRef.current
       window.__amll.backgroundRender = backgroundRender
     }
 
-    // Expose global API for Android (redundant but safe)
+    // Expose global API for Android
     ;(window as any).__setLyricLines = setLyricLines
     ;(window as any).__setCurrentTime = setCurrentTime
     ;(window as any).__setAlbumUri = setAlbumUri
@@ -191,15 +180,6 @@ function App() {
       setAlbumUri(uri || demoAlbumArt)
       lastAlbumArt = uri
       logToAndroid(`Album art updated: ${uri ? 'present' : 'empty'}`, 'debug')
-      
-      // Also update BackgroundRender directly if available
-      if (window.__amll?.backgroundRender) {
-        const bgRender = window.__amll.backgroundRender
-        if (bgRender.setAlbum) {
-          bgRender.setAlbum(uri || '')
-          logToAndroid('BackgroundRender album updated directly', 'debug')
-        }
-      }
     }
 
     window.setPaused = function (paused: boolean) {
@@ -323,7 +303,6 @@ if (typeof window !== 'undefined') {
   ;(window as any).__setAlbumUri = (uri: string) => {
     globalSetAlbumUri = uri
   }
-  
   window.addEventListener('DOMContentLoaded', () => {
     try {
       document.documentElement.style.background = 'transparent'
