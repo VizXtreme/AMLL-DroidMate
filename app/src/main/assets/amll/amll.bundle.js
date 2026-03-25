@@ -51680,8 +51680,8 @@ void main(void)
         if (typeof window.__setCurrentTime === "function") {
           window.__setCurrentTime(parsedTime);
         }
-        if (playerRef.current) {
-          playerRef.current.setCurrentTime(Math.trunc(parsedTime), false);
+        if (playerRef.current?.lyricPlayer) {
+          playerRef.current.lyricPlayer.setCurrentTime(Math.trunc(parsedTime), false);
         }
       };
       window.updateAlbumArt = async function(uri2) {

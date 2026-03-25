@@ -117,10 +117,6 @@ fun AMLLLyricsView(
                         // 确保页面加载后背景仍然透明
                         view.setBackgroundColor(Color.TRANSPARENT)
                         amllDebug("[$debugSource#$instanceId] WebView page finished: $url")
-                        view.evaluateJavascript(
-                            "window.logFromKotlin && window.logFromKotlin('[KOTLIN] page finished for $debugSource#$instanceId');",
-                            null
-                        )
                     }
                 }
                 webChromeClient = object : WebChromeClient() {
@@ -157,6 +153,9 @@ fun AMLLLyricsView(
                 // 使用 NONE 让 View 自行决定渲染方式，通常会使用硬件加速
                 // 同时避免软件渲染导致的帧率问题
                 setLayerType(View.LAYER_TYPE_NONE, null)
+                
+                // 强制清除所有缓存数据，确保加载最新的 HTML 和 JS
+                clearAllCache()
 
                 // keep a reference to the WebView so we can send immediate commands back to
                 // the javascript bridge when the user initiates a seek via clicking a lyric.
@@ -392,50 +391,55 @@ private fun normalizeFontToken(value: String): String {
 }
 
 private fun buildApplyFontScript(effectiveFamily: String, files: List<FontWebEntry>): String {
-    val escapedFamily = escapeJsString(effectiveFamily)
-    val filesJs = files.joinToString(",") {
-        "{id:\"${escapeJsString(it.id)}\",familyName:\"${escapeJsString(it.familyName)}\",uri:\"${escapeJsString(it.uri)}\"}"
+    // 将字体家族名称转换为 JSON 安全的字符串
+    val familyJson = "\"${escapeJsStringForJson(effectiveFamily)}\""
+    
+    // 构建文件数组的 JSON 表示
+    val filesArrayJson = if (files.isEmpty()) {
+        "[]"
+    } else {
+        val filesEntries = files.joinToString(",") { entry ->
+            "{id:\"${escapeJsStringForJson(entry.id)}\",familyName:\"${escapeJsStringForJson(entry.familyName)}\",uri:\"${escapeJsStringForJson(entry.uri)}\"}"
+        }
+        "[$filesEntries]"
     }
 
-    return """
-        (function() {
-            var effectiveFamily = "$escapedFamily";
-            var files = [$filesJs];
-            var styleId = 'amll-dynamic-font-face-style';
-            var styleNode = document.getElementById(styleId);
-            if (!styleNode) {
-                styleNode = document.createElement('style');
-                styleNode.id = styleId;
-                document.head.appendChild(styleNode);
-            }
+    return buildString {
+        append("(function(){")
+        append("var effectiveFamily=$familyJson;")
+        append("var files=$filesArrayJson;")
+        append("var styleId='amll-dynamic-font-face-style';")
+        append("var styleNode=document.getElementById(styleId);")
+        append("if(!styleNode){styleNode=document.createElement('style');styleNode.id=styleId;document.head.appendChild(styleNode);}")
+        append("var css='';")
+        append("for(var i=0;i<files.length;i+=1){var item=files[i];if(!item||!item.familyName||!item.uri)continue;if(item.uri.indexOf('data:image/svg+xml')===0)continue;css+='@font-face{font-family:\"'+item.familyName+'\";src:url(\"'+item.uri+'\");font-display:swap;}';}")
+        append("styleNode.textContent=css;")
+        append("document.documentElement.style.setProperty('--amll-user-font-family',effectiveFamily);")
+        append("document.documentElement.style.setProperty('--amll-lp-font-family','var(--amll-user-font-family)');")
+        append("var players=document.querySelectorAll('.amll-lyric-player');")
+        append("for(var j=0;j<players.length;j+=1){players[j].style.fontFamily='var(--amll-lp-font-family)';}")
+        append("})();")
+    }
+}
 
-            var css = '';
-            for (var i = 0; i < files.length; i += 1) {
-                var item = files[i];
-                if (!item || !item.familyName || !item.uri) continue;
-                // 过滤掉SVG数据URL，只处理真正的字体文件
-                if (item.uri.indexOf('data:image/svg+xml') === 0) continue;
-                css += '@font-face{font-family:"' + item.familyName + '";src:url("' + item.uri + '");font-display:swap;}';
-            }
-            styleNode.textContent = css;
-
-            document.documentElement.style.setProperty('--amll-user-font-family', effectiveFamily);
-            document.documentElement.style.setProperty('--amll-lp-font-family', 'var(--amll-user-font-family)');
-
-            var players = document.querySelectorAll('.amll-lyric-player');
-            for (var j = 0; j < players.length; j += 1) {
-                players[j].style.fontFamily = 'var(--amll-lp-font-family)';
-            }
-        })();
-    """.trimIndent().replace("\n", " ")
+private fun escapeJsStringForJson(value: String): String {
+    return value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("'", "\\'")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
 }
 
 private fun escapeJsString(value: String): String {
     return value
         .replace("\\", "\\\\")
         .replace("\"", "\\\"")
+        .replace("'", "\\'")
         .replace("\n", "\\n")
-        .replace("\r", "")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
 }
 
 private fun buildLyricsJson(lyrics: TTMLLyrics): String {
@@ -568,5 +572,23 @@ private fun getMimeType(uriString: String): String? {
         uriString.endsWith(".gif", ignoreCase = true) -> "image/gif"
         uriString.endsWith(".webp", ignoreCase = true) -> "image/webp"
         else -> "image/jpeg" // 默认为 JPEG
+    }
+}
+
+/**
+ * 清除 WebView 的所有缓存数据
+ */
+private fun WebView.clearAllCache() {
+    try {
+        // 清除内存缓存
+        clearCache(true)
+        
+        // 清除 DOM 存储
+        settings.domStorageEnabled = false
+        settings.domStorageEnabled = true
+        
+        amllDebug("WebView cache cleared")
+    } catch (e: Exception) {
+        amllDebug("Failed to clear WebView cache: ${e.message}")
     }
 }

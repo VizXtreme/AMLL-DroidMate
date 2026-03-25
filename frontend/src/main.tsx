@@ -182,8 +182,9 @@ function App() {
       if (typeof (window as any).__setCurrentTime === 'function') {
         ;(window as any).__setCurrentTime(parsedTime)
       }
-      if (playerRef.current) {
-        playerRef.current.setCurrentTime(Math.trunc(parsedTime), false)
+      // playerRef.current.lyricPlayer 才是真正的歌词播放实例
+      if (playerRef.current?.lyricPlayer) {
+        playerRef.current.lyricPlayer.setCurrentTime(Math.trunc(parsedTime), false)
       }
     }
 
