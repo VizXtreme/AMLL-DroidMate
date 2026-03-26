@@ -17,14 +17,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.amll.droidmate.ui.AppSettings
+import com.amll.droidmate.websocket.AMLLWebSocketClient
 import androidx.compose.ui.viewinterop.AndroidView
 import com.amll.droidmate.domain.model.TTMLLyrics
 import timber.log.Timber
 import java.io.File
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -53,6 +57,11 @@ private fun amllInfo(message: String) {
 fun AMLLLyricsView(
     lyrics: TTMLLyrics?,
     currentTime: Long,
+    musicId: String = "",
+    musicName: String = "Unknown",
+    albumName: String = "",
+    artistName: String = "Unknown",
+    duration: Long = 0L,
     albumArtUri: String? = null,
     renderMode: AMLLRenderMode = AMLLRenderMode.DOM,
     debugSource: String = "unknown",
@@ -61,6 +70,15 @@ fun AMLLLyricsView(
     isPlaying: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val webViewEnabled = AppSettings.isWebViewEnabled(context)
+    
+    // 如果 WebView 被禁用，不渲染任何内容
+    if (!webViewEnabled) {
+        Timber.d("[$debugSource] WebView 已禁用，跳过歌词渲染")
+        return
+    }
+    
     val instanceId = remember { AMLL_VIEW_INSTANCE_COUNTER.incrementAndGet() }
     val onLyricsClickState = rememberUpdatedState(onLyricsClick)
     val onLineSeekState = rememberUpdatedState(onLineSeek)
@@ -73,6 +91,206 @@ fun AMLLLyricsView(
     var lastAlbumArtUri by remember { mutableStateOf<String?>(null) }
     var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
     var lastMotionConfigValue by remember { mutableStateOf<String?>(null) }
+    
+    // WebSocket 客户端和状态
+    val webSocketClient = remember { 
+        com.amll.droidmate.websocket.AMLLWebSocketClient.getInstance() 
+    }
+    var isWebSocketConnected by remember { mutableStateOf(false) }
+    
+    // 发送播放状态到 WebSocket 服务器（V1 二进制协议）
+    fun sendPlaybackStatusToWebSocket(currentTime: Long, isPlaying: Boolean) {
+        if (!isWebSocketConnected) {
+            Timber.d("[$debugSource#$instanceId] WebSocket 未连接，跳过发送")
+            return
+        }
+            
+        // V1 二进制协议格式：
+        // - Magic Number (2 bytes, u16, little-endian)
+        // - Payload data
+        
+        // 发送进度更新 (Magic: 5 = OnPlayProgress)
+        val progressBytes = ByteArray(10) // 2 bytes magic + 8 bytes u64
+        progressBytes[0] = 5.toByte()  // Magic low byte
+        progressBytes[1] = 0.toByte()  // Magic high byte (little-endian)
+        
+        // 将 currentTime (Long/u64) 转为小端字节序
+        for (i in 0 until 8) {
+            progressBytes[2 + i] = ((currentTime ushr (i * 8)) and 0xFF).toByte()
+        }
+        
+        Timber.d("[$debugSource#$instanceId] 发送进度消息 (V1 Binary): Magic=5, progress=$currentTime")
+        webSocketClient.send(progressBytes)
+            
+        // 发送播放/暂停状态
+        val stateBytes = if (isPlaying) {
+            // OnResumed (Magic: 8)
+            byteArrayOf(8.toByte(), 0.toByte())
+        } else {
+            // OnPaused (Magic: 7)
+            byteArrayOf(7.toByte(), 0.toByte())
+        }
+        
+        Timber.d("[$debugSource#$instanceId] 发送播放状态消息 (V1 Binary): Magic=${stateBytes[0]}")
+        webSocketClient.send(stateBytes)
+    }
+    
+    // 发送歌曲信息到 WebSocket 服务器
+    fun sendMusicInfoToWebSocket(musicId: String, musicName: String, albumName: String, artistName: String, duration: Long) {
+        if (!isWebSocketConnected) {
+            Timber.d("[$debugSource#$instanceId] WebSocket 未连接，跳过发送歌曲信息")
+            return
+        }
+        
+        // SetMusicInfo (Magic: 2)
+        // 结构：music_id\0 music_name\0 album_id\0 album_name\0 artists_count\0 artist\0 duration
+        val musicIdBytes = musicId.toByteArray(Charsets.UTF_8) + 0.toByte()
+        val musicNameBytes = musicName.toByteArray(Charsets.UTF_8) + 0.toByte()
+        val albumIdBytes = byteArrayOf(0.toByte()) // 空 album_id
+        val albumNameBytes = albumName.toByteArray(Charsets.UTF_8) + 0.toByte()
+        val artistNameBytes = artistName.toByteArray(Charsets.UTF_8) + 0.toByte()
+        
+        val message = ByteArrayOutputStream()
+        message.write(byteArrayOf(2.toByte(), 0.toByte())) // Magic: 2
+        message.write(musicIdBytes)
+        message.write(musicNameBytes)
+        message.write(albumIdBytes)
+        message.write(albumNameBytes)
+        message.write(byteArrayOf(1.toByte(), 0.toByte(), 0.toByte(), 0.toByte())) // artists_count: 1 (u32)
+        message.write(artistNameBytes)
+        
+        // duration (u64 little-endian)
+        for (i in 0 until 8) {
+            message.write(((duration ushr (i * 8)) and 0xFF).toInt())
+        }
+        
+        val finalBytes = message.toByteArray()
+        Timber.d("[$debugSource#$instanceId] 发送歌曲信息 (V1 Binary): Magic=2, name=$musicName, duration=$duration")
+        webSocketClient.send(finalBytes)
+    }
+    
+    // 发送歌词到 WebSocket 服务器（TTML 格式）
+    fun sendLyricToWebSocket(ttmlContent: String) {
+        if (!isWebSocketConnected) {
+            Timber.d("[$debugSource#$instanceId] WebSocket 未连接，跳过发送歌词")
+            return
+        }
+        
+        // SetLyricFromTTML (Magic: 17)
+        // 结构：ttml_data\0
+        val ttmlBytes = ttmlContent.toByteArray(Charsets.UTF_8) + 0.toByte()
+        
+        val message = ByteArrayOutputStream()
+        message.write(byteArrayOf(17.toByte(), 0.toByte())) // Magic: 17
+        message.write(ttmlBytes)
+        
+        val finalBytes = message.toByteArray()
+        Timber.d("[$debugSource#$instanceId] 发送歌词 (V1 Binary): Magic=17, size=${ttmlBytes.size} bytes")
+        webSocketClient.send(finalBytes)
+    }
+    
+    // 将 TTMLLyrics 对象转换为 TTML 字符串
+    fun buildTtmlString(lyrics: TTMLLyrics): String {
+        // 简单实现：返回原始的 TTML 内容
+        // 如果 lyrics 对象有 toXml() 或类似方法，可以在这里调用
+        // 暂时返回空字符串，需要时再完善
+        return ""
+    }
+    
+    // 注入 WebSocket 桥接代码到 WebView
+    fun injectWebSocketBridge(view: WebView) {
+        amllDebug("[$debugSource#$instanceId] 注入 WebSocket 桥接代码")
+        
+        // 注入 JavaScript 代码，让前端可以发送消息到 Android WebSocket 客户端
+        view.evaluateJavascript(
+            """
+            (function() {
+                if (!window.AndroidWebSocketBridge) {
+                    window.AndroidWebSocketBridge = {
+                        send: function(message) {
+                            // 通过 JavascriptInterface 发送到 Android
+                            if (window.Android && window.Android.sendWebSocketMessage) {
+                                window.Android.sendWebSocketMessage(JSON.stringify(message));
+                            }
+                        }
+                    };
+                    console.log('[AMLL Bridge] WebSocket bridge injected');
+                }
+            })();
+            """.trimIndent(),
+            null
+        )
+    }
+    
+    // 初始化 WebSocket 监听器（不重复连接）
+    LaunchedEffect(Unit) {
+        if (AppSettings.isWebSocketProtocolEnabled(context)) {
+            val wsAddress = AppSettings.getWebSocketProtocolAddress(context)
+            Timber.d("[$debugSource#$instanceId] 设置 WebSocket 监听器：$wsAddress")
+            
+            // 添加监听器以更新 UI 状态
+            webSocketClient.addListener(object : AMLLWebSocketClient.Listener {
+                override fun onConnected() {
+                    Timber.i("[$debugSource#$instanceId] WebSocket 已连接")
+                    isWebSocketConnected = true
+                    
+                    // 连接成功后立即发送歌曲信息和歌词
+                    sendMusicInfoToWebSocket(musicId, musicName, albumName, artistName, duration)
+                    lyrics?.lines?.let { lines ->
+                        // 将 TTML 歌词转为字符串并发送
+                        val ttmlContent = buildTtmlString(lyrics)
+                        if (ttmlContent.isNotBlank()) {
+                            sendLyricToWebSocket(ttmlContent)
+                        }
+                    }
+                }
+                
+                override fun onDisconnected() {
+                    Timber.w("[$debugSource#$instanceId] WebSocket 已断开")
+                    isWebSocketConnected = false
+                }
+                
+                override fun onMessageReceived(message: String) {
+                    Timber.d("[$debugSource#$instanceId] 收到 WebSocket 消息：$message")
+                    // TODO: 处理来自服务器的命令（如暂停、播放、跳转等）
+                }
+                
+                override fun onError(error: Throwable) {
+                    Timber.e(error, "[$debugSource#$instanceId] WebSocket 错误")
+                    isWebSocketConnected = false
+                    // 打印更详细的错误信息
+                    when (error) {
+                        is java.io.EOFException -> {
+                            Timber.e("服务器主动断开了连接，可能原因：")
+                            Timber.e("  1. 服务器未运行或已关闭")
+                            Timber.e("  2. 协议格式不匹配（检查 Initialize 消息格式）")
+                            Timber.e("  3. 网络问题导致连接中断")
+                            Timber.e("  4. 防火墙/安全软件阻止连接")
+                        }
+                        is java.net.ConnectException -> {
+                            Timber.e("无法连接到服务器：${wsAddress}")
+                            Timber.e("请检查：")
+                            Timber.e("  1. 服务器是否正在运行")
+                            Timber.e("  2. IP 地址和端口是否正确")
+                            Timber.e("  3. 设备是否在同一局域网内")
+                        }
+                        else -> {
+                            Timber.e("未知错误类型：${error.javaClass.simpleName}")
+                        }
+                    }
+                }
+            })
+        }
+    }
+    
+    // 在 Composable 销毁时清理监听器（不断开连接）
+    DisposableEffect(Unit) {
+        onDispose {
+            Timber.d("[$debugSource#$instanceId] 移除 WebSocket 监听器")
+            // 注意：由于使用匿名对象，无法直接移除特定的监听器
+            // 这里只是记录日志，实际清理在 destroy() 中统一进行
+        }
+    }
 
     AndroidView(
         modifier = modifier,
@@ -116,6 +334,12 @@ fun AMLLLyricsView(
                         lastFontConfigSignature = null
                         // 确保页面加载后背景仍然透明
                         view.setBackgroundColor(Color.TRANSPARENT)
+                        
+                        // 注入 WebSocket 桥接代码（如果启用了 WebSocket）
+                        if (isWebSocketConnected) {
+                            injectWebSocketBridge(view)
+                        }
+                        
                         amllDebug("[$debugSource#$instanceId] WebView page finished: $url")
                     }
                 }
@@ -216,6 +440,9 @@ fun AMLLLyricsView(
             // 立即更新时间，减少歌词行激活延迟
             Timber.d("[$debugSource#$instanceId] Bridge call: updateTime($currentTime)")
             view.evaluateJavascript("window.updateTime && window.updateTime($currentTime);", null)
+            
+            // 同时通过 WebSocket 发送到外部服务
+            sendPlaybackStatusToWebSocket(currentTime, isPlayingState.value)
 
             val modeValue = if (renderMode == AMLLRenderMode.DOM) "dom" else "dom-lite"
             if (lastModeValue != modeValue) {
@@ -255,7 +482,7 @@ fun AMLLLyricsView(
                 lastMotionConfigValue = motionConfig
             }
 
-            // 只在lyrics对象引用改变时才重新构建JSON（避免每秒都构建）
+            // 只在 lyrics 对象引用改变时才重新构建 JSON（避免每秒都构建）
             if (lyrics !== lastLyrics) {
                 amllDebug("[$debugSource#$instanceId] Lyrics changed: ${lyrics?.lines?.size ?: 0} lines")
                 if (lyrics != null && lyrics.lines.isNotEmpty()) {
@@ -267,6 +494,14 @@ fun AMLLLyricsView(
                     }
                     view.evaluateJavascript("window.updateLyrics && window.updateLyrics($lyricsJson);", null)
                     lastLyricsPayload = lyricsJson
+                                
+                    // 通过 WebSocket 发送歌词更新（V2 协议）
+                    if (isWebSocketConnected) {
+                        // V2 协议格式：SetLyric 使用 Ttml 格式
+                        // {"update":"SetLyric","value":{"format":"Ttml","data":"..."}}
+                        val lyricMessage = """{"update":"SetLyric","value":{"format":"Ttml","data":$lyricsJson}}"""
+                        webSocketClient.send(lyricMessage)
+                    }
                 } else {
                     // 如果 lyrics 为空或 null，注入测试歌词以便调试
                     amllDebug("[$debugSource#$instanceId] No lyrics provided, injecting test lyrics")
@@ -523,6 +758,15 @@ class AMLLInterface(
     @JavascriptInterface
     fun isPlaying(): Boolean {
         return isPlayingProvider()
+    }
+    
+    @JavascriptInterface
+    fun sendWebSocketMessage(message: String) {
+        // 通过 WebSocket 发送到外部 AMLL 服务
+        amllDebug("[$debugSource#$instanceId] 发送 WebSocket 消息：$message")
+        // TODO: 这里需要传递 webSocketClient 引用或者通过其他方式发送
+        // 由于 AMMLInterface 是内部类，无法直接访问外部作用域的 webSocketClient
+        // 需要通过回调或者全局单例来传递
     }
 }
 

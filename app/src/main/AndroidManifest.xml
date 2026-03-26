@@ -76,6 +76,11 @@
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
 
+        <activity
+            android:name="com.amll.droidmate.ui.WsProtocolSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.DroidMate" />
+
         <!-- 后台歌词监听服务 -->
         <service
             android:name="com.amll.droidmate.service.MediaListenerService"

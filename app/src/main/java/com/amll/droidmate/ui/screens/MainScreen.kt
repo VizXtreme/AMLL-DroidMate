@@ -191,6 +191,45 @@ fun MainScreen() {
             }
         }
     }
+    
+    // WebSocket 连接状态
+    var isWebSocketConnected by remember { mutableStateOf(false) }
+    var websocketUrl by remember { mutableStateOf(AppSettings.getWebSocketProtocolAddress(context)) }
+    val isWebViewEnabled = AppSettings.isWebViewEnabled(context)
+    
+    // 监听上次 WebView 启用状态，用于检测变化并自动刷新
+    var lastWebViewEnabled by remember { mutableStateOf(isWebViewEnabled) }
+    
+    // 当 WebView 启用状态改变时自动刷新
+    LaunchedEffect(isWebViewEnabled) {
+        if (lastWebViewEnabled != isWebViewEnabled) {
+            Timber.d("WebView 启用状态改变：$lastWebViewEnabled -> $isWebViewEnabled")
+            lastWebViewEnabled = isWebViewEnabled
+            // 状态改变时自动刷新歌词和 WebView
+            viewModel.fetchLyrics()
+            webViewReloadKey++
+            Timber.d("自动刷新完成，webViewReloadKey=$webViewReloadKey")
+        }
+    }
+    
+    // 监听 WebSocket 连接状态
+    LaunchedEffect(Unit) {
+        val webSocketClient = com.amll.droidmate.websocket.AMLLWebSocketClient.getInstance()
+        webSocketClient.addListener(object : com.amll.droidmate.websocket.AMLLWebSocketClient.Listener {
+            override fun onConnected() {
+                isWebSocketConnected = true
+            }
+            
+            override fun onDisconnected() {
+                isWebSocketConnected = false
+            }
+            
+            override fun onMessageReceived(message: String) {}
+            override fun onError(error: Throwable) {
+                isWebSocketConnected = false
+            }
+        })
+    }
 
     var showMatchBubble by remember { mutableStateOf(false) }
     LaunchedEffect(isLoading) {
@@ -307,6 +346,67 @@ fun MainScreen() {
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
+            
+            // WebSocket 状态指示器
+            if (AppSettings.isWebSocketProtocolEnabled(context) && !isLyricsFullscreen) {
+                val statusCardBg = if (isWebSocketConnected) {
+                    androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.2f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                }
+                
+                val connectedDotColor = androidx.compose.ui.graphics.Color.Green
+                val disconnectedDotColor = MaterialTheme.colorScheme.onSurfaceVariant
+                val connectedTextColor = androidx.compose.ui.graphics.Color.Green
+                val disconnectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = statusCardBg)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 状态圆点
+                            Box(
+                                modifier = Modifier.size(8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val dotColor = if (isWebSocketConnected) connectedDotColor else disconnectedDotColor
+                                androidx.compose.foundation.Canvas(modifier = Modifier.matchParentSize()) {
+                                    drawCircle(color = dotColor)
+                                }
+                            }
+                            
+                            Text(
+                                text = if (isWebSocketConnected) {
+                                    "WebSocket 已连接"
+                                } else {
+                                    "WebSocket 未连接"
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (isWebSocketConnected) connectedTextColor else disconnectedTextColor
+                            )
+                        }
+                        
+                        IconButton(onClick = { 
+                            context.startActivity(Intent(context, com.amll.droidmate.ui.WsProtocolSettingsActivity::class.java))
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "WebSocket 设置",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
 
             if (showOpenAppDialog) {
                 val sourceAppName = getAppNameFromPackage(context, nowPlaying?.packageName) ?: "播放源应用"
@@ -373,13 +473,59 @@ fun MainScreen() {
                             webViewReloadKey = webViewReloadKey,
                             onLineSeek = { viewModel.seekTo(it) },
                             // 改进：无歌词显示文案时禁止进入全屏
-                            onFullscreenTap = { if (currentLyrics != null) isLyricsFullscreen = true },
+                            onFullscreenTap = { if (currentLyrics != null && isWebViewEnabled) isLyricsFullscreen = true },
                             amllDebugSource = "embedded",
                             modifier = Modifier.fillMaxSize()
                         )
-
+                        
+                        // WebView 已关闭提示 - 浮在歌词组件上方
+                        if (!isWebViewEnabled) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Card(
+                                    modifier = Modifier.padding(32.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f)
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.VisibilityOff,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(48.dp)
+                                        )
+                                        
+                                        Text(
+                                            text = "歌词组件已关闭",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        
+                                        IconButton(onClick = { 
+                                            context.startActivity(Intent(context, com.amll.droidmate.ui.WsProtocolSettingsActivity::class.java))
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Settings,
+                                                contentDescription = "去设置",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
                         // 占位提示：恢复消失的文案
-                        if (currentLyrics == null && !spinnerVisible) {
+                        if (currentLyrics == null && !spinnerVisible && isWebViewEnabled) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 Text(
                                     text = "选择歌词来显示 AMLL",
@@ -783,9 +929,25 @@ fun NowPlayingCard(
 @Composable
 fun PermissionStatusCard(notificationAccessGranted: Boolean, onOpenNotificationAccessSettings: () -> Unit, modifier: Modifier = Modifier) {
     Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f))) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("需要通知访问权限才能正常使用此应用。", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-            TextButton(onClick = onOpenNotificationAccessSettings) { Text("去授权") }
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                "需要通知访问权限才能正常使用此应用。",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Text(
+                "请在系统设置中开启通知访问权限，或前往应用内设置页面配置。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+            )
+            Row(
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                TextButton(onClick = onOpenNotificationAccessSettings) { 
+                    Text("去授权") 
+                }
+            }
         }
     }
 }

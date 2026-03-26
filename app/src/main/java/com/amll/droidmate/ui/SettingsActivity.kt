@@ -244,53 +244,7 @@ private fun SettingsPage(
                 }
             }
 
-            Text(
-                text = "歌词时间轴偏移",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("歌曲偏移 + 设备偏移")
-                    Button(onClick = {
-                        context.startActivity(Intent(context, LyricOffsetSettingsActivity::class.java))
-                    }, modifier = Modifier.fillMaxWidth()) {
-                        Text("歌词时间轴偏移设置")
-                    }
-                }
-            }
-
-            Text(
-                text = "动画设置（实验性）",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Button(
-                onClick = {
-                    context.startActivity(Intent(context, AnimationSettingsActivity::class.java))
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("打开动画设置")
-            }
-
-            Text(
-                text = "字体设置",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Button(
-                onClick = {
-                    context.startActivity(Intent(context, FontSettingsActivity::class.java))
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("打开字体设置")
-            }
-            Text(                text = "辅助功能",
+            Text(text = "辅助功能",
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -338,7 +292,7 @@ private fun SettingsPage(
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
                         Text("处理元数据（实验性）", color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            text = "尝试自动移除歌词中的词/曲/编曲等元数据行，可能会误删。",
+                            text = "尝试自动移除歌词中的\"词:\", \"曲:\", \"编曲:\"等行，可能会误删。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -368,7 +322,7 @@ private fun SettingsPage(
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
                         Text("角色识别（实验性）", color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            text = "尝试识别当前句角色，可能存在误报。",
+                            text = "尝试识别当前句由哪位歌手演唱并设置对唱歌词，可能存在错误。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -383,6 +337,73 @@ private fun SettingsPage(
                     )
                 }
             }
+
+            Text(
+                text = "WebSocket 协议传递",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, WsProtocolSettingsActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("打开 WebSocket 协议传递设置")
+            }
+
+
+            Text(
+                text = "歌词时间轴偏移",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Text(
+                text = "歌曲偏移 + 设备偏移",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, LyricOffsetSettingsActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("歌词时间轴偏移设置")
+            }
+            
+
+            Text(
+                text = "动画设置（实验性）",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, AnimationSettingsActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("打开动画设置")
+            }
+
+            Text(
+                text = "字体设置",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, FontSettingsActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("打开字体设置")
+            }
+
+            
+
+            
 
             Text(
                 text = "版本更新",
