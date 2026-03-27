@@ -23,10 +23,11 @@
 - 常驻通知实时歌词：可选常驻通知实时显示当前句歌词，并支持锁屏显示
 - 应用全局颜色根据专辑图变换
 - 基于歌曲和输出设备的歌词偏移，轻松解决延迟问题
+- WebSocket 传递：通过兼容的外部 AMLL 来显示歌词动画
 
 ## 参考和接入的项目
 
-- 核心动效：[Apple Music-like Lyrics （AMLL） `amll-dev/applemusic-like-lyrics`](https://github.com/amll-dev/applemusic-like-lyrics)
+- 核心动效：[Apple Music-like Lyrics （AMLL） `amll-dev/applemusic-like-lyrics`](https://github.com/amll-dev/applemusic-like-lyrics) (已存入本仓库`applemusic-like-lyrics`文件夹内以更好的参考)
 - 多源歌词匹配：[Unilyric `apoint123/Unilyric`](https://github.com/apoint123/Unilyric)
 - 优质歌词来源：[AMLL TTML DB `amll-dev/amll-ttml-db`](https://github.com/amll-dev/amll-ttml-db)
 
