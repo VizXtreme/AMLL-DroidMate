@@ -28,6 +28,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.produceState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -35,18 +44,13 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.amll.droidmate.ui.theme.DroidMateTheme
 import com.amll.droidmate.ui.theme.DynamicThemeManager
+import com.amll.droidmate.ui.theme.SuccessGreen
+import com.amll.droidmate.ui.theme.WarningAmber
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -101,76 +105,45 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
         mutableStateOf(AppSettings.isWebViewEnabled(context))
     }
     
-    // WebSocket 连接状态
-    var connectionStatus by remember { mutableStateOf<String>("未连接") }
-    var isConnected by remember { mutableStateOf(false) }
-    
-    // 全局 WebSocket 客户端实例（用于实际连接）
+    // WebSocket 连接状态 - 使用统一的状态监听器
     val webSocketClient = remember { 
         com.amll.droidmate.websocket.AMLLWebSocketClient.getInstance()
     }
     
-    // 为设置页面的 WebSocket 客户端设置监听器
-    LaunchedEffect(Unit) {
-        webSocketClient.addListener(object : com.amll.droidmate.websocket.AMLLWebSocketClient.Listener {
-            override fun onConnected() {
-                Timber.i("WebSocket 已连接")
-                connectionStatus = "已连接"
-                isConnected = true
-            }
-            
-            override fun onDisconnected() {
-                Timber.w("WebSocket 已断开")
-                connectionStatus = "未连接"
-                isConnected = false
-            }
-            
-            override fun onMessageReceived(message: String) {
-                Timber.d("收到服务器消息：$message")
-                // V2 协议下，服务器可能会广播状态更新
-                // 可以在这里解析并更新 UI 状态
-            }
-            
-            override fun onError(error: Throwable) {
+    // 使用 produceState 实时监听连接状态变化
+    val isConnected by produceState(initialValue = webSocketClient.isConnected) {
+        value = webSocketClient.isConnected
+        
+        // 使用工厂函数创建简单的状态监听器
+        val listener = webSocketClient.createStateListener(
+            onStateChanged = { connected ->
+                value = connected
+            },
+            onErrorCallback = { error ->
                 Timber.e(error, "WebSocket 错误")
-                connectionStatus = "未连接"
-                isConnected = false
                 // 打印更详细的错误信息
                 when (error) {
                     is java.io.EOFException -> {
-                        Timber.e("服务器主动断开了连接，可能原因：")
-                        Timber.e("  1. 服务器未运行或已关闭")
-                        Timber.e("  2. 协议格式不匹配（检查 Initialize 消息格式）")
-                        Timber.e("  3. 网络问题导致连接中断")
-                        Timber.e("  4. 防火墙/安全软件阻止连接")
+                        Timber.e("服务器主动断开了连接")
                     }
                     is java.net.ConnectException -> {
-                        Timber.e("无法连接到服务器：${websocketAddress}")
-                        Timber.e("请检查：")
-                        Timber.e("  1. 服务器是否正在运行")
-                        Timber.e("  2. IP 地址和端口是否正确")
-                        Timber.e("  3. 设备是否在同一局域网内")
+                        Timber.e("无法连接到服务器")
                     }
                     else -> {
-                        Timber.e("未知错误类型：${error.javaClass.simpleName}")
+                        Timber.e("错误类型：${error.javaClass.simpleName}")
                     }
                 }
             }
-        })
+        )
+        
+        webSocketClient.addListener(listener)
     }
     
-    // 页面加载时自动连接（如果启用了 WebSocket）
-    LaunchedEffect(websocketEnabled) {
-        if (websocketEnabled && isValidWebSocketAddress(websocketAddress)) {
-            webSocketClient.connect(websocketAddress)
-        } else {
-            webSocketClient.disconnect()
-        }
-    }
+    val connectionStatus = if (isConnected) "已连接" else "未连接"
 
     Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         TopAppBar(
-            title = { Text("WebSocket 协议传递") },
+            title = { Text("WebSocket 传递") },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     @Suppress("DEPRECATION")
@@ -190,9 +163,15 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // WebSocket 总开关卡片
+            val statusCardBg = if (websocketEnabled && isConnected) {
+                SuccessGreen.copy(alpha = 0.2f)
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            }
+            
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                colors = CardDefaults.cardColors(containerColor = statusCardBg)
             ) {
                 Column(
                     modifier = Modifier
@@ -205,50 +184,64 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "WebSocket 协议传递",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "WebSocket 传递",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = if (websocketEnabled && isConnected) SuccessGreen else MaterialTheme.colorScheme.onSurface
+                            )
+                            
+                            // 连接状态指示器（作为附属说明）
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                            ) {
+                                // 状态圆点
+                                Box(
+                                    modifier = Modifier.size(6.dp),
+                                    contentAlignment = androidx.compose.ui.Alignment.Center
+                                ) {
+                                    val dotColor = if (isConnected) SuccessGreen else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    androidx.compose.foundation.Canvas(modifier = Modifier.matchParentSize()) {
+                                        drawCircle(color = dotColor)
+                                    }
+                                }
+                                
+                                Text(
+                                    text = "状态：$connectionStatus",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isConnected) SuccessGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        
                         Switch(
                             checked = websocketEnabled,
                             onCheckedChange = { enabled ->
                                 websocketEnabled = enabled
                                 AppSettings.setWebSocketProtocolEnabled(context, enabled)
+                                
+                                // 切换开关时立即生效连接
+                                if (enabled && isValidWebSocketAddress(websocketAddress)) {
+                                    Timber.d("启用 WebSocket，尝试连接：$websocketAddress")
+                                    webSocketClient.connect(websocketAddress)
+                                } else {
+                                    Timber.d("禁用 WebSocket，断开连接")
+                                    webSocketClient.disconnect()
+                                }
                             },
-                            colors = switchColors
-                        )
-                    }
-                    
-                    // 连接状态指示器
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                    ) {
-                        // 状态圆点
-                        Box(
-                            modifier = Modifier.size(8.dp),
-                            contentAlignment = androidx.compose.ui.Alignment.Center
-                        ) {
-                            androidx.compose.foundation.Canvas(modifier = Modifier.matchParentSize()) {
-                                drawCircle(
-                                    color = if (isConnected) {
-                                        androidx.compose.ui.graphics.Color.Green // 绿色 - 已连接
-                                    } else {
-                                        androidx.compose.ui.graphics.Color.Gray // 灰色 - 未连接
-                                    }
+                            colors = if (websocketEnabled && isConnected) {
+                                SwitchDefaults.colors(
+                                    checkedThumbColor = SuccessGreen,
+                                    checkedTrackColor = SuccessGreen.copy(alpha = 0.5f),
+                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    uncheckedTrackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f)
                                 )
-                            }
-                        }
-                        
-                        Text(
-                            text = "状态：$connectionStatus",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (isConnected) {
-                                androidx.compose.ui.graphics.Color.Green
                             } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                                switchColors
                             }
                         )
                     }
@@ -294,8 +287,8 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
                             AppSettings.setWebSocketProtocolAddress(context, addressToSave)
                             // 如果当前已启用，立即重启连接
                             if (websocketEnabled) {
-                                webSocketClient.disconnect()
-                                webSocketClient.connect(addressToSave)
+                                Timber.d("保存设置并强制重连 WebSocket: $addressToSave")
+                                webSocketClient.connect(addressToSave, forceReconnect = true)
                             } else {
                                 // 如果未启用，提示将在开启时生效
                                 Timber.d("WebSocket 地址已保存：$addressToSave，将在开启时自动连接")

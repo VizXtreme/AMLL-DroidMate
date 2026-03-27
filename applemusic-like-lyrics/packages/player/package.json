@@ -83,9 +83,10 @@
 		"@vitejs/plugin-react": "catalog:",
 		"@vitejs/plugin-react-swc": "^4.3.0",
 		"i18next-cli": "^1.50.3",
+		"jotai-babel": "^0.1.0",
 		"typescript": "catalog:",
 		"vite": "catalog:",
-		"vite-plugin-babel": "^1.5.1",
+		"vite-plugin-babel": "^1.6.0",
 		"vite-plugin-i18next-loader": "^3.1.3"
 	}
 }

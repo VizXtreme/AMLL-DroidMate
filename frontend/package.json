@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node ../scripts/copy-amll-artifacts.js",
+    "build": "powershell -ExecutionPolicy Bypass -File ../scripts/build-android.ps1",
     "preview": "vite preview",
     "build:android": "powershell -ExecutionPolicy Bypass -File ../scripts/build-android.ps1"
   },

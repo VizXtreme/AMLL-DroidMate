@@ -339,8 +339,14 @@ private fun SettingsPage(
             }
 
             Text(
-                text = "WebSocket 协议传递",
+                text = "WebSocket 传递",
                 style = MaterialTheme.typography.titleMedium
+            )
+
+            Text(
+                text = "通过兼容的外部 AMLL 来显示歌词动画。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
 
             Button(
@@ -349,7 +355,7 @@ private fun SettingsPage(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("打开 WebSocket 协议传递设置")
+                Text("打开 WebSocket 传递设置")
             }
 
 
@@ -374,7 +380,7 @@ private fun SettingsPage(
             
 
             Text(
-                text = "动画设置（实验性）",
+                text = "动画设置（⚠此版本暂不可用）",
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -388,7 +394,7 @@ private fun SettingsPage(
             }
 
             Text(
-                text = "字体设置",
+                text = "字体设置（⚠此版本暂不可用）",
                 style = MaterialTheme.typography.titleMedium
             )
 

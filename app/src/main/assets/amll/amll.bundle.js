@@ -27101,12 +27101,27 @@ var AMLLBundle = (function() {
     if (hasRequiredUtils) return utils;
     hasRequiredUtils = 1;
     var formats2 = /* @__PURE__ */ requireFormats();
+    var getSideChannel = requireSideChannel();
     var has = Object.prototype.hasOwnProperty;
     var isArray = Array.isArray;
+    var overflowChannel = getSideChannel();
+    var markOverflow = function markOverflow2(obj, maxIndex) {
+      overflowChannel.set(obj, maxIndex);
+      return obj;
+    };
+    var isOverflow = function isOverflow2(obj) {
+      return overflowChannel.has(obj);
+    };
+    var getMaxIndex = function getMaxIndex2(obj) {
+      return overflowChannel.get(obj);
+    };
+    var setMaxIndex = function setMaxIndex2(obj, maxIndex) {
+      overflowChannel.set(obj, maxIndex);
+    };
     var hexTable = (function() {
       var array = [];
       for (var i2 = 0; i2 < 256; ++i2) {
-        array.push("%" + ((i2 < 16 ? "0" : "") + i2.toString(16)).toUpperCase());
+        array[array.length] = "%" + ((i2 < 16 ? "0" : "") + i2.toString(16)).toUpperCase();
       }
       return array;
     })();
@@ -27118,7 +27133,7 @@ var AMLLBundle = (function() {
           var compacted = [];
           for (var j2 = 0; j2 < obj.length; ++j2) {
             if (typeof obj[j2] !== "undefined") {
-              compacted.push(obj[j2]);
+              compacted[compacted.length] = obj[j2];
             }
           }
           item.obj[item.prop] = compacted;
@@ -27140,9 +27155,19 @@ var AMLLBundle = (function() {
       }
       if (typeof source !== "object" && typeof source !== "function") {
         if (isArray(target)) {
-          target.push(source);
+          var nextIndex = target.length;
+          if (options && typeof options.arrayLimit === "number" && nextIndex > options.arrayLimit) {
+            return markOverflow(arrayToObject(target.concat(source), options), nextIndex);
+          }
+          target[nextIndex] = source;
         } else if (target && typeof target === "object") {
-          if (options && (options.plainObjects || options.allowPrototypes) || !has.call(Object.prototype, source)) {
+          if (isOverflow(target)) {
+            var newIndex = getMaxIndex(target) + 1;
+            target[newIndex] = source;
+            setMaxIndex(target, newIndex);
+          } else if (options && options.strictMerge) {
+            return [target, source];
+          } else if (options && (options.plainObjects || options.allowPrototypes) || !has.call(Object.prototype, source)) {
             target[source] = true;
           }
         } else {
@@ -27151,7 +27176,20 @@ var AMLLBundle = (function() {
         return target;
       }
       if (!target || typeof target !== "object") {
-        return [target].concat(source);
+        if (isOverflow(source)) {
+          var sourceKeys = Object.keys(source);
+          var result = options && options.plainObjects ? { __proto__: null, 0: target } : { 0: target };
+          for (var m2 = 0; m2 < sourceKeys.length; m2++) {
+            var oldKey = parseInt(sourceKeys[m2], 10);
+            result[oldKey + 1] = source[sourceKeys[m2]];
+          }
+          return markOverflow(result, getMaxIndex(source) + 1);
+        }
+        var combined = [target].concat(source);
+        if (options && typeof options.arrayLimit === "number" && combined.length > options.arrayLimit) {
+          return markOverflow(arrayToObject(combined, options), combined.length - 1);
+        }
+        return combined;
       }
       var mergeTarget = target;
       if (isArray(target) && !isArray(source)) {
@@ -27164,7 +27202,7 @@ var AMLLBundle = (function() {
             if (targetItem && typeof targetItem === "object" && item && typeof item === "object") {
               target[i2] = merge2(targetItem, item, options);
             } else {
-              target.push(item);
+              target[target.length] = item;
             }
           } else {
             target[i2] = item;
@@ -27178,6 +27216,15 @@ var AMLLBundle = (function() {
           acc[key] = merge2(acc[key], value, options);
         } else {
           acc[key] = value;
+        }
+        if (isOverflow(source) && !isOverflow(acc)) {
+          markOverflow(acc, getMaxIndex(source));
+        }
+        if (isOverflow(acc)) {
+          var keyNum = parseInt(key, 10);
+          if (String(keyNum) === key && keyNum >= 0 && keyNum > getMaxIndex(acc)) {
+            setMaxIndex(acc, keyNum);
+          }
         }
         return acc;
       }, mergeTarget);
@@ -27256,8 +27303,8 @@ var AMLLBundle = (function() {
           var key = keys[j2];
           var val = obj[key];
           if (typeof val === "object" && val !== null && refs.indexOf(val) === -1) {
-            queue.push({ obj, prop: key });
-            refs.push(val);
+            queue[queue.length] = { obj, prop: key };
+            refs[refs.length] = val;
           }
         }
       }
@@ -27273,14 +27320,24 @@ var AMLLBundle = (function() {
       }
       return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
     };
-    var combine = function combine2(a2, b2) {
-      return [].concat(a2, b2);
+    var combine = function combine2(a2, b2, arrayLimit, plainObjects) {
+      if (isOverflow(a2)) {
+        var newIndex = getMaxIndex(a2) + 1;
+        a2[newIndex] = b2;
+        setMaxIndex(a2, newIndex);
+        return a2;
+      }
+      var result = [].concat(a2, b2);
+      if (result.length > arrayLimit) {
+        return markOverflow(arrayToObject(result, { plainObjects }), result.length - 1);
+      }
+      return result;
     };
     var maybeMap = function maybeMap2(val, fn2) {
       if (isArray(val)) {
         var mapped = [];
         for (var i2 = 0; i2 < val.length; i2 += 1) {
-          mapped.push(fn2(val[i2]));
+          mapped[mapped.length] = fn2(val[i2]);
         }
         return mapped;
       }
@@ -27294,7 +27351,9 @@ var AMLLBundle = (function() {
       decode,
       encode,
       isBuffer,
+      isOverflow,
       isRegExp,
+      markOverflow,
       maybeMap,
       merge
     };
@@ -27611,6 +27670,7 @@ var AMLLBundle = (function() {
       parseArrays: true,
       plainObjects: false,
       strictDepth: false,
+      strictMerge: true,
       strictNullHandling: false,
       throwOnLimitExceeded: false
     };
@@ -27672,16 +27732,18 @@ var AMLLBundle = (function() {
           val = options.strictNullHandling ? null : "";
         } else {
           key = options.decoder(part.slice(0, pos), defaults.decoder, charset, "key");
-          val = utils2.maybeMap(
-            parseArrayValue(
-              part.slice(pos + 1),
-              options,
-              isArray(obj[key]) ? obj[key].length : 0
-            ),
-            function(encodedVal) {
-              return options.decoder(encodedVal, defaults.decoder, charset, "value");
-            }
-          );
+          if (key !== null) {
+            val = utils2.maybeMap(
+              parseArrayValue(
+                part.slice(pos + 1),
+                options,
+                isArray(obj[key]) ? obj[key].length : 0
+              ),
+              function(encodedVal) {
+                return options.decoder(encodedVal, defaults.decoder, charset, "value");
+              }
+            );
+          }
         }
         if (val && options.interpretNumericEntities && charset === "iso-8859-1") {
           val = interpretNumericEntities(String(val));
@@ -27689,11 +27751,24 @@ var AMLLBundle = (function() {
         if (part.indexOf("[]=") > -1) {
           val = isArray(val) ? [val] : val;
         }
-        var existing = has.call(obj, key);
-        if (existing && options.duplicates === "combine") {
-          obj[key] = utils2.combine(obj[key], val);
-        } else if (!existing || options.duplicates === "last") {
-          obj[key] = val;
+        if (options.comma && isArray(val) && val.length > options.arrayLimit) {
+          if (options.throwOnLimitExceeded) {
+            throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
+          }
+          val = utils2.combine([], val, options.arrayLimit, options.plainObjects);
+        }
+        if (key !== null) {
+          var existing = has.call(obj, key);
+          if (existing && (options.duplicates === "combine" || part.indexOf("[]=") > -1)) {
+            obj[key] = utils2.combine(
+              obj[key],
+              val,
+              options.arrayLimit,
+              options.plainObjects
+            );
+          } else if (!existing || options.duplicates === "last") {
+            obj[key] = val;
+          }
         }
       }
       return obj;
@@ -27709,17 +27784,32 @@ var AMLLBundle = (function() {
         var obj;
         var root = chain[i2];
         if (root === "[]" && options.parseArrays) {
-          obj = options.allowEmptyArrays && (leaf === "" || options.strictNullHandling && leaf === null) ? [] : utils2.combine([], leaf);
+          if (utils2.isOverflow(leaf)) {
+            obj = leaf;
+          } else {
+            obj = options.allowEmptyArrays && (leaf === "" || options.strictNullHandling && leaf === null) ? [] : utils2.combine(
+              [],
+              leaf,
+              options.arrayLimit,
+              options.plainObjects
+            );
+          }
         } else {
           obj = options.plainObjects ? { __proto__: null } : {};
           var cleanRoot = root.charAt(0) === "[" && root.charAt(root.length - 1) === "]" ? root.slice(1, -1) : root;
           var decodedRoot = options.decodeDotInKeys ? cleanRoot.replace(/%2E/g, ".") : cleanRoot;
           var index = parseInt(decodedRoot, 10);
+          var isValidArrayIndex = !isNaN(index) && root !== decodedRoot && String(index) === decodedRoot && index >= 0 && options.parseArrays;
           if (!options.parseArrays && decodedRoot === "") {
             obj = { 0: leaf };
-          } else if (!isNaN(index) && root !== decodedRoot && String(index) === decodedRoot && index >= 0 && (options.parseArrays && index <= options.arrayLimit)) {
+          } else if (isValidArrayIndex && index < options.arrayLimit) {
             obj = [];
             obj[index] = leaf;
+          } else if (isValidArrayIndex && options.throwOnLimitExceeded) {
+            throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
+          } else if (isValidArrayIndex) {
+            obj[index] = leaf;
+            utils2.markOverflow(obj, index);
           } else if (decodedRoot !== "__proto__") {
             obj[decodedRoot] = leaf;
           }
@@ -27728,14 +27818,19 @@ var AMLLBundle = (function() {
       }
       return leaf;
     };
-    var parseKeys = function parseQueryStringKeys(givenKey, val, options, valuesParsed) {
-      if (!givenKey) {
-        return;
-      }
+    var splitKeyIntoSegments = function splitKeyIntoSegments2(givenKey, options) {
       var key = options.allowDots ? givenKey.replace(/\.([^.[]+)/g, "[$1]") : givenKey;
+      if (options.depth <= 0) {
+        if (!options.plainObjects && has.call(Object.prototype, key)) {
+          if (!options.allowPrototypes) {
+            return;
+          }
+        }
+        return [key];
+      }
       var brackets = /(\[[^[\]]*])/;
       var child = /(\[[^[\]]*])/g;
-      var segment = options.depth > 0 && brackets.exec(key);
+      var segment = brackets.exec(key);
       var parent = segment ? key.slice(0, segment.index) : key;
       var keys = [];
       if (parent) {
@@ -27744,23 +27839,34 @@ var AMLLBundle = (function() {
             return;
           }
         }
-        keys.push(parent);
+        keys[keys.length] = parent;
       }
       var i2 = 0;
-      while (options.depth > 0 && (segment = child.exec(key)) !== null && i2 < options.depth) {
+      while ((segment = child.exec(key)) !== null && i2 < options.depth) {
         i2 += 1;
-        if (!options.plainObjects && has.call(Object.prototype, segment[1].slice(1, -1))) {
+        var segmentContent = segment[1].slice(1, -1);
+        if (!options.plainObjects && has.call(Object.prototype, segmentContent)) {
           if (!options.allowPrototypes) {
             return;
           }
         }
-        keys.push(segment[1]);
+        keys[keys.length] = segment[1];
       }
       if (segment) {
         if (options.strictDepth === true) {
           throw new RangeError("Input depth exceeded depth option of " + options.depth + " and strictDepth is true");
         }
-        keys.push("[" + key.slice(segment.index) + "]");
+        keys[keys.length] = "[" + key.slice(segment.index) + "]";
+      }
+      return keys;
+    };
+    var parseKeys = function parseQueryStringKeys(givenKey, val, options, valuesParsed) {
+      if (!givenKey) {
+        return;
+      }
+      var keys = splitKeyIntoSegments(givenKey, options);
+      if (!keys) {
+        return;
       }
       return parseObject(keys, val, options, valuesParsed);
     };
@@ -27810,6 +27916,7 @@ var AMLLBundle = (function() {
         parseArrays: opts.parseArrays !== false,
         plainObjects: typeof opts.plainObjects === "boolean" ? opts.plainObjects : defaults.plainObjects,
         strictDepth: typeof opts.strictDepth === "boolean" ? !!opts.strictDepth : defaults.strictDepth,
+        strictMerge: typeof opts.strictMerge === "boolean" ? !!opts.strictMerge : defaults.strictMerge,
         strictNullHandling: typeof opts.strictNullHandling === "boolean" ? opts.strictNullHandling : defaults.strictNullHandling,
         throwOnLimitExceeded: typeof opts.throwOnLimitExceeded === "boolean" ? opts.throwOnLimitExceeded : false
       };
@@ -42823,7 +42930,6 @@ void main(void)
   }
   var Y = 32, tt$1 = (e7, t2) => (n2) => Math.min(1, Math.max(0, (n2 - e7) / (t2 - e7))), nt$1 = 0.5, rt$1 = tt$1(0, nt$1), it$1 = tt$1(nt$1, 1), at$1 = J$1(0.2, 0.4, 0.58, 1), ot$1 = J$1(0.3, 0, 0.58, 1), st$1 = (e7) => (t2) => t2 < e7 ? at$1(rt$1(t2)) : 1 - ot$1(it$1(t2));
   function ct$1(e7, t2 = 0, n2 = "rgba(0,0,0,var(--bright-mask-alpha, 1.0))", r2 = "rgba(0,0,0,var(--dark-mask-alpha, 1.0))") {
-    (!Number.isFinite(e7) || e7 <= 0) && (console.warn("[AMLL] Invalid fade width:", e7, "using default 1.0"), e7 = 1);
     let i2 = 2 + e7 + t2, a2 = e7 / i2, o2 = (1 - a2) / 2;
     return [`linear-gradient(to right,${n2} ${o2 * 100}%,${r2} ${(o2 + a2) * 100}%)`, i2];
   }
@@ -43115,10 +43221,10 @@ void main(void)
         let t2 = e7.mainElement;
         if (t2) {
           e7.width = t2.clientWidth, e7.height = t2.clientHeight;
-          let n2 = e7.width > 0 ? e7.width : 1, r2 = (e7.height > 0 ? e7.height : 1) * this.lyricPlayer.getWordFadeWidth(), [i2, a2] = ct$1(r2 / n2), o2 = `${a2 * 100}% 100%`;
-          this.lyricPlayer.supportMaskImage ? (t2.style.maskImage = i2, t2.style.maskRepeat = "no-repeat", t2.style.maskOrigin = "left", t2.style.maskSize = o2) : (t2.style.webkitMaskImage = i2, t2.style.webkitMaskRepeat = "no-repeat", t2.style.webkitMaskOrigin = "left", t2.style.webkitMaskSize = o2);
-          let s2 = e7.width + r2, c2 = `clamp(${-s2}px,calc(${-s2}px + (var(--amll-player-time) - ${e7.startTime})*${s2 / Math.abs(e7.endTime - e7.startTime)}px),0px) 0px, left top`;
-          t2.style.maskPosition = c2, t2.style.webkitMaskPosition = c2;
+          let n2 = e7.height * this.lyricPlayer.getWordFadeWidth(), [r2, i2] = ct$1(n2 / e7.width), a2 = `${i2 * 100}% 100%`;
+          this.lyricPlayer.supportMaskImage ? (t2.style.maskImage = r2, t2.style.maskRepeat = "no-repeat", t2.style.maskOrigin = "left", t2.style.maskSize = a2) : (t2.style.webkitMaskImage = r2, t2.style.webkitMaskRepeat = "no-repeat", t2.style.webkitMaskOrigin = "left", t2.style.webkitMaskSize = a2);
+          let o2 = e7.width + n2, s2 = `clamp(${-o2}px,calc(${-o2}px + (var(--amll-player-time) - ${e7.startTime})*${o2 / Math.abs(e7.endTime - e7.startTime)}px),0px) 0px, left top`;
+          t2.style.maskPosition = s2, t2.style.webkitMaskPosition = s2;
         }
       }
     }
@@ -51598,6 +51704,19 @@ void main(void)
   const PLAYER_BACKGROUND = "transparent";
   const demoAlbumArt = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJyZ2JhKDAsMCwwLDAuMSkiLz48L3N2Zz4=";
   let backgroundRender = null;
+  function applyAMLLPatch() {
+    logToAndroid("Applying AMLL patch for generateFadeGradient", "info");
+    const style = document.createElement("style");
+    style.textContent = `
+    /* 确保 mask-image 相关 CSS 变量始终有安全默认值 */
+    :root {
+      --bright-mask-alpha: 1.0;
+      --dark-mask-alpha: 0.2;
+    }
+  `;
+    document.head.appendChild(style);
+    logToAndroid("AMLL patch applied successfully", "debug");
+  }
   function logToAndroid(message, level = "debug") {
     if (window.Android?.log) {
       try {
@@ -51845,6 +51964,7 @@ void main(void)
       try {
         document.documentElement.style.background = "transparent";
         document.body.style.background = "transparent";
+        applyAMLLPatch();
         const root = document.getElementById("app") || document.createElement("div");
         if (!document.getElementById("app")) {
           root.id = "app";

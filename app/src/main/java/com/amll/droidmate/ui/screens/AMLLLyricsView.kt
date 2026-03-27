@@ -26,8 +26,12 @@ import com.amll.droidmate.ui.AppSettings
 import com.amll.droidmate.websocket.AMLLWebSocketClient
 import androidx.compose.ui.viewinterop.AndroidView
 import com.amll.droidmate.domain.model.TTMLLyrics
+import com.amll.droidmate.websocket.WsProtocolV2Helper
 import timber.log.Timber
 import java.io.File
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -73,9 +77,133 @@ fun AMLLLyricsView(
     val context = androidx.compose.ui.platform.LocalContext.current
     val webViewEnabled = AppSettings.isWebViewEnabled(context)
     
-    // 如果 WebView 被禁用，不渲染任何内容
+    // WebSocket 客户端和状态
+    val webSocketClient = remember { 
+        com.amll.droidmate.websocket.AMLLWebSocketClient.getInstance() 
+    }
+    var isWebSocketConnected by remember { mutableStateOf(false) }
+    
+    // 初始化 WebSocket 监听器（无论 WebView 是否启用都执行）
+    // 这样即使禁用 WebView，也能通过 WebSocket 同步播放状态
+    InitializeWebSocketListener(
+        musicId = musicId,
+        musicName = musicName,
+        albumName = albumName,
+        artistName = artistName,
+        duration = duration,
+        currentTime = currentTime,
+        isPlaying = isPlaying,
+        lyrics = lyrics,
+        debugSource = debugSource,
+        onCommandReceived = { command, valueObj ->
+            when (command) {
+                "pause" -> {
+                    Timber.i("[$debugSource] 收到暂停命令，执行暂停操作")
+                    // 发送系统广播：媒体按钮事件（暂停）
+                    val pauseIntent = android.content.Intent("android.intent.action.MEDIA_BUTTON").apply {
+                        putExtra(android.content.Intent.EXTRA_KEY_EVENT, android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MEDIA_PAUSE))
+                        addFlags(android.content.Intent.FLAG_RECEIVER_REGISTERED_ONLY)
+                    }
+                    context.sendBroadcast(pauseIntent)
+                }
+                "resume" -> {
+                    Timber.i("[$debugSource] 收到恢复播放命令，执行播放操作")
+                    // 发送系统广播：媒体按钮事件（播放）
+                    val playIntent = android.content.Intent("android.intent.action.MEDIA_BUTTON").apply {
+                        putExtra(android.content.Intent.EXTRA_KEY_EVENT, android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MEDIA_PLAY))
+                        addFlags(android.content.Intent.FLAG_RECEIVER_REGISTERED_ONLY)
+                    }
+                    context.sendBroadcast(playIntent)
+                }
+                "forwardSong" -> {
+                    Timber.i("[$debugSource] 收到下一首命令，执行下一首操作")
+                    // 发送系统广播：媒体按钮事件（下一首）
+                    val nextIntent = android.content.Intent("android.intent.action.MEDIA_BUTTON").apply {
+                        putExtra(android.content.Intent.EXTRA_KEY_EVENT, android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MEDIA_NEXT))
+                        addFlags(android.content.Intent.FLAG_RECEIVER_REGISTERED_ONLY)
+                    }
+                    context.sendBroadcast(nextIntent)
+                }
+                "backwardSong" -> {
+                    Timber.i("[$debugSource] 收到上一首命令，执行上一首操作")
+                    // 发送系统广播：媒体按钮事件（上一首）
+                    val prevIntent = android.content.Intent("android.intent.action.MEDIA_BUTTON").apply {
+                        putExtra(android.content.Intent.EXTRA_KEY_EVENT, android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS))
+                        addFlags(android.content.Intent.FLAG_RECEIVER_REGISTERED_ONLY)
+                    }
+                    context.sendBroadcast(prevIntent)
+                }
+                "seekPlayProgress" -> {
+                    val progress = valueObj?.get("progress")?.jsonPrimitive?.content?.toLongOrNull()
+                    if (progress != null) {
+                        Timber.i("[$debugSource] 收到跳转进度命令：$progress ms，执行跳转操作")
+                        // 使用 MediaInfoService 进行跳转
+                        val mediaInfoService = com.amll.droidmate.service.MediaInfoService(context)
+                        mediaInfoService.seekTo(progress)
+                    } else {
+                        Timber.w("[$debugSource] 跳转进度命令参数无效")
+                    }
+                }
+                "setVolume" -> {
+                    val volume = valueObj?.get("volume")?.jsonPrimitive?.content?.toDoubleOrNull()
+                    if (volume != null) {
+                        Timber.i("[$debugSource] 收到音量设置命令：$volume")
+                        // 使用 AudioManager 设置系统音量
+                        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+                        // 将 0.0-1.0 的音量转换为系统音量级别（0-15）
+                        val maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
+                        val targetVolume = (volume * maxVolume).toInt().coerceIn(0, maxVolume)
+                        audioManager.setStreamVolume(
+                            android.media.AudioManager.STREAM_MUSIC,
+                            targetVolume,
+                            0  // 不显示音量 UI
+                        )
+                        Timber.d("[$debugSource] 音量已设置：${volume} -> $targetVolume/$maxVolume")
+                    } else {
+                        Timber.w("[$debugSource] 音量设置命令参数无效")
+                    }
+                }
+                "setRepeatMode", "setShuffleMode" -> {
+                    Timber.d("[$debugSource] 收到不支持的命令：$command，忽略")
+                    // 忽略这些命令，不回复错误（避免频繁发送错误消息）
+                }
+                else -> {
+                    Timber.d("[$debugSource] 未知命令：$command")
+                }
+            }
+        },
+        onConnectedCallback = {
+            isWebSocketConnected = true
+            Timber.d("[$debugSource] WebSocket 已连接，当前歌曲信息：musicId=$musicId, musicName=$musicName, artist=$artistName")
+        },
+        onErrorCallback = { error ->
+            isWebSocketConnected = false
+            // 打印更详细的错误信息
+            when (error) {
+                is java.io.EOFException -> {
+                    Timber.e("服务器主动断开了连接，可能原因：")
+                    Timber.e("  1. 服务器未运行或已关闭")
+                    Timber.e("  2. 协议格式不匹配（检查 Initialize 消息格式）")
+                    Timber.e("  3. 网络问题导致连接中断")
+                    Timber.e("  4. 防火墙/安全软件阻止连接")
+                }
+                is java.net.ConnectException -> {
+                    Timber.e("无法连接到服务器")
+                    Timber.e("请检查：")
+                    Timber.e("  1. 服务器是否正在运行")
+                    Timber.e("  2. IP 地址和端口是否正确")
+                    Timber.e("  3. 设备是否在同一局域网内")
+                }
+                else -> {
+                    Timber.e("未知错误类型：${error.javaClass.simpleName}")
+                }
+            }
+        }
+    )
+    
+    // 如果 WebView 被禁用，不渲染歌词 UI，但仍保持 WebSocket 通信
     if (!webViewEnabled) {
-        Timber.d("[$debugSource] WebView 已禁用，跳过歌词渲染")
+        Timber.d("[$debugSource] WebView 已禁用，跳过歌词渲染（但 WebSocket 仍在运行）")
         return
     }
     
@@ -92,112 +220,92 @@ fun AMLLLyricsView(
     var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
     var lastMotionConfigValue by remember { mutableStateOf<String?>(null) }
     
-    // WebSocket 客户端和状态
-    val webSocketClient = remember { 
-        com.amll.droidmate.websocket.AMLLWebSocketClient.getInstance() 
-    }
-    var isWebSocketConnected by remember { mutableStateOf(false) }
+    // 记录上次发送的状态，用于去重
+    var lastSentMusicId by remember { mutableStateOf<String?>(null) }
+    var lastSentMusicName by remember { mutableStateOf<String?>(null) }
+    var lastSentAlbumName by remember { mutableStateOf<String?>(null) }
+    var lastSentArtistName by remember { mutableStateOf<String?>(null) }
+    var lastSentIsPlaying by remember { mutableStateOf<Boolean?>(null) }
     
-    // 发送播放状态到 WebSocket 服务器（V1 二进制协议）
+    // 发送播放状态到 WebSocket 服务器（V2 JSON 协议）
+    // 仅在歌曲信息或播放状态变化时发送，播放进度惯性除外
     fun sendPlaybackStatusToWebSocket(currentTime: Long, isPlaying: Boolean) {
         if (!isWebSocketConnected) {
             Timber.d("[$debugSource#$instanceId] WebSocket 未连接，跳过发送")
             return
         }
             
-        // V1 二进制协议格式：
-        // - Magic Number (2 bytes, u16, little-endian)
-        // - Payload data
+        // 检查是否有状态变化
+        val musicInfoChanged = musicId != lastSentMusicId ||
+                               musicName != lastSentMusicName ||
+                               albumName != lastSentAlbumName ||
+                               artistName != lastSentArtistName
         
-        // 发送进度更新 (Magic: 5 = OnPlayProgress)
-        val progressBytes = ByteArray(10) // 2 bytes magic + 8 bytes u64
-        progressBytes[0] = 5.toByte()  // Magic low byte
-        progressBytes[1] = 0.toByte()  // Magic high byte (little-endian)
+        val playingStateChanged = isPlaying != lastSentIsPlaying
         
-        // 将 currentTime (Long/u64) 转为小端字节序
-        for (i in 0 until 8) {
-            progressBytes[2 + i] = ((currentTime ushr (i * 8)) and 0xFF).toByte()
+        // 只有状态变化时才发送
+        if (!musicInfoChanged && !playingStateChanged) {
+            // 状态无变化，不发送（播放进度惯性除外）
+            return
         }
-        
-        Timber.d("[$debugSource#$instanceId] 发送进度消息 (V1 Binary): Magic=5, progress=$currentTime")
-        webSocketClient.send(progressBytes)
             
-        // 发送播放/暂停状态
-        val stateBytes = if (isPlaying) {
-            // OnResumed (Magic: 8)
-            byteArrayOf(8.toByte(), 0.toByte())
-        } else {
-            // OnPaused (Magic: 7)
-            byteArrayOf(7.toByte(), 0.toByte())
+        // V2 协议：使用 JSON 格式发送状态更新
+        try {
+            // 如果歌曲信息变化，发送新的歌曲信息
+            if (musicInfoChanged) {
+                val message = com.amll.droidmate.websocket.WsProtocolV2Helper.createSetMusicUpdate(
+                    musicId = musicId,
+                    musicName = musicName,
+                    albumName = albumName,
+                    artists = listOf(com.amll.droidmate.websocket.WsProtocolV2Helper.Artist("1", artistName)),
+                    duration = duration
+                )
+                Timber.d("[$debugSource#$instanceId] 发送歌曲信息 (V2 JSON): $musicName")
+                webSocketClient.send(message)
+                
+                // 更新记录的状态
+                lastSentMusicId = musicId
+                lastSentMusicName = musicName
+                lastSentAlbumName = albumName
+                lastSentArtistName = artistName
+            }
+            
+            // 如果播放状态变化，发送播放/暂停状态
+            if (playingStateChanged) {
+                val stateMessage = if (isPlaying) {
+                    com.amll.droidmate.websocket.WsProtocolV2Helper.createResumedUpdate()
+                } else {
+                    com.amll.droidmate.websocket.WsProtocolV2Helper.createPausedUpdate()
+                }
+                
+                Timber.d("[$debugSource#$instanceId] 发送播放状态消息 (V2 JSON): isPlaying=$isPlaying")
+                webSocketClient.send(stateMessage)
+                
+                // 更新记录的状态
+                lastSentIsPlaying = isPlaying
+            }
+            
+            // 注意：不发送播放进度更新（currentTime），避免频繁网络请求
+        } catch (e: Exception) {
+            Timber.e(e, "[$debugSource#$instanceId] 发送 V2 消息失败")
         }
-        
-        Timber.d("[$debugSource#$instanceId] 发送播放状态消息 (V1 Binary): Magic=${stateBytes[0]}")
-        webSocketClient.send(stateBytes)
     }
     
-    // 发送歌曲信息到 WebSocket 服务器
-    fun sendMusicInfoToWebSocket(musicId: String, musicName: String, albumName: String, artistName: String, duration: Long) {
-        if (!isWebSocketConnected) {
-            Timber.d("[$debugSource#$instanceId] WebSocket 未连接，跳过发送歌曲信息")
-            return
+    // WebSocket 状态同步逻辑 - 当歌曲信息或播放状态变化时立即发送
+    LaunchedEffect(musicId, musicName, albumName, artistName, duration, isPlaying) {
+        if (AppSettings.isWebSocketProtocolEnabled(context) && isWebSocketConnected) {
+            // 当歌曲信息或播放状态变化时，立即发送新状态（播放进度惯性除外）
+            sendPlaybackStatusToWebSocket(currentTime, isPlaying)
         }
-        
-        // SetMusicInfo (Magic: 2)
-        // 结构：music_id\0 music_name\0 album_id\0 album_name\0 artists_count\0 artist\0 duration
-        val musicIdBytes = musicId.toByteArray(Charsets.UTF_8) + 0.toByte()
-        val musicNameBytes = musicName.toByteArray(Charsets.UTF_8) + 0.toByte()
-        val albumIdBytes = byteArrayOf(0.toByte()) // 空 album_id
-        val albumNameBytes = albumName.toByteArray(Charsets.UTF_8) + 0.toByte()
-        val artistNameBytes = artistName.toByteArray(Charsets.UTF_8) + 0.toByte()
-        
-        val message = ByteArrayOutputStream()
-        message.write(byteArrayOf(2.toByte(), 0.toByte())) // Magic: 2
-        message.write(musicIdBytes)
-        message.write(musicNameBytes)
-        message.write(albumIdBytes)
-        message.write(albumNameBytes)
-        message.write(byteArrayOf(1.toByte(), 0.toByte(), 0.toByte(), 0.toByte())) // artists_count: 1 (u32)
-        message.write(artistNameBytes)
-        
-        // duration (u64 little-endian)
-        for (i in 0 until 8) {
-            message.write(((duration ushr (i * 8)) and 0xFF).toInt())
-        }
-        
-        val finalBytes = message.toByteArray()
-        Timber.d("[$debugSource#$instanceId] 发送歌曲信息 (V1 Binary): Magic=2, name=$musicName, duration=$duration")
-        webSocketClient.send(finalBytes)
-    }
-    
-    // 发送歌词到 WebSocket 服务器（TTML 格式）
-    fun sendLyricToWebSocket(ttmlContent: String) {
-        if (!isWebSocketConnected) {
-            Timber.d("[$debugSource#$instanceId] WebSocket 未连接，跳过发送歌词")
-            return
-        }
-        
-        // SetLyricFromTTML (Magic: 17)
-        // 结构：ttml_data\0
-        val ttmlBytes = ttmlContent.toByteArray(Charsets.UTF_8) + 0.toByte()
-        
-        val message = ByteArrayOutputStream()
-        message.write(byteArrayOf(17.toByte(), 0.toByte())) // Magic: 17
-        message.write(ttmlBytes)
-        
-        val finalBytes = message.toByteArray()
-        Timber.d("[$debugSource#$instanceId] 发送歌词 (V1 Binary): Magic=17, size=${ttmlBytes.size} bytes")
-        webSocketClient.send(finalBytes)
-    }
-    
-    // 将 TTMLLyrics 对象转换为 TTML 字符串
-    fun buildTtmlString(lyrics: TTMLLyrics): String {
-        // 简单实现：返回原始的 TTML 内容
-        // 如果 lyrics 对象有 toXml() 或类似方法，可以在这里调用
-        // 暂时返回空字符串，需要时再完善
-        return ""
     }
     
     // 注入 WebSocket 桥接代码到 WebView
+    fun buildTtmlString(lyrics: TTMLLyrics): String {
+        return lyrics.lines.joinToString("\n") { line ->
+            "<p begin=\"${line.startTime}\" end=\"${line.endTime}\">${line.text}</p>"
+        }
+    }
+    
     fun injectWebSocketBridge(view: WebView) {
         amllDebug("[$debugSource#$instanceId] 注入 WebSocket 桥接代码")
         
@@ -222,73 +330,11 @@ fun AMLLLyricsView(
         )
     }
     
-    // 初始化 WebSocket 监听器（不重复连接）
-    LaunchedEffect(Unit) {
-        if (AppSettings.isWebSocketProtocolEnabled(context)) {
-            val wsAddress = AppSettings.getWebSocketProtocolAddress(context)
-            Timber.d("[$debugSource#$instanceId] 设置 WebSocket 监听器：$wsAddress")
-            
-            // 添加监听器以更新 UI 状态
-            webSocketClient.addListener(object : AMLLWebSocketClient.Listener {
-                override fun onConnected() {
-                    Timber.i("[$debugSource#$instanceId] WebSocket 已连接")
-                    isWebSocketConnected = true
-                    
-                    // 连接成功后立即发送歌曲信息和歌词
-                    sendMusicInfoToWebSocket(musicId, musicName, albumName, artistName, duration)
-                    lyrics?.lines?.let { lines ->
-                        // 将 TTML 歌词转为字符串并发送
-                        val ttmlContent = buildTtmlString(lyrics)
-                        if (ttmlContent.isNotBlank()) {
-                            sendLyricToWebSocket(ttmlContent)
-                        }
-                    }
-                }
-                
-                override fun onDisconnected() {
-                    Timber.w("[$debugSource#$instanceId] WebSocket 已断开")
-                    isWebSocketConnected = false
-                }
-                
-                override fun onMessageReceived(message: String) {
-                    Timber.d("[$debugSource#$instanceId] 收到 WebSocket 消息：$message")
-                    // TODO: 处理来自服务器的命令（如暂停、播放、跳转等）
-                }
-                
-                override fun onError(error: Throwable) {
-                    Timber.e(error, "[$debugSource#$instanceId] WebSocket 错误")
-                    isWebSocketConnected = false
-                    // 打印更详细的错误信息
-                    when (error) {
-                        is java.io.EOFException -> {
-                            Timber.e("服务器主动断开了连接，可能原因：")
-                            Timber.e("  1. 服务器未运行或已关闭")
-                            Timber.e("  2. 协议格式不匹配（检查 Initialize 消息格式）")
-                            Timber.e("  3. 网络问题导致连接中断")
-                            Timber.e("  4. 防火墙/安全软件阻止连接")
-                        }
-                        is java.net.ConnectException -> {
-                            Timber.e("无法连接到服务器：${wsAddress}")
-                            Timber.e("请检查：")
-                            Timber.e("  1. 服务器是否正在运行")
-                            Timber.e("  2. IP 地址和端口是否正确")
-                            Timber.e("  3. 设备是否在同一局域网内")
-                        }
-                        else -> {
-                            Timber.e("未知错误类型：${error.javaClass.simpleName}")
-                        }
-                    }
-                }
-            })
-        }
-    }
-    
-    // 在 Composable 销毁时清理监听器（不断开连接）
-    DisposableEffect(Unit) {
-        onDispose {
-            Timber.d("[$debugSource#$instanceId] 移除 WebSocket 监听器")
-            // 注意：由于使用匿名对象，无法直接移除特定的监听器
-            // 这里只是记录日志，实际清理在 destroy() 中统一进行
+    // WebSocket 状态同步逻辑 - 当歌曲信息或播放状态变化时立即发送
+    LaunchedEffect(musicId, musicName, albumName, artistName, duration, isPlaying) {
+        if (AppSettings.isWebSocketProtocolEnabled(context) && isWebSocketConnected) {
+            // 当歌曲信息或播放状态变化时，立即发送新状态（播放进度惯性除外）
+            sendPlaybackStatusToWebSocket(currentTime, isPlaying)
         }
     }
 

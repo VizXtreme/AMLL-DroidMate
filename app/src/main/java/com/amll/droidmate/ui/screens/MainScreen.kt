@@ -78,6 +78,9 @@ import com.amll.droidmate.ui.AppSettings
 import com.amll.droidmate.ui.CardClickAction
 import com.amll.droidmate.ui.CustomLyricsActivity
 import com.amll.droidmate.ui.viewmodel.MainViewModel
+import com.amll.droidmate.ui.theme.DroidMateTheme
+import com.amll.droidmate.ui.theme.SuccessGreen
+import com.amll.droidmate.ui.theme.WarningAmber
 import com.amll.droidmate.update.GitHubUpdateChecker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -192,8 +195,20 @@ fun MainScreen() {
         }
     }
     
-    // WebSocket 连接状态
-    var isWebSocketConnected by remember { mutableStateOf(false) }
+    // WebSocket 连接状态 - 使用统一的状态监听器
+    val webSocketClient = remember { com.amll.droidmate.websocket.AMLLWebSocketClient.getInstance() }
+    val isWebSocketConnected by produceState(initialValue = webSocketClient.isConnected) {
+        value = webSocketClient.isConnected
+        
+        // 使用工厂函数创建简单的状态监听器
+        val listener = webSocketClient.createStateListener(
+            onStateChanged = { connected ->
+                value = connected
+            }
+        )
+        
+        webSocketClient.addListener(listener)
+    }
     var websocketUrl by remember { mutableStateOf(AppSettings.getWebSocketProtocolAddress(context)) }
     val isWebViewEnabled = AppSettings.isWebViewEnabled(context)
     
@@ -212,23 +227,13 @@ fun MainScreen() {
         }
     }
     
-    // 监听 WebSocket 连接状态
+    // 首次进入 App 时自动连接 WebSocket
     LaunchedEffect(Unit) {
-        val webSocketClient = com.amll.droidmate.websocket.AMLLWebSocketClient.getInstance()
-        webSocketClient.addListener(object : com.amll.droidmate.websocket.AMLLWebSocketClient.Listener {
-            override fun onConnected() {
-                isWebSocketConnected = true
-            }
-            
-            override fun onDisconnected() {
-                isWebSocketConnected = false
-            }
-            
-            override fun onMessageReceived(message: String) {}
-            override fun onError(error: Throwable) {
-                isWebSocketConnected = false
-            }
-        })
+        if (AppSettings.isWebSocketProtocolEnabled(context)) {
+            val wsAddress = AppSettings.getWebSocketProtocolAddress(context)
+            Timber.d("[MainScreen] 首次启动，尝试连接 WebSocket: $wsAddress")
+            webSocketClient.connect(wsAddress)
+        }
     }
 
     var showMatchBubble by remember { mutableStateOf(false) }
@@ -350,14 +355,14 @@ fun MainScreen() {
             // WebSocket 状态指示器
             if (AppSettings.isWebSocketProtocolEnabled(context) && !isLyricsFullscreen) {
                 val statusCardBg = if (isWebSocketConnected) {
-                    androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.2f)
+                    SuccessGreen.copy(alpha = 0.2f)
                 } else {
                     MaterialTheme.colorScheme.surfaceVariant
                 }
                 
-                val connectedDotColor = androidx.compose.ui.graphics.Color.Green
+                val connectedDotColor = SuccessGreen
                 val disconnectedDotColor = MaterialTheme.colorScheme.onSurfaceVariant
-                val connectedTextColor = androidx.compose.ui.graphics.Color.Green
+                val connectedTextColor = SuccessGreen
                 val disconnectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                 
                 Card(
@@ -764,6 +769,11 @@ private fun LyricsVisualLayer(
                 AMLLLyricsView(
                     lyrics = lyrics,
                     currentTime = currentTime,
+                    musicId = nowPlaying?.packageName ?: "",
+                    musicName = nowPlaying?.title ?: "Unknown",
+                    albumName = nowPlaying?.album ?: "",
+                    artistName = nowPlaying?.artist ?: "Unknown",
+                    duration = nowPlaying?.duration ?: 0L,
                     albumArtUri = nowPlaying?.albumArtUri,
                     renderMode = AMLLRenderMode.DOM,
                     debugSource = amllDebugSource,

@@ -1,9 +1,10 @@
 import { execSync } from "node:child_process";
 import { resolve } from "node:path";
 import react from "@vitejs/plugin-react";
-import jotaiDebugLabel from "jotai/babel/plugin-debug-label";
-import jotaiReactRefresh from "jotai/babel/plugin-react-refresh";
+import jotaiDebugLabel from "jotai-babel/plugin-debug-label";
+import jotaiReactRefresh from "jotai-babel/plugin-react-refresh";
 import { defineConfig, type Plugin } from "vite";
+import babel from "vite-plugin-babel";
 import i18nextLoader from "vite-plugin-i18next-loader";
 import lightningcss from "vite-plugin-lightningcss";
 import svgr from "vite-plugin-svgr";
@@ -60,7 +61,6 @@ const GitMetadataPlugin = (): Plugin => {
 			this.emitFile({
 				fileName: "git-metadata.json",
 				name: "git-metadata",
-				needsCodeReference: false,
 				source: JSON.stringify(metadata),
 				type: "asset",
 			});
@@ -83,12 +83,6 @@ const GitMetadataPlugin = (): Plugin => {
 // https://vitejs.dev/config/
 export default defineConfig({
 	build: {
-		target:
-			process.env.TAURI_ENV_PLATFORM === "windows" ? "chrome105" : "safari15",
-		minify: !process.env.TAURI_ENV_DEBUG ? "esbuild" : false,
-		modulePreload: {
-			polyfill: false,
-		},
 		rollupOptions: {
 			shimMissingExports: true,
 			input: {
@@ -97,18 +91,15 @@ export default defineConfig({
 				"taskbar-lyric": resolve(__dirname, "taskbar-lyric.html"),
 			},
 		},
-		sourcemap: "inline",
 	},
 	plugins: [
-		// MillionLint.vite(),
-		react({
-			babel: {
+		react(),
+		babel({
+			babelConfig: {
 				plugins: [jotaiDebugLabel, jotaiReactRefresh],
 			},
 		}),
 		wasm(),
-		// topLevelAwait(),
-
 		svgr({
 			svgrOptions: {
 				ref: true,

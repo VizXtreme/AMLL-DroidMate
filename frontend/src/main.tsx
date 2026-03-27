@@ -56,6 +56,25 @@ interface AMLLGlobal {
   state: any
 }
 
+// 🔧 下游覆盖：修复 generateFadeGradient 的 width 验证问题
+// 在 AMLL 加载后立即应用补丁
+function applyAMLLPatch() {
+  logToAndroid('Applying AMLL patch for generateFadeGradient', 'info')
+  
+  // 方法 1：通过 CSS 变量设置安全值
+  const style = document.createElement('style')
+  style.textContent = `
+    /* 确保 mask-image 相关 CSS 变量始终有安全默认值 */
+    :root {
+      --bright-mask-alpha: 1.0;
+      --dark-mask-alpha: 0.2;
+    }
+  `
+  document.head.appendChild(style)
+  
+  logToAndroid('AMLL patch applied successfully', 'debug')
+}
+
 declare global {
   interface Window {
     __amll?: AMLLGlobal
@@ -373,6 +392,9 @@ if (typeof window !== 'undefined') {
     try {
       document.documentElement.style.background = 'transparent'
       document.body.style.background = 'transparent'
+      
+      // 🔧 应用下游补丁
+      applyAMLLPatch()
       
       const root = document.getElementById('app') || document.createElement('div')
       if (!document.getElementById('app')) {

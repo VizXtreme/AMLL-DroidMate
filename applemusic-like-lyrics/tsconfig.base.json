@@ -1,26 +1,36 @@
 {
 	"compilerOptions": {
+		// Environment setup & latest features
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
+		"target": "ESNext",
+		"module": "Preserve",
+		"moduleDetection": "force",
+		"jsx": "react-jsx",
+		"allowJs": false,
+
+		// Bundler mode
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"verbatimModuleSyntax": true,
+		"noEmit": true,
+		"isolatedModules": true,
+		"incremental": true,
+		"declaration": true,
+		"isolatedDeclarations": false,
+
+		// Best practices
 		"strict": true,
-		"strictNullChecks": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"noImplicitOverride": true,
+		"skipLibCheck": true,
 		"noFallthroughCasesInSwitch": true,
+		"noImplicitOverride": true,
 		"forceConsistentCasingInFileNames": true,
 
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-		"resolveJsonModule": true,
-		"allowImportingTsExtensions": true,
-		"noEmit": true,
-
-		"target": "ESNext",
-		"lib": ["ESNext", "DOM", "DOM.Iterable"],
-		"jsx": "react-jsx",
-
-		"esModuleInterop": true,
-		"allowSyntheticDefaultImports": true,
-
-		"skipLibCheck": true
+		// Some stricter flags
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noPropertyAccessFromIndexSignature": false,
+		"noUncheckedIndexedAccess": false,
+		"exactOptionalPropertyTypes": false,
+		"noImplicitReturns": false
 	}
 }

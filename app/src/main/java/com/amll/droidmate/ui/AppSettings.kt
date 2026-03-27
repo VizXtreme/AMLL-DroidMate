@@ -420,7 +420,7 @@ object AppSettings {
         prefs(context).putLong(KEY_AMLL_ANIMATION_FPS, value.toLong())
     }
 
-    // === WebSocket 协议传递设置 ===
+    // === WebSocket 传递设置 ===
     fun getWebSocketProtocolAddress(context: Context): String {
         return prefs(context).getString(KEY_WEBSOCKET_PROTOCOL_ADDRESS, DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS)
             ?: DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS

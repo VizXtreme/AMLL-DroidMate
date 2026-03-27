@@ -15,7 +15,7 @@ $AndroidAssets = Join-Path $ProjectRoot "app/src/main/assets/amll"
 # 步骤 1: 执行 Vite 构建
 Write-Host "[1/4] Building frontend with Vite..." -ForegroundColor Yellow
 Set-Location (Join-Path $ProjectRoot "frontend")
-npm run build
+& pnpm exec vite build
 if ($LASTEXITCODE -ne 0) {
     Write-Host "✗ Build failed!" -ForegroundColor Red
     exit 1

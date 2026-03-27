@@ -24,5 +24,6 @@
 			"maxParallel": 1,
 			"outputs": ["{projectRoot}/dist", "{projectRoot}/pkg"]
 		}
-	}
+	},
+	"analytics": false
 }

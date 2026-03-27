@@ -1,11 +1,10 @@
 {
 	"extends": "../../tsconfig.base.json",
+	"include": ["src", "i18next.config.ts", "vite.config.ts"],
 	"compilerOptions": {
-		"useDefineForClassFields": true,
-		"isolatedModules": true,
-		"composite": true
+		"declaration": false,
+		"composite": false
 	},
-	"include": ["src", "i18next.config.ts"],
 	"references": [
 		{ "path": "../core" },
 		{ "path": "../react" },
