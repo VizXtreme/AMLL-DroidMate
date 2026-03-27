@@ -1,11 +1,67 @@
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import org.gradle.api.tasks.TaskAction
+import javax.inject.Inject
+import org.gradle.process.ExecOperations
+import java.io.File
 
 plugins {
     id("com.android.application")
     kotlin("plugin.serialization")
     kotlin("plugin.compose")
+}
+
+// Custom task type for building frontend
+abstract class BuildFrontendTask @Inject constructor(
+    private val execOperations: ExecOperations
+) : DefaultTask() {
+    
+    // Use Property to pass project directory - this is Configuration Cache compatible
+    @get:InputDirectory
+    abstract val projectDir: DirectoryProperty
+    
+    init {
+        group = "frontend"
+        description = "Build frontend assets using pnpm"
+    }
+    
+    @TaskAction
+    fun buildFrontend() {
+        val rootDir = projectDir.get().asFile
+        val frontendDir = File(rootDir, "frontend")
+        val scriptsDir = File(rootDir, "scripts")
+        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+        
+        if (!frontendDir.exists()) {
+            logger.warn("Frontend directory not found, skipping build")
+            return
+        }
+        
+        logger.info("Building frontend in ${frontendDir.absolutePath}")
+        
+        val command = if (isWindows) {
+            listOf("powershell", "-ExecutionPolicy", "Bypass", "-File", 
+                File(scriptsDir, "build-android.ps1").absolutePath)
+        } else {
+            listOf("pnpm", "run", "build:android")
+        }
+        
+        execOperations.exec {
+            workingDir(frontendDir)
+            commandLine(command)
+        }
+    }
+}
+
+// Register and configure the task
+val buildFrontendProvider = tasks.register("buildFrontend", BuildFrontendTask::class.java) {
+    projectDir.set(rootProject.layout.projectDirectory)
+}
+
+// Build frontend before preBuild task
+tasks.named("preBuild") {
+    dependsOn(buildFrontendProvider)
 }
 
 val buildTimestamp = SimpleDateFormat("yyyyMMddHHmmss", Locale.US)
