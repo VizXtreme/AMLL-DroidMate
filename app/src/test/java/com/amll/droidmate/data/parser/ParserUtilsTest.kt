@@ -1,5 +1,6 @@
 package com.amll.droidmate.data.parser
 
+import com.amll.droidmate.domain.model.LyricLine
 import com.amll.droidmate.domain.model.LyricWord
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -14,16 +15,16 @@ class ParserUtilsTest {
     @Test
     fun testNormalizeTextWhitespace() {
         // 标准清理
-        assertEquals("hello world", ParserUtils.normalizeTextWhitespace("  hello   world  "))
-        assertEquals("test", ParserUtils.normalizeTextWhitespace("\t\ntest\n\t"))
+        assertEquals("hello world", normalizeTextWhitespace("  hello   world  "))
+        assertEquals("test", normalizeTextWhitespace("\t\ntest\n\t"))
         
         // QQ 音乐翻译字段（双斜杠）
-        assertEquals("translation", ParserUtils.normalizeTextWhitespace("//   translation"))
-        assertEquals("text", ParserUtils.normalizeTextWhitespace("////text"))
+        assertEquals("translation", normalizeTextWhitespace("//   translation"))
+        assertEquals("text", normalizeTextWhitespace("////text"))
         
         // 空字符串
-        assertEquals("", ParserUtils.normalizeTextWhitespace(""))
-        assertEquals("", ParserUtils.normalizeTextWhitespace("   "))
+        assertEquals("", normalizeTextWhitespace(""))
+        assertEquals("", normalizeTextWhitespace("   "))
     }
     
     @Test
@@ -31,48 +32,48 @@ class ParserUtilsTest {
         val words = mutableListOf<LyricWord>()
         
         // 普通文本
-        val result1 = ParserUtils.processSyllableText("hello", words)
+        val result1 = processSyllableText("hello", words)
         assertEquals("hello" to false, result1)
         
         // 带前导空格
         words.add(LyricWord("word", 0, 100))
-        val result2 = ParserUtils.processSyllableText(" next", words)
+        val result2 = processSyllableText(" next", words)
         assertEquals("next" to false, result2)
         // 验证最后一个单词后面加了空格
         assertTrue(words.last().word.endsWith(" "))
         
         // 带尾随空格
-        val result3 = ParserUtils.processSyllableText("text ", words)
+        val result3 = processSyllableText("text ", words)
         assertEquals("text" to true, result3)
         
         // 空文本
-        assertNull(ParserUtils.processSyllableText("", words))
-        assertNull(ParserUtils.processSyllableText("   ", words))
+        assertNull(processSyllableText("", words))
+        assertNull(processSyllableText("   ", words))
     }
     
     @Test
     fun testCleanLyricText() {
         // 标准模式（trim 并压缩空格）
-        assertEquals("hello world", ParserUtils.cleanLyricText("  hello   world  "))
+        assertEquals("hello world", cleanLyricText("  hello   world  "))
         
         // 保留空格模式
-        assertEquals("hello   world", ParserUtils.cleanLyricText("hello   world", preserveSpaces = true))
-        assertEquals("hello\nworld", ParserUtils.cleanLyricText("hello\nworld", preserveSpaces = true))
+        assertEquals("hello   world", cleanLyricText("hello   world", preserveSpaces = true))
+        assertEquals("hello\nworld", cleanLyricText("hello\nworld", preserveSpaces = true))
         
         // 移除双斜杠
-        assertEquals("text", ParserUtils.cleanLyricText("//text", removeLeadingSlashes = true))
-        assertEquals("//text", ParserUtils.cleanLyricText("//text", removeLeadingSlashes = false))
+        assertEquals("text", cleanLyricText("//text", removeLeadingSlashes = true))
+        assertEquals("//text", cleanLyricText("//text", removeLeadingSlashes = false))
     }
     
     @Test
     fun testCleanBackgroundText() {
         // 括号包裹的文本
-        assertEquals("background", ParserUtils.cleanBackgroundText("(background)"))
-        assertEquals("bg text", ParserUtils.cleanBackgroundText("(bg text)"))
+        assertEquals("background", cleanBackgroundText("(background)"))
+        assertEquals("bg text", cleanBackgroundText("(bg text)"))
         
         // 非括号包裹的文本
-        assertEquals("normal text", ParserUtils.cleanBackgroundText("normal text"))
-        assertEquals("", ParserUtils.cleanBackgroundText(""))
+        assertEquals("normal text", cleanBackgroundText("normal text"))
+        assertEquals("", cleanBackgroundText(""))
     }
     
     @Test
@@ -88,11 +89,11 @@ class ParserUtilsTest {
         val regex = Regex("""\[(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?]""")
         
         // 找到下一行时间
-        assertEquals(15000L, ParserUtils.findNextLineStartTime(lines, 0, regex))
-        assertEquals(17500L, ParserUtils.findNextLineStartTime(lines, 3, regex))
+        assertEquals(15000L, findNextLineStartTime(lines, 0, regex))
+        assertEquals(17500L, findNextLineStartTime(lines, 3, regex))
         
         // 找不到返回 null
-        assertNull(ParserUtils.findNextLineStartTime(lines, 4, regex))
+        assertNull(findNextLineStartTime(lines, 4, regex))
     }
     
     @Test
@@ -108,7 +109,7 @@ class ParserUtilsTest {
             LyricLine(startTime = 3000, endTime = 4000, text = "翻译 2", words = emptyList())
         )
         
-        val merged = ParserUtils.mergeLyricLines(mainLines, translationLines, null)
+        val merged = mergeLyricLines(mainLines, translationLines, null)
         
         assertEquals(3, merged.size)
         assertEquals("翻译 1", merged[0].translation)

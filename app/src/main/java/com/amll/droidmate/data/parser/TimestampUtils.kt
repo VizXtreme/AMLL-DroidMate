@@ -22,7 +22,8 @@ object TimestampUtils {
      * @param timeStr 时间字符串
      * @return 毫秒数，解析失败返回 0L
      */
-    fun toMillis(timeStr: String): Long {
+    fun toMillis(timeStr: String?): Long {
+        if (timeStr == null) return 0L
         return try {
             if (timeStr.isBlank()) return 0L
             

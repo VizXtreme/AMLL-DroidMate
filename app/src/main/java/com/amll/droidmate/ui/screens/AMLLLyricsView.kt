@@ -457,6 +457,8 @@ fun AMLLLyricsView(
                     }
                 }
                 // WebView 安全配置
+                // 已弃用的 WebView 配置，但为了保持兼容性暂时保留
+                @Suppress("DEPRECATION")
                 settings.apply {
                     javaScriptEnabled = true
                     domStorageEnabled = true

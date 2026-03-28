@@ -59,7 +59,7 @@ class TimestampUtilsTest {
     @Test
     fun testToMillis_millisecondPrecision() {
         // 毫秒精度处理
-        assertEquals(1000L, TimestampUtils.toMillis("00:01.1"))      // .1 -> 100ms
+        assertEquals(1100L, TimestampUtils.toMillis("00:01.1"))      // .1 -> 100ms
         assertEquals(1010L, TimestampUtils.toMillis("00:01.01"))     // .01 -> 10ms
         assertEquals(1001L, TimestampUtils.toMillis("00:01.001"))    // .001 -> 1ms
         assertEquals(1123L, TimestampUtils.toMillis("00:01.1234"))   // .1234 -> 123ms (截断)

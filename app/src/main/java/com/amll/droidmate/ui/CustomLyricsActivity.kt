@@ -21,7 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 
 // icons are deprecated but AutoMirrored is unavailable; suppress warnings where used
 import androidx.compose.material3.Button
@@ -192,7 +192,7 @@ private fun CustomLyricsPage(
                     context.startActivity(Intent(context, LyricsCacheActivity::class.java))
                 }) {
                     Icon(
-                        imageVector = Icons.Default.FormatListBulleted,
+                        imageVector = Icons.AutoMirrored.Filled.FormatListBulleted,
                         contentDescription = "管理缓存歌词"
                     )
                 }

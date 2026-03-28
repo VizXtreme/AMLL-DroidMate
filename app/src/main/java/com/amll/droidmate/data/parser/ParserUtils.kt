@@ -88,18 +88,21 @@ fun cleanLyricText(
     if (text.isEmpty()) return ""
     
     return if (preserveSpaces) {
-        // 保留空格的清理模式：仅移除换行控制字符
-        text
-            .replace("\r", "")
-            .replace("\n", "")
+        // 保留空格的清理模式：仅移除回车符
+        text.replace("\r", "")
     } else {
         // 标准清理模式：trim 并压缩空格
-        val cleaned = normalizeTextWhitespace(text)
-        if (removeLeadingSlashes) {
-            cleaned.replaceFirst(Regex("^/{2,}\\s*"), "")
+        var cleaned = normalizeTextWhitespace(text)
+        // 仅在明确指定时移除双斜杠
+        if (!removeLeadingSlashes) {
+            // 如果原始文本有双斜杠且 normalizeTextWhitespace 移除了它们，需要恢复
+            if (text.trim().startsWith("//")) {
+                cleaned = "//" + cleaned.trimStart()
+            }
         } else {
-            cleaned
+            cleaned = cleaned.replaceFirst(Regex("^/{2,}\\s*"), "")
         }
+        cleaned
     }
 }
 
