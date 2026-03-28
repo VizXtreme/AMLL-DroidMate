@@ -143,8 +143,10 @@ private fun SettingsPage(
             title = { Text("设置") },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    @Suppress("DEPRECATION")
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "返回"
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(

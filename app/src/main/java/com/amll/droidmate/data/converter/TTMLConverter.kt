@@ -3,10 +3,14 @@ package com.amll.droidmate.data.converter
 import com.amll.droidmate.domain.model.LyricLine
 import com.amll.droidmate.domain.model.TTMLLyrics
 import com.amll.droidmate.domain.model.TTMLMetadata
+import com.amll.droidmate.data.parser.TimestampUtils
 import timber.log.Timber
 
 /**
  * TTML 转换器 - 将歌词转换为 TTML 格式
+ * 
+ * 注意：本转换器的所有方法均通过反射调用，因此需要保留 @Suppress("unused")
+ * 这些方法在运行时被动态调用，用于歌词格式的导入/导出功能
  */
 @Suppress("unused")
 object TTMLConverter {
@@ -60,13 +64,14 @@ object TTMLConverter {
         sb.append("""${indent}</head>$lineBreak""")
         
         // Body
-        val duration = formatTime(lyrics.lines.lastOrNull()?.endTime ?: 0L)
+        val duration = TimestampUtils.fromMillis(lyrics.lines.lastOrNull()?.endTime ?: 0L)
         sb.append("""${indent}<body dur="$duration">$lineBreak""")
+        sb.append("""${indent}${indent}<div>$lineBreak""")
         
         // Lyrics lines
         lyrics.lines.forEachIndexed outer@{ lineIndex, line ->
-            val begin = formatTime(line.startTime)
-            val end = formatTime(line.endTime)
+            val begin = TimestampUtils.fromMillis(line.startTime)
+            val end = TimestampUtils.fromMillis(line.endTime)
             val lineNum = "L${lineIndex + 1}"
             val agentAttr = line.agent?.let { " ttm:agent=\"$it\"" } ?: ""
             
@@ -93,8 +98,8 @@ object TTMLConverter {
                 // 警示后人：<p>/<span> 内空格是可见歌词语义，不能对词文本做 trim。
                 // 这里最多仅清理换行控制字符，避免导出后把 "a b" 变成 "ab"。
                 line.words.forEachIndexed inner@{ wordIndex, word ->
-                    val wordBegin = formatTime(word.startTime)
-                    val wordEnd = formatTime(word.endTime)
+                    val wordBegin = TimestampUtils.fromMillis(word.startTime)
+                    val wordEnd = TimestampUtils.fromMillis(word.endTime)
 
                     val spanText = word.word
                         .replace("\r", "")
@@ -150,6 +155,7 @@ object TTMLConverter {
             if (formatted) sb.append("\n")
         }
         
+        sb.append("""${indent}${indent}</div>$lineBreak""")
         sb.append("""${indent}</body>$lineBreak""")
         sb.append("</tt>")
         
@@ -180,26 +186,32 @@ object TTMLConverter {
 
     /**
      * 格式化时间为 TTML 格式
-     * 格式: mm:ss.msms
+     * 格式：mm:ss.msms
+     * @deprecated 使用 TimestampUtils.fromMillis() 代替
      */
+    @Deprecated("Use TimestampUtils.fromMillis()", ReplaceWith("TimestampUtils.fromMillis(millis, TimestampUtils.Format.MM_SS_MS)"))
     fun formatTime(millis: Long): String {
+        // 保留旧实现以确保向后兼容
         val totalSeconds = millis / 1000
         val minutes = totalSeconds / 60
         val seconds = totalSeconds % 60
         val ms = millis % 1000
-        
+            
         return String.format("%02d:%02d.%03d", minutes, seconds, ms)
     }
 
     /**
      * 将时间字符串转换为毫秒
-     * 支持: mm:ss.mmm 或 mm:ss
+     * 支持：mm:ss.mmm 或 mm:ss
+     * @deprecated 使用 TimestampUtils.toMillis() 代替
      */
+    @Deprecated("Use TimestampUtils.toMillis()", ReplaceWith("TimestampUtils.toMillis(timeStr)"))
     fun timeToMillis(timeStr: String): Long {
+        // 保留旧实现以确保向后兼容
         return try {
             val parts = timeStr.split(":")
             if (parts.size != 2) return 0L
-
+    
             val minutes = parts[0].toLongOrNull() ?: return 0L
             val secParts = parts[1].split(".")
             val seconds = secParts[0].toLongOrNull() ?: return 0L
@@ -208,7 +220,7 @@ object TTMLConverter {
             } else {
                 0L
             }
-
+    
             (minutes * 60 + seconds) * 1000 + millis
         } catch (_: Exception) {
             0L

@@ -178,8 +178,10 @@ private fun CustomLyricsPage(
             title = { Text("自选歌词") },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    @Suppress("DEPRECATION")
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "返回"
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -189,8 +191,10 @@ private fun CustomLyricsPage(
                 IconButton(onClick = {
                     context.startActivity(Intent(context, LyricsCacheActivity::class.java))
                 }) {
-                    @Suppress("DEPRECATION")
-                    Icon(Icons.Default.FormatListBulleted, contentDescription = "管理缓存歌词")
+                    Icon(
+                        imageVector = Icons.Default.FormatListBulleted,
+                        contentDescription = "管理缓存歌词"
+                    )
                 }
             }
         )

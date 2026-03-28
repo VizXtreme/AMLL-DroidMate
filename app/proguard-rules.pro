@@ -30,10 +30,20 @@
 # Keep Ktor (allow shrinking)
 -keep,allowshrinking class io.ktor.** { *; }
 
-# Keep OkHttp
+# Keep OkHttp and Okio - only keep actually used classes
+# Retain OkHttp and Okio classes to prevent ClassNotFoundException at runtime
 -dontwarn okhttp3.**
 -dontwarn okio.**
-# (no keep rule; allow shrinker to remove unused okhttp classes)
+-keep,allowobfuscation,allowshrinking class okhttp3.OkHttpClient { *; }
+-keep,allowobfuscation,allowshrinking class okhttp3.Request { *; }
+-keep,allowobfuscation,allowshrinking class okhttp3.Response { *; }
+-keep,allowobfuscation,allowshrinking class okhttp3.RequestBody { *; }
+-keep,allowobfuscation,allowshrinking class okhttp3.ResponseBody { *; }
+-keep,allowobfuscation,allowshrinking class okhttp3.MediaType { *; }
+-keep,allowobfuscation,allowshrinking class okhttp3.Headers { *; }
+-keep,allowobfuscation,allowshrinking class okio.BufferedSource { *; }
+-keep,allowobfuscation,allowshrinking class okio.BufferedSink { *; }
+-keep,allowobfuscation,allowshrinking class okio.ByteString { *; }
 
 # Keep Timber
 -keep class timber.** { *; }

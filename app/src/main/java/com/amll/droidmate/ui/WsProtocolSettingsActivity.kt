@@ -146,8 +146,10 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
             title = { Text("WebSocket 传递") },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    @Suppress("DEPRECATION")
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "返回"
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(

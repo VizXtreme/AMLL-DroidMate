@@ -1,6 +1,8 @@
 // lint.xml for Android Lint
+// 注意：仅禁用确实不需要的检查，保持其他检查启用以捕获潜在问题
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
+    <!-- 忽略翻译检查，因为应用不需要多语言强制校验 -->
     <issue id="MissingTranslation" severity="ignore" />
     <issue id="ExtraTranslation" severity="ignore" />
 </lint>

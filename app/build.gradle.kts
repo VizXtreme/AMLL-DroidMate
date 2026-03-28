@@ -5,6 +5,9 @@ import org.gradle.api.tasks.TaskAction
 import javax.inject.Inject
 import org.gradle.process.ExecOperations
 import java.io.File
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.OutputDirectory
 
 plugins {
     id("com.android.application")
@@ -17,9 +20,18 @@ abstract class BuildFrontendTask @Inject constructor(
     private val execOperations: ExecOperations
 ) : DefaultTask() {
     
-    // Use Property to pass project directory - this is Configuration Cache compatible
+    // Declare frontend source directory as input for incremental builds
     @get:InputDirectory
-    abstract val projectDir: DirectoryProperty
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val frontendSrcDir: DirectoryProperty
+    
+    // Declare output directory for up-to-date checks
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+    
+    // Internal property to store root project directory
+    @get:Internal
+    abstract val rootProjectDir: DirectoryProperty
     
     init {
         group = "frontend"
@@ -28,7 +40,8 @@ abstract class BuildFrontendTask @Inject constructor(
     
     @TaskAction
     fun buildFrontend() {
-        val rootDir = projectDir.get().asFile
+        // Get the root project directory from the internal property
+        val rootDir = rootProjectDir.get().asFile
         val frontendDir = File(rootDir, "frontend")
         val scriptsDir = File(rootDir, "scripts")
         val isWindows = System.getProperty("os.name").lowercase().contains("windows")
@@ -56,7 +69,12 @@ abstract class BuildFrontendTask @Inject constructor(
 
 // Register and configure the task
 val buildFrontendProvider = tasks.register("buildFrontend", BuildFrontendTask::class.java) {
-    projectDir.set(rootProject.layout.projectDirectory)
+    // Only set frontend source directory as input - this is what we want to watch for changes
+    frontendSrcDir.set(File(rootProject.projectDir, "frontend/src"))
+    // Set output directory for up-to-date checks
+    outputDir.set(File(rootProject.projectDir, "app/src/main/assets/amll"))
+    // Set root project directory for task execution
+    rootProjectDir.set(rootProject.layout.projectDirectory)
 }
 
 // Build frontend before preBuild task
@@ -101,7 +119,8 @@ android {
     }
 
     lint {
-        disable += listOf("FullBackupContent", "NetworkSecurityConfig")
+        // 仅禁用 FullBackupContent，重新启用 NetworkSecurityConfig 以检查网络安全问题
+        disable += listOf("FullBackupContent")
     }
 }
 

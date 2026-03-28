@@ -5,7 +5,10 @@ import timber.log.Timber
 
 /**
  * 酷狗音乐签名工具
- * 参考: https://github.com/apoint123/unilyric/tree/main/lyrics_helper_rs/src/providers/kugou
+ * 参考：https://github.com/apoint123/unilyric/tree/main/lyrics_helper_rs/src/providers/kugou
+ * 
+ * 注意：本工具类的所有方法均通过反射调用，因此需要保留 @Suppress("unused")
+ * 这些方法在运行时被动态调用，用于生成酷狗音乐的 API 签名
  */
 @Suppress("unused")
 object KugouSignature {

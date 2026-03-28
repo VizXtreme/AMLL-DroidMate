@@ -23,7 +23,8 @@ object QrcParser {
         for (raw in rawContent.lines()) {
             val line = raw.trim()
             if (line.isEmpty()) continue
-            if (parseAndStoreMetadata(line, metadata)) continue
+            // 使用统一的元数据检测函数
+            if (MetadataStripper.isMetadataLine(line)) continue
 
             parseSingleLine(line)?.let { finalLines.add(it) }
         }

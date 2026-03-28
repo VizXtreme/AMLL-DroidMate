@@ -3,6 +3,7 @@
 import com.amll.droidmate.data.parser.mergeLyricLines
 import com.amll.droidmate.data.parser.LyricsFormat
 import com.amll.droidmate.data.parser.TTMLParser
+import com.amll.droidmate.data.parser.TimestampUtils
 import com.amll.droidmate.data.network.NeteaseEapiCrypto
 import com.amll.droidmate.data.network.QqMusicQrcCrypto
 import com.amll.droidmate.data.network.KugouDecrypter
@@ -2386,22 +2387,25 @@ open class LyricsRepository(
         
         /**
          * 将时间字符串转换为毫秒
-         * 支持格式: "mm:ss.ms" 或 "mm:ss.mss" 或 "00:01.500s"
+         * 支持格式："mm:ss.ms" 或 "mm:ss.mss" 或 "00:01.500s"
+         * @deprecated 使用 TimestampUtils.toMillis() 代替
          */
+        @Deprecated("Use TimestampUtils.toMillis()", ReplaceWith("TimestampUtils.toMillis(timeStr)"))
         fun timeToMillis(timeStr: String): Long {
+            // 保留旧实现以确保向后兼容
             return try {
                 val cleanStr = timeStr.replace("[sS]$".toRegex(), "")
                 val parts = cleanStr.split(":")
                 if (parts.size < 2) return 0L
-                
+                        
                 val minutes = parts[0].toLongOrNull() ?: 0L
                 val secondsParts = parts[1].split(".")
                 val seconds = secondsParts.getOrNull(0)?.toLongOrNull() ?: 0L
                 val millis = secondsParts.getOrNull(1)?.let {
-                    // 补齐到3位数字
+                    // 补齐到 3 位数字
                     it.padEnd(3, '0').take(3).toLongOrNull() ?: 0L
                 } ?: 0L
-                
+                        
                 (minutes * 60 * 1000) + (seconds * 1000) + millis
             } catch (e: Exception) {
                 Timber.e("Error parsing time: $timeStr")

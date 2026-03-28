@@ -51708,7 +51708,7 @@ void main(void)
     logToAndroid("Applying AMLL patch for generateFadeGradient", "info");
     const style = document.createElement("style");
     style.textContent = `
-    /* 确保 mask-image 相关 CSS 变量始终有安全默认值 */
+    /* 确保 mask-image 相关 CSS 变量始终有安全默认�?*/
     :root {
       --bright-mask-alpha: 1.0;
       --dark-mask-alpha: 0.2;

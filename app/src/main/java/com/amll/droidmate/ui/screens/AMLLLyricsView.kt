@@ -14,6 +14,7 @@ import android.view.ViewGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import com.amll.droidmate.data.parser.escapeXML
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -56,7 +57,6 @@ private fun amllInfo(message: String) {
     Timber.i(message)
 }
 
-@SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun AMLLLyricsView(
     lyrics: TTMLLyrics?,
@@ -301,10 +301,64 @@ fun AMLLLyricsView(
     
     // 注入 WebSocket 桥接代码到 WebView
     fun buildTtmlString(lyrics: TTMLLyrics): String {
-        return lyrics.lines.joinToString("\n") { line ->
-            "<p begin=\"${line.startTime}\" end=\"${line.endTime}\">${line.text}</p>"
+        val sb = StringBuilder()
+        
+        // XML 头
+        sb.append("""<?xml version="1.0" encoding="UTF-8"?>""")
+        
+        // TTML 根元素
+        sb.append("""<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" xml:lang="ja">""")
+        
+        // Head
+        sb.append("<head>")
+        sb.append("<metadata>")
+        sb.append("""<amll:meta key="title" value="${lyrics.metadata.title}" xmlns:amll="http://www.example.com/ns/amll"/>""")
+        sb.append("""<amll:meta key="artist" value="${lyrics.metadata.artist}" xmlns:amll="http://www.example.com/ns/amll"/>""")
+        sb.append("</metadata>")
+        sb.append("</head>")
+        
+        // Body
+        val duration = lyrics.lines.lastOrNull()?.endTime ?: 0L
+        sb.append("""<body dur="${formatTime(duration)}">""")
+        sb.append("<div>")
+        
+        // Lyrics lines
+        lyrics.lines.forEach { line ->
+            val begin = formatTime(line.startTime)
+            val end = formatTime(line.endTime)
+            sb.append("""<p begin="$begin" end="$end">""")
+            
+            // 如果有逐词数据
+            if (line.words.isNotEmpty()) {
+                line.words.forEach { word ->
+                    val wordBegin = formatTime(word.startTime)
+                    val wordEnd = formatTime(word.endTime)
+                    sb.append("""<span begin="$wordBegin" end="$wordEnd">${escapeXML(word.word)}</span>""")
+                }
+            } else {
+                // 整行输出
+                sb.append("""<span begin="$begin" end="$end">${escapeXML(line.text)}</span>""")
+            }
+            
+            sb.append("</p>")
         }
+        
+        sb.append("</div>")
+        sb.append("</body>")
+        sb.append("</tt>")
+        
+        return sb.toString()
     }
+    
+    fun formatTime(millis: Long): String {
+        val seconds = millis / 1000
+        val minutes = seconds / 60
+        val remainingSeconds = seconds % 60
+        val remainingMillis = millis % 1000
+        return String.format("%02d:%02d.%03d", minutes, remainingSeconds, remainingMillis)
+    }
+    
+
     
     fun injectWebSocketBridge(view: WebView) {
         amllDebug("[$debugSource#$instanceId] 注入 WebSocket 桥接代码")
@@ -402,16 +456,16 @@ fun AMLLLyricsView(
                         return super.onConsoleMessage(consoleMessage)
                     }
                 }
-                @Suppress("DEPRECATION")
+                // WebView 安全配置
                 settings.apply {
                     javaScriptEnabled = true
                     domStorageEnabled = true
                     allowFileAccess = true
                     allowContentAccess = true
-                    // Allow asset page (file origin) to read local cached album art file URIs.
-                    // Required for `file:///data/user/0/...` album art paths passed from Kotlin.
-                    allowFileAccessFromFileURLs = true
-                    allowUniversalAccessFromFileURLs = true
+                    // 仅允许从本地文件 URI 读取资源（用于专辑封面）
+                    // 禁用跨文件访问以提升安全性
+                    allowFileAccessFromFileURLs = false
+                    allowUniversalAccessFromFileURLs = false
                     // 禁用缓存确保每次加载最新的文件
                     cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
                     setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH)
@@ -436,6 +490,7 @@ fun AMLLLyricsView(
                         debugSource,
                         instanceId,
                         onLineSeekState.value,
+                        webSocketClient = webSocketClient, // 传递 WebSocket 客户端引用
                         onSeekRequested = { seekTime ->
                             // schedule a UI-thread action so that the webview can immediately
                             // acknowledge the seek and prevent the "lyrics running around" effect.
@@ -779,6 +834,7 @@ class AMLLInterface(
     private val debugSource: String,
     private val instanceId: Int,
     private val onLineSeek: ((Long) -> Unit)? = null,
+    private val webSocketClient: com.amll.droidmate.websocket.AMLLWebSocketClient? = null, // WebSocket 客户端引用
     private val onSeekRequested: ((Long) -> Unit)? = null,
     private val isPlayingProvider: () -> Boolean = { true }
 ) {
@@ -810,9 +866,32 @@ class AMLLInterface(
     fun sendWebSocketMessage(message: String) {
         // 通过 WebSocket 发送到外部 AMLL 服务
         amllDebug("[$debugSource#$instanceId] 发送 WebSocket 消息：$message")
-        // TODO: 这里需要传递 webSocketClient 引用或者通过其他方式发送
-        // 由于 AMMLInterface 是内部类，无法直接访问外部作用域的 webSocketClient
-        // 需要通过回调或者全局单例来传递
+        
+        try {
+            // 解析消息并转发到 WebSocket 客户端
+            val jsonObject = org.json.JSONObject(message)
+            val type = jsonObject.optString("type")
+            
+            when (type) {
+                "ping" -> {
+                    // 响应 ping 消息
+                    webSocketClient?.send("{\"type\":\"pong\"}")
+                    amllDebug("[$debugSource#$instanceId] 已响应 ping 消息")
+                }
+                "seek" -> {
+                    // 处理 seek 命令（如果需要）
+                    val time = jsonObject.optLong("time", 0L)
+                    amllDebug("[$debugSource#$instanceId] 收到 seek 命令：time=$time")
+                }
+                else -> {
+                    // 其他类型的消息直接转发
+                    webSocketClient?.send(message)
+                    amllDebug("[$debugSource#$instanceId] 已转发 WebSocket 消息：type=$type")
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "[$debugSource#$instanceId] 发送 WebSocket 消息失败")
+        }
     }
 }
 

@@ -76,21 +76,32 @@ class MediaInfoService(private val context: Context) {
                     
                     // 获取专辑封面 - 优先获取 Bitmap，然后保存并返回 URI
                     val albumArtUri = try {
+                        Timber.d("尝试获取专辑图...")
                         val albumArtBitmap = metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
                             ?: metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
                         
                         if (albumArtBitmap != null) {
+                            Timber.d("获取到专辑图 Bitmap: ${albumArtBitmap.width}x${albumArtBitmap.height}")
                             // 如果有 Bitmap，保存到缓存并返回 content:// URI
-                            saveAlbumArtToCache(
+                            val uri = saveAlbumArtToCache(
                                 bitmap = albumArtBitmap,
                                 title = title,
                                 artist = artist,
                                 packageName = packageName
                             )
+                            Timber.d("专辑图已保存到：$uri")
+                            uri
                         } else {
+                            Timber.w("未获取到专辑图 Bitmap，尝试获取 URI")
                             // 否则尝试获取 URI
-                            metadata.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
+                            val uri = metadata.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
                                 ?: metadata.getString(android.media.MediaMetadata.METADATA_KEY_ART_URI)
+                            if (uri != null) {
+                                Timber.d("获取到专辑图 URI: $uri")
+                            } else {
+                                Timber.w("既无 Bitmap 也无 URI")
+                            }
+                            uri
                         }
                     } catch (e: Exception) {
                         Timber.e(e, "Failed to get album art")

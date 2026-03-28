@@ -68,8 +68,8 @@ object KrcParser {
             val trimmed = lineStr.trim()
             if (trimmed.isEmpty()) continue
             
-            // 跳过元数据行
-            if (isMetadataLine(trimmed)) continue
+            // 使用统一的元数据检测函数
+            if (MetadataStripper.isMetadataLine(trimmed)) continue
             
             try {
                 parseSingleLine(trimmed)?.let { parsedLine ->
@@ -243,8 +243,11 @@ object KrcParser {
     
     /**
      * 检查是否是元数据行
+     * @deprecated 使用 MetadataStripper.isMetadataLine() 代替
      */
+    @Deprecated("Use MetadataStripper.isMetadataLine()", ReplaceWith("MetadataStripper.isMetadataLine(line)"))
     private fun isMetadataLine(line: String): Boolean {
+        // 保留旧实现以确保向后兼容
         return line.startsWith("[language:") ||
                line.startsWith("[id:") ||
                line.startsWith("[hash:") ||

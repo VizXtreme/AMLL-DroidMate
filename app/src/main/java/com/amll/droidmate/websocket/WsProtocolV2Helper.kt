@@ -44,7 +44,19 @@ object WsProtocolV2Helper {
         val lines: List<LyricLine>? = null,
         val repeat: String? = null,
         val shuffle: Boolean? = null,
-        val data: String? = null  // Base64 编码的数据或 JSON 字符串
+        val data: String? = null,  // Base64 编码的数据或 JSON 字符串
+        // 专辑封面相关字段（用于 setCover）- 使用嵌套结构
+        val source: String? = null,  // "uri" 或 "data"
+        val image: AlbumImage? = null  // 嵌套的图片对象
+    )
+    
+    /**
+     * 专辑图片数据（嵌套结构）
+     */
+    @Serializable
+    data class AlbumImage(
+        val mimeType: String? = null,
+        val data: String? = null  // Base64 编码的图片数据
     )
     
     /**
@@ -134,9 +146,42 @@ object WsProtocolV2Helper {
      * 快速创建 TTML 歌词更新消息
      */
     fun createTTMLLyricUpdate(ttmlContent: String): String {
-        // 注意：歌词数据应该放在 data 字段中，使用 Base64 编码
-        val base64Data = Base64.encodeToString(ttmlContent.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
-        return encode(MessageV2(type = "state", value = ValuePayload(update = "setLyric", format = "ttml", data = base64Data)))
+        // 注意：根据 Rust 服务端 v2.rs 的定义，Ttml 变体的 data 字段应该是原始 TTML 字符串
+        // pub enum LyricContent {
+        //     Structured { lines: Vec<LyricLine> },
+        //     Ttml { data: String },  // 直接是 String，不是 Base64
+        // }
+        // 因此不需要进行 Base64 编码，直接发送原始 TTML 内容
+        return encode(MessageV2(type = "state", value = ValuePayload(update = "setLyric", format = "ttml", data = ttmlContent)))
+    }
+    
+    /**
+     * 快速创建专辑封面更新消息（Base64 Data URL 格式）
+     * @param base64DataUrl 专辑图的 Base64 Data URL，格式如：data:image/jpeg;base64,/9j/...
+     */
+    fun createAlbumArtUpdate(base64DataUrl: String): String {
+        // 解析 Data URL 格式：data:[mime_type];base64,[base64_data]
+        val dataUrlPattern = "^data:([^;]+);base64,(.*)$".toRegex()
+        val matchResult = dataUrlPattern.find(base64DataUrl) ?: run {
+            throw IllegalArgumentException("无效的 Base64 Data URL 格式：$base64DataUrl")
+        }
+        
+        val mimeType = matchResult.groupValues[1]
+        val base64Data = matchResult.groupValues[2]
+        
+        // 构建符合 V2 协议的消息格式
+        // {"type":"state","value":{"update":"setCover","source":"data","image":{"mimeType":"...","data":"..."}}}
+        return encode(MessageV2(
+            type = "state",
+            value = ValuePayload(
+                update = "setCover",
+                source = "data",
+                image = AlbumImage(
+                    mimeType = mimeType,
+                    data = base64Data
+                )
+            )
+        ))
     }
     
     @Serializable

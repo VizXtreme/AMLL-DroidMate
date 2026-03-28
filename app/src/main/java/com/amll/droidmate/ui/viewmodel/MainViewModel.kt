@@ -15,11 +15,15 @@ import com.amll.droidmate.service.LyricNotificationManager
 import com.amll.droidmate.service.MediaInfoService
 import com.amll.droidmate.ui.AppSettings
 import com.amll.droidmate.util.AudioDeviceHelper
+import com.amll.droidmate.websocket.AMLLWebSocketClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
+import java.io.File
 
 /**
  * 主视图模型 - 管理应用的状态和逻辑
@@ -37,6 +41,157 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     // 服务
     private val mediaInfoService = MediaInfoService(context)
+    
+    // WebSocket 客户端（用于同步播放状态到外部服务）
+    private val webSocketClient = AMLLWebSocketClient.getInstance()
+    
+    // 用于跟踪上次发送的歌词，避免重复发送
+    private var lastSentLyricsHash: Int = 0
+    
+    // WebSocket 监听器（用于在连接时提供当前播放状态）
+    private val webSocketListener: AMLLWebSocketClient.Listener by lazy {
+        object : AMLLWebSocketClient.Listener {
+            override fun onConnected() {
+                Timber.d("MainViewModel: WebSocket 已连接")
+                
+                // ✅ 每次连接（包括重连）都重新同步完整的播放状态
+                val music = _nowPlayingMusic.value
+                if (music != null && AppSettings.isWebSocketProtocolEnabled(context)) {
+                    Timber.d("WebSocket 重连成功，重新同步完整播放状态")
+                    // isMusicChanged=true 会触发歌曲信息和专辑图的发送
+                    syncPlaybackStateToWebSocket(music, isMusicChanged = true)
+                }
+            }
+            
+            override fun onDisconnected() {
+                Timber.w("MainViewModel: WebSocket 已断开")
+            }
+            
+            override fun onMessageReceived(message: String) {
+                Timber.d("MainViewModel: 收到 WebSocket 消息：$message")
+                
+                // 解析并执行命令
+                try {
+                    val json = kotlinx.serialization.json.Json.parseToJsonElement(message)
+                    val type = json.jsonObject["type"]?.jsonPrimitive?.content
+                    
+                    if (type == "command") {
+                        val valueObj = json.jsonObject["value"]?.jsonObject
+                        val command = valueObj?.get("command")?.jsonPrimitive?.content
+                        
+                        Timber.i("MainViewModel: 收到命令：$command")
+                        
+                        when (command) {
+                            "pause" -> {
+                                Timber.i("MainViewModel: 执行暂停命令")
+                                pause()
+                                Timber.d("MainViewModel: 暂停命令执行完成")
+                            }
+                            "resume" -> {
+                                Timber.i("MainViewModel: 执行播放命令")
+                                play()
+                                Timber.d("MainViewModel: 播放命令执行完成")
+                            }
+                            "forwardSong" -> {
+                                Timber.i("MainViewModel: 执行下一首命令")
+                                skipToNext()
+                                Timber.d("MainViewModel: 下一首命令执行完成")
+                            }
+                            "backwardSong" -> {
+                                Timber.i("MainViewModel: 执行上一首命令")
+                                skipToPrevious()
+                                Timber.d("MainViewModel: 上一首命令执行完成")
+                            }
+                            "seekPlayProgress" -> {
+                                val progress = valueObj?.get("progress")?.jsonPrimitive?.content?.toLongOrNull()
+                                if (progress != null) {
+                                    Timber.i("MainViewModel: 执行跳转进度命令：$progress ms")
+                                    seekTo(progress)
+                                    Timber.d("MainViewModel: 跳转进度命令执行完成")
+                                } else {
+                                    Timber.w("MainViewModel: 跳转进度命令参数无效")
+                                }
+                            }
+                            "setVolume" -> {
+                                val volume = valueObj?.get("volume")?.jsonPrimitive?.content?.toDoubleOrNull()
+                                if (volume != null) {
+                                    Timber.i("MainViewModel: 执行音量设置命令：$volume")
+                                    setVolume(volume)
+                                    Timber.d("MainViewModel: 音量设置命令执行完成")
+                                } else {
+                                    Timber.w("MainViewModel: 音量设置命令参数无效")
+                                }
+                            }
+                            "setRepeatMode", "setShuffleMode" -> {
+                                Timber.d("MainViewModel: 收到不支持的命令：$command，忽略")
+                            }
+                            else -> {
+                                Timber.d("MainViewModel: 未知命令：$command")
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Timber.e(e, "MainViewModel: 解析命令失败")
+                }
+            }
+            
+            override fun onError(error: Throwable) {
+                Timber.e(error, "MainViewModel: WebSocket 错误")
+            }
+            
+            override fun getCurrentPlayState(): AMLLWebSocketClient.PlayState? {
+                val music = _nowPlayingMusic.value
+                if (music == null) {
+                    Timber.d("MainViewModel: getCurrentPlayState - 无播放内容")
+                    return null
+                }
+                
+                // 检查是否有有效的歌曲信息
+                val validMusicId = music.packageName?.takeIf { it.isNotEmpty() && it != "unknown" }
+                val validMusicName = music.title.takeIf { it.isNotEmpty() && it != "Unknown" && it != "等待播放" }
+                
+                if (validMusicId == null || validMusicName == null) {
+                    Timber.d("MainViewModel: getCurrentPlayState - 无有效歌曲信息 (musicId=$validMusicId, musicName=$validMusicName)")
+                    return null
+                }
+                
+                // 构建 TTML 歌词
+                val ttmlContent = _lyrics.value?.let { lyrics ->
+                    try {
+                        buildTtmlForLyrics(lyrics)
+                    } catch (e: Exception) {
+                        Timber.e(e, "MainViewModel: 构建 TTML 失败")
+                        null
+                    }
+                }
+                
+                val state = AMLLWebSocketClient.PlayState(
+                    musicId = validMusicId,
+                    musicName = validMusicName,
+                    albumName = music.album ?: "",
+                    artistName = music.artist,
+                    duration = music.duration,
+                    progress = music.currentPosition,
+                    isPlaying = music.isPlaying,
+                    ttmlLyric = ttmlContent,
+                    albumArtUri = music.albumArtUri  // ✅ 新增：包含专辑图 URI
+                )
+                
+                Timber.d("MainViewModel: getCurrentPlayState 返回:")
+                Timber.d("  - musicId: ${state.musicId}")
+                Timber.d("  - musicName: ${state.musicName}")
+                Timber.d("  - artistName: ${state.artistName}")
+                Timber.d("  - hasLyrics: ${!state.ttmlLyric.isNullOrBlank()}")
+                Timber.d("  - isPlaying: ${state.isPlaying}")
+                Timber.d("  - progress: ${state.progress}ms")
+                if (!state.ttmlLyric.isNullOrBlank()) {
+                    Timber.d("  - TTML 预览：${state.ttmlLyric.take(200)}...")
+                }
+                
+                return state
+            }
+        }
+    }
 
     /**
      * Real notification manager; tests can replace via the internal var below.
@@ -80,6 +235,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     init {
         setupMediaListener()
         observeLyricNotification()
+        registerWebSocketListener()
         Timber.plant(Timber.DebugTree())
 
         // listen for user dismissals. Android 13+ requires an explicit export flag
@@ -171,8 +327,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     oldMusic?.title != music?.title ||
                     oldMusic?.artist != music?.artist
                 
+                // 检查播放状态是否变化
+                val isPlayingChanged = oldMusic?.isPlaying != music?.isPlaying
+                
+                // 检查进度是否显著变化（用于检测跳转操作）
+                val positionChangedSignificantly = 
+                    music != null && oldMusic != null &&
+                    kotlin.math.abs(music.currentPosition - oldMusic.currentPosition) > 1000 // 超过 1 秒
+                
                 _nowPlayingMusic.value = music
                 Timber.d("Now playing: ${music?.title} - ${music?.artist}")
+                
+                // 同步到 WebSocket（如果启用）
+                if (music != null && AppSettings.isWebSocketProtocolEnabled(context)) {
+                    // 任何状态变化都触发同步：歌曲信息、播放状态、或进度显著变化
+                    val shouldSync = isMusicChanged || isPlayingChanged || positionChangedSignificantly || music.isPlaying
+                    if (shouldSync) {
+                        syncPlaybackStateToWebSocket(music, isMusicChanged)
+                    }
+                }
                 
                 // 如果歌曲确实改变且有有效的歌曲信息，先尝试使用缓存，只有在缓存不可用时才清空并搜索
                 if (isMusicChanged && music != null) {
@@ -187,6 +360,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 _lyrics.value = parsed
                                 _errorMessage.value = null
                                 Timber.i("Loaded lyrics from cache (startup): ${cached.title} - ${cached.artist} (${cached.source})")
+                                
+                                // 同步到 WebSocket（如果启用）
+                                if (AppSettings.isWebSocketProtocolEnabled(context)) {
+                                    webSocketClient.sendLyrics(cached.ttmlContent)
+                                    Timber.d("已同步启动缓存歌词到 WebSocket")
+                                }
+                                
                                 // 已经拿到缓存，跳过后续搜索
                                 return@collect
                             }
@@ -232,6 +412,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         _lyrics.value = parsed
                         _errorMessage.value = null
                         Timber.d("Loaded lyrics from cache: ${cached.title} - ${cached.artist} (${cached.source})")
+                        
+                        // ✅ 重置歌词哈希值，确保新歌词会被发送
+                        lastSentLyricsHash = 0
+                        
+                        // 同步到 WebSocket（如果启用）
+                        if (AppSettings.isWebSocketProtocolEnabled(context)) {
+                            // 使用完整的同步方法，包含歌曲信息、专辑图和歌词
+                            syncPlaybackStateToWebSocket(music, isMusicChanged = false)
+                            Timber.d("已同步缓存歌词到 WebSocket")
+                        }
+                        
                         return@launch
                     }
                 } else {
@@ -262,6 +453,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         ttmlContent = TTMLConverter.toTTMLString(result.lyrics)
                     )
                     Timber.i("Successfully fetched lyrics from ${result.source}")
+                    
+                    // ✅ 重置歌词哈希值，确保新歌词会被发送
+                    lastSentLyricsHash = 0
+                    
+                    // 同步到 WebSocket（如果启用）
+                    if (AppSettings.isWebSocketProtocolEnabled(context)) {
+                        // 使用完整的同步方法，包含歌曲信息、专辑图和歌词
+                        syncPlaybackStateToWebSocket(music, isMusicChanged = false)
+                        Timber.d("已同步网络歌词到 WebSocket")
+                    }
                 } else {
                     _errorMessage.value = result.errorMessage ?: "获取歌词失败"
                     Timber.e("Failed to fetch lyrics: ${result.errorMessage}")
@@ -311,14 +512,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _errorMessage.value = "歌词内容为空"
                     return@launch
                 }
-
+    
                 val parsed: TTMLLyrics? = TTMLConverter.fromLyrics(
                     content = trimmed,
                     title = if (title.isBlank()) "自选歌词" else title,
                     artist = if (artist.isBlank()) "Unknown" else artist,
                     processMetadata = AppSettings.isMetadataProcessingEnabled(context)
                 )
-
+    
                 if (parsed != null) {
                     _lyrics.value = parsed
                     _errorMessage.value = null
@@ -328,11 +529,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         source = source,
                         ttmlContent = TTMLConverter.toTTMLString(parsed)
                     )
+                                    
+                    // ✅ 重置歌词哈希值，确保新歌词会被发送
+                    lastSentLyricsHash = 0
+                                    
+                    // ✅ 如果启用了 WebSocket，重新发送歌词和当前播放状态
+                    val music = _nowPlayingMusic.value
+                    if (music != null && AppSettings.isWebSocketProtocolEnabled(context)) {
+                        Timber.d("用户选择了新歌词，重新同步到 WebSocket")
+                        syncPlaybackStateToWebSocket(music, isMusicChanged = true)
+                    }
                 } else {
                     _errorMessage.value = "无法识别歌词格式"
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "应用歌词失败: ${e.message}"
+                _errorMessage.value = "应用歌词失败：${e.message}"
                 Timber.e(e, "Error applying custom lyrics input")
             }
         }
@@ -385,6 +596,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         mediaInfoService.rewind()
     }
     
+    /**
+     * 设置系统音量
+     * @param volume 音量值，范围 0.0-1.0
+     */
+    fun setVolume(volume: Double) {
+        // 将 0.0-1.0 的音量转换为系统音量级别（0-15）
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+        val maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
+        val targetVolume = (volume * maxVolume).toInt().coerceIn(0, maxVolume)
+        audioManager.setStreamVolume(
+            android.media.AudioManager.STREAM_MUSIC,
+            targetVolume,
+            0  // 不显示 UI
+        )
+        Timber.i("MainViewModel: 音量已设置：$volume -> $targetVolume/$maxVolume")
+    }
+    
     override fun onCleared() {
         super.onCleared()
         // unregister broadcast listener added earlier
@@ -392,5 +620,252 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         lyricNotificationManager.cancel()
         mediaInfoService.stopListening()
         httpClient.close()
+    }
+    
+    /**
+     * 同步播放状态到 WebSocket 服务器
+     * @param music 当前播放的音乐信息
+     * @param isMusicChanged 歌曲信息是否发生变化
+     */
+    private fun syncPlaybackStateToWebSocket(music: NowPlayingMusic, isMusicChanged: Boolean) {
+        try {
+            // 检查 WebSocket 是否已连接
+            if (!webSocketClient.isConnected()) {
+                Timber.d("WebSocket 未连接，跳过同步")
+                return
+            }
+            
+            // 如果歌曲信息变化，发送歌曲信息
+            if (isMusicChanged) {
+                val message = com.amll.droidmate.websocket.WsProtocolV2Helper.createSetMusicUpdate(
+                    musicId = music.packageName ?: "unknown",
+                    musicName = music.title,
+                    albumName = music.album ?: "",
+                    artists = listOf(com.amll.droidmate.websocket.WsProtocolV2Helper.Artist("1", music.artist)),
+                    duration = music.duration
+                )
+                webSocketClient.send(message)
+                Timber.d("已同步歌曲信息到 WebSocket: ${music.title} - ${music.artist}")
+                
+                // ✅ 只有在歌曲变化时才发送专辑图（避免频繁发送）
+                if (!music.albumArtUri.isNullOrBlank()) {
+                    sendAlbumArtToWebSocket(music.albumArtUri)
+                }
+            }
+            
+            // 发送播放/暂停状态
+            val stateMessage = if (music.isPlaying) {
+                com.amll.droidmate.websocket.WsProtocolV2Helper.createResumedUpdate()
+            } else {
+                com.amll.droidmate.websocket.WsProtocolV2Helper.createPausedUpdate()
+            }
+            webSocketClient.send(stateMessage)
+            Timber.d("已同步播放状态到 WebSocket: ${if (music.isPlaying) "播放" else "暂停"}")
+            
+            // ✅ 发送当前播放进度（实时同步）
+            val progressMessage = com.amll.droidmate.websocket.WsProtocolV2Helper.createProgressUpdate(music.currentPosition)
+            webSocketClient.send(progressMessage)
+            Timber.d("已同步播放进度到 WebSocket: ${music.currentPosition}ms")
+            
+            // ✅ 如果有歌词，发送歌词（仅在歌词变化时）
+            val lyrics = _lyrics.value
+            if (lyrics != null) {
+                try {
+                    val ttmlContent = buildTtmlForLyrics(lyrics)
+                    if (!ttmlContent.isNullOrBlank()) {
+                        // 计算歌词内容的哈希值，避免重复发送相同内容
+                        val currentHash = ttmlContent.hashCode()
+                        if (currentHash != lastSentLyricsHash) {
+                            webSocketClient.sendLyrics(ttmlContent)
+                            Timber.d("已同步歌词到 WebSocket (${ttmlContent.length} chars, hash=$currentHash)")
+                            lastSentLyricsHash = currentHash
+                        } else {
+                            // 歌词未变化，跳过发送（减少网络流量）
+                            Timber.v("歌词未变化，跳过发送")
+                        }
+                    }
+                } catch (e: Exception) {
+                    Timber.e(e, "构建 TTML 歌词失败")
+                }
+            }
+            
+        } catch (e: Exception) {
+            Timber.e(e, "同步播放状态到 WebSocket 失败")
+        }
+    }
+    
+    /**
+     * 将专辑图 URI 转换为 Base64 Data URL 并发送到 WebSocket
+     * @param albumArtUri 专辑图 URI（file:// 或 content://）
+     */
+    private fun sendAlbumArtToWebSocket(albumArtUri: String) {
+        viewModelScope.launch {
+            try {
+                Timber.d("准备发送专辑图：$albumArtUri")
+                val dataUrl = convertFileUriToDataUrl(context, albumArtUri)
+                if (!dataUrl.isNullOrBlank()) {
+                    webSocketClient.sendAlbumArt(dataUrl)
+                    Timber.d("已同步专辑图到 WebSocket，大小：${dataUrl.length} chars")
+                    Timber.d("专辑图 Data URL 预览：${dataUrl.take(100)}...")
+                } else {
+                    Timber.w("无法转换专辑图 URI 为 Data URL: $albumArtUri")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "发送专辑图失败")
+            }
+        }
+    }
+    
+    /**
+     * 将 file:// URI 转换为 base64 data URL，以便 WebView 能够加载本地图片
+     */
+    private fun convertFileUriToDataUrl(context: Context, uriString: String?): String? {
+        if (uriString.isNullOrBlank()) {
+            Timber.w("convertFileUriToDataUrl: URI 为空")
+            return null
+        }
+        
+        return try {
+            Timber.d("转换专辑图 URI: $uriString")
+            val inputStream = when {
+                uriString.startsWith("file://") -> {
+                    val path = uriString.removePrefix("file://")
+                    Timber.d("读取文件：$path")
+                    File(path).inputStream()
+                }
+                uriString.startsWith("content://") -> {
+                    val uri = android.net.Uri.parse(uriString)
+                    Timber.d("打开内容流：$uri")
+                    context.contentResolver.openInputStream(uri)
+                }
+                else -> {
+                    Timber.w("Unsupported URI scheme: $uriString")
+                    return uriString // 直接返回原始字符串（可能是 data URL）
+                }
+            }
+            
+            inputStream?.use { stream ->
+                val bytes = stream.readBytes()
+                Timber.d("读取到图片数据：${bytes.size} bytes")
+                val mimeType = getMimeType(uriString) ?: "image/jpeg"
+                val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                val dataUrl = "data:$mimeType;base64,$base64"
+                Timber.d("生成 Data URL: mimeType=$mimeType, base64 length=${base64.length}")
+                dataUrl
+            } ?: run {
+                Timber.e("无法打开输入流：$uriString")
+                null
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to convert file URI to data URL: $uriString")
+            null
+        }
+    }
+    
+    /**
+     * 根据文件扩展名获取 MIME 类型
+     */
+    private fun getMimeType(uriString: String): String? {
+        return when {
+            uriString.endsWith(".png", ignoreCase = true) -> "image/png"
+            uriString.endsWith(".jpg", ignoreCase = true) || uriString.endsWith(".jpeg", ignoreCase = true) -> "image/jpeg"
+            uriString.endsWith(".gif", ignoreCase = true) -> "image/gif"
+            uriString.endsWith(".webp", ignoreCase = true) -> "image/webp"
+            else -> "image/jpeg" // 默认使用 JPEG
+        }
+    }
+    
+    /**
+     * 注册 WebSocket 监听器
+     * 用于在 WebSocket 连接时提供当前播放状态
+     */
+    private fun registerWebSocketListener() {
+        // 移除旧的监听器（如果存在）
+        webSocketClient.removeListener(webSocketListener)
+        // 注册新的监听器
+        webSocketClient.addListener(webSocketListener)
+        Timber.d("已注册 MainViewModel WebSocket 监听器")
+    }
+    
+    /**
+     * 将歌词构建为 TTML 字符串
+     */
+    private fun buildTtmlForLyrics(lyrics: TTMLLyrics): String {
+        // 检查是否有有效的歌词行
+        if (lyrics.lines.isEmpty()) {
+            Timber.d("buildTtmlForLyrics: 无歌词行，返回空字符串")
+            return ""
+        }
+        
+        val sb = StringBuilder()
+        
+        // XML 头
+        sb.append("""<?xml version="1.0" encoding="UTF-8"?>""")
+        
+        // TTML 根元素
+        sb.append("""<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" xml:lang="ja">""")
+        
+        // Head
+        sb.append("<head>")
+        sb.append("<metadata>")
+        sb.append("""<amll:meta key="title" value="${escapeXmlForTTML(lyrics.metadata.title)}" xmlns:amll="http://www.example.com/ns/amll"/>""")
+        sb.append("""<amll:meta key="artist" value="${escapeXmlForTTML(lyrics.metadata.artist)}" xmlns:amll="http://www.example.com/ns/amll"/>""")
+        sb.append("</metadata>")
+        sb.append("</head>")
+        
+        // Body
+        val duration = lyrics.lines.lastOrNull()?.endTime ?: 0L
+        sb.append("""<body dur="${formatTimeForTTML(duration)}">""")
+        sb.append("<div>")
+        
+        // Lyrics lines
+        lyrics.lines.forEach { line ->
+            val begin = formatTimeForTTML(line.startTime)
+            val end = formatTimeForTTML(line.endTime)
+            sb.append("""<p begin="$begin" end="$end">""")
+            
+            // 如果有逐词数据
+            if (line.words.isNotEmpty()) {
+                line.words.forEach { word ->
+                    val wordBegin = formatTimeForTTML(word.startTime)
+                    val wordEnd = formatTimeForTTML(word.endTime)
+                    sb.append("""<span begin="$wordBegin" end="$wordEnd">${escapeXmlForTTML(word.word)}</span>""")
+                }
+            } else {
+                // 整行输出
+                sb.append("""<span begin="$begin" end="$end">${escapeXmlForTTML(line.text)}</span>""")
+            }
+            
+            sb.append("</p>")
+        }
+        
+        sb.append("</div>")
+        sb.append("</body>")
+        sb.append("</tt>")
+        
+        return sb.toString()
+    }
+    
+    /**
+     * 格式化时间为 TTML 格式 (mm:ss.SSS)
+     */
+    private fun formatTimeForTTML(millis: Long): String {
+        val seconds = millis / 1000
+        val minutes = seconds / 60
+        val remainingSeconds = seconds % 60
+        val remainingMillis = millis % 1000
+        return String.format("%02d:%02d.%03d", minutes, remainingSeconds, remainingMillis)
+    }
+    
+    /**
+     * XML 转义
+     */
+    private fun escapeXmlForTTML(text: String): String {
+        return text
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
     }
 }
