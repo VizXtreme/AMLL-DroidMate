@@ -22,9 +22,9 @@ object TimestampUtils {
      * @param timeStr 时间字符串
      * @return 毫秒数，解析失败返回 0L
      */
-    fun toMillis(timeStr: String): Long {
+    fun toMillis(timeStr: String?): Long {
         return try {
-            if (timeStr.isBlank()) return 0L
+            if (timeStr.isNullOrBlank()) return 0L
             
             val normalized = timeStr.trim().lowercase().removeSuffix("s")
             if (normalized.isEmpty()) return 0L

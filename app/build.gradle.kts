@@ -8,6 +8,7 @@ import java.io.File
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.provider.Provider
 
 plugins {
     id("com.android.application")
@@ -82,8 +83,10 @@ tasks.named("preBuild") {
     dependsOn(buildFrontendProvider)
 }
 
-val buildTimestamp = SimpleDateFormat("yyyyMMddHHmmss", Locale.US)
-    .format(Date())
+// Use Provider API for lazy evaluation - ensures fresh timestamp on each build
+val buildTimestampProvider: Provider<String> = providers.provider {
+    SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(Date())
+}
 
 android {
     namespace = "com.amll.droidmate"
@@ -94,7 +97,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "Alpha $buildTimestamp" // 版本号
+        versionName = "Alpha ${buildTimestampProvider.get()}" // 版本号
         vectorDrawables.useSupportLibrary = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -129,7 +132,7 @@ androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
             (output as? com.android.build.api.variant.impl.VariantOutputImpl)?.outputFileName?.set(
-                "AMLL-DroidMate-Alpha-$buildTimestamp.apk" //版本号
+                "AMLL-DroidMate-Alpha-${buildTimestampProvider.get()}.apk" //版本号
             )
         }
     }
