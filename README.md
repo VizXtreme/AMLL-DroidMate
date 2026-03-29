@@ -32,4 +32,4 @@
 - 优质歌词来源：[AMLL TTML DB `amll-dev/amll-ttml-db`](https://github.com/amll-dev/amll-ttml-db)
 
 ## 提示
-本项目目前 100% Vibe coding。
+本项目目前 100% HITL Vibe coding。
