@@ -122,24 +122,30 @@ fun SongStructureBar(
     }
     
     // 计算当前应该显示的 structure 索引
-    val currentStructureIndex = remember(structures, currentTime) {
-        structures.indexOfFirst { currentTime in it.startTime..it.endTime }
+    val currentStructureIndex by remember(structures, currentTime) {
+        derivedStateOf {
+            structures.indexOfFirst { currentTime in it.startTime..it.endTime }
+        }
     }
     
     // 当 currentStructureIndex 变化时，自动滚动到该位置并居中
     LaunchedEffect(currentStructureIndex, containerWidthPx, allChipsMeasured) {
         if (currentStructureIndex >= 0 && containerWidthPx > 0 && allChipsMeasured) {
             // 优先使用扩展宽度，否则使用自然宽度
-            val chipWidthPx = expandedChipWidthsPx[currentStructureIndex] 
+            val targetChipWidthPx = expandedChipWidthsPx[currentStructureIndex] 
                 ?: chipNaturalWidthsPx[currentStructureIndex] 
                 ?: 0
             
-            // 计算滚动偏移量，使 chip 居中：(容器宽度 / 2) - (chip 宽度 / 2)
-            val scrollOffset = if (chipWidthPx > 0) {
-                (containerWidthPx / 2) - (chipWidthPx / 2)
-            } else {
-                0
-            }
+            // 计算从列表起始位置到目标 chip 中心的累计距离
+            val distanceToTargetCenter = calculateDistanceToCenter(
+                targetIndex = currentStructureIndex,
+                chipWidths = if (expandedChipWidthsPx.isNotEmpty()) expandedChipWidthsPx else chipNaturalWidthsPx,
+                spacingPx = chipSpacingPx,
+                startPaddingPx = horizontalPaddingPx
+            )
+            
+            // 计算需要的滚动偏移量以实现居中：目标中心 - 容器一半宽度
+            val scrollOffset = distanceToTargetCenter - (containerWidthPx / 2)
             
             // 执行平滑滚动动画
             listState.animateScrollToItem(
@@ -183,6 +189,31 @@ fun SongStructureBar(
             }
         }
     }
+}
+
+/**
+ * 计算从列表起始位置到目标 chip 中心的累计距离
+ * 
+ * @param targetIndex 目标 chip 的索引
+ * @param chipWidths 每个 chip 的宽度（像素）映射表
+ * @param spacingPx chip 之间的间距（像素）
+ * @param startPaddingPx 列表起始的内边距（像素）
+ * @return 从列表开始到目标 chip 中心的距离（像素）
+ */
+private fun calculateDistanceToCenter(
+    targetIndex: Int,
+    chipWidths: Map<Int, Int>,
+    spacingPx: Int,
+    startPaddingPx: Int
+): Int {
+    var distance = startPaddingPx
+    for (i in 0 until targetIndex) {
+        distance += chipWidths[i] ?: 0
+        distance += spacingPx
+    }
+    // 加上目标 chip 自身宽度的一半，得到中心点位置
+    distance += (chipWidths[targetIndex] ?: 0) / 2
+    return distance
 }
 
 /**
