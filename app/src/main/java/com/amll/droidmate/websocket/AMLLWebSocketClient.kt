@@ -83,8 +83,7 @@ class AMLLWebSocketClient private constructor(
         val duration: Long,
         val progress: Long,
         val isPlaying: Boolean,
-        val ttmlLyric: String? = null,
-        val albumArtUri: String? = null  // 新增：专辑图 URI
+        val ttmlLyric: String? = null
     )
     
     // 支持多个监听器
@@ -189,20 +188,19 @@ class AMLLWebSocketClient private constructor(
                         val valueObj = json.jsonObject["value"]?.jsonObject
                         val command = valueObj?.get("command")?.jsonPrimitive?.content
                         
-                        Timber.i("[$debugSource] 【解析成功】收到命令：$command")
-                        Timber.d("[$debugSource] 命令参数：$valueObj")
+                        Timber.i("[$debugSource] 收到命令：$command")
                         Timber.d("[$debugSource] onCommandReceived 引用：$onCommandReceived")
                         
                         if (onCommandReceived != null) {
-                            Timber.d("[$debugSource] 【命令分发】准备调用 onCommandReceived，命令：$command")
+                            Timber.d("[$debugSource] 准备调用 onCommandReceived，命令：$command")
                             onCommandReceived.invoke(command ?: "unknown", valueObj)
-                            Timber.d("[$debugSource] 【执行完成】onCommandReceived 调用完成")
+                            Timber.d("[$debugSource] onCommandReceived 执行完成")
                         } else {
-                            Timber.w("[$debugSource] 【警告】onCommandReceived 为 null，跳过命令处理")
+                            Timber.w("[$debugSource] onCommandReceived 为 null，跳过命令处理")
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.e(e, "[$debugSource] 【解析失败】解析命令异常")
+                    Timber.e(e, "[$debugSource] 解析命令失败")
                 }
             }
             
@@ -221,8 +219,8 @@ class AMLLWebSocketClient private constructor(
                     return null
                 }
                 
-                val ttmlContent = lyrics?.lines?.let {
-                    buildTtmlString(lyrics).takeIf { it.isNotBlank() }
+                val ttmlContent = lyrics?.let {
+                    com.amll.droidmate.data.converter.TTMLConverter.toTTMLString(it).takeIf { it.isNotBlank() }
                 }
                 
                 val state = PlayState(
@@ -250,72 +248,6 @@ class AMLLWebSocketClient private constructor(
     }
     
     // ==================== 内部辅助函数 ====================
-    
-    /**
-     * 构建 TTML 字符串（内部使用）
-     */
-    private fun buildTtmlString(lyrics: TTMLLyrics?): String {
-        if (lyrics == null) return ""
-        
-        val sb = StringBuilder()
-        
-        // XML 头
-        sb.append("""<?xml version="1.0" encoding="UTF-8"?>""")
-        
-        // TTML 根元素
-        sb.append("""<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" xml:lang="ja">""")
-        
-        // Head
-        sb.append("<head>")
-        sb.append("<metadata>")
-        sb.append("""<amll:meta key="title" value="${lyrics.metadata.title}" xmlns:amll="http://www.example.com/ns/amll"/>""")
-        sb.append("""<amll:meta key="artist" value="${lyrics.metadata.artist}" xmlns:amll="http://www.example.com/ns/amll"/>""")
-        sb.append("</metadata>")
-        sb.append("</head>")
-        
-        // Body
-        val duration = lyrics.lines.lastOrNull()?.endTime ?: 0L
-        sb.append("""<body dur="${formatTime(duration)}">""")
-        sb.append("<div>")
-        
-        // Lyrics lines
-        lyrics.lines.forEach { line ->
-            val begin = formatTime(line.startTime)
-            val end = formatTime(line.endTime)
-            sb.append("""<p begin="$begin" end="$end">""")
-            
-            // 如果有逐词数据
-            if (line.words.isNotEmpty()) {
-                line.words.forEach { word ->
-                    val wordBegin = formatTime(word.startTime)
-                    val wordEnd = formatTime(word.endTime)
-                    sb.append("""<span begin="$wordBegin" end="$wordEnd">${escapeXml(word.word)}</span>""")
-                }
-            } else {
-                // 整行输出
-                sb.append("""<span begin="$begin" end="$end">${escapeXml(line.text)}</span>""")
-            }
-            
-            sb.append("</p>")
-        }
-        
-        sb.append("</div>")
-        sb.append("</body>")
-        sb.append("</tt>")
-        
-        return sb.toString()
-    }
-    
-    /**
-     * 格式化时间为 TTML 格式 (mm:ss.SSS)
-     */
-    private fun formatTime(millis: Long): String {
-        val seconds = millis / 1000
-        val minutes = seconds / 60
-        val remainingSeconds = seconds % 60
-        val remainingMillis = millis % 1000
-        return String.format("%02d:%02d.%03d", minutes, remainingSeconds, remainingMillis)
-    }
     
     /**
      * XML 转义
@@ -388,7 +320,15 @@ class AMLLWebSocketClient private constructor(
             // 输出前 200 个字符用于调试
             Timber.d("歌词内容预览：${ttmlContent.take(200)}...")
         } catch (e: Exception) {
-            Timber.e(e, "发送歌词失败")
+            Timber.e(e, "发送歌词失败：${e.message}")
+            // 通知所有监听器发生了错误
+            listeners.forEach { listener ->
+                try {
+                    listener.onError(e)
+                } catch (ex: Exception) {
+                    Timber.e(ex, "监听器 onError 异常")
+                }
+            }
         }
     }
     
@@ -534,7 +474,7 @@ class AMLLWebSocketClient private constructor(
                         Timber.i("WebSocket 连接成功，准备握手")
                         isConnected = true
                         
-                        // Step 1: 同步发送 Initialize 握手（必须在其他消息之前）
+                        // ✅ 每次连接都必须发送 Initialize 握手（无论是否是重连）
                         if (config.sendInitialize) {
                             // 直接同步发送，不通过 scope.launch
                             val initializeMessage = """{"type":"initialize"}"""
@@ -653,8 +593,6 @@ class AMLLWebSocketClient private constructor(
                     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                         Timber.e(t, "WebSocket 连接失败")
                         isConnected = false
-                        isHandshakeComplete = false  // ✅ 重置握手状态
-                        stopHeartbeat()
                         listeners.forEach { listener ->
                             try {
                                 listener.onError(t)
@@ -670,7 +608,7 @@ class AMLLWebSocketClient private constructor(
                             }
                             if (serverUrl != null) {
                                 Timber.d("尝试重新连接...")
-                                connect(serverUrl!!)  // ✅ 重连时会重新触发 onOpen 和握手
+                                connect(serverUrl!!)
                             }
                         }
                     }
@@ -678,26 +616,12 @@ class AMLLWebSocketClient private constructor(
                     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                         Timber.d("WebSocket 连接关闭：code=$code, reason=$reason")
                         isConnected = false
-                        isHandshakeComplete = false  // ✅ 重置握手状态
                         stopHeartbeat()
                         listeners.forEach { listener ->
                             try {
                                 listener.onDisconnected()
                             } catch (e: Exception) {
                                 Timber.e(e, "监听器 onDisconnected 异常")
-                            }
-                        }
-                        
-                        // 如果是异常断开，尝试自动重连
-                        if (code != 1000) {  // 1000 是正常关闭
-                            scope.launch {
-                                withContext(Dispatchers.IO) {
-                                    Thread.sleep(3000)
-                                }
-                                if (serverUrl != null) {
-                                    Timber.d("连接异常断开，尝试重新连接...")
-                                    connect(serverUrl!!)
-                                }
                             }
                         }
                     }
@@ -850,7 +774,6 @@ class AMLLWebSocketClient private constructor(
                 Timber.d("  - 进度：${playState.progress}ms")
                 Timber.d("  - 播放状态：${if (playState.isPlaying) "播放中" else "暂停"}")
                 Timber.d("  - 歌词：${if (!playState.ttmlLyric.isNullOrBlank()) "有" else "无"}")
-                Timber.d("  - 专辑图：${if (!playState.albumArtUri.isNullOrBlank()) playState.albumArtUri.take(50) + "..." else "无"}")
                 
                 // 1. 发送歌曲信息
                 val musicInfoMsg = WsProtocolV2Helper.createSetMusicUpdate(
@@ -876,25 +799,23 @@ class AMLLWebSocketClient private constructor(
                 webSocket.send(stateMessage)
                 Timber.d("已发送播放状态消息")
                 
-                // 3. 如果有歌词，发送歌词
+                // 3. 如果有歌词，发送歌词（可选失败，不影响其他状态）
                 if (!playState.ttmlLyric.isNullOrBlank()) {
-                    val ttmlMessage = WsProtocolV2Helper.createTTMLLyricUpdate(playState.ttmlLyric)
-                    webSocket.send(ttmlMessage)
-                    Timber.d("已发送歌词消息")
-                }
-                
-                // 4. 如果有专辑图，发送专辑图
-                if (!playState.albumArtUri.isNullOrBlank()) {
-                    // 需要先将 file:// URI 转换为 Base64 Data URL
-                    // 但由于这里无法访问 Context，需要在 MainViewModel 中处理
-                    Timber.w("有专辑图但无法在此处转换 (URI: ${playState.albumArtUri.take(50)}...)")
-                    Timber.w("建议：在 MainViewModel.syncPlaybackStateToWebSocket 中直接调用 sendAlbumArtToWebSocket")
+                    try {
+                        val ttmlMessage = WsProtocolV2Helper.createTTMLLyricUpdate(playState.ttmlLyric)
+                        webSocket.send(ttmlMessage)
+                        Timber.d("已发送歌词消息")
+                    } catch (e: Exception) {
+                        Timber.e(e, "发送初始歌词失败，但不影响其他状态同步")
+                        // 不重新抛出异常，避免因为歌词错误导致整个状态同步失败
+                    }
                 }
                 
                 Timber.i("✓ 初始播放状态发送完成")
             } catch (e: Exception) {
                 Timber.e(e, "✗ 发送初始播放状态失败：${e.message}")
-                throw e // 重新抛出以便上层捕获
+                // 只在非歌词相关错误时才重新抛出
+                throw e
             }
         }
     }

@@ -71,6 +71,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.amll.droidmate.R
 import com.amll.droidmate.domain.model.LyricLine
+import com.amll.droidmate.domain.model.SongStructure
 import com.amll.droidmate.ui.theme.AlbumColorExtractor
 import com.amll.droidmate.domain.model.NowPlayingMusic
 import com.amll.droidmate.domain.model.TTMLLyrics
@@ -139,6 +140,7 @@ fun MainScreen() {
     val lyrics by viewModel.lyrics.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val songStructures by viewModel.songStructures.collectAsState()
     val currentTime = nowPlaying?.currentPosition ?: 0L
     // Apply user-configured lyric timing offsets when updating the lyric view
     val lyricTime = viewModel.getLyricTimeWithDeviceOffset(nowPlaying)
@@ -331,7 +333,12 @@ fun MainScreen() {
                                 DropdownMenuItem(
                                     leadingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) },
                                     text = { Text("刷新") },
-                                    onClick = { viewModel.fetchLyrics(); webViewReloadKey++; showMenu = false }
+                                    onClick = { 
+                                        viewModel.fetchLyrics()
+                                        viewModel.refreshWebSocketConnection()
+                                        webViewReloadKey++
+                                        showMenu = false 
+                                    }
                                 )
                                 DropdownMenuItem(
                                     leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) },
@@ -571,6 +578,19 @@ fun MainScreen() {
                 }
             } else {
                 Spacer(Modifier.fillMaxWidth().weight(1f))
+            }
+
+            // 歌曲结构显示条（仅在有歌词且非全屏时显示）
+            AnimatedVisibility(visible = !isLyricsFullscreen && songStructures.isNotEmpty()) {
+                SongStructureBar(
+                    structures = songStructures,
+                    currentTime = currentTime,
+                    onSeekTo = { time ->
+                        viewModel.seekTo(time)
+                        Timber.d("[SongStructure] 点击跳转至：${time}ms")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             AnimatedVisibility(visible = !isLyricsFullscreen) {

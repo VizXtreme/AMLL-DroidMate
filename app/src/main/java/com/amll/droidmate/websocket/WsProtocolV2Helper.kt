@@ -27,9 +27,9 @@ object WsProtocolV2Helper {
     
     @Serializable
     data class ValuePayload(
-        val update: String? = null,      // "setMusic", "progress", "paused", "resumed"
+        val update: String? = null,      // "setMusic", "progress", "paused", "resumed", "setLyric", "setCover"
         val command: String? = null,     // "pause", "resume", etc.
-        // MusicInfo 字段扁平化到这里
+        // MusicInfo 字段（扁平化，直接放在 value 层级）
         val musicId: String? = null,
         val musicName: String? = null,
         val albumId: String? = null,
@@ -45,18 +45,46 @@ object WsProtocolV2Helper {
         val repeat: String? = null,
         val shuffle: Boolean? = null,
         val data: String? = null,  // Base64 编码的数据或 JSON 字符串
-        // 专辑封面相关字段（用于 setCover）- 使用嵌套结构
+        // 专辑封面相关字段（用于 setCover）
         val source: String? = null,  // "uri" 或 "data"
-        val image: AlbumImage? = null  // 嵌套的图片对象
+        val url: String? = null,     // URI 模式的 URL
+        val image: ImageData? = null  // Data 模式的嵌套图片对象
+    )
+    
+    /**
+     * 专辑图片数据（嵌套结构，用于 AlbumCover::Data）
+     */
+    @Serializable
+    data class ImageData(
+        val mimeType: String? = null,
+        val data: String? = null  // Base64 编码的图片数据
+    )
+    
+    @Serializable
+    data class LyricLine(
+        val startTime: Long,
+        val endTime: Long,
+        val words: List<LyricWord> = emptyList(),
+        val translatedLyric: String = "",
+        val romanLyric: String = "",
+        val isBG: Boolean = false,
+        val isDuet: Boolean = false
+    )
+    
+    @Serializable
+    data class LyricWord(
+        val startTime: Long,
+        val endTime: Long,
+        val word: String
     )
     
     /**
      * 专辑图片数据（嵌套结构）
      */
     @Serializable
-    data class AlbumImage(
-        val mimeType: String? = null,
-        val data: String? = null  // Base64 编码的图片数据
+    data class Artist(
+        val id: String,
+        val name: String
     )
     
     /**
@@ -152,7 +180,12 @@ object WsProtocolV2Helper {
         //     Ttml { data: String },  // 直接是 String，不是 Base64
         // }
         // 因此不需要进行 Base64 编码，直接发送原始 TTML 内容
-        return encode(MessageV2(type = "state", value = ValuePayload(update = "setLyric", format = "ttml", data = ttmlContent)))
+        // 根据 serde 的 tag 配置，format 和 data 字段会被提升到 value 层级
+        return try {
+            encode(MessageV2(type = "state", value = ValuePayload(update = "setLyric", format = "ttml", data = ttmlContent)))
+        } catch (e: Exception) {
+            throw RuntimeException("创建 TTML 歌词消息失败：${e.message}", e)
+        }
     }
     
     /**
@@ -170,13 +203,14 @@ object WsProtocolV2Helper {
         val base64Data = matchResult.groupValues[2]
         
         // 构建符合 V2 协议的消息格式
+        // 根据 serde 的 tag 配置，AlbumCover::Data 会生成 source 和 image 字段
         // {"type":"state","value":{"update":"setCover","source":"data","image":{"mimeType":"...","data":"..."}}}
         return encode(MessageV2(
             type = "state",
             value = ValuePayload(
                 update = "setCover",
                 source = "data",
-                image = AlbumImage(
+                image = ImageData(
                     mimeType = mimeType,
                     data = base64Data
                 )
@@ -184,39 +218,7 @@ object WsProtocolV2Helper {
         ))
     }
     
-    @Serializable
-    data class MusicInfo(
-        val musicId: String,
-        val musicName: String,
-        val albumId: String = "",
-        val albumName: String = "",
-        val artists: List<Artist> = emptyList(),
-        val duration: Long
-    )
-    
-    @Serializable
-    data class Artist(
-        val id: String,
-        val name: String
-    )
-    
-    @Serializable
-    data class LyricLine(
-        val startTime: Long,
-        val endTime: Long,
-        val words: List<LyricWord> = emptyList(),
-        val translatedLyric: String = "",
-        val romanLyric: String = "",
-        val isBG: Boolean = false,
-        val isDuet: Boolean = false
-    )
-    
-    @Serializable
-    data class LyricWord(
-        val startTime: Long,
-        val endTime: Long,
-        val word: String
-    )
+
     
     // ==================== 编解码方法 ====================
     
@@ -227,7 +229,7 @@ object WsProtocolV2Helper {
         return try {
             json.encodeToString(MessageV2.serializer(), message)
         } catch (e: Exception) {
-            throw RuntimeException("编码失败", e)
+            throw RuntimeException("JSON 编码失败：${e.message}", e)
         }
     }
     

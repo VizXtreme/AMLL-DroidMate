@@ -59,29 +59,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.amll.droidmate.service.MediaInfoService
-import com.amll.droidmate.ui.theme.DroidMateTheme
-import com.amll.droidmate.ui.theme.DynamicThemeManager
+import com.amll.droidmate.ui.base.BaseComposeActivity
 import kotlinx.coroutines.launch
 
-class LyricOffsetManagementActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        setContent {
-            val isDarkTheme = isSystemInDarkTheme()
-            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
-
-            DroidMateTheme(
-                darkTheme = isDarkTheme,
-                dynamicColorScheme = dynamicColorScheme
-            ) {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    LyricOffsetManagementPage(onBack = { finish() })
-                }
-            }
-        }
+class LyricOffsetManagementActivity : BaseComposeActivity() {
+    @Composable
+    override fun renderContent() {
+        LyricOffsetManagementPage(onBack = { finish() })
     }
 }
 

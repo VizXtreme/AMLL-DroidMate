@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.Color
 
 // 成功和警告颜色定义
 val SuccessGreen = Color(0xFF10B981)
-val WarningAmber = Color(0xFFF59E0B)
+val WarningAmber = Color(0xFFD97706)
 
 private val DarkColors = darkColorScheme(
     primary = Color(0xFF818CF8),

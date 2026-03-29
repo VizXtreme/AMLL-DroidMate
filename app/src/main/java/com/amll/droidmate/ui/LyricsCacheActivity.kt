@@ -49,39 +49,19 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.amll.droidmate.data.repository.LyricsCacheRepository
 import com.amll.droidmate.domain.model.CachedLyricEntry
-import com.amll.droidmate.ui.theme.DroidMateTheme
-import com.amll.droidmate.ui.theme.DynamicThemeManager
+import com.amll.droidmate.ui.base.BaseComposeActivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class LyricsCacheActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
+class LyricsCacheActivity : BaseComposeActivity() {
+    @Composable
+    override fun renderContent() {
         val repository = LyricsCacheRepository(applicationContext)
-
-        setContent {
-            val isDarkTheme = isSystemInDarkTheme()
-            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
-            
-            DroidMateTheme(
-                darkTheme = isDarkTheme,
-                dynamicColorScheme = dynamicColorScheme
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    LyricsCachePage(
-                        repository = repository,
-                        onBack = { finish() }
-                    )
-                }
-            }
-        }
+        LyricsCachePage(
+            repository = repository,
+            onBack = { finish() }
+        )
     }
 }
 

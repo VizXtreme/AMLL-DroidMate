@@ -3,8 +3,11 @@ package com.amll.droidmate.data.converter
 import com.amll.droidmate.domain.model.LyricLine
 import com.amll.droidmate.domain.model.TTMLLyrics
 import com.amll.droidmate.domain.model.TTMLMetadata
+import com.amll.droidmate.domain.model.SongStructure
 import com.amll.droidmate.data.parser.TimestampUtils
 import timber.log.Timber
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * TTML 转换器 - 将歌词转换为 TTML 格式
@@ -46,6 +49,17 @@ object TTMLConverter {
         
         // Metadata
         with(lyrics.metadata) {
+            // ✅ 添加主唱 agent 定义（必须放在其他 meta 之前，让 Rust 解析器正确识别）
+            sb.append("""${indent}${indent}${indent}<ttm:agent type="person" xml:id="v1" />""")
+            if (formatted) sb.append("\n")
+            
+            // 检查是否有对唱歌词，如果有则添加 v2 agent 定义
+            val hasDuet = lyrics.lines.any { it.isDuet }
+            if (hasDuet) {
+                sb.append("""${indent}${indent}${indent}<ttm:agent type="other" xml:id="v2" />""")
+                if (formatted) sb.append("\n")
+            }
+            
             sb.append("""${indent}${indent}${indent}<amll:meta key="title" value="$title" />""")
             if (formatted) sb.append("\n")
             sb.append("""${indent}${indent}${indent}<amll:meta key="artist" value="$artist" />""")
@@ -58,6 +72,23 @@ object TTMLConverter {
             if (formatted) sb.append("\n")
             sb.append("""${indent}${indent}${indent}<amll:meta key="source" value="$source" />""")
             if (formatted) sb.append("\n")
+            
+            // ✅ 序列化歌曲结构信息到 amll:meta，以便后续解析时保留
+            songStructures?.let { structures ->
+                if (structures.isNotEmpty()) {
+                    val jsonStructures = JSONArray()
+                    structures.forEach { structure ->
+                        JSONObject().apply {
+                            put("label", structure.label)
+                            put("start", structure.startTime)
+                            put("end", structure.endTime)
+                            put("type", structure.type.name.lowercase())
+                        }.let { jsonStructures.put(it) }
+                    }
+                    sb.append("""${indent}${indent}${indent}<amll:meta name="song-structure" content='${jsonStructures.toString()}' />""")
+                    if (formatted) sb.append("\n")
+                }
+            }
         }
         
         sb.append("""${indent}${indent}</metadata>$lineBreak""")
@@ -73,8 +104,11 @@ object TTMLConverter {
             val begin = TimestampUtils.fromMillis(line.startTime)
             val end = TimestampUtils.fromMillis(line.endTime)
             val lineNum = "L${lineIndex + 1}"
-            val agentAttr = line.agent?.let { " ttm:agent=\"$it\"" } ?: ""
-            
+                    
+            // ✅ 优先使用 agent 字段，如果没有则根据 isDuet 推断
+            val agentValue = line.agent ?: if (line.isDuet) "v2" else "v1"
+            val agentAttr = if (agentValue.isNotEmpty()) " ttm:agent=\"$agentValue\"" else ""
+                    
             sb.append("""${indent}${indent}<p begin="$begin" end="$end" itunes:key="$lineNum"$agentAttr>""")
             if (formatted) sb.append("\n")
 

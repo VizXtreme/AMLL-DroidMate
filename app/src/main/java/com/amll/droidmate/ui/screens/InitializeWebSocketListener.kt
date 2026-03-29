@@ -8,7 +8,7 @@ import com.amll.droidmate.ui.AppSettings
 import com.amll.droidmate.domain.model.TTMLLyrics
 import com.amll.droidmate.websocket.AMLLWebSocketClient
 import com.amll.droidmate.websocket.WsProtocolV2Helper
-import com.amll.droidmate.data.parser.escapeXML
+import com.amll.droidmate.data.converter.TTMLConverter
 import kotlinx.serialization.json.JsonObject
 import timber.log.Timber
 
@@ -34,68 +34,6 @@ fun InitializeWebSocketListener(
     val context = LocalContext.current
     val webSocketClient = remember { AMLLWebSocketClient.getInstance() }
 
-    fun buildTtmlString(lyrics: TTMLLyrics?): String {
-        if (lyrics == null) return ""
-        
-        val sb = StringBuilder()
-        
-        // XML 头
-        sb.append("""<?xml version="1.0" encoding="UTF-8"?>""")
-        
-        // TTML 根元素
-        sb.append("""<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" xml:lang="ja">""")
-        
-        // Head
-        sb.append("<head>")
-        sb.append("<metadata>")
-        sb.append("""<amll:meta key="title" value="${lyrics.metadata.title}" xmlns:amll="http://www.example.com/ns/amll"/>""")
-        sb.append("""<amll:meta key="artist" value="${lyrics.metadata.artist}" xmlns:amll="http://www.example.com/ns/amll"/>""")
-        sb.append("</metadata>")
-        sb.append("</head>")
-        
-        // Body
-        val duration = lyrics.lines.lastOrNull()?.endTime ?: 0L
-        sb.append("""<body dur="${formatTime(duration)}">""")
-        sb.append("<div>")
-        
-        // Lyrics lines
-        lyrics.lines.forEach { line ->
-            val begin = formatTime(line.startTime)
-            val end = formatTime(line.endTime)
-            sb.append("""<p begin="$begin" end="$end">""")
-            
-            // 如果有逐词数据
-            if (line.words.isNotEmpty()) {
-                line.words.forEach { word ->
-                    val wordBegin = formatTime(word.startTime)
-                    val wordEnd = formatTime(word.endTime)
-                    sb.append("""<span begin="$wordBegin" end="$wordEnd">${escapeXML(word.word)}</span>""")
-                }
-            } else {
-                // 整行输出
-                sb.append("""<span begin="$begin" end="$end">${escapeXML(line.text)}</span>""")
-            }
-            
-            sb.append("</p>")
-        }
-        
-        sb.append("</div>")
-        sb.append("</body>")
-        sb.append("</tt>")
-        
-        return sb.toString()
-    }
-    
-    fun formatTime(millis: Long): String {
-        val seconds = millis / 1000
-        val minutes = seconds / 60
-        val remainingSeconds = seconds % 60
-        val remainingMillis = millis % 1000
-        return String.format("%02d:%02d.%03d", minutes, remainingSeconds, remainingMillis)
-    }
-    
-
-
     LaunchedEffect(Unit) {
         if (AppSettings.isWebSocketProtocolEnabled(context)) {
             val wsAddress = AppSettings.getWebSocketProtocolAddress(context)
@@ -113,9 +51,14 @@ fun InitializeWebSocketListener(
                     Timber.d("[$debugSource] 无有效歌曲信息，跳过发送")
                 }
                 lyrics?.lines?.let { lines ->
-                    val ttmlContent = buildTtmlString(lyrics)
-                    if (ttmlContent.isNotBlank()) {
-                        webSocketClient.sendLyrics(ttmlContent)
+                    try {
+                        val ttmlContent = TTMLConverter.toTTMLString(lyrics)
+                        if (ttmlContent.isNotBlank()) {
+                            webSocketClient.sendLyrics(ttmlContent)
+                            Timber.d("[$debugSource] 已发送初始歌词")
+                        }
+                    } catch (e: Exception) {
+                        Timber.e(e, "[$debugSource] 发送初始歌词失败")
                     }
                 }
             }

@@ -50,7 +50,7 @@ open class LyricsRepository(
     private val amllProbeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // exposed for testing
-    internal enum class MatchType(val score: Int) {
+    enum class MatchType(val score: Int) {
         NONE(-1),
         VERY_LOW(10),
         LOW(30),
@@ -1155,12 +1155,12 @@ open class LyricsRepository(
         return s
     }
 
-    internal data class MatchEvaluation(
+    data class MatchEvaluation(
         val confidence: Float,
         val matchType: String
     )
 
-    internal fun evaluateMatch(
+    fun evaluateMatch(
         searchTitle: String,
         searchArtist: String,
         resultTitle: String,
@@ -1465,7 +1465,7 @@ open class LyricsRepository(
         }
     }
 
-    internal fun compareTrack(
+    fun compareTrack(
         searchTitle: String,
         searchArtist: String,
         resultTitle: String,
@@ -1772,9 +1772,26 @@ open class LyricsRepository(
 
                     val parsed = parseTTML(content, title, artist)
                     if (parsed != null && parsed.lines.isNotEmpty()) {
+                        // 检查是否有歌曲结构
+                        val songStructures = parsed.metadata.songStructures
+                        if (!songStructures.isNullOrEmpty()) {
+                            Timber.d("[SongStructure] ✅ getAMLL_TTMLLyrics 接收到 ${songStructures.size} 个结构")
+                            songStructures.forEachIndexed { index, structure ->
+                                Timber.d("  [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms")
+                            }
+                        } else {
+                            Timber.d("[SongStructure] ⚠️ getAMLL_TTMLLyrics 未接收到结构信息")
+                        }
+                        
                         // Mark the source for AMLL lyrics so downstream feature analysis
                         // (e.g. overlap detection) can distinguish AMLL TTML DB content.
-                        val withSource = parsed.copy(metadata = parsed.metadata.copy(source = "AMLL TTML DB"))
+                        // 保留歌曲结构信息
+                        val withSource = parsed.copy(
+                            metadata = parsed.metadata.copy(
+                                source = "AMLL TTML DB",
+                                songStructures = songStructures  // 保留歌曲结构
+                            )
+                        )
                         Timber.i("Fetched AMLL lyrics from: $url")
                         lastAmlLError = null
                         return withSource
@@ -2312,18 +2329,27 @@ open class LyricsRepository(
         ): TTMLLyrics? {
             return try {
                 Timber.d("[BG-LYRICS-DEBUG] LyricsRepository.parseTTML input: length=${ttmlContent.length}, hasXbg=${ttmlContent.contains("ttm:role=\"x-bg\"")}, hasXTranslation=${ttmlContent.contains("ttm:role=\"x-translation\"")}")
-                val lines = TTMLParser.parse(ttmlContent)
-                val bgLines = lines.filter { it.isBG }
-                val bgWithTranslation = bgLines.count { !it.translation.isNullOrBlank() }
-                val sampleBg = bgLines.firstOrNull()
-                Timber.d("[BG-LYRICS-DEBUG] LyricsRepository.parseTTML output: total=${lines.size}, bg=${bgLines.size}, bgWithTrans=$bgWithTranslation, sampleBg='${sampleBg?.text?.take(40) ?: ""}', sampleTrans='${sampleBg?.translation?.take(40) ?: ""}'")
-                TTMLLyrics(
-                    metadata = TTMLMetadata(
-                        title = title ?: "Unknown",
-                        artist = artist ?: "Unknown"
-                    ),
-                    lines = lines.sortedBy { it.startTime }
+                val ttmlLyrics = TTMLParser.parse(ttmlContent)
+                
+                // 检查是否有解析到的歌曲结构
+                val songStructures = ttmlLyrics.metadata.songStructures
+                if (!songStructures.isNullOrEmpty()) {
+                    Timber.d("[SongStructure] ✅ LyricsRepository 接收到 ${songStructures.size} 个结构")
+                    songStructures.forEachIndexed { index, structure ->
+                        Timber.d("  [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms")
+                    }
+                } else {
+                    Timber.d("[SongStructure] ⚠️ LyricsRepository 未接收到结构信息")
+                }
+                
+                // 如果提供了自定义标题或艺术家，覆盖元数据（但保留 songStructures）
+                val metadata = ttmlLyrics.metadata.copy(
+                    title = title ?: ttmlLyrics.metadata.title,
+                    artist = artist ?: ttmlLyrics.metadata.artist,
+                    songStructures = songStructures  // 保留歌曲结构信息
                 )
+                
+                ttmlLyrics.copy(metadata = metadata)
             } catch (e: Exception) {
                 Timber.e(e, "Error parsing TTML")
                 null

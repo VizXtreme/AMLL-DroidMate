@@ -64,7 +64,35 @@ data class TTMLMetadata(
     val album: String? = null,
     val language: String = "ja",
     val duration: Long = 0L,
-    val source: String = "DroidMate"
+    val source: String = "DroidMate",
+    val songStructures: List<SongStructure>? = null // 从 TTML 元数据中解析的歌曲结构
+)
+
+/**
+ * 歌曲结构类型
+ */
+enum class SongStructureType(val displayName: String) {
+    VERSE("主歌"),
+    CHORUS("副歌"),
+    BRIDGE("桥段"),
+    PRE_CHORUS("预副歌"),
+    INTRO("前奏"),
+    INTERLUDE("间奏"),
+    OUTRO("尾奏"),
+    SOLO("独奏"),
+    BREAK("停顿"),
+    UNKNOWN("未知")
+}
+
+/**
+ * 歌曲结构段落
+ */
+@Serializable
+data class SongStructure(
+    val label: String,
+    val startTime: Long,
+    val endTime: Long,
+    val type: SongStructureType = SongStructureType.UNKNOWN
 )
 
 /**

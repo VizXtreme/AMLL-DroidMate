@@ -52,63 +52,40 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.amll.droidmate.ui.theme.DroidMateTheme
-import com.amll.droidmate.ui.theme.DynamicThemeManager
+import com.amll.droidmate.ui.base.BaseComposeActivity
 import com.amll.droidmate.ui.viewmodel.CustomLyricsCandidate
 import com.amll.droidmate.ui.viewmodel.CustomLyricsViewModel
 
-class CustomLyricsActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
+class CustomLyricsActivity : BaseComposeActivity() {
+    @Composable
+    override fun renderContent() {
         val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
         val artist = intent.getStringExtra(EXTRA_ARTIST).orEmpty()
         val playbackSource = intent.getStringExtra(EXTRA_PLAYBACK_SOURCE)
-
-        // 我们不再在 Activity 里阻止搜索，即使有缓存也继续显示候选
-        // （缓存优先逻辑由 ViewModel 处理）
-
-        setContent {
-            val isDarkTheme = isSystemInDarkTheme()
-            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
-            
-            DroidMateTheme(
-                darkTheme = isDarkTheme,
-                dynamicColorScheme = dynamicColorScheme
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val viewModel: CustomLyricsViewModel = viewModel()
-                    // tell VM about playback app so ranking rules can use it
-                    LaunchedEffect(playbackSource) {
-                        viewModel.updateCurrentSource(playbackSource)
-                    }
-                    val appliedSource by viewModel.appliedLyricsSource.collectAsState()
-
-                    CustomLyricsPage(
-                        title = title,
-                        artist = artist,
-                        onBack = { finish() },
-                        onApply = { lyricsText ->
-                            val result = Intent().apply {
-                                putExtra(EXTRA_TITLE, title)
-                                putExtra(EXTRA_ARTIST, artist)
-                                putExtra(EXTRA_LYRICS_TEXT, lyricsText)
-                                putExtra(EXTRA_SOURCE, appliedSource ?: "manual")
-                            }
-                            setResult(RESULT_OK, result)
-                            finish()
-                        }
-                    )
-                }
-            }
+        
+        val viewModel: CustomLyricsViewModel = viewModel()
+        LaunchedEffect(playbackSource) {
+            viewModel.updateCurrentSource(playbackSource)
         }
+        val appliedSource by viewModel.appliedLyricsSource.collectAsState()
+        
+        CustomLyricsPage(
+            title = title,
+            artist = artist,
+            onBack = { finish() },
+            onApply = { lyricsText ->
+                val result = Intent().apply {
+                    putExtra(EXTRA_TITLE, title)
+                    putExtra(EXTRA_ARTIST, artist)
+                    putExtra(EXTRA_LYRICS_TEXT, lyricsText)
+                    putExtra(EXTRA_SOURCE, appliedSource ?: "manual")
+                }
+                setResult(RESULT_OK, result)
+                finish()
+            }
+        )
     }
-
+    
     companion object {
         const val EXTRA_TITLE = "extra_title"
         const val EXTRA_ARTIST = "extra_artist"

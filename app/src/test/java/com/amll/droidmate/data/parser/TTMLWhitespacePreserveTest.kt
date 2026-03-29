@@ -12,7 +12,7 @@ class TTMLWhitespacePreserveTest {
     fun parser_keeps_visible_spaces_in_plain_p_text() {
         val ttml = """<?xml version="1.0" encoding="UTF-8"?><tt xmlns="http://www.w3.org/ns/ttml"><body><div><p begin="00:00.000" end="00:01.000">  Hello  World  </p></div></body></tt>"""
 
-        val lines = TTMLParser.parse(ttml)
+        val lines = TTMLParser.parse(ttml).lines
 
         assertEquals(1, lines.size)
         assertEquals("  Hello  World  ", lines[0].text)
@@ -33,8 +33,8 @@ class TTMLWhitespacePreserveTest {
     fun parser_keeps_visible_spaces_in_background_line() {
         val ttml = """<?xml version="1.0" encoding="UTF-8"?><tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata"><body><div><p begin="00:00.000" end="00:02.000"><span ttm:role="x-bg"><span begin="00:00.000" end="00:01.000"> It's</span><span begin="00:01.000" end="00:02.000"> ridiculous </span></span></p></div></body></tt>"""
 
-        val lines = TTMLParser.parse(ttml)
-
+        val lines = TTMLParser.parse(ttml).lines
+        
         val bgLine = lines.firstOrNull { it.isBG }
         assertNotNull(bgLine)
         assertEquals(" It's ridiculous ", bgLine?.text)
@@ -64,7 +64,7 @@ class TTMLWhitespacePreserveTest {
             """</div></body></tt>"""
 
         // ensure parser can handle the malformed metadata without throwing
-        val lines = TTMLParser.parse(ttml)
+        val lines = TTMLParser.parse(ttml).lines
         assertEquals(1, lines.size)
         assertEquals("Test", lines[0].text)
     }

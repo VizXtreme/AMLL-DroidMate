@@ -5,14 +5,17 @@ import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.amll.droidmate.data.converter.TTMLConverter
+import com.amll.droidmate.data.parser.SongStructureParser
 import com.amll.droidmate.data.repository.LyricsCacheRepository
 import com.amll.droidmate.data.repository.LyricsRepository
 import com.amll.droidmate.ui.screens.getAppNameFromPackage
 import com.amll.droidmate.di.ServiceLocator
 import com.amll.droidmate.domain.model.NowPlayingMusic
+import com.amll.droidmate.domain.model.SongStructure
 import com.amll.droidmate.domain.model.TTMLLyrics
 import com.amll.droidmate.service.LyricNotificationManager
 import com.amll.droidmate.service.MediaInfoService
+import com.amll.droidmate.service.WebSocketForegroundService
 import com.amll.droidmate.ui.AppSettings
 import com.amll.droidmate.util.AudioDeviceHelper
 import com.amll.droidmate.websocket.AMLLWebSocketClient
@@ -173,8 +176,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     duration = music.duration,
                     progress = music.currentPosition,
                     isPlaying = music.isPlaying,
-                    ttmlLyric = ttmlContent,
-                    albumArtUri = music.albumArtUri  // ✅ 新增：包含专辑图 URI
+                    ttmlLyric = ttmlContent
                 )
                 
                 Timber.d("MainViewModel: getCurrentPlayState 返回:")
@@ -208,6 +210,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     @androidx.annotation.VisibleForTesting(otherwise = androidx.annotation.VisibleForTesting.PRIVATE)
     internal val _lyrics = MutableStateFlow<TTMLLyrics?>(null)
     val lyrics: StateFlow<TTMLLyrics?> = _lyrics
+    
+    // 歌曲结构信息
+    private val _songStructures = MutableStateFlow<List<SongStructure>>(emptyList())
+    val songStructures: StateFlow<List<SongStructure>> = _songStructures
 
     
     private val _isLoading = MutableStateFlow(false)
@@ -316,9 +322,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * 设置媒体监听
+     * 设置媒体监听器
      */
     private fun setupMediaListener() {
+        // 如果启用了 WebSocket 协议，则启动前台服务
+        if (AppSettings.isWebSocketProtocolEnabled(context)) {
+            val serverUrl = AppSettings.getWebSocketProtocolAddress(context)
+            if (serverUrl.isNotEmpty()) {
+                Timber.i("启动 WebSocket 前台服务")
+                WebSocketForegroundService.start(context, serverUrl)
+            } else {
+                Timber.w("WebSocket 已启用但未配置服务器地址")
+                // 回退到普通模式
+                mediaInfoService.startListening()
+            }
+        } else {
+            // 未启用 WebSocket，使用普通模式
+            mediaInfoService.startListening()
+        }
+            
         viewModelScope.launch {
             mediaInfoService.nowPlayingMusic.collect { music ->
                 // 检查是否为新歌曲（标题或歌手改变）
@@ -358,6 +380,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             val parsed = LyricsRepository.parseTTML(cached.ttmlContent)
                             if (parsed != null) {
                                 _lyrics.value = parsed
+                                updateSongStructures(parsed)
                                 _errorMessage.value = null
                                 Timber.i("Loaded lyrics from cache (startup): ${cached.title} - ${cached.artist} (${cached.source})")
                                 
@@ -386,7 +409,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     /**
      * 智能获取歌词 - 自动搜索多个来源并选择最佳结果
      * 基于 Unilyric 的多源搜索策略:
-     * 1. 搜索网易云、QQ音乐、酷狗音乐
+     * 1. 搜索网易云、QQ 音乐、酷狗音乐
      * 2. 优先尝试 AMLL TTML DB (高质量逐字歌词)
      * 3. 回退到各平台的普通歌词
      */
@@ -396,10 +419,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _errorMessage.value = "未检测到播放信息"
             return
         }
-
+    
         viewModelScope.launch {
             _errorMessage.value = null
-
+    
             // first try to load from cache without toggling the loading flag; this avoids
             // showing a spinner/mask for cached data which is usually very fast.
             val cached = lyricsCacheRepository.findBySong(music.title, music.artist)
@@ -410,42 +433,44 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val parsed = LyricsRepository.parseTTML(cached.ttmlContent)
                     if (parsed != null) {
                         _lyrics.value = parsed
+                        updateSongStructures(parsed)
                         _errorMessage.value = null
                         Timber.d("Loaded lyrics from cache: ${cached.title} - ${cached.artist} (${cached.source})")
-                        
+                            
                         // ✅ 重置歌词哈希值，确保新歌词会被发送
                         lastSentLyricsHash = 0
-                        
+                            
                         // 同步到 WebSocket（如果启用）
                         if (AppSettings.isWebSocketProtocolEnabled(context)) {
                             // 使用完整的同步方法，包含歌曲信息、专辑图和歌词
                             syncPlaybackStateToWebSocket(music, isMusicChanged = false)
                             Timber.d("已同步缓存歌词到 WebSocket")
                         }
-                        
+                            
                         return@launch
                     }
                 } else {
                     Timber.d("Bypassing stale Kugou cache to refresh whitespace-fixed lyrics")
                 }
             }
-
+    
             // no usable cache, fall back to network search
             _lyrics.value = null
             _isLoading.value = true
-
+    
             try {
                 Timber.i("Fetching lyrics for: ${music.title} - ${music.artist}")
-
+    
                 val sourceName = getAppNameFromPackage(context, music.packageName)
                 val result = lyricsRepository.fetchLyricsAuto(
                     title = music.title,
                     artist = music.artist,
                     currentSourceName = sourceName
                 )
-
+    
                 if (result.isSuccess && result.lyrics != null) {
                     _lyrics.value = result.lyrics
+                    updateSongStructures(result.lyrics)
                     lyricsCacheRepository.upsert(
                         title = music.title,
                         artist = music.artist,
@@ -453,10 +478,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         ttmlContent = TTMLConverter.toTTMLString(result.lyrics)
                     )
                     Timber.i("Successfully fetched lyrics from ${result.source}")
-                    
+                        
                     // ✅ 重置歌词哈希值，确保新歌词会被发送
                     lastSentLyricsHash = 0
-                    
+                        
+                    // 刷新歌曲结构（重搜歌词时）
+                    refreshSongStructures()
+                        
                     // 同步到 WebSocket（如果启用）
                     if (AppSettings.isWebSocketProtocolEnabled(context)) {
                         // 使用完整的同步方法，包含歌曲信息、专辑图和歌词
@@ -468,12 +496,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     Timber.e("Failed to fetch lyrics: ${result.errorMessage}")
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "错误: ${e.message}"
+                _errorMessage.value = "错误：${e.message}"
                 Timber.e(e, "Error fetching lyrics")
             } finally {
                 _isLoading.value = false
             }
         }
+    }
+        
+    /**
+     * 刷新 WebSocket 连接（强制重连）
+     * 用于当用户点击刷新按钮时，重新建立 WebSocket 连接以同步最新状态
+     * ✅ 此方法会完全断开旧连接并重新初始化，确保服务器端视为全新连接
+     */
+    fun refreshWebSocketConnection() {
+        if (!AppSettings.isWebSocketProtocolEnabled(context)) {
+            Timber.d("WebSocket 协议未启用，跳过刷新")
+            return
+        }
+            
+        val serverUrl = AppSettings.getWebSocketProtocolAddress(context)
+        if (serverUrl.isBlank()) {
+            Timber.w("WebSocket 地址为空，跳过刷新")
+            return
+        }
+            
+        Timber.i("🔄 强制刷新 WebSocket 连接：$serverUrl")
+        // ✅ 使用 forceReconnect=true 强制断开并重连，确保发送完整的初始化消息
+        webSocketClient.connect(serverUrl, forceReconnect = true)
+        
+        // 同时刷新歌曲结构（刷新按钮）
+        refreshSongStructures()
     }
     
     /**
@@ -490,6 +543,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 if (ttml != null) {
                     _lyrics.value = ttml
+                    updateSongStructures(ttml)
                     Timber.i("Successfully converted LRC to TTML")
                 } else {
                     _errorMessage.value = "LRC 转换失败"
@@ -513,21 +567,49 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     return@launch
                 }
     
-                val parsed: TTMLLyrics? = TTMLConverter.fromLyrics(
-                    content = trimmed,
-                    title = if (title.isBlank()) "自选歌词" else title,
-                    artist = if (artist.isBlank()) "Unknown" else artist,
-                    processMetadata = AppSettings.isMetadataProcessingEnabled(context)
-                )
+                // ✅ 检测歌词格式
+                val format = com.amll.droidmate.data.parser.LyricsFormat.detect(trimmed)
+                
+                var parsed: TTMLLyrics?
+                var cachedTtmlContent: String
+                
+                when (format) {
+                    // ✅ TTML 格式直接解析，保留完整的歌曲结构信息
+                    com.amll.droidmate.data.parser.LyricsFormat.TTML -> {
+                        Timber.d("[SongStructure] TTML format detected, parsing directly to preserve song structures")
+                        try {
+                            parsed = com.amll.droidmate.data.parser.TTMLParser.parse(trimmed)
+                            // ✅ 对于 TTML 格式，直接保存原始内容，避免 toTTMLString 丢失歌曲结构
+                            cachedTtmlContent = trimmed
+                        } catch (e: Exception) {
+                            Timber.e(e, "Failed to parse TTML directly")
+                            parsed = null
+                            cachedTtmlContent = ""
+                        }
+                    }
+                    // ✅ 其他格式使用 UnifiedLyricsParser（通过 TTMLConverter.fromLyrics）
+                    else -> {
+                        Timber.d("[SongStructure] Non-TTML format ($format), using UnifiedLyricsParser")
+                        parsed = TTMLConverter.fromLyrics(
+                            content = trimmed,
+                            title = if (title.isBlank()) "自选歌词" else title,
+                            artist = if (artist.isBlank()) "Unknown" else artist,
+                            processMetadata = AppSettings.isMetadataProcessingEnabled(context)
+                        )
+                        // 非 TTML 格式需要转换后缓存
+                        cachedTtmlContent = parsed?.let { TTMLConverter.toTTMLString(it) } ?: ""
+                    }
+                }
     
-                if (parsed != null) {
+                if (parsed != null && cachedTtmlContent.isNotBlank()) {
                     _lyrics.value = parsed
+                    updateSongStructures(parsed)
                     _errorMessage.value = null
                     lyricsCacheRepository.upsert(
                         title = if (title.isBlank()) "自选歌词" else title,
                         artist = if (artist.isBlank()) "Unknown" else artist,
                         source = source,
-                        ttmlContent = TTMLConverter.toTTMLString(parsed)
+                        ttmlContent = cachedTtmlContent
                     )
                                     
                     // ✅ 重置歌词哈希值，确保新歌词会被发送
@@ -619,6 +701,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         context.unregisterReceiver(deleteReceiver)
         lyricNotificationManager.cancel()
         mediaInfoService.stopListening()
+        
+        // 如果 WebSocket 前台服务正在运行，停止它
+        if (WebSocketForegroundService.isServiceRunning()) {
+            WebSocketForegroundService.stop(context)
+        }
+        
         httpClient.close()
     }
     
@@ -637,14 +725,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             
             // 如果歌曲信息变化，发送歌曲信息
             if (isMusicChanged) {
-                val message = com.amll.droidmate.websocket.WsProtocolV2Helper.createSetMusicUpdate(
+                webSocketClient.sendMusicInfo(
                     musicId = music.packageName ?: "unknown",
                     musicName = music.title,
                     albumName = music.album ?: "",
-                    artists = listOf(com.amll.droidmate.websocket.WsProtocolV2Helper.Artist("1", music.artist)),
+                    artistName = music.artist,
                     duration = music.duration
                 )
-                webSocketClient.send(message)
                 Timber.d("已同步歌曲信息到 WebSocket: ${music.title} - ${music.artist}")
                 
                 // ✅ 只有在歌曲变化时才发送专辑图（避免频繁发送）
@@ -685,7 +772,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.e(e, "构建 TTML 歌词失败")
+                    Timber.e(e, "构建或发送 TTML 歌词失败：${e.message}")
+                    // 不抛出异常，继续其他操作
                 }
             }
             
@@ -790,82 +878,72 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     /**
      * 将歌词构建为 TTML 字符串
      */
+    /**
+     * 构建 TTML 歌词字符串（复用统一转换器）
+     */
     private fun buildTtmlForLyrics(lyrics: TTMLLyrics): String {
-        // 检查是否有有效的歌词行
-        if (lyrics.lines.isEmpty()) {
-            Timber.d("buildTtmlForLyrics: 无歌词行，返回空字符串")
-            return ""
-        }
-        
-        val sb = StringBuilder()
-        
-        // XML 头
-        sb.append("""<?xml version="1.0" encoding="UTF-8"?>""")
-        
-        // TTML 根元素
-        sb.append("""<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" xml:lang="ja">""")
-        
-        // Head
-        sb.append("<head>")
-        sb.append("<metadata>")
-        sb.append("""<amll:meta key="title" value="${escapeXmlForTTML(lyrics.metadata.title)}" xmlns:amll="http://www.example.com/ns/amll"/>""")
-        sb.append("""<amll:meta key="artist" value="${escapeXmlForTTML(lyrics.metadata.artist)}" xmlns:amll="http://www.example.com/ns/amll"/>""")
-        sb.append("</metadata>")
-        sb.append("</head>")
-        
-        // Body
-        val duration = lyrics.lines.lastOrNull()?.endTime ?: 0L
-        sb.append("""<body dur="${formatTimeForTTML(duration)}">""")
-        sb.append("<div>")
-        
-        // Lyrics lines
-        lyrics.lines.forEach { line ->
-            val begin = formatTimeForTTML(line.startTime)
-            val end = formatTimeForTTML(line.endTime)
-            sb.append("""<p begin="$begin" end="$end">""")
-            
-            // 如果有逐词数据
-            if (line.words.isNotEmpty()) {
-                line.words.forEach { word ->
-                    val wordBegin = formatTimeForTTML(word.startTime)
-                    val wordEnd = formatTimeForTTML(word.endTime)
-                    sb.append("""<span begin="$wordBegin" end="$wordEnd">${escapeXmlForTTML(word.word)}</span>""")
+        // ✅ 复用 TTMLConverter.toTTMLString() 统一函数，确保包含翻译和音译
+        return com.amll.droidmate.data.converter.TTMLConverter.toTTMLString(lyrics)
+    }
+    
+    /**
+     * 解析并更新歌曲结构信息
+     * 从歌词行自动推断歌曲结构（前奏、间奏、尾奏、主歌、副歌等）
+     */
+    private fun updateSongStructures(lyrics: TTMLLyrics) {
+        viewModelScope.launch {
+            try {
+                // 获取歌曲总时长用于检测尾奏
+                val songDuration = _nowPlayingMusic.value?.duration ?: 0L
+                
+                // 检查是否有元数据中的结构信息
+                val metadataStructures = lyrics.metadata.songStructures
+                Timber.d("[SongStructure] 📋 MainViewModel: metadata.songStructures = $metadataStructures")
+                Timber.d("[SongStructure] 📋 metadataStructures.isNullOrEmpty() = ${metadataStructures.isNullOrEmpty()}")
+                if (!metadataStructures.isNullOrEmpty()) {
+                    Timber.d("[SongStructure] ✅ MainViewModel: 使用 TTML 元数据中的结构：${metadataStructures.size} 个")
+                    metadataStructures.forEachIndexed { index, structure ->
+                        val startMin = structure.startTime / 60000
+                        val startSec = (structure.startTime % 60000) / 1000
+                        val endMin = structure.endTime / 60000
+                        val endSec = (structure.endTime % 60000) / 1000
+                        Timber.d("  [$index] ${structure.label} (${structure.type.displayName}): ${String.format("%d:%02d", startMin, startSec)} - ${String.format("%d:%02d", endMin, endSec)}")
+                    }
+                } else {
+                    Timber.w("[SongStructure] ⚠️ MainViewModel: 无元数据结构，将触发 SongStructureParser.parseStructure() fallback")
+                    Timber.w("[SongStructure] ⚠️ 最终会显示为 '段落 1'")
                 }
-            } else {
-                // 整行输出
-                sb.append("""<span begin="$begin" end="$end">${escapeXmlForTTML(line.text)}</span>""")
+                
+                val structures = SongStructureParser.parseStructure(lyrics.lines, lyrics.metadata.songStructures, songDuration)
+                _songStructures.value = structures
+                Timber.d("[SongStructure] 🎯 MainViewModel: 最终 structures.size = ${structures.size}")
+                structures.forEachIndexed { index, structure ->
+                    val startMin = structure.startTime / 60000
+                    val startSec = (structure.startTime % 60000) / 1000
+                    val endMin = structure.endTime / 60000
+                    val endSec = (structure.endTime % 60000) / 1000
+                    Timber.d("  [$index] ${structure.label} (${structure.type.displayName}): ${String.format("%d:%02d", startMin, startSec)} - ${String.format("%d:%02d", endMin, endSec)}")
+                }
+                
+                // 诊断最终结果
+                if (structures.size == 1 && structures[0].label == "段落 1") {
+                    Timber.w("[SongStructure] ❌ 检测到 fallback 结果：单一段落 '段落 1'")
+                    Timber.w("[SongStructure] ❌ 这表明原始 TTML 中没有有效的歌曲结构信息")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "[SongStructure] 解析歌曲结构失败")
+                _songStructures.value = emptyList()
             }
-            
-            sb.append("</p>")
         }
-        
-        sb.append("</div>")
-        sb.append("</body>")
-        sb.append("</tt>")
-        
-        return sb.toString()
     }
     
     /**
-     * 格式化时间为 TTML 格式 (mm:ss.SSS)
+     * 刷新歌曲结构信息
+     * 用于重搜歌词或刷新时重新解析结构
      */
-    private fun formatTimeForTTML(millis: Long): String {
-        val seconds = millis / 1000
-        val minutes = seconds / 60
-        val remainingSeconds = seconds % 60
-        val remainingMillis = millis % 1000
-        return String.format("%02d:%02d.%03d", minutes, remainingSeconds, remainingMillis)
-    }
-    
-    /**
-     * XML 转义
-     */
-    private fun escapeXmlForTTML(text: String): String {
-        return text
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("'", "&apos;")
+    fun refreshSongStructures() {
+        val currentLyrics = _lyrics.value ?: return
+        updateSongStructures(currentLyrics)
+        Timber.i("[SongStructure] 刷新歌曲结构")
     }
 }

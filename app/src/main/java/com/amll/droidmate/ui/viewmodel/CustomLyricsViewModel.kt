@@ -488,21 +488,30 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             _isApplying.value = true
             _errorMessage.value = null
             try {
-                val parsed = TTMLConverter.fromLyrics(
-                    content = input,
-                    title = if (title.isBlank()) "自选歌词" else title,
-                    artist = if (artist.isBlank()) "Unknown" else artist,
-                    processMetadata = AppSettings.isMetadataProcessingEnabled(getApplication())
-                )
-                if (parsed != null) {
-                    _appliedLyricsText.value = TTMLConverter.toTTMLString(parsed)
-                    _appliedLyricsSource.value = sourceFromInput(input)
+                val format = com.amll.droidmate.data.parser.LyricsFormat.detect(input)
+                    
+                if (format == com.amll.droidmate.data.parser.LyricsFormat.TTML) {
+                    // ✅ 对于 TTML 格式，直接保存原始内容，避免 toTTMLString 丢失歌曲结构
+                    _appliedLyricsText.value = input.trim()
+                    _appliedLyricsSource.value = "ttml"
                 } else {
-                    _errorMessage.value = "无法识别歌词格式"
+                    // 非 TTML 格式才需要转换
+                    val parsed = TTMLConverter.fromLyrics(
+                        content = input,
+                        title = if (title.isBlank()) "自选歌词" else title,
+                        artist = if (artist.isBlank()) "Unknown" else artist,
+                        processMetadata = AppSettings.isMetadataProcessingEnabled(getApplication())
+                    )
+                    if (parsed != null) {
+                        _appliedLyricsText.value = TTMLConverter.toTTMLString(parsed)
+                        _appliedLyricsSource.value = sourceFromInput(input)
+                    } else {
+                        _errorMessage.value = "无法识别歌词格式"
+                    }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to parse manual lyrics")
-                _errorMessage.value = "解析歌词失败: ${e.message}"
+                _errorMessage.value = "解析歌词失败：${e.message}"
             } finally {
                 _isApplying.value = false
             }
