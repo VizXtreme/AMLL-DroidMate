@@ -43,7 +43,7 @@ object TimestampUtils {
                 else -> 0L
             }
         } catch (e: Exception) {
-            Timber.e(e, "[TimestampUtils] Failed to parse time string: $timeStr")
+            Timber.e("[TimestampUtils] Failed to parse time string: $timeStr", e)
             0L
         }
     }

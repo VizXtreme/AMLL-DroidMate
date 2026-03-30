@@ -83,13 +83,13 @@ Timber.w("[Storage] Failed to save to external storage, using internal cache", e
 ---
 
 ### 🟢 `Timber.i()` - 信息 (Info)
-**定义：** 一个阶段的完成，或是程序进入哪个分支结构，预期内的可能出现的无法获取
+**定义：** 一个阶段的完成，或是程序进入哪个分支结构（fallback到什么方法），有可能出现的合理的无法获取
 
 **使用场景：**
 - 重要流程的开始/结束
 - 状态转换（如：连接建立、断开）
 - 用户关键操作的记录
-- 预期的异常情况（如：资源不存在）
+- 有可能出现的合理异常情况（如：资源不存在）
 - 功能模块初始化完成
 - 条件分支的选择
 
@@ -101,7 +101,7 @@ Timber.i("[WebSocket] Connected to server: $url")
 // 歌词匹配完成
 Timber.i("[LyricsMatcher] Lyrics matched for song: $title")
 
-// 预期的 404（资源不存在）
+// 有可能出现的合理 404（资源不存在）
 Timber.i("[CustomLyrics] Custom lyric not found, using default")
 
 // 进入某个业务分支
@@ -116,6 +116,18 @@ Timber.i("[CacheManager] Cache miss for lyric data, fetching from network")
 
 // 旧版本兼容处理（正常的系统适配）
 Timber.i("[Compatibility] Using legacy API for Android version ${Build.VERSION.SDK_INT}")
+
+// Fallback 到备用方案（合理的降级处理）
+Timber.i("[SongStructure] Fallback: 无元数据结构信息，从歌词自动推断")
+Timber.i("[LyricsMatcher] Fallback: 精确匹配失败，使用模糊匹配")
+Timber.i("[CustomLyrics] Fallback: 自定义歌词未找到，使用默认歌词")
+
+// 其他合理的异常情况
+Timber.i("[Network] 网络请求超时，使用缓存数据")
+Timber.i("[Storage] 外部存储不可用，使用内部存储")
+Timber.i("[MediaSession] 当前无播放会话，等待用户操作")
+Timber.i("[WebSocket] 连接已断开，将在后台重试")
+Timber.i("[Permission] 通知权限未授予，使用基础功能")
 ```
 
 ---
@@ -265,6 +277,7 @@ Timber.d("[Debug] Variable value: $value") // ❌ [Debug] 不是有效的模块�
 5. ❌ **避免敏感信息**：不要记录密码、token 等敏感数据
 6. ❌ **避免过度日志**：不要在循环中大量记录不必要的日志
 7. ❌ **禁止缺少标记**：不允许出现没有模块标记的日志
+8. ❌ **禁止讲解性内容**：日志只记录事实和关键数据，不要包含"可能原因"、"请检查"等讲解性、教育性的内容
 
 ---
 
@@ -355,6 +368,18 @@ Timber.d("User token: $userToken") // ❌ 绝对禁止！
 
 // 缺少模块标记
 Timber.d("[Info] Processing complete") // ❌ [Info] 不是有效的模块标记
+
+// 包含讲解性内容
+Timber.w("[SongStructure] ⚠️ Fallback 触发：无元数据结构信息")
+Timber.w("[SongStructure] ⚠️ 可能原因:")  // ❌ 不应该解释原因
+Timber.w("[SongStructure]   1. TTML 文件本身不包含 itunes:songPart 元数据")  // ❌ 不应该列举原因
+Timber.w("[SongStructure]   2. UnifiedLyricsParser 在 processMetadata=false 模式下运行")  // ❌ 不应该列举原因
+
+// 包含教育性内容
+Timber.e("[WebSocket] 无法连接到服务器")
+Timber.e("[WebSocket] 请检查：")  // ❌ 不应该指导用户检查
+Timber.e("[WebSocket]   1. 服务器是否正在运行")  // ❌ 不应该列举检查项
+Timber.e("[WebSocket]   2. IP 地址和端口是否正确")  // ❌ 不应该列举检查项
 ```
 
 ### ✅ 正确示例

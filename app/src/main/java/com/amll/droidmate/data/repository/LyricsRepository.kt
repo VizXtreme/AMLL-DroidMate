@@ -119,7 +119,7 @@ open class LyricsRepository(
                 ?.jsonArray
 
             if (songList.isNullOrEmpty()) {
-                Timber.e("[LyricsRepository] No QQ Music results found for: $keyword")
+                Timber.i("[LyricsRepository] No QQ Music results found for: $keyword")
                 return emptyList()
             }
 
@@ -240,7 +240,7 @@ open class LyricsRepository(
                 ?.jsonPrimitive?.contentOrNull
             
             if (lyricContent.isNullOrBlank() && qrcContent.isNullOrBlank()) {
-                Timber.e("[LyricsRepository] No lyrics content from QQ Music for: $fallbackMid")
+                Timber.i("[LyricsRepository] No lyrics content from QQ Music for: $fallbackMid")
                 return null
             }
 
@@ -641,7 +641,7 @@ open class LyricsRepository(
             }
 
             if (lyricContent.isNullOrBlank() && yrcContent.isNullOrBlank()) {
-                Timber.e("[LyricsRepository] No lyrics content from Netease for: $songId")
+                Timber.i("[LyricsRepository] No lyrics content from Netease for: $songId")
                 return null
             }
 
@@ -916,7 +916,7 @@ open class LyricsRepository(
             Timber.d("[Kugou] Kugou parsed data element: ${dataElement?.size} items")
 
             if (dataElement.isNullOrEmpty()) {
-                Timber.e("[Kugou] No Kugou song results found for: $keyword")
+                Timber.i("[Kugou] No Kugou song results found for: $keyword")
                 return emptyList()
             }
 

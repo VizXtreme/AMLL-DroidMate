@@ -181,18 +181,10 @@ fun AMLLLyricsView(
             // 打印更详细的错误信息
             when (error) {
                 is java.io.EOFException -> {
-                    Timber.e("[AMLLLyrics] 服务器主动断开了连接，可能原因：")
-                    Timber.e("[AMLLLyrics]   1. 服务器未运行或已关闭")
-                    Timber.e("[AMLLLyrics]   2. 协议格式不匹配（检查 Initialize 消息格式）")
-                    Timber.e("[AMLLLyrics]   3. 网络问题导致连接中断")
-                    Timber.e("[AMLLLyrics]   4. 防火墙/安全软件阻止连接")
+                    Timber.e("[AMLLLyrics] 服务器主动断开了连接")
                 }
                 is java.net.ConnectException -> {
                     Timber.e("[AMLLLyrics] 无法连接到服务器")
-                    Timber.e("[AMLLLyrics] 请检查：")
-                    Timber.e("[AMLLLyrics]   1. 服务器是否正在运行")
-                    Timber.e("[AMLLLyrics]   2. IP 地址和端口是否正确")
-                    Timber.e("[AMLLLyrics]   3. 设备是否在同一局域网内")
                 }
                 else -> {
                     Timber.e("[AMLLLyrics] 未知错误类型：${error.javaClass.simpleName}")

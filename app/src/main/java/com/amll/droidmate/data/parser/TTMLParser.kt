@@ -42,7 +42,7 @@ object TTMLParser {
         return try {
             tryParse(content)
         } catch (e: Exception) {
-            Timber.w("[TTMLParser] Initial TTML parse failed, trying sanitization", e)
+            Timber.i("[TTMLParser] Initial TTML parse failed, trying sanitization", e)
             val sanitized = sanitizeTTMLContent(content)
             return try {
                 tryParse(sanitized)
@@ -193,7 +193,7 @@ object TTMLParser {
                 language = language
             )
         } catch (e: Exception) {
-            Timber.e("[TTMLParser] Failed to parse metadata", e)
+            Timber.w("[TTMLParser] Failed to parse metadata", e)
             TTMLMetadata(title = "Unknown", artist = "Unknown")
         }
         
@@ -278,7 +278,7 @@ object TTMLParser {
                 ParsedParagraph(mainLine = mainLine, bgLine = bgLine, agent = agent)
             }
         } catch (e: Exception) {
-            Timber.e("[TTMLParser] Failed to parse paragraph", e)
+            Timber.w("[TTMLParser] Failed to parse paragraph", e)
             null
         }
     }

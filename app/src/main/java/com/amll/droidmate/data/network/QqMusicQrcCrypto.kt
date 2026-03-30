@@ -31,7 +31,7 @@ object QqMusicQrcCrypto {
             }
         }
 
-        Timber.tag("QqMusicQrcCrypto").w("Native Rust decoder returned empty or failed; falling back to Kotlin implementation")
+        Timber.tag("QqMusicQrcCrypto").i("Native Rust decoder returned empty or failed; falling back to Kotlin implementation")
 
         val encryptedBytes = decodeHex(encryptedText)
         Timber.d("[QqMusicQrcCrypto] After Hex decode: ${encryptedBytes.size} bytes")
@@ -68,7 +68,7 @@ object QqMusicQrcCrypto {
         }
 
         val decompressed = if (decrypted.isNotEmpty() && decrypted[0] != 0x78.toByte()) {
-            Timber.w("[QqMusicQrcCrypto] First byte is 0x{"%02X".format(decrypted[0])} (not 0x78), attempting to locate zlib header")
+            Timber.i("[QqMusicQrcCrypto] First byte is 0x${"%02X".format(decrypted[0])} (not 0x78), attempting to locate zlib header")
             attemptDecompressFromPossibleZlibOffset(decrypted)
         } else {
             decompress(decrypted)
@@ -93,13 +93,13 @@ object QqMusicQrcCrypto {
         // If UTF-8 decoding produces replacement characters, QQ may be using a different legacy
         // encoding (e.g. GBK/GB18030). In that case, attempt a fallback decode.
         if (utf8Result.contains('\uFFFD')) {
-            Timber.w("[QqMusicQrcCrypto] UTF-8 decoding produced replacement chars; retrying with GB18030")
+            Timber.i("[QqMusicQrcCrypto] UTF-8 decoding produced replacement chars; retrying with GB18030")
             try {
                 val gb18030 = payload.toString(Charset.forName("GB18030"))
                 Timber.d("[QqMusicQrcCrypto] Final result length (GB18030): ${gb18030.length}, preview (first 300 chars): ${gb18030.take(300)}")
                 return gb18030
             } catch (e: Exception) {
-                Timber.w("[QqMusicQrcCrypto] GB18030 decode failed; falling back to UTF-8", e)
+                Timber.i("[QqMusicQrcCrypto] GB18030 decode failed; falling back to UTF-8", e)
             }
         }
 
@@ -125,7 +125,7 @@ object QqMusicQrcCrypto {
         return try {
             InflaterInputStream(ByteArrayInputStream(data)).use { it.readBytes() }
         } catch (e: Exception) {
-            Timber.w("[QqMusicQrcCrypto] Zlib decompression failed, retrying as raw deflate", e)
+            Timber.i("[QqMusicQrcCrypto] Zlib decompression failed, retrying as raw deflate", e)
             // Some QQ QRC payloads appear to be raw DEFLATE without zlib headers.
             InflaterInputStream(ByteArrayInputStream(data), Inflater(/* nowrap */ true)).use { it.readBytes() }
         }
@@ -151,11 +151,11 @@ object QqMusicQrcCrypto {
             val second = data[offset + 1].toInt() and 0xFF
             val combined = (0x78 shl 8) or second
             val valid = combined % 31 == 0
-            Timber.d("[QqMusicQrcCrypto] Candidate @ $offset: header=0x78 0x{"%02X".format(second)} valid=$valid")
+            Timber.d("[QqMusicQrcCrypto] Candidate @ $offset: header=0x78 0x${"%02X".format(second)} valid=$valid")
             if (!valid) continue
         
             try {
-                Timber.d("[QqMusicQrcCrypto] Attempt decompress at offset $offset (header=0x78 0x{"%02X".format(second)})")
+                Timber.d("[QqMusicQrcCrypto] Attempt decompress at offset $offset (header=0x78 0x${"%02X".format(second)})")
                 return decompress(data.copyOfRange(offset, data.size))
             } catch (e: Exception) {
                 Timber.w("[QqMusicQrcCrypto] Decompress attempt failed at offset $offset", e)
@@ -163,7 +163,7 @@ object QqMusicQrcCrypto {
         }
 
         // As a last resort, try decompress from the very start using raw deflate
-        Timber.w("[QqMusicQrcCrypto] No valid zlib header found; falling back to raw deflate from start")
+        Timber.i("[QqMusicQrcCrypto] No valid zlib header found; falling back to raw deflate from start")
         return InflaterInputStream(ByteArrayInputStream(data), Inflater(/* nowrap */ true)).use { it.readBytes() }
     }
 

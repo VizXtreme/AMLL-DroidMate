@@ -46,11 +46,7 @@ object SongStructureParser {
         }
         
         // 否则，从歌词行自动推断结构
-        Timber.w("[SongStructure] ⚠️ Fallback 触发：无元数据结构信息")
-        Timber.w("[SongStructure] ⚠️ 可能原因:")
-        Timber.w("[SongStructure]   1. TTML 文件本身不包含 itunes:songPart 元数据")
-        Timber.w("[SongStructure]   2. UnifiedLyricsParser 在 processMetadata=false 模式下运行")
-        Timber.w("[SongStructure]   3. TTMLParser 解析失败，structures 被清空")
+        Timber.i("[SongStructure] ⚠️ Fallback 触发：无元数据结构信息")
         Timber.d("[SongStructure] 歌词行数：${lyricsLines.size}，歌曲时长：${songDuration}ms")
         
         return inferStructureFromLyrics(lyricsLines, songDuration)
@@ -85,8 +81,7 @@ object SongStructureParser {
         
         if (interludes.isEmpty()) {
             // 没有检测到间奏，将所有歌词作为一个段落
-            Timber.w("[SongStructure] ⚠️ Fallback: 无间奏检测，将整首歌标记为单一段落 '段落 1'")
-            Timber.w("[SongStructure] ⚠️ 这通常意味着 TTML 元数据中没有歌曲结构信息")
+            Timber.i("[SongStructure] ⚠️ Fallback: 无间奏检测，将整首歌标记为单一段落 '段落 1'")
             Timber.d("[SongStructure] 第一行时间：${formatTime(lines.first().startTime)}, 最后一行时间：${formatTime(lines.last().endTime)}")
             
             structures.add(

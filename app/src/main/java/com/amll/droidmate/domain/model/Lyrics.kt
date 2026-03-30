@@ -93,7 +93,10 @@ data class SongStructure(
     val startTime: Long,
     val endTime: Long,
     val type: SongStructureType = SongStructureType.UNKNOWN
-)
+) {
+    val duration: Long
+        get() = endTime - startTime
+}
 
 /**
  * 支持的功能（用于 UI 提示）
