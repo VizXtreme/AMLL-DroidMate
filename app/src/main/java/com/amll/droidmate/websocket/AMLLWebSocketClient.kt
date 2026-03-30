@@ -317,8 +317,10 @@ class AMLLWebSocketClient private constructor(
             val message = WsProtocolV2Helper.createTTMLLyricUpdate(ttmlContent)
             send(message)
             Timber.d("[WebSocket] Sent lyrics: size=${ttmlContent.length} chars")
-            // 输出前 200 个字符用于调试
-            Timber.d("[WebSocket]  - Lyrics preview: ${ttmlContent.take(200)}...")
+            // ⭐ 输出前 500 个字符用于调试（增加到 500 以便查看完整的 XML 结构）
+            Timber.d("[WebSocket]  - Lyrics preview (first 500): ${ttmlContent.take(500)}...")
+            // ⭐ 添加消息大小日志
+            Timber.d("[WebSocket]  - Encoded message size: ${message.length} chars")
         } catch (e: Exception) {
             Timber.e("[WebSocket] Failed to send lyrics: ${e.message}", e)
             // 通知所有监听器发生了错误
@@ -451,12 +453,25 @@ class AMLLWebSocketClient private constructor(
             return
         }
         
-        if (isConnected && forceReconnect) {
-            Timber.i("[WebSocket] Forced reconnect, disconnecting old connection")
+        // ⭐ 修复关键：强制重连时完全重置所有状态
+        if (forceReconnect) {
+            Timber.i("[WebSocket] Forced reconnect, performing full state reset")
+            
+            // 1. 重置协议版本为默认值
+            negotiatedProtocolVersion = WsProtocolVersion.V2
+            isHandshakeComplete = false
+            
+            // 2. 停止旧的心跳任务
+            stopHeartbeat()
+            heartbeatJob = null
+            
+            // 3. 断开旧连接
             disconnect()
-        } else if (isConnected) {
-            Timber.w("[WebSocket] Already connected to WebSocket server, disconnecting old connection")
-            disconnect()
+            
+            // 4. 清空 WebSocket 引用
+            webSocket = null
+            
+            Timber.d("[WebSocket] State reset completed")
         }
         
         serverUrl = url
@@ -476,14 +491,14 @@ class AMLLWebSocketClient private constructor(
                         
                         // ✅ 每次连接都必须发送 Initialize 握手（无论是否是重连）
                         if (config.sendInitialize) {
-                            // 直接同步发送，不通过 scope.launch
+                            // ⭐ 关键修复：同步发送 Initialize，确保是第一个消息
                             val initializeMessage = """{"type":"initialize"}"""
                             webSocket.send(initializeMessage)
                             Timber.d("[WebSocket] Sent V2 Initialize handshake message (synchronous)")
                             
-                            // 短暂延迟确保服务器收到
+                            // ⭐ 阻塞等待，确保 Initialize 已经发送到服务器
                             kotlinx.coroutines.runBlocking {
-                                kotlinx.coroutines.delay(50) // 50ms 延迟
+                                kotlinx.coroutines.delay(100) // 100ms 延迟确保服务器收到
                             }
                             
                             isHandshakeComplete = true
@@ -516,7 +531,7 @@ class AMLLWebSocketClient private constructor(
                                 Timber.w("[WebSocket] All listeners returned null play state")
                             }
                             
-                            // Step 3: 最后启动心跳机制
+                            // Step 3: 最后启动心跳机制（在 Initialize 和状态同步之后）
                             if (config.enableHeartbeat) {
                                 startHeartbeat()
                             }
@@ -593,11 +608,17 @@ class AMLLWebSocketClient private constructor(
                     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                         Timber.e("[WebSocket] Connection failed", t)
                         isConnected = false
+                        
+                        // ⭐ 修复：失败时立即清理所有状态
+                        stopHeartbeat()
+                        this@AMLLWebSocketClient.webSocket = null
+                        isHandshakeComplete = false
+                        
                         listeners.forEach { listener ->
                             try {
                                 listener.onError(t)
                             } catch (e: Exception) {
-                                Timber.e("[WebSocket] 监听器 onError 异常", e)
+                                Timber.e("[WebSocket] Listener onError exception", e)
                             }
                         }
                         
@@ -615,11 +636,12 @@ class AMLLWebSocketClient private constructor(
                                 
                                 if (serverUrl != null) {
                                     try {
+                                        // ⭐ 修复：重连时强制重置状态
                                         connect(serverUrl!!, forceReconnect = true)
                                         break // 连接成功则退出
                                     } catch (e: Exception) {
                                         retryCount++
-                                        Timber.w("[WebSocket] Reconnect failed (${retryCount}/$maxRetries)", e) 
+                                        Timber.w("[WebSocket] Reconnect failed (${retryCount}/$maxRetries): ${e.message}")
                                     }
                                 } else {
                                     break
@@ -643,6 +665,16 @@ class AMLLWebSocketClient private constructor(
                     
                     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
                         Timber.d("[WebSocket] Closing: code=$code, reason=$reason")
+                        
+                        // ⭐ 修复：根据断开原因记录协议错误
+                        if (reason.contains("协议", ignoreCase = true) || 
+                            reason.contains("illegal", ignoreCase = true) ||
+                            reason.contains("invalid", ignoreCase = true) ||
+                            reason.contains("Initialize", ignoreCase = true)) {
+                            Timber.w("[WebSocket] Protocol error detected: $reason")
+                            Timber.w("[WebSocket] Will reset protocol state on reconnect")
+                        }
+                        
                         webSocket.close(code, reason)
                     }
                 })
@@ -669,6 +701,15 @@ class AMLLWebSocketClient private constructor(
         webSocket = null
         isConnected = false
         serverUrl = null
+        
+        // ⭐ 修复：断开时也要重置协议状态
+        isHandshakeComplete = false
+        negotiatedProtocolVersion = WsProtocolVersion.V2
+        
+        // 停止心跳
+        stopHeartbeat()
+        
+        Timber.d("[WebSocket] Connection disconnected, state reset completed")
     }
     
     /**

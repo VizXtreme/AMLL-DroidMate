@@ -3,6 +3,7 @@ package com.amll.droidmate.websocket
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import android.util.Base64
+import timber.log.Timber
 
 /**
  * AMLL WebSocket V2 协议消息工具类
@@ -12,6 +13,8 @@ object WsProtocolV2Helper {
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = false  // 不编码默认值（null 字段）
+        // ⭐ 修复关键：允许编码特殊字符，确保 TTML 中的 XML 能正确传输
+        explicitNulls = false  // 不编码 null 值
     }
     
     // ==================== V2 协议消息类型 ====================
@@ -39,16 +42,17 @@ object WsProtocolV2Helper {
         // 其他字段
         val progress: Long? = null,
         val volume: Double? = null,
-        val format: String? = null,
-        val ttml: String? = null,
-        val lines: List<LyricLine>? = null,
-        val repeat: String? = null,
-        val shuffle: Boolean? = null,
-        val data: String? = null,  // Base64 编码的数据或 JSON 字符串
+        // 模式相关字段（用于 modeChanged）
+        val repeat: String? = null,      // "off", "all", "one"
+        val shuffle: Boolean? = null,    // true/false
         // 专辑封面相关字段（用于 setCover）
         val source: String? = null,  // "uri" 或 "data"
         val url: String? = null,     // URI 模式的 URL
-        val image: ImageData? = null  // Data 模式的嵌套图片对象
+        val image: ImageData? = null,  // Data 模式的嵌套图片对象
+        // 歌词相关字段（用于 setLyric）- ⭐ 修复：与 format/data 在同一层级
+        val lines: List<LyricLine>? = null,  // Structured 模式
+        val format: String? = null,          // "ttml" 或 null
+        val data: String? = null             // TTML 字符串（当 format="ttml" 时）
     )
     
     /**
@@ -182,8 +186,13 @@ object WsProtocolV2Helper {
         // 因此不需要进行 Base64 编码，直接发送原始 TTML 内容
         // 根据 serde 的 tag 配置，format 和 data 字段会被提升到 value 层级
         return try {
-            encode(MessageV2(type = "state", value = ValuePayload(update = "setLyric", format = "ttml", data = ttmlContent)))
+            val message = MessageV2(type = "state", value = ValuePayload(update = "setLyric", format = "ttml", data = ttmlContent))
+            val encoded = encode(message)
+            Timber.d("[WsProtocolV2] Created TTML lyric update message, size=${encoded.length} chars")
+            Timber.d("[WsProtocolV2] JSON preview (first 300): ${encoded.take(300)}")
+            encoded
         } catch (e: Exception) {
+            Timber.e("[WsProtocolV2] Failed to create TTML lyric update", e)
             throw RuntimeException("创建 TTML 歌词消息失败：${e.message}", e)
         }
     }

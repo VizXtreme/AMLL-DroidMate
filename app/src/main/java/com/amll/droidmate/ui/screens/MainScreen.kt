@@ -460,6 +460,7 @@ fun MainScreen() {
                     onDismissRequest = { showOpenAppDialog = false },
                     title = { Text("打开 $sourceAppName？") },
                     text = { Text("您可进入设置调整点击卡片的默认行为。") },
+                    containerColor = MaterialTheme.colorScheme.background,
                     confirmButton = {
                         TextButton(onClick = {
                             openSourceApp(context, nowPlaying?.packageName)
