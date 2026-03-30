@@ -141,17 +141,17 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
                 value = connected
             },
             onErrorCallback = { error ->
-                Timber.e(error, "WebSocket 错误")
+                Timber.e("[WebSocketSettings] WebSocket error: ${error.message}", error)
                 // 打印更详细的错误信息
                 when (error) {
                     is java.io.EOFException -> {
-                        Timber.e("服务器主动断开了连接")
+                        Timber.e("[WebSocketSettings] 服务器主动断开了连接")
                     }
                     is java.net.ConnectException -> {
-                        Timber.e("无法连接到服务器")
+                        Timber.e("[WebSocketSettings] 无法连接到服务器")
                     }
                     else -> {
-                        Timber.e("错误类型：${error.javaClass.simpleName}")
+                        Timber.e("[WebSocketSettings] 错误类型：${error.javaClass.simpleName}")
                     }
                 }
             }
@@ -249,10 +249,10 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
                                 
                                 // 切换开关时立即生效连接
                                 if (enabled && isValidWebSocketAddress(websocketAddress)) {
-                                    Timber.d("启用 WebSocket，尝试连接：$websocketAddress")
+                                    Timber.d("[WebSocketSettings] 启用 WebSocket，尝试连接：$websocketAddress")
                                     webSocketClient.connect(websocketAddress)
                                 } else {
-                                    Timber.d("禁用 WebSocket，断开连接")
+                                    Timber.d("[WebSocketSettings] 禁用 WebSocket，断开连接")
                                     webSocketClient.disconnect()
                                 }
                             },
@@ -390,11 +390,11 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
                             AppSettings.setWebSocketProtocolAddress(context, addressToSave)
                             // 如果当前已启用，立即重启连接
                             if (websocketEnabled) {
-                                Timber.d("保存设置并强制重连 WebSocket: $addressToSave")
+                                Timber.d("[WebSocketSettings] 保存设置并强制重连 WebSocket: $addressToSave")
                                 webSocketClient.connect(addressToSave, forceReconnect = true)
                             } else {
                                 // 如果未启用，提示将在开启时生效
-                                Timber.d("WebSocket 地址已保存：$addressToSave，将在开启时自动连接")
+                                Timber.d("[WebSocketSettings] WebSocket 地址已保存：$addressToSave，将在开启时自动连接")
                             }
                         },
                         enabled = isValidWebSocketAddress(websocketAddress) || websocketAddress.isBlank(),

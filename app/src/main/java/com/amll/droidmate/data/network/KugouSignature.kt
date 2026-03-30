@@ -39,7 +39,7 @@ object KugouSignature {
             // 转换为 16 进制字符串
             digest.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to generate Kugou signature")
+            Timber.e("[KugouSignature] Failed to generate Kugou signature", e)
             ""
         }
     }
@@ -53,7 +53,7 @@ object KugouSignature {
             val digest = md5.digest("-".toByteArray())
             digest.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to generate device mid")
+            Timber.e("[KugouSignature] Failed to generate device mid", e)
             "00000000000000000000000000000000"
         }
     }

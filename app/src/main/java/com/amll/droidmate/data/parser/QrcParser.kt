@@ -12,9 +12,9 @@ object QrcParser {
     fun parse(content: String): List<LyricLine> {
         val rawContent = extractQrcFromXmlIfNeeded(content)
 
-        Timber.d("QRC raw content length=${rawContent.length}, lineCount=${rawContent.lines().size}, containsNewline=${rawContent.contains('\n')}")
+        Timber.d("[QrcParser] Raw content length=${rawContent.length}, lineCount=${rawContent.lines().size}, containsNewline=${rawContent.contains('\n')}")
         rawContent.lines().take(10).forEachIndexed { index, line ->
-            Timber.d("QRC raw line $index: ${line.take(200)}")
+            Timber.d("[QrcParser] Raw line $index: ${line.take(200)}")
         }
 
         val finalLines = mutableListOf<LyricLine>()
@@ -31,7 +31,7 @@ object QrcParser {
 
         // Debug output to help diagnose why QRC may fall back to line-by-line (no words)
         val totalWords = finalLines.sumOf { it.words.size }
-        Timber.d("QRC parser output: ${finalLines.size} lines, $totalWords words (avg=${if (finalLines.isNotEmpty()) totalWords.toDouble() / finalLines.size else 0.0})")
+        Timber.d("[QrcParser] Output: ${finalLines.size} lines, $totalWords words (avg=${if (finalLines.isNotEmpty()) totalWords.toDouble() / finalLines.size else 0.0})")
 
         return finalLines
     }
@@ -138,7 +138,7 @@ object QrcParser {
         }
 
         if (extracted.isNotEmpty()) {
-            Timber.d("Extracted ${extracted.size} LyricContent entries from QRC XML (regex)")
+            Timber.d("[QrcParser] Extracted $extracted.size LyricContent entries from QRC XML (regex)")
             return extracted.joinToString(separator = "\n")
         }
 
@@ -160,14 +160,14 @@ object QrcParser {
             }
 
             if (lyricContents.isEmpty()) {
-                Timber.d("Detected QRC XML but no LyricContent attributes found; falling back to raw content")
+                Timber.d("[QrcParser] Detected QRC XML but no LyricContent attributes found; falling back to raw content")
                 return content
             }
-
-            Timber.d("Extracted ${lyricContents.size} LyricContent entries from QRC XML (DOM)")
+            
+            Timber.d("[QrcParser] Extracted $lyricContents.size LyricContent entries from QRC XML (DOM)")
             lyricContents.joinToString(separator = "\n")
         } catch (e: Exception) {
-            Timber.w(e, "Failed to parse QRC XML content; falling back to raw content")
+            Timber.w("[QrcParser] Failed to parse QRC XML content; falling back to raw content", e)
             content
         }
     }

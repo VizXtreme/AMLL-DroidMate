@@ -324,7 +324,7 @@ class AMLLLyricsView @Composable(...) {
         }
         
         override fun onError(error: Throwable) {
-            Timber.e(error, "Bridge message error")
+            Timber.e("[Bridge] Bridge message error", error)
         }
     })
     

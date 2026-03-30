@@ -42,12 +42,12 @@ object TTMLParser {
         return try {
             tryParse(content)
         } catch (e: Exception) {
-            Timber.w(e, "Initial TTML parse failed, trying sanitization")
+            Timber.w("[TTMLParser] Initial TTML parse failed, trying sanitization", e)
             val sanitized = sanitizeTTMLContent(content)
             return try {
                 tryParse(sanitized)
             } catch (e2: Exception) {
-                Timber.e(e2, "Failed to parse ttml content after sanitization")
+                Timber.e("[TTMLParser] Failed to parse ttml content after sanitization", e2)
                 TTMLLyrics(
                     metadata = TTMLMetadata(title = "Unknown", artist = "Unknown"),
                     lines = emptyList()
@@ -97,12 +97,12 @@ object TTMLParser {
                 val pElement = paragraphs.item(i) as? Element ?: continue
                 val rawAgent = pElement.getAttribute("ttm:agent").ifBlank { pElement.getAttribute("agent") }
                 if (i < 5 || i >= paragraphs.length - 2) {
-                    Timber.d("[AGENT-DEBUG-RAW] Para $i: raw ttm:agent='$rawAgent'")
+                    Timber.d("[AgentDebug-RAW] Para $i: raw ttm:agent='$rawAgent'")
                 }
                 parseParagraph(pElement)?.let { parsedParagraphs.add(it) }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse TTML document structure")
+            Timber.e("[TTMLParser] Failed to parse TTML document structure", e)
             return TTMLLyrics(
                 metadata = TTMLMetadata(title = "Unknown", artist = "Unknown"),
                 lines = emptyList()
@@ -112,27 +112,27 @@ object TTMLParser {
         val normalizedAgents = parsedParagraphs.map { normalizeAgent(it.agent) }
         val uniqueAgents = normalizedAgents.filterNotNull().distinct()
         
-        Timber.i("[AGENT] Total lines: ${parsedParagraphs.size}, unique agents: ${uniqueAgents.size}, agents: $uniqueAgents")
+        Timber.i("[AgentAnalyzer] Total lines: ${parsedParagraphs.size}, unique agents: ${uniqueAgents.size}, agents: $uniqueAgents")
         
         val duetFlags = when {
             uniqueAgents.size <= 1 -> {
-                Timber.d("[AGENT-DEBUG] Mode: single or no agent (all isDuet=false)")
+                Timber.d("[AgentAnalyzer] Mode: single or no agent (all isDuet=false)")
                 List(parsedParagraphs.size) { false }
             }
             uniqueAgents.size == 2 -> {
                 val leftAgent = pickLeftAgentForTwo(uniqueAgents[0], uniqueAgents[1])
-                Timber.d("[AGENT-DEBUG] Mode: exactly 2 agents. leftAgent=$leftAgent, rightAgent=${uniqueAgents.firstOrNull { it != leftAgent }}")
+                Timber.d("[AgentAnalyzer] Mode: exactly 2 agents. leftAgent=$leftAgent, rightAgent=${uniqueAgents.firstOrNull { it != leftAgent }}")
                 normalizedAgents.mapIndexed { idx, agent ->
                     val isDuet = agent != null && agent != leftAgent
-                    if (idx < 5) Timber.d("[AGENT-DEBUG] Line $idx: agent=$agent -> isDuet=$isDuet")
+                    if (idx < 5) Timber.d("[AgentAnalyzer] Line $idx: agent=$agent -> isDuet=$isDuet")
                     isDuet
                 }
             }
             else -> {
-                Timber.d("[AGENT-DEBUG] Mode: >2 agents, alternating mode")
+                Timber.d("[AgentAnalyzer] Mode: >2 agents, alternating mode")
                 val flags = buildAlternatingDuetFlags(normalizedAgents)
                 flags.mapIndexed { idx, isDuet ->
-                    if (idx < 10) Timber.d("[AGENT-DEBUG] Line $idx: agent=${normalizedAgents[idx]} -> isDuet=$isDuet")
+                    if (idx < 10) Timber.d("[AgentAnalyzer] Line $idx: agent=${normalizedAgents[idx]} -> isDuet=$isDuet")
                     isDuet
                 }
             }
@@ -145,11 +145,11 @@ object TTMLParser {
             parsed.bgLine?.let { lines.add(it.copy(isBG = true, isDuet = isDuet)) }
         }
 
-        Timber.d("[AGENT-DEBUG] Parse complete: ${lines.size} total output lines")
+        Timber.d("[TTMLParser] Parse complete: ${lines.size} total output lines")
         
         // 解析 TTML 元数据信息
         val metadata = try {
-            Timber.d("[SongStructure] Parsing TTML metadata")
+            Timber.d("[TTMLParser] Parsing TTML metadata")
             val head = doc.getElementsByTagName("head").item(0) as? Element
             val metadataElement = head?.getElementsByTagName("metadata")?.item(0) as? Element
             
@@ -193,7 +193,7 @@ object TTMLParser {
                 language = language
             )
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse metadata")
+            Timber.e("[TTMLParser] Failed to parse metadata", e)
             TTMLMetadata(title = "Unknown", artist = "Unknown")
         }
         
@@ -278,7 +278,7 @@ object TTMLParser {
                 ParsedParagraph(mainLine = mainLine, bgLine = bgLine, agent = agent)
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse paragraph")
+            Timber.e("[TTMLParser] Failed to parse paragraph", e)
             null
         }
     }
@@ -633,7 +633,7 @@ object TTMLParser {
             Timber.d("[SongStructure] Metadata parsing complete: found ${structures.size} structures")
                     
         } catch (e: Exception) {
-            Timber.e(e, "[SongStructure] Error parsing metadata")
+            Timber.e("[SongStructure] Error parsing metadata", e)
         }
                 
         return structures
@@ -834,7 +834,7 @@ object TTMLParser {
                         structures.addAll(jsonStructures)
                         Timber.d("[SongStructure] ✅ Parsed ${jsonStructures.size} structures from amll:meta")
                     } catch (e: Exception) {
-                        Timber.e(e, "[SongStructure] Failed to parse JSON structures")
+                        Timber.e("[SongStructure] Failed to parse JSON structures", e)
                     }
                 } else {
                     Timber.d("[SongStructure] Skipping amll:meta: name='$name', content blank=${content.isBlank()}")
@@ -900,7 +900,7 @@ object TTMLParser {
                 )
             }
         } catch (e: Exception) {
-            Timber.e(e, "[SongStructure] Failed to parse JSON")
+            Timber.e("[SongStructure] Failed to parse JSON", e)
         }
         return structures
     }
@@ -955,7 +955,7 @@ object TTMLParser {
 
             (hours * 3600 + minutes * 60 + seconds) * 1000 + millis
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse time string: $timeStr")
+            Timber.e("[TTMLParser] Failed to parse time string: $timeStr", e)
             0L
         }
     }

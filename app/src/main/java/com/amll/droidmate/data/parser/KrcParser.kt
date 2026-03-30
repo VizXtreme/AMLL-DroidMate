@@ -59,7 +59,7 @@ object KrcParser {
             if (trimmed.startsWith("[offset:", ignoreCase = true)) {
                 val num = trimmed.removePrefix("[offset:").removeSuffix("]").trim()
                 globalOffsetMs = num.toLongOrNull() ?: 0L
-                Timber.i("KRC global offset metadata: $globalOffsetMs ms")
+                Timber.i("[KrcParser] KRC global offset metadata: $globalOffsetMs ms")
                 break
             }
         }
@@ -101,7 +101,7 @@ object KrcParser {
                     auxLineIndex += 1
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Failed to parse KRC line $index: $trimmed")
+                Timber.e("[KrcParser] Failed to parse KRC line $index: $trimmed", e)
             }
         }
         
@@ -147,7 +147,7 @@ object KrcParser {
                 romanizations = romanizations
             )
         } catch (e: Exception) {
-            Timber.w(e, "Failed to parse KRC [language] auxiliary data")
+            Timber.w("[KrcParser] Failed to parse KRC [language] auxiliary data", e)
             KrcAuxiliaryData()
         }
     }

@@ -165,19 +165,19 @@ class AMLLWebSocketClient private constructor(
     ): Listener {
         return object : Listener {
             override fun onConnected() {
-                Timber.i("[$debugSource] WebSocket 已连接")
-                Timber.d("[$debugSource] 当前歌曲信息：musicId=$musicId, musicName=$musicName, artist=$artistName")
+                Timber.i("[WebSocket] WebSocket connected")
+                Timber.d("[WebSocket] Current song info: musicId=$musicId, musicName=$musicName, artist=$artistName")
                 
                 // 执行额外的连接后操作
                 onConnectedCallback?.invoke()
             }
             
             override fun onDisconnected() {
-                Timber.w("[$debugSource] WebSocket 已断开")
+                Timber.w("[WebSocket] WebSocket disconnected")
             }
             
             override fun onMessageReceived(message: String) {
-                Timber.d("[$debugSource] 收到 WebSocket 消息：$message")
+                Timber.d("[WebSocket] Received WebSocket message: $message")
                 
                 // 解析并处理来自服务器的命令
                 try {
@@ -188,24 +188,24 @@ class AMLLWebSocketClient private constructor(
                         val valueObj = json.jsonObject["value"]?.jsonObject
                         val command = valueObj?.get("command")?.jsonPrimitive?.content
                         
-                        Timber.i("[$debugSource] 收到命令：$command")
-                        Timber.d("[$debugSource] onCommandReceived 引用：$onCommandReceived")
+                        Timber.i("[PlaybackControl] Received command: $command")
+                        Timber.d("[WebSocket] onCommandReceived reference: $onCommandReceived")
                         
                         if (onCommandReceived != null) {
-                            Timber.d("[$debugSource] 准备调用 onCommandReceived，命令：$command")
+                            Timber.d("[WebSocket] Preparing to call onCommandReceived, command: $command")
                             onCommandReceived.invoke(command ?: "unknown", valueObj)
-                            Timber.d("[$debugSource] onCommandReceived 执行完成")
+                            Timber.d("[WebSocket] onCommandReceived executed")
                         } else {
-                            Timber.w("[$debugSource] onCommandReceived 为 null，跳过命令处理")
+                            Timber.w("[WebSocket] onCommandReceived is null, skipping command processing")
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.e(e, "[$debugSource] 解析命令失败")
+                    Timber.e("[WebSocket] Failed to parse command: ${e.message}", e)
                 }
             }
             
             override fun onError(error: Throwable) {
-                Timber.e(error, "[$debugSource] WebSocket 错误")
+                Timber.e("[WebSocket] WebSocket error", error)
                 onErrorCallback?.invoke(error)
             }
             
@@ -215,7 +215,7 @@ class AMLLWebSocketClient private constructor(
                 val validMusicName = musicName.takeIf { it.isNotEmpty() && it != "Unknown" && it != "等待播放" }
                 
                 if (validMusicId == null || validMusicName == null) {
-                    Timber.d("[$debugSource] getCurrentPlayState: 无有效歌曲信息 (musicId=$musicId, musicName=$musicName)")
+                    Timber.d("[WebSocket] getCurrentPlayState: invalid song info (musicId=$musicId, musicName=$musicName)")
                     return null
                 }
                 
@@ -234,13 +234,13 @@ class AMLLWebSocketClient private constructor(
                     ttmlLyric = ttmlContent
                 )
                 
-                Timber.d("[$debugSource] getCurrentPlayState 返回:")
-                Timber.d("  - musicId: ${state.musicId}")
-                Timber.d("  - musicName: ${state.musicName}")
-                Timber.d("  - artistName: ${state.artistName}")
-                Timber.d("  - hasLyrics: ${!state.ttmlLyric.isNullOrBlank()}")
-                Timber.d("  - isPlaying: ${state.isPlaying}")
-                Timber.d("  - progress: ${state.progress}ms")
+                Timber.d("[WebSocket] getCurrentPlayState returns:")
+                Timber.d("[WebSocket]  - musicId: ${state.musicId}")
+                Timber.d("[WebSocket]  - musicName: ${state.musicName}")
+                Timber.d("[WebSocket]  - artistName: ${state.artistName}")
+                Timber.d("[WebSocket]  - hasLyrics: ${!state.ttmlLyric.isNullOrBlank()}")
+                Timber.d("[WebSocket]  - isPlaying: ${state.isPlaying}")
+                Timber.d("[WebSocket]  - progress: ${state.progress}ms")
                 
                 return state
             }
@@ -279,7 +279,7 @@ class AMLLWebSocketClient private constructor(
         duration: Long
     ) {
         if (!isConnected) {
-            Timber.w("WebSocket 未连接，跳过发送歌曲信息")
+            Timber.w("[WebSocket] Not connected, skipping sending song info")
             return
         }
         
@@ -292,9 +292,9 @@ class AMLLWebSocketClient private constructor(
                 duration = duration
             )
             send(message)
-            Timber.d("已发送歌曲信息：$musicName")
+            Timber.d("[WebSocket] Sent song info: $musicName")
         } catch (e: Exception) {
-            Timber.e(e, "发送歌曲信息失败")
+            Timber.e("[WebSocket] Failed to send song info: ${e.message}", e)
         }
     }
     
@@ -304,29 +304,29 @@ class AMLLWebSocketClient private constructor(
      */
     fun sendLyrics(ttmlContent: String) {
         if (!isConnected) {
-            Timber.w("WebSocket 未连接，跳过发送歌词")
+            Timber.w("[WebSocket] Not connected, skipping sending lyrics")
             return
         }
         
         if (ttmlContent.isBlank()) {
-            Timber.w("歌词内容为空，跳过发送")
+            Timber.w("[LyricsMatcher] Lyrics content is empty, skipping send")
             return
         }
         
         try {
             val message = WsProtocolV2Helper.createTTMLLyricUpdate(ttmlContent)
             send(message)
-            Timber.d("已发送歌词：size=${ttmlContent.length} chars")
+            Timber.d("[WebSocket] Sent lyrics: size=${ttmlContent.length} chars")
             // 输出前 200 个字符用于调试
-            Timber.d("歌词内容预览：${ttmlContent.take(200)}...")
+            Timber.d("[WebSocket]  - Lyrics preview: ${ttmlContent.take(200)}...")
         } catch (e: Exception) {
-            Timber.e(e, "发送歌词失败：${e.message}")
+            Timber.e("[WebSocket] Failed to send lyrics: ${e.message}", e)
             // 通知所有监听器发生了错误
             listeners.forEach { listener ->
                 try {
                     listener.onError(e)
                 } catch (ex: Exception) {
-                    Timber.e(ex, "监听器 onError 异常")
+                    Timber.e("[WebSocket] 监听器 onError 异常", ex)
                 }
             }
         }
@@ -338,21 +338,21 @@ class AMLLWebSocketClient private constructor(
      */
     fun sendAlbumArt(albumArtDataUrl: String) {
         if (!isConnected) {
-            Timber.w("WebSocket 未连接，跳过发送专辑图")
+            Timber.w("[WebSocket] Not connected, skipping sending album art")
             return
         }
         
         if (albumArtDataUrl.isBlank()) {
-            Timber.d("专辑图为空，跳过发送")
+            Timber.d("[AlbumArtExtractor] Album art is empty, skipping send")
             return
         }
         
         try {
             val message = WsProtocolV2Helper.createAlbumArtUpdate(albumArtDataUrl)
             send(message)
-            Timber.d("已发送专辑图：size=${albumArtDataUrl.length} chars")
+            Timber.d("[WebSocket] Sent album art: size=${albumArtDataUrl.length} chars")
         } catch (e: Exception) {
-            Timber.e(e, "发送专辑图失败")
+            Timber.e("[WebSocket] Failed to send album art", e)
         }
     }
     private var webSocket: WebSocket? = null
@@ -366,9 +366,9 @@ class AMLLWebSocketClient private constructor(
             // 只绑定端口，不绑定特定 IP（让系统选择最佳本地 IP）
             try {
                 socket.bind(InetSocketAddress(localPort))
-                Timber.d("Socket 绑定到本地端口：$localPort")
+                Timber.d("[Network] Socket bound to local port: $localPort")
             } catch (e: Exception) {
-                Timber.w(e, "无法绑定到端口 $localPort，使用系统分配")
+                Timber.w("[Network] Cannot bind to port $localPort, using system default: ${e.message}", e)
             }
             return socket
         }
@@ -410,7 +410,7 @@ class AMLLWebSocketClient private constructor(
                     try {
                         it.onConnected()
                     } catch (e: Exception) {
-                        Timber.e(e, "监听器 onConnected 异常")
+                        Timber.e("[WebSocket] 监听器 onConnected 异常", e)
                     }
                 }
             } else {
@@ -418,7 +418,7 @@ class AMLLWebSocketClient private constructor(
                     try {
                         it.onDisconnected()
                     } catch (e: Exception) {
-                        Timber.e(e, "监听器 onDisconnected 异常")
+                        Timber.e("[WebSocket] 监听器 onDisconnected 异常", e)
                     }
                 }
             }
@@ -447,15 +447,15 @@ class AMLLWebSocketClient private constructor(
     fun connect(url: String, forceReconnect: Boolean = false) {
         // 如果已连接且不需要重连，则跳过
         if (isConnected && !forceReconnect) {
-            Timber.d("WebSocket 已连接，跳过重连：$url")
+            Timber.d("[WebSocket] Already connected, skipping reconnect: $url")
             return
         }
         
         if (isConnected && forceReconnect) {
-            Timber.i("强制重连 WebSocket，断开旧连接")
+            Timber.i("[WebSocket] Forced reconnect, disconnecting old connection")
             disconnect()
         } else if (isConnected) {
-            Timber.w("已经连接到 WebSocket 服务器，断开旧连接")
+            Timber.w("[WebSocket] Already connected to WebSocket server, disconnecting old connection")
             disconnect()
         }
         
@@ -463,7 +463,7 @@ class AMLLWebSocketClient private constructor(
         
         scope.launch {
             try {
-                Timber.d("开始连接 WebSocket 服务器：$url")
+                Timber.d("[WebSocket] Starting to connect to server: $url")
                 
                 val request = Request.Builder()
                     .url(url)
@@ -471,7 +471,7 @@ class AMLLWebSocketClient private constructor(
                 
                 webSocket = client.newWebSocket(request, object : WebSocketListener() {
                     override fun onOpen(webSocket: WebSocket, response: Response) {
-                        Timber.i("WebSocket 连接成功，准备握手")
+                        Timber.i("[WebSocket] Connection successful, preparing handshake")
                         isConnected = true
                         
                         // ✅ 每次连接都必须发送 Initialize 握手（无论是否是重连）
@@ -479,7 +479,7 @@ class AMLLWebSocketClient private constructor(
                             // 直接同步发送，不通过 scope.launch
                             val initializeMessage = """{"type":"initialize"}"""
                             webSocket.send(initializeMessage)
-                            Timber.d("已发送 V2 Initialize 握手消息（同步）")
+                            Timber.d("[WebSocket] Sent V2 Initialize handshake message (synchronous)")
                             
                             // 短暂延迟确保服务器收到
                             kotlinx.coroutines.runBlocking {
@@ -487,33 +487,33 @@ class AMLLWebSocketClient private constructor(
                             }
                             
                             isHandshakeComplete = true
-                            Timber.i("WebSocket 握手完成（V2 协议）")
+                            Timber.i("[WebSocket] Handshake completed (V2 protocol)")
                             
                             // Step 2: 握手完成后才通知监听器并发送状态
                             var stateSent = false
-                            Timber.d("开始遍历监听器，总数：${listeners.size}")
+                            Timber.d("[WebSocket] Starting to traverse listeners, total: ${listeners.size}")
                             listeners.forEachIndexed { index, listener ->
                                 try {
-                                    Timber.d("调用监听器 #$index.onConnected()")
+                                    Timber.d("[WebSocket] Calling listener #$index.onConnected()")
                                     listener.onConnected()
                                     
                                     // 获取并发送当前播放状态
-                                    Timber.d("调用监听器 #$index.getCurrentPlayState()")
+                                    Timber.d("[WebSocket] Calling listener #$index.getCurrentPlayState()")
                                     val playState = listener.getCurrentPlayState()
                                     if (playState != null) {
-                                        Timber.d("监听器 #$index 返回有效播放状态：${playState.musicName}, musicId=${playState.musicId}")
+                                        Timber.d("[WebSocket] Listener #$index returned valid play state: ${playState.musicName}, musicId=${playState.musicId}")
                                         sendInitialPlayState(webSocket, playState)
                                         stateSent = true
                                     } else {
-                                        Timber.d("监听器 #$index 返回 null 播放状态（无播放内容）")
+                                        Timber.d("[WebSocket] Listener #$index returned null play state (no playback)")
                                     }
                                 } catch (e: Exception) {
-                                    Timber.e(e, "监听器 #$index onConnected 异常")
+                                    Timber.e("[WebSocket] Listener #$index onConnected exception", e)
                                 }
                             }
                             
                             if (!stateSent) {
-                                Timber.w("所有监听器均未提供有效播放状态")
+                                Timber.w("[WebSocket] All listeners returned null play state")
                             }
                             
                             // Step 3: 最后启动心跳机制
@@ -523,31 +523,31 @@ class AMLLWebSocketClient private constructor(
                         } else {
                             // V1 协议：不需要握手
                             isHandshakeComplete = true
-                            Timber.i("WebSocket 已就绪（V1 二进制协议）")
+                            Timber.i("[WebSocket] Ready (V1 binary protocol)")
                             
                             // 通知监听器并获取初始状态
                             var stateSent = false
-                            Timber.d("开始遍历监听器，总数：${listeners.size}")
+                            Timber.d("[WebSocket] Starting to traverse listeners, total: ${listeners.size}")
                             listeners.forEachIndexed { index, listener ->
                                 try {
-                                    Timber.d("调用监听器 #$index.onConnected()")
+                                    Timber.d("[WebSocket] Calling listener #$index.onConnected()")
                                     listener.onConnected()
                                     
                                     val playState = listener.getCurrentPlayState()
                                     if (playState != null) {
-                                        Timber.d("监听器 #$index 返回有效播放状态：${playState.musicName}")
+                                        Timber.d("[WebSocket] Listener #$index returned valid play state: ${playState.musicName}")
                                         sendInitialPlayState(webSocket, playState)
                                         stateSent = true
                                     } else {
-                                        Timber.d("监听器 #$index 返回 null 播放状态（无播放内容）")
+                                        Timber.d("[WebSocket] Listener #$index returned null play state (no playback)")
                                     }
                                 } catch (e: Exception) {
-                                    Timber.e(e, "监听器 #$index onConnected 异常")
+                                    Timber.e("[WebSocket] Listener #$index onConnected exception", e)
                                 }
                             }
                             
                             if (!stateSent) {
-                                Timber.w("所有监听器均未提供有效播放状态")
+                                Timber.w("[WebSocket] All listeners returned null play state")
                             }
                             
                             if (config.enableHeartbeat) {
@@ -557,7 +557,7 @@ class AMLLWebSocketClient private constructor(
                     }
                     
                     override fun onMessage(webSocket: WebSocket, text: String) {
-                        Timber.d("收到 WebSocket 消息：$text")
+                        Timber.d("[WebSocket] Received message: $text")
                         
                         // 尝试解析为 V2 协议消息
                         try {
@@ -566,79 +566,94 @@ class AMLLWebSocketClient private constructor(
                             
                             when (type) {
                                 "pong" -> {
-                                    Timber.d("收到 Pong 心跳响应")
+                                    Timber.d("[WebSocket] Received pong heartbeat response")
                                     // 心跳响应，无需特殊处理
                                 }
                                 "command" -> {
-                                    Timber.d("收到控制命令")
+                                    Timber.d("[PlaybackControl] Received control command")
                                     // 可以在此解析具体的命令
                                 }
                                 else -> {
-                                    Timber.d("收到其他类型消息：$type")
+                                    Timber.d("[WebSocket] Received other type message: $type")
                                 }
                             }
                         } catch (e: Exception) {
-                            Timber.w(e, "无法解析为 V2 协议消息，可能是旧版格式")
+                            Timber.w("[WebSocket] Cannot parse as V2 protocol message, may be old format", e)
                         }
                         
                         listeners.forEach { listener ->
                             try {
                                 listener.onMessageReceived(text)
                             } catch (e: Exception) {
-                                Timber.e(e, "监听器 onMessageReceived 异常")
+                                Timber.e("[WebSocket] 监听器 onMessageReceived 异常", e)
                             }
                         }
                     }
                     
                     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                        Timber.e(t, "WebSocket 连接失败")
+                        Timber.e("[WebSocket] Connection failed", t)
                         isConnected = false
                         listeners.forEach { listener ->
                             try {
                                 listener.onError(t)
                             } catch (e: Exception) {
-                                Timber.e(e, "监听器 onError 异常")
+                                Timber.e("[WebSocket] 监听器 onError 异常", e)
                             }
                         }
                         
-                        // 尝试重连（延迟 3 秒）
+                        // 指数退避重连策略（非阻塞）
                         scope.launch {
-                            withContext(Dispatchers.IO) {
-                                Thread.sleep(3000)
-                            }
-                            if (serverUrl != null) {
-                                Timber.d("尝试重新连接...")
-                                connect(serverUrl!!)
+                            var retryCount = 0
+                            val maxRetries = 5
+                            
+                            while (retryCount < maxRetries && isActive) {
+                                // 指数退避：1s, 2s, 4s, 8s, 16s，最大 30s
+                                val delayMs = minOf(1000L * (1 shl retryCount), 30000L)
+                                Timber.d("[WebSocket] Waiting ${delayMs}ms for reconnect (attempt ${retryCount + 1}/$maxRetries)")
+                                
+                                delay(delayMs)
+                                
+                                if (serverUrl != null) {
+                                    try {
+                                        connect(serverUrl!!, forceReconnect = true)
+                                        break // 连接成功则退出
+                                    } catch (e: Exception) {
+                                        retryCount++
+                                        Timber.w("[WebSocket] Reconnect failed (${retryCount}/$maxRetries)", e) 
+                                    }
+                                } else {
+                                    break
+                                }
                             }
                         }
                     }
                     
                     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                        Timber.d("WebSocket 连接关闭：code=$code, reason=$reason")
+                        Timber.d("[WebSocket] Connection closed: code=$code, reason=$reason")
                         isConnected = false
                         stopHeartbeat()
                         listeners.forEach { listener ->
                             try {
                                 listener.onDisconnected()
                             } catch (e: Exception) {
-                                Timber.e(e, "监听器 onDisconnected 异常")
+                                Timber.e("[WebSocket] 监听器 onDisconnected 异常", e)   
                             }
                         }
                     }
                     
                     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                        Timber.d("WebSocket 正在关闭：code=$code, reason=$reason")
+                        Timber.d("[WebSocket] Closing: code=$code, reason=$reason")
                         webSocket.close(code, reason)
                     }
                 })
                 
             } catch (e: Exception) {
-                Timber.e(e, "创建 WebSocket 连接失败")
+                Timber.e("[WebSocket] Failed to create connection", e)  
                 listeners.forEach { listener ->
                     try {
                         listener.onError(e)
                     } catch (ex: Exception) {
-                        Timber.e(ex, "监听器 onError 异常")
+                        Timber.e("[WebSocket] 监听器 onError 异常", ex)
                     }
                 }
             }
@@ -649,8 +664,8 @@ class AMLLWebSocketClient private constructor(
      * 断开 WebSocket 连接
      */
     fun disconnect() {
-        Timber.d("断开 WebSocket 连接")
-        webSocket?.close(1000, "用户主动断开")
+        Timber.d("[WebSocket] Disconnecting")
+        webSocket?.close(1000, "User initiated disconnect")
         webSocket = null
         isConnected = false
         serverUrl = null
@@ -663,21 +678,21 @@ class AMLLWebSocketClient private constructor(
      */
     fun send(message: String) {
         if (!isConnected()) {
-            Timber.w("WebSocket 未连接或握手未完成，无法发送消息：$message")
+            Timber.w("[WebSocket] Not connected or handshake incomplete, cannot send message: $message")
             return
         }
         
         scope.launch {
             try {
                 webSocket?.send(message)
-                Timber.d("发送 WebSocket 消息：$message")
+                Timber.d("[WebSocket] Sent message: $message")
             } catch (e: Exception) {
-                Timber.e(e, "发送消息失败：$message")
+                Timber.e("[WebSocket] Failed to send message: $message", e)
                 listeners.forEach { listener ->
                     try {
                         listener.onError(e)
                     } catch (ex: Exception) {
-                        Timber.e(ex, "监听器 onError 异常")
+                        Timber.e("[WebSocket] 监听器 onError 异常", ex)
                     }
                 }
             }
@@ -691,7 +706,7 @@ class AMLLWebSocketClient private constructor(
      */
     fun send(data: ByteArray) {
         if (!isConnected()) {
-            Timber.w("WebSocket 未连接，无法发送二进制消息")
+            Timber.w("[WebSocket] Not connected, cannot send binary message")
             return
         }
         
@@ -699,14 +714,14 @@ class AMLLWebSocketClient private constructor(
             try {
                 val byteString = ByteString.of(*data)
                 webSocket?.send(byteString)
-                Timber.d("发送 WebSocket 二进制消息：${data.size} bytes, hex=${data.joinToString("") { "%02X".format(it) }}")
+                Timber.d("[WebSocket] Sent binary message: ${data.size} bytes")
             } catch (e: Exception) {
-                Timber.e(e, "发送二进制消息失败")
+                Timber.e("[WebSocket] Failed to send binary message", e)
                 listeners.forEach { listener ->
                     try {
                         listener.onError(e)
                     } catch (ex: Exception) {
-                        Timber.e(ex, "监听器 onError 异常")
+                        Timber.e("[WebSocket] 监听器 onError 异常", ex)
                     }
                 }
             }
@@ -738,7 +753,7 @@ class AMLLWebSocketClient private constructor(
         heartbeatJob?.cancel() // 取消旧的心跳
         
         heartbeatJob = scope.launch {
-            Timber.d("启动心跳机制，间隔：${config.heartbeatIntervalSeconds}秒")
+            Timber.d("[WebSocket] Starting heartbeat mechanism, interval: ${config.heartbeatIntervalSeconds}s")
             
             while (isActive && isConnected()) {
                 delay(config.heartbeatIntervalSeconds * 1000L)
@@ -756,7 +771,7 @@ class AMLLWebSocketClient private constructor(
     private fun stopHeartbeat() {
         heartbeatJob?.cancel()
         heartbeatJob = null
-        Timber.d("心跳已停止")
+        Timber.d("[WebSocket] Heartbeat stopped")
     }
     
     /**
@@ -766,14 +781,14 @@ class AMLLWebSocketClient private constructor(
     private fun sendInitialPlayState(webSocket: WebSocket, playState: PlayState) {
         scope.launch {
             try {
-                Timber.d("开始发送初始播放状态:")
-                Timber.d("  - 歌曲 ID: ${playState.musicId}")
-                Timber.d("  - 歌曲名：${playState.musicName}")
-                Timber.d("  - 艺术家：${playState.artistName}")
-                Timber.d("  - 时长：${playState.duration}ms")
-                Timber.d("  - 进度：${playState.progress}ms")
-                Timber.d("  - 播放状态：${if (playState.isPlaying) "播放中" else "暂停"}")
-                Timber.d("  - 歌词：${if (!playState.ttmlLyric.isNullOrBlank()) "有" else "无"}")
+                Timber.d("[WebSocket] Sending initial play state:")
+                Timber.d("[WebSocket]  - Song ID: ${playState.musicId}")
+                Timber.d("[WebSocket]  - Song name: ${playState.musicName}")
+                Timber.d("[WebSocket]  - Artist: ${playState.artistName}")
+                Timber.d("[WebSocket]  - Duration: ${playState.duration}ms")
+                Timber.d("[WebSocket]  - Progress: ${playState.progress}ms")
+                Timber.d("[WebSocket]  - Playback state: ${if (playState.isPlaying) "playing" else "paused"}")
+                Timber.d("[WebSocket]  - Lyrics: ${if (!playState.ttmlLyric.isNullOrBlank()) "yes" else "no"}")
                 
                 // 1. 发送歌曲信息
                 val musicInfoMsg = WsProtocolV2Helper.createSetMusicUpdate(
@@ -784,12 +799,12 @@ class AMLLWebSocketClient private constructor(
                     duration = playState.duration
                 )
                 webSocket.send(musicInfoMsg)
-                Timber.d("已发送歌曲信息消息")
+                Timber.d("[WebSocket] Sent song info message")
                 
                 // 2. 发送播放进度和状态
                 val progressMessage = WsProtocolV2Helper.createProgressUpdate(playState.progress)
                 webSocket.send(progressMessage)
-                Timber.d("已发送进度更新消息")
+                Timber.d("[WebSocket] Sent progress update message")
                 
                 val stateMessage = if (playState.isPlaying) {
                     WsProtocolV2Helper.createResumedUpdate()
@@ -797,23 +812,23 @@ class AMLLWebSocketClient private constructor(
                     WsProtocolV2Helper.createPausedUpdate()
                 }
                 webSocket.send(stateMessage)
-                Timber.d("已发送播放状态消息")
+                Timber.d("[WebSocket] Sent playback state message")
                 
                 // 3. 如果有歌词，发送歌词（可选失败，不影响其他状态）
                 if (!playState.ttmlLyric.isNullOrBlank()) {
                     try {
                         val ttmlMessage = WsProtocolV2Helper.createTTMLLyricUpdate(playState.ttmlLyric)
                         webSocket.send(ttmlMessage)
-                        Timber.d("已发送歌词消息")
+                        Timber.d("[WebSocket] Sent lyrics message")
                     } catch (e: Exception) {
-                        Timber.e(e, "发送初始歌词失败，但不影响其他状态同步")
+                        Timber.e("[LyricsMatcher] Failed to send initial lyrics, but not affecting other state sync", e)
                         // 不重新抛出异常，避免因为歌词错误导致整个状态同步失败
                     }
                 }
                 
-                Timber.i("✓ 初始播放状态发送完成")
+                Timber.i("[WebSocket] ✓ Initial play state sent completed")
             } catch (e: Exception) {
-                Timber.e(e, "✗ 发送初始播放状态失败：${e.message}")
+                Timber.e("[WebSocket] ✗ Failed to send initial play state: ${e.message}", e)
                 // 只在非歌词相关错误时才重新抛出
                 throw e
             }
@@ -830,11 +845,11 @@ class AMLLWebSocketClient private constructor(
                 // V2 协议：发送 JSON 格式的 Initialize 消息
                 val initializeMessage = """{"type":"initialize"}"""
                 webSocket.send(initializeMessage)
-                Timber.d("已发送 V2 Initialize 握手消息")
+                Timber.d("[WebSocket] Sent V2 Initialize handshake message")
             }
             WsProtocolVersion.V1 -> {
                 // V1 协议：不需要 Initialize 握手
-                Timber.d("V1 二进制协议：跳过 Initialize 握手")
+                Timber.d("[WebSocket] V1 binary protocol: skipping Initialize handshake")
             }
         }
     }
@@ -844,7 +859,7 @@ class AMLLWebSocketClient private constructor(
      */
     fun sendPing() {
         if (!isConnected()) {
-            Timber.w("WebSocket 未连接，无法发送 Ping")
+            Timber.w("[WebSocket] Not connected, cannot send ping")
             return
         }
         
@@ -852,13 +867,13 @@ class AMLLWebSocketClient private constructor(
             WsProtocolVersion.V2 -> {
                 val pingMessage = """{"type":"ping"}"""
                 send(pingMessage)
-                Timber.d("已发送 Ping 心跳")
+                Timber.d("[WebSocket] Sent ping heartbeat")
             }
             WsProtocolVersion.V1 -> {
                 // V1 协议：发送二进制 Ping 消息 (Magic Number = 0)
                 val pingData = byteArrayOf(0x00, 0x00)
                 send(pingData)
-                Timber.d("已发送 V1 Ping 心跳")
+                Timber.d("[WebSocket] Sent V1 ping heartbeat")
             }
         }
     }
@@ -868,7 +883,7 @@ class AMLLWebSocketClient private constructor(
      */
     fun sendPong() {
         if (!isConnected()) {
-            Timber.w("WebSocket 未连接，无法发送 Pong")
+            Timber.w("[WebSocket] Not connected, cannot send pong")
             return
         }
         
@@ -876,13 +891,13 @@ class AMLLWebSocketClient private constructor(
             WsProtocolVersion.V2 -> {
                 val pongMessage = """{"type":"pong"}"""
                 send(pongMessage)
-                Timber.d("已发送 Pong 响应")
+                Timber.d("[WebSocket] Sent pong response")
             }
             WsProtocolVersion.V1 -> {
                 // V1 协议：发送二进制 Pong 消息 (Magic Number = 1)
                 val pongData = byteArrayOf(0x01, 0x00)
                 send(pongData)
-                Timber.d("已发送 V1 Pong 响应")
+                Timber.d("[WebSocket] Sent V1 pong response")
             }
         }
     }

@@ -92,7 +92,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
         val bCache = b.provider.equals("cache", true)
         if (aCache != bCache) {
             val res = if (aCache) -1 else 1
-            Timber.d("compareCandidates cache: $a vs $b -> $res")
+            Timber.d("[LyricsMatcher] compareCandidates cache: $a vs $b -> $res")
             return res
         }
 
@@ -100,12 +100,12 @@ class CustomLyricsViewModel @JvmOverloads constructor(
         val confDiff = a.confidence - b.confidence
         if (confDiff != 0f) {
             val res = -confDiff.compareTo(0f)
-            Timber.d("compareCandidates confidence: $a vs $b -> $res (diff=$confDiff)")
+            Timber.d("[LyricsMatcher] compareCandidates confidence: $a vs $b -> $res (diff=$confDiff)")
             return res
         }
         val featDiff = b.features.size - a.features.size
         if (featDiff != 0) {
-            Timber.d("compareCandidates features: $a vs $b -> $featDiff")
+            Timber.d("[LyricsMatcher] compareCandidates features: $a vs $b -> $featDiff")
             return featDiff
         }
 
@@ -115,7 +115,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
         val bAml = b.provider.equals("amll", true)
         if (aAml != bAml) {
             val res = if (aAml) -1 else 1
-            Timber.d("compareCandidates amll db pref: $a vs $b -> $res")
+            Timber.d("[LyricsMatcher] compareCandidates amll db pref: $a vs $b -> $res")
             return res
         }
 
@@ -124,7 +124,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
         if (aAml && bAml) {
             if (a.metadataMatch != b.metadataMatch) {
                 val res = if (!a.metadataMatch) -1 else 1
-                Timber.d("compareCandidates amll id-vs-metadata: $a vs $b -> $res")
+                Timber.d("[LyricsMatcher] compareCandidates amll id-vs-metadata: $a vs $b -> $res")
                 return res
             }
         }
@@ -149,7 +149,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                     val bIn = preferredProviders.contains(b.provider.lowercase())
                     if (aIn != bIn) {
                         val res = if (aIn) -1 else 1
-                    Timber.d("compareCandidates source bias: $a vs $b -> $res")
+                    Timber.d("[LyricsMatcher] compareCandidates source bias: $a vs $b -> $res")
                     return res
                 }
             }
@@ -172,7 +172,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             val bMatch = amllMatches(b)
             if (aMatch != bMatch) {
                 val res = if (aMatch) -1 else 1
-                Timber.d("compareCandidates amll prefix: $a vs $b -> $res")
+                Timber.d("[LyricsMatcher] compareCandidates amll prefix: $a vs $b -> $res")
                 return res
             }
         }
@@ -187,20 +187,20 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             val preferQQ = lowerSource.contains("qq") && !lowerSource.contains("酷狗")
             if (preferKugou) {
                 if (a.provider.lowercase() == "kugou" && b.provider.lowercase() == "qq") {
-                    Timber.d("compareCandidates tme pref kugou: $a vs $b -> -1")
+                    Timber.d("[LyricsMatcher] compareCandidates tme pref kugou: $a vs $b -> -1")
                     return -1
                 }
                 if (a.provider.lowercase() == "qq" && b.provider.lowercase() == "kugou") {
-                    Timber.d("compareCandidates tme pref kugou: $a vs $b -> 1")
+                    Timber.d("[LyricsMatcher] compareCandidates tme pref kugou: $a vs $b -> 1")
                     return 1
                 }
             } else if (preferQQ) {
                 if (a.provider.lowercase() == "qq" && b.provider.lowercase() == "kugou") {
-                    Timber.d("compareCandidates tme pref qq: $a vs $b -> -1")
+                    Timber.d("[LyricsMatcher] compareCandidates tme pref qq: $a vs $b -> -1")
                     return -1
                 }
                 if (a.provider.lowercase() == "kugou" && b.provider.lowercase() == "qq") {
-                    Timber.d("compareCandidates tme pref qq: $a vs $b -> 1")
+                    Timber.d("[LyricsMatcher] compareCandidates tme pref qq: $a vs $b -> 1")
                     return 1
                 }
             }
@@ -210,7 +210,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             val pb = providerPriority[b.provider.lowercase()] ?: Int.MAX_VALUE
             if (pa != pb) {
                 val res = pa - pb
-                Timber.d("compareCandidates provider priority: $a vs $b -> $res")
+                Timber.d("[LyricsMatcher] compareCandidates provider priority: $a vs $b -> $res")
                 return res
             }
         }
@@ -218,10 +218,10 @@ class CustomLyricsViewModel @JvmOverloads constructor(
         // 5. equal -> break tie with seq, earlier arrivals first
         if (a.seq != b.seq) {
             val res = a.seq.compareTo(b.seq)
-            Timber.d("compareCandidates seq tie-break asc: $a(seq=${a.seq}) vs $b(seq=${b.seq}) -> $res")
+            Timber.d("[LyricsMatcher] compareCandidates seq tie-break asc: $a(seq=${a.seq}) vs $b(seq=${b.seq}) -> $res")
             return res
         }
-        Timber.d("compareCandidates tie: $a vs $b -> 0 (preserve order)")
+        Timber.d("[LyricsMatcher] compareCandidates tie: $a vs $b -> 0 (preserve order)")
         return 0
     }
 
@@ -327,7 +327,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                 }
 
             } catch (e: Exception) {
-                Timber.e(e, "Failed to search candidates")
+                Timber.e("[LyricsViewModel] Failed to search candidates", e)
                 _errorMessage.value = "搜索候选歌词失败: ${e.message}"
             } finally {
                 _isSearching.value = false
@@ -383,7 +383,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                     }
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Failed to apply candidate")
+                Timber.e("[LyricsViewModel] Failed to apply candidate", e)
                 _errorMessage.value = "应用候选歌词失败: ${e.message}"
             } finally {
                 _isApplying.value = false
@@ -510,7 +510,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                     }
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Failed to parse manual lyrics")
+                Timber.e("[LyricsViewModel] Failed to parse manual lyrics", e)
                 _errorMessage.value = "解析歌词失败：${e.message}"
             } finally {
                 _isApplying.value = false

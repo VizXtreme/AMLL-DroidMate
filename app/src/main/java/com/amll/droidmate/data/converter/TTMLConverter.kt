@@ -299,7 +299,7 @@ object TTMLConverter {
                 processMetadata = processMetadata
             )
         } catch (e: Exception) {
-            Timber.e(e, "Error parsing lyrics using Unilyric rules")
+            Timber.e("[TTMLConverter] Error parsing lyrics using Unilyric rules", e)
             null
         }
     }

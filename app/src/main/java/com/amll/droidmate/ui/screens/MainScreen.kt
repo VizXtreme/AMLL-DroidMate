@@ -220,12 +220,12 @@ fun MainScreen() {
     // 当 WebView 启用状态改变时自动刷新
     LaunchedEffect(isWebViewEnabled) {
         if (lastWebViewEnabled != isWebViewEnabled) {
-            Timber.d("WebView 启用状态改变：$lastWebViewEnabled -> $isWebViewEnabled")
+            Timber.d("[UI] WebView 启用状态改变：$lastWebViewEnabled -> $isWebViewEnabled")
             lastWebViewEnabled = isWebViewEnabled
             // 状态改变时自动刷新歌词和 WebView
             viewModel.fetchLyrics()
             webViewReloadKey++
-            Timber.d("自动刷新完成，webViewReloadKey=$webViewReloadKey")
+            Timber.d("[UI] 自动刷新完成，webViewReloadKey=$webViewReloadKey")
         }
     }
     

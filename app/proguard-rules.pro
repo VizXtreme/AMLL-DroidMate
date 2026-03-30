@@ -1,8 +1,14 @@
 # This is a configuration file for ProGuard.
 # http://proguard.sourceforge.net/index.html#manual/usage.html
+#
+# Performance optimizations:
+# - Enable code shrinking and optimization
+# - Remove logging in release builds
+# - Optimize number of optimization passes
 
 -dontobfuscate
 -optimizationpasses 5
+-optimizations !code/allocation/variable,!field/removal/writeonly,!class/merging/*
 
 # Keep our application entry points and data models.  Avoid overly broad rules affecting 100+ classes.
 -keep class com.amll.droidmate.MainActivity { *; }
@@ -27,6 +33,13 @@
     *** INSTANCE;
 }
 
+# Remove Timber logging in release builds for better performance
+-assumenosideeffects class timber.log.Timber {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+}
+
 # Keep Ktor (allow shrinking)
 -keep,allowshrinking class io.ktor.** { *; }
 
@@ -44,6 +57,11 @@
 -keep,allowobfuscation,allowshrinking class okio.BufferedSource { *; }
 -keep,allowobfuscation,allowshrinking class okio.BufferedSink { *; }
 -keep,allowobfuscation,allowshrinking class okio.ByteString { *; }
+
+# Optimize connection pool usage
+-keepclassmembers class okhttp3.ConnectionPool {
+    public *** cleanup();
+}
 
 # Keep Timber
 -keep class timber.** { *; }

@@ -38,7 +38,7 @@ object EnhancedLrcParser {
             if (trimmed.startsWith("[offset:", ignoreCase = true)) {
                 val num = trimmed.removePrefix("[offset:").removeSuffix("]").trim()
                 offsetMs = num.toLongOrNull() ?: 0L
-                Timber.i("Enhanced LRC global offset metadata: $offsetMs ms")
+                Timber.i("[EnhancedLrcParser] Enhanced LRC global offset metadata: $offsetMs ms")
                 break
             }
         }
@@ -52,8 +52,8 @@ object EnhancedLrcParser {
             
             try {
                 parseSingleLine(trimmed, contentLines, index)?.let { lines.add(it) }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to parse Enhanced LRC line $index: $trimmed")
+            } catch (e: Exception) {    
+                Timber.e("[EnhancedLrcParser] Failed to parse Enhanced LRC line $index: $trimmed", e)
             }
         }
         

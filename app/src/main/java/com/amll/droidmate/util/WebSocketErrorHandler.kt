@@ -32,27 +32,27 @@ object WebSocketErrorHandler {
         error: Throwable,
         onUserFriendlyMessage: ((String) -> Unit)? = null
     ) {
-        Timber.e(error, "WebSocket 错误")
+        Timber.e("[WebSocketErrorHandler] WebSocket error: ${error.message}", error)
         
         val userMessage = when (error) {
             is EOFException -> {
-                Timber.e("服务器主动断开连接，可能原因：")
-                Timber.e("  1. 服务器未运行或已关闭")
-                Timber.e("  2. 协议格式不匹配（检查 Initialize 消息格式）")
-                Timber.e("  3. 网络问题导致连接中断")
-                Timber.e("  4. 防火墙/安全软件阻止连接")
+                Timber.e("[WebSocketErrorHandler] 服务器主动断开连接，可能原因：")
+                Timber.e("[WebSocketErrorHandler]   1. 服务器未运行或已关闭")
+                Timber.e("[WebSocketErrorHandler]   2. 协议格式不匹配（检查 Initialize 消息格式）")
+                Timber.e("[WebSocketErrorHandler]   3. 网络问题导致连接中断")
+                Timber.e("[WebSocketErrorHandler]   4. 防火墙/安全软件阻止连接")
                 "服务器已断开连接"
             }
             is ConnectException -> {
-                Timber.e("无法连接到服务器")
-                Timber.e("请检查：")
-                Timber.e("  1. 服务器是否正在运行")
-                Timber.e("  2. IP 地址和端口是否正确")
-                Timber.e("  3. 设备是否在同一局域网内")
+                Timber.e("[WebSocketErrorHandler] 无法连接到服务器")
+                Timber.e("[WebSocketErrorHandler] 请检查：")
+                Timber.e("[WebSocketErrorHandler]   1. 服务器是否正在运行")
+                Timber.e("[WebSocketErrorHandler]   2. IP 地址和端口是否正确")
+                Timber.e("[WebSocketErrorHandler]   3. 设备是否在同一局域网内")
                 "无法连接到服务器，请检查网络设置"
             }
             else -> {
-                Timber.e("未知错误类型：${error.javaClass.simpleName}")
+                Timber.e("[WebSocketErrorHandler] 未知错误类型：${error.javaClass.simpleName}")
                 "发生未知错误：${error.message}"
             }
         }

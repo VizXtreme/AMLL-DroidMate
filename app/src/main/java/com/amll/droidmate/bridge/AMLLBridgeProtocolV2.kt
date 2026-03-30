@@ -181,7 +181,7 @@ class ProtocolDetector {
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "协议检测失败")
+            Timber.e("[Bridge] Protocol detection failed", e)
             ProtocolDetectionResult.Failure("解析错误：${e.message}")
         }
     }
@@ -220,7 +220,7 @@ class AMLLBridgeManagerV2 {
      * 自动检测协议版本并处理
      */
     fun receiveFromWebView(jsonString: String) {
-        Timber.d("收到 WebView 消息：$jsonString")
+        Timber.d("[Bridge] Received message from WebView: $jsonString")
         
         // Step 1: 协议检测
         val detectionResult = protocolDetector.detectProtocol(jsonString)
@@ -233,13 +233,13 @@ class AMLLBridgeManagerV2 {
             
             // === Legacy 协议 ===
             is ProtocolDetectionResult.Legacy -> {
-                Timber.d("检测到 Legacy 协议，使用兼容模式")
+                Timber.d("[Bridge] Detected Legacy protocol, using compatibility mode")
                 handleLegacyMessage(jsonString)
             }
             
             // === 检测失败 ===
             is ProtocolDetectionResult.Failure -> {
-                Timber.e("协议检测失败：${detectionResult.reason}")
+                Timber.e("[Bridge] Protocol detection failed: ${detectionResult.reason}")
                 listener?.onError(Exception(detectionResult.reason))
             }
         }
@@ -255,7 +255,7 @@ class AMLLBridgeManagerV2 {
         negotiatedVersion = result.version
         clientCapabilities = result.capabilities
         
-        Timber.i("协议协商成功：${result.version.description}, 能力：${result.capabilities}")
+        Timber.i("[Bridge] Protocol negotiated successfully: ${result.version.description}, capabilities: ${result.capabilities}")
         
         // 如果是握手消息，发送响应
         if (jsonString.contains("\"handshake\"")) {
@@ -274,7 +274,7 @@ class AMLLBridgeManagerV2 {
                     listener?.onCommand(command.payload)
                 }
                 else -> {
-                    Timber.w("收到未期望的消息类型：$type")
+                    Timber.w("[Bridge] Received unexpected message type: $type")
                 }
             }
         } catch (e: Exception) {
@@ -314,9 +314,9 @@ class AMLLBridgeManagerV2 {
             messageQueue.forEach { sendToWebView(Json.encodeToString(it)) }
             messageQueue.clear()
             
-            Timber.i("握手完成，协议版本：V2")
+            Timber.i("[Bridge] Handshake completed, protocol version: V2")
         } catch (e: Exception) {
-            Timber.e(e, "握手处理失败")
+            Timber.e("[Bridge] Handshake processing failed", e)
             listener?.onError(e)
         }
     }
@@ -356,7 +356,7 @@ class AMLLBridgeManagerV2 {
      */
     private fun sendToWebView(message: String) {
         // 实际实现在这里调用 JavascriptInterface
-        Timber.d("发送到 WebView: $message")
+        Timber.d("[Bridge] Sending to WebView: $message")
     }
     
     /**
@@ -370,7 +370,7 @@ class AMLLBridgeManagerV2 {
             sendToWebView(Json.encodeToString(message))
         } else {
             messageQueue.add(message)
-            Timber.d("握手未完成，消息已加入队列")
+            Timber.d("[Bridge] Handshake incomplete, message added to queue")
         }
     }
     
@@ -379,7 +379,7 @@ class AMLLBridgeManagerV2 {
      * 如果 WebView 没有主动发起，Android 端可以主动发起
      */
     fun initiateHandshake() {
-        Timber.d("主动发起握手请求")
+        Timber.d("[Bridge] Initiating handshake request")
         
         val request = HandshakeRequest(
             version = BridgeMessageV2.CURRENT_VERSION,
@@ -468,11 +468,11 @@ class AMLLLyricsView @Composable(...) {
             }
             
             override fun onError(error: Throwable) {
-                Timber.e(error, "Bridge error")
+                Timber.e("[Bridge] Bridge error", error)
             }
             
             override fun onProtocolNegotiated(version: ProtocolVersion) {
-                Timber.i("协议协商成功：$version")
+                Timber.i("[Bridge] Protocol negotiated successfully: $version")
                 
                 when (version) {
                     ProtocolVersion.V2 -> {

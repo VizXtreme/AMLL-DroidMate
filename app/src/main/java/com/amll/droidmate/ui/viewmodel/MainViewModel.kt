@@ -55,23 +55,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val webSocketListener: AMLLWebSocketClient.Listener by lazy {
         object : AMLLWebSocketClient.Listener {
             override fun onConnected() {
-                Timber.d("MainViewModel: WebSocket 已连接")
+                Timber.d("[WebSocket] WebSocket connected")
                 
                 // ✅ 每次连接（包括重连）都重新同步完整的播放状态
                 val music = _nowPlayingMusic.value
                 if (music != null && AppSettings.isWebSocketProtocolEnabled(context)) {
-                    Timber.d("WebSocket 重连成功，重新同步完整播放状态")
+                    Timber.d("[WebSocket] Reconnected, syncing full playback state")
                     // isMusicChanged=true 会触发歌曲信息和专辑图的发送
                     syncPlaybackStateToWebSocket(music, isMusicChanged = true)
                 }
             }
             
             override fun onDisconnected() {
-                Timber.w("MainViewModel: WebSocket 已断开")
+                Timber.w("[WebSocket] WebSocket disconnected")
             }
             
             override fun onMessageReceived(message: String) {
-                Timber.d("MainViewModel: 收到 WebSocket 消息：$message")
+                Timber.d("[WebSocket] Received message: $message")
                 
                 // 解析并执行命令
                 try {
@@ -82,70 +82,70 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         val valueObj = json.jsonObject["value"]?.jsonObject
                         val command = valueObj?.get("command")?.jsonPrimitive?.content
                         
-                        Timber.i("MainViewModel: 收到命令：$command")
+                        Timber.i("[PlaybackControl] Received command: $command")
                         
                         when (command) {
                             "pause" -> {
-                                Timber.i("MainViewModel: 执行暂停命令")
+                                Timber.i("[PlaybackControl] Executing pause command")
                                 pause()
-                                Timber.d("MainViewModel: 暂停命令执行完成")
+                                Timber.d("[PlaybackControl] Pause command completed")
                             }
                             "resume" -> {
-                                Timber.i("MainViewModel: 执行播放命令")
+                                Timber.i("[PlaybackControl] Executing resume command")
                                 play()
-                                Timber.d("MainViewModel: 播放命令执行完成")
+                                Timber.d("[PlaybackControl] Resume command completed")
                             }
                             "forwardSong" -> {
-                                Timber.i("MainViewModel: 执行下一首命令")
+                                Timber.i("[PlaybackControl] Executing skip to next command")
                                 skipToNext()
-                                Timber.d("MainViewModel: 下一首命令执行完成")
+                                Timber.d("[PlaybackControl] Skip to next command completed")
                             }
                             "backwardSong" -> {
-                                Timber.i("MainViewModel: 执行上一首命令")
+                                Timber.i("[PlaybackControl] Executing skip to previous command")
                                 skipToPrevious()
-                                Timber.d("MainViewModel: 上一首命令执行完成")
+                                Timber.d("[PlaybackControl] Skip to previous command completed")
                             }
                             "seekPlayProgress" -> {
                                 val progress = valueObj?.get("progress")?.jsonPrimitive?.content?.toLongOrNull()
                                 if (progress != null) {
-                                    Timber.i("MainViewModel: 执行跳转进度命令：$progress ms")
+                                    Timber.i("[PlaybackControl] Executing seek command: $progress ms")
                                     seekTo(progress)
-                                    Timber.d("MainViewModel: 跳转进度命令执行完成")
+                                    Timber.d("[PlaybackControl] Seek command completed")
                                 } else {
-                                    Timber.w("MainViewModel: 跳转进度命令参数无效")
+                                    Timber.w("[PlaybackControl] Invalid seek command parameter")
                                 }
                             }
                             "setVolume" -> {
                                 val volume = valueObj?.get("volume")?.jsonPrimitive?.content?.toDoubleOrNull()
                                 if (volume != null) {
-                                    Timber.i("MainViewModel: 执行音量设置命令：$volume")
+                                    Timber.i("[PlaybackControl] Executing set volume command: $volume")
                                     setVolume(volume)
-                                    Timber.d("MainViewModel: 音量设置命令执行完成")
+                                    Timber.d("[PlaybackControl] Set volume command completed")
                                 } else {
-                                    Timber.w("MainViewModel: 音量设置命令参数无效")
+                                    Timber.w("[PlaybackControl] Invalid set volume command parameter")
                                 }
                             }
                             "setRepeatMode", "setShuffleMode" -> {
-                                Timber.d("MainViewModel: 收到不支持的命令：$command，忽略")
+                                Timber.d("[PlaybackControl] Received unsupported command: $command, ignoring")
                             }
                             else -> {
-                                Timber.d("MainViewModel: 未知命令：$command")
+                                Timber.d("[PlaybackControl] Unknown command: $command")
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.e(e, "MainViewModel: 解析命令失败")
+                    Timber.e("[WebSocket] Failed to parse command: ${e.message}", e)
                 }
             }
             
             override fun onError(error: Throwable) {
-                Timber.e(error, "MainViewModel: WebSocket 错误")
+                Timber.e("[WebSocket] WebSocket error: ${error.message}", error)
             }
             
             override fun getCurrentPlayState(): AMLLWebSocketClient.PlayState? {
                 val music = _nowPlayingMusic.value
                 if (music == null) {
-                    Timber.d("MainViewModel: getCurrentPlayState - 无播放内容")
+                    Timber.d("[WebSocket] getCurrentPlayState - no playback")
                     return null
                 }
                 
@@ -154,7 +154,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val validMusicName = music.title.takeIf { it.isNotEmpty() && it != "Unknown" && it != "等待播放" }
                 
                 if (validMusicId == null || validMusicName == null) {
-                    Timber.d("MainViewModel: getCurrentPlayState - 无有效歌曲信息 (musicId=$validMusicId, musicName=$validMusicName)")
+                    Timber.d("[WebSocket] getCurrentPlayState - invalid song info (musicId=$validMusicId, musicName=$validMusicName)")
                     return null
                 }
                 
@@ -163,7 +163,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     try {
                         buildTtmlForLyrics(lyrics)
                     } catch (e: Exception) {
-                        Timber.e(e, "MainViewModel: 构建 TTML 失败")
+                        Timber.e("[LyricsMatcher] Failed to build TTML: ${e.message}", e)
                         null
                     }
                 }
@@ -179,15 +179,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     ttmlLyric = ttmlContent
                 )
                 
-                Timber.d("MainViewModel: getCurrentPlayState 返回:")
-                Timber.d("  - musicId: ${state.musicId}")
-                Timber.d("  - musicName: ${state.musicName}")
-                Timber.d("  - artistName: ${state.artistName}")
-                Timber.d("  - hasLyrics: ${!state.ttmlLyric.isNullOrBlank()}")
-                Timber.d("  - isPlaying: ${state.isPlaying}")
-                Timber.d("  - progress: ${state.progress}ms")
+                Timber.d("[WebSocket] getCurrentPlayState returns:")
+                Timber.d("[WebSocket]  - musicId: ${state.musicId}")
+                Timber.d("[WebSocket]  - musicName: ${state.musicName}")
+                Timber.d("[WebSocket]  - artistName: ${state.artistName}")
+                Timber.d("[WebSocket]  - hasLyrics: ${!state.ttmlLyric.isNullOrBlank()}")
+                Timber.d("[WebSocket]  - isPlaying: ${state.isPlaying}")
+                Timber.d("[WebSocket]  - progress: ${state.progress}ms")
                 if (!state.ttmlLyric.isNullOrBlank()) {
-                    Timber.d("  - TTML 预览：${state.ttmlLyric.take(200)}...")
+                    Timber.d("[WebSocket]  - TTML preview: ${state.ttmlLyric.take(200)}...")
                 }
                 
                 return state
@@ -232,7 +232,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val deleteReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: android.content.Intent?) {
             if (intent?.action == LyricNotificationManager.ACTION_LYRIC_NOTIFICATION_DISMISSED) {
-                Timber.i("Lyric notification deleted by user, cancelling")
+                Timber.i("[NotificationListener] Lyric notification dismissed by user, cancelling")
                 lyricNotificationManager.cancel()
             }
         }
@@ -260,7 +260,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     @androidx.annotation.VisibleForTesting(otherwise = androidx.annotation.VisibleForTesting.PRIVATE)
     internal fun onNotificationDeletedByUser() {
-        Timber.i("Lyric notification deleted by user (test helper)")
+        Timber.i("[NotificationListener] Lyric notification deleted by user (test helper)")
         lyricNotificationManager.cancel()
     }
 
@@ -317,7 +317,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val source = music.packageName ?: "*"
         val offset = AppSettings.getLyricTimingOffset(context, music.title, music.artist, device, source) ?: 0L
         if (offset == 0L) return base
-        Timber.d("Applying lyric offset: ${'$'}offset ms (song='${'$'}{music.title}' artist='${'$'}{music.artist}' device='${'$'}device' source='${'$'}source')")
+        Timber.d("[LyricsMatcher] Applying lyric offset: $offset ms (song='${music.title}' artist='${music.artist}' device='$device' source='$source')")
         return base + offset
     }
 
@@ -329,10 +329,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (AppSettings.isWebSocketProtocolEnabled(context)) {
             val serverUrl = AppSettings.getWebSocketProtocolAddress(context)
             if (serverUrl.isNotEmpty()) {
-                Timber.i("启动 WebSocket 前台服务")
+                Timber.i("[WebSocket] Starting WebSocket foreground service")
                 WebSocketForegroundService.start(context, serverUrl)
             } else {
-                Timber.w("WebSocket 已启用但未配置服务器地址")
+                Timber.w("[WebSocket] WebSocket enabled but no server address configured")
                 // 回退到普通模式
                 mediaInfoService.startListening()
             }
@@ -358,7 +358,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     kotlin.math.abs(music.currentPosition - oldMusic.currentPosition) > 1000 // 超过 1 秒
                 
                 _nowPlayingMusic.value = music
-                Timber.d("Now playing: ${music?.title} - ${music?.artist}")
+                Timber.d("[PlaybackControl] Now playing: ${music?.title} - ${music?.artist}")
                 
                 // 同步到 WebSocket（如果启用）
                 if (music != null && AppSettings.isWebSocketProtocolEnabled(context)) {
@@ -382,12 +382,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 _lyrics.value = parsed
                                 updateSongStructures(parsed)
                                 _errorMessage.value = null
-                                Timber.i("Loaded lyrics from cache (startup): ${cached.title} - ${cached.artist} (${cached.source})")
+                                Timber.i("[CacheManager] Loaded lyrics from cache (startup): ${cached.title} - ${cached.artist} (${cached.source})")
                                 
                                 // 同步到 WebSocket（如果启用）
                                 if (AppSettings.isWebSocketProtocolEnabled(context)) {
                                     webSocketClient.sendLyrics(cached.ttmlContent)
-                                    Timber.d("已同步启动缓存歌词到 WebSocket")
+                                    Timber.d("[WebSocket] Synced cached lyrics on startup")
                                 }
                                 
                                 // 已经拿到缓存，跳过后续搜索
@@ -398,7 +398,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                     // 没有可用缓存时再清空并执行网络请求，以避免闪烁的遮罩
                     _lyrics.value = null
-                    Timber.i("Music changed, auto-fetching lyrics...")
+                    Timber.i("[LyricsMatcher] Music changed, auto-fetching lyrics...")
                     fetchLyrics()
                 }
             }
@@ -435,7 +435,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         _lyrics.value = parsed
                         updateSongStructures(parsed)
                         _errorMessage.value = null
-                        Timber.d("Loaded lyrics from cache: ${cached.title} - ${cached.artist} (${cached.source})")
+                        Timber.d("[CacheManager] Loaded lyrics from cache: ${cached.title} - ${cached.artist} (${cached.source})")
                             
                         // ✅ 重置歌词哈希值，确保新歌词会被发送
                         lastSentLyricsHash = 0
@@ -444,13 +444,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         if (AppSettings.isWebSocketProtocolEnabled(context)) {
                             // 使用完整的同步方法，包含歌曲信息、专辑图和歌词
                             syncPlaybackStateToWebSocket(music, isMusicChanged = false)
-                            Timber.d("已同步缓存歌词到 WebSocket")
+                            Timber.d("[WebSocket] Synced cached lyrics")
                         }
                             
                         return@launch
                     }
                 } else {
-                    Timber.d("Bypassing stale Kugou cache to refresh whitespace-fixed lyrics")
+                    Timber.d("[CacheManager] Bypassing stale Kugou cache to refresh whitespace-fixed lyrics")
                 }
             }
     
@@ -459,7 +459,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _isLoading.value = true
     
             try {
-                Timber.i("Fetching lyrics for: ${music.title} - ${music.artist}")
+                Timber.i("[LyricsMatcher] Fetching lyrics for: ${music.title} - ${music.artist}")
     
                 val sourceName = getAppNameFromPackage(context, music.packageName)
                 val result = lyricsRepository.fetchLyricsAuto(
@@ -477,7 +477,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         source = result.source ?: "auto",
                         ttmlContent = TTMLConverter.toTTMLString(result.lyrics)
                     )
-                    Timber.i("Successfully fetched lyrics from ${result.source}")
+                    Timber.i("[LyricsMatcher] Successfully fetched lyrics from ${result.source}")
                         
                     // ✅ 重置歌词哈希值，确保新歌词会被发送
                     lastSentLyricsHash = 0
@@ -489,15 +489,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (AppSettings.isWebSocketProtocolEnabled(context)) {
                         // 使用完整的同步方法，包含歌曲信息、专辑图和歌词
                         syncPlaybackStateToWebSocket(music, isMusicChanged = false)
-                        Timber.d("已同步网络歌词到 WebSocket")
+                        Timber.d("[WebSocket] Synced network lyrics")
                     }
                 } else {
                     _errorMessage.value = result.errorMessage ?: "获取歌词失败"
-                    Timber.e("Failed to fetch lyrics: ${result.errorMessage}")
+                    Timber.e("[LyricsMatcher] Failed to fetch lyrics: ${result.errorMessage}")
                 }
             } catch (e: Exception) {
                 _errorMessage.value = "错误：${e.message}"
-                Timber.e(e, "Error fetching lyrics")
+                Timber.e(e, "[LyricsMatcher] Error fetching lyrics")
             } finally {
                 _isLoading.value = false
             }
@@ -511,17 +511,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun refreshWebSocketConnection() {
         if (!AppSettings.isWebSocketProtocolEnabled(context)) {
-            Timber.d("WebSocket 协议未启用，跳过刷新")
+            Timber.d("[WebSocket] WebSocket protocol not enabled, skipping refresh")
             return
         }
             
         val serverUrl = AppSettings.getWebSocketProtocolAddress(context)
         if (serverUrl.isBlank()) {
-            Timber.w("WebSocket 地址为空，跳过刷新")
+            Timber.w("[WebSocket] WebSocket address is empty, skipping refresh")
             return
         }
             
-        Timber.i("🔄 强制刷新 WebSocket 连接：$serverUrl")
+        Timber.i("[WebSocket] 🔄 Forcing WebSocket connection refresh: $serverUrl")
         // ✅ 使用 forceReconnect=true 强制断开并重连，确保发送完整的初始化消息
         webSocketClient.connect(serverUrl, forceReconnect = true)
         
@@ -544,13 +544,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (ttml != null) {
                     _lyrics.value = ttml
                     updateSongStructures(ttml)
-                    Timber.i("Successfully converted LRC to TTML")
+                    Timber.i("[CustomLyrics] Successfully converted LRC to TTML")
                 } else {
                     _errorMessage.value = "LRC 转换失败"
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "转换错误: ${e.message}"
-                Timber.e(e, "Error converting LRC to TTML")
+                _errorMessage.value = "转换错误：${e.message}"
+                Timber.e(e, "[CustomLyrics] Error converting LRC to TTML")
             }
         }
     }
@@ -582,7 +582,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             // ✅ 对于 TTML 格式，直接保存原始内容，避免 toTTMLString 丢失歌曲结构
                             cachedTtmlContent = trimmed
                         } catch (e: Exception) {
-                            Timber.e(e, "Failed to parse TTML directly")
+                            Timber.e(e, "[TTMLParser] Failed to parse TTML directly")
                             parsed = null
                             cachedTtmlContent = ""
                         }
@@ -618,7 +618,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     // ✅ 如果启用了 WebSocket，重新发送歌词和当前播放状态
                     val music = _nowPlayingMusic.value
                     if (music != null && AppSettings.isWebSocketProtocolEnabled(context)) {
-                        Timber.d("用户选择了新歌词，重新同步到 WebSocket")
+                        Timber.d("[CustomLyrics] User selected new lyrics, resyncing to WebSocket")
                         syncPlaybackStateToWebSocket(music, isMusicChanged = true)
                     }
                 } else {
@@ -626,7 +626,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             } catch (e: Exception) {
                 _errorMessage.value = "应用歌词失败：${e.message}"
-                Timber.e(e, "Error applying custom lyrics input")
+                Timber.e(e, "[CustomLyrics] Error applying custom lyrics input")
             }
         }
     }
@@ -666,7 +666,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     fun seekTo(position: Long) {
-        Timber.d("MainViewModel.seekTo(position=$position)")
+        Timber.d("[PlaybackControl] seekTo(position=$position)")
         mediaInfoService.seekTo(position)
     }
     
@@ -692,7 +692,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             targetVolume,
             0  // 不显示 UI
         )
-        Timber.i("MainViewModel: 音量已设置：$volume -> $targetVolume/$maxVolume")
+        Timber.i("[PlaybackControl] Volume set: $volume -> $targetVolume/$maxVolume")
     }
     
     override fun onCleared() {
@@ -719,7 +719,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         try {
             // 检查 WebSocket 是否已连接
             if (!webSocketClient.isConnected()) {
-                Timber.d("WebSocket 未连接，跳过同步")
+                Timber.d("[WebSocket] Not connected, skipping sync")
                 return
             }
             
@@ -732,7 +732,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     artistName = music.artist,
                     duration = music.duration
                 )
-                Timber.d("已同步歌曲信息到 WebSocket: ${music.title} - ${music.artist}")
+                Timber.d("[WebSocket] Synced song info: ${music.title} - ${music.artist}")
                 
                 // ✅ 只有在歌曲变化时才发送专辑图（避免频繁发送）
                 if (!music.albumArtUri.isNullOrBlank()) {
@@ -747,12 +747,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 com.amll.droidmate.websocket.WsProtocolV2Helper.createPausedUpdate()
             }
             webSocketClient.send(stateMessage)
-            Timber.d("已同步播放状态到 WebSocket: ${if (music.isPlaying) "播放" else "暂停"}")
+            Timber.d("[WebSocket] Synced playback state to WebSocket: ${if (music.isPlaying) "playing" else "paused"}")
             
             // ✅ 发送当前播放进度（实时同步）
             val progressMessage = com.amll.droidmate.websocket.WsProtocolV2Helper.createProgressUpdate(music.currentPosition)
             webSocketClient.send(progressMessage)
-            Timber.d("已同步播放进度到 WebSocket: ${music.currentPosition}ms")
+            Timber.d("[WebSocket] Synced playback progress to WebSocket: ${music.currentPosition}ms")
             
             // ✅ 如果有歌词，发送歌词（仅在歌词变化时）
             val lyrics = _lyrics.value
@@ -764,21 +764,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         val currentHash = ttmlContent.hashCode()
                         if (currentHash != lastSentLyricsHash) {
                             webSocketClient.sendLyrics(ttmlContent)
-                            Timber.d("已同步歌词到 WebSocket (${ttmlContent.length} chars, hash=$currentHash)")
+                            Timber.d("[WebSocket] Synced lyrics to WebSocket (${ttmlContent.length} chars, hash=$currentHash)")
                             lastSentLyricsHash = currentHash
                         } else {
                             // 歌词未变化，跳过发送（减少网络流量）
-                            Timber.v("歌词未变化，跳过发送")
+                            Timber.v("[WebSocket] Lyrics unchanged, skipping send")
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.e(e, "构建或发送 TTML 歌词失败：${e.message}")
+                    Timber.e(e, "[WebSocket] Failed to build or send TTML lyrics: ${e.message}")
                     // 不抛出异常，继续其他操作
                 }
             }
             
         } catch (e: Exception) {
-            Timber.e(e, "同步播放状态到 WebSocket 失败")
+            Timber.e(e, "[WebSocket] Failed to sync playback state")
         }
     }
     
@@ -789,17 +789,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun sendAlbumArtToWebSocket(albumArtUri: String) {
         viewModelScope.launch {
             try {
-                Timber.d("准备发送专辑图：$albumArtUri")
+                Timber.d("[AlbumArtExtractor] Preparing to send album art: $albumArtUri")
                 val dataUrl = convertFileUriToDataUrl(context, albumArtUri)
                 if (!dataUrl.isNullOrBlank()) {
                     webSocketClient.sendAlbumArt(dataUrl)
-                    Timber.d("已同步专辑图到 WebSocket，大小：${dataUrl.length} chars")
-                    Timber.d("专辑图 Data URL 预览：${dataUrl.take(100)}...")
+                    Timber.d("[WebSocket] Synced album art to WebSocket, size: ${dataUrl.length} chars")
+                    Timber.d("[WebSocket]  - Album art Data URL preview: ${dataUrl.take(100)}...")
                 } else {
-                    Timber.w("无法转换专辑图 URI 为 Data URL: $albumArtUri")
+                    Timber.w("[AlbumArtExtractor] Failed to convert album art URI to Data URL: $albumArtUri")
                 }
             } catch (e: Exception) {
-                Timber.e(e, "发送专辑图失败")
+                Timber.e("[AlbumArtExtractor] Failed to send album art: ${e.message}", e)
             }
         }
     }
@@ -809,43 +809,43 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun convertFileUriToDataUrl(context: Context, uriString: String?): String? {
         if (uriString.isNullOrBlank()) {
-            Timber.w("convertFileUriToDataUrl: URI 为空")
+            Timber.w("[AlbumArtExtractor] URI is empty")
             return null
         }
         
         return try {
-            Timber.d("转换专辑图 URI: $uriString")
+            Timber.d("[AlbumArtExtractor] Converting album art URI: $uriString")
             val inputStream = when {
                 uriString.startsWith("file://") -> {
                     val path = uriString.removePrefix("file://")
-                    Timber.d("读取文件：$path")
+                    Timber.d("[AlbumArtExtractor] Reading file: $path")
                     File(path).inputStream()
                 }
                 uriString.startsWith("content://") -> {
                     val uri = android.net.Uri.parse(uriString)
-                    Timber.d("打开内容流：$uri")
+                    Timber.d("[AlbumArtExtractor] Opening content stream: $uri")
                     context.contentResolver.openInputStream(uri)
                 }
                 else -> {
-                    Timber.w("Unsupported URI scheme: $uriString")
+                    Timber.w("[Network] Unsupported URI scheme: $uriString")
                     return uriString // 直接返回原始字符串（可能是 data URL）
                 }
             }
             
             inputStream?.use { stream ->
                 val bytes = stream.readBytes()
-                Timber.d("读取到图片数据：${bytes.size} bytes")
+                Timber.d("[AlbumArtExtractor] Read image data: ${bytes.size} bytes")
                 val mimeType = getMimeType(uriString) ?: "image/jpeg"
                 val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
                 val dataUrl = "data:$mimeType;base64,$base64"
-                Timber.d("生成 Data URL: mimeType=$mimeType, base64 length=${base64.length}")
+                Timber.d("[AlbumArtExtractor] Generated Data URL: mimeType=$mimeType, base64 length=${base64.length}")
                 dataUrl
             } ?: run {
-                Timber.e("无法打开输入流：$uriString")
+                Timber.e("[AlbumArtExtractor] Cannot open input stream: $uriString")
                 null
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to convert file URI to data URL: $uriString")
+            Timber.e("[AlbumArtExtractor] Failed to convert file URI to data URL: $uriString: ${e.message}", e)
             null
         }
     }
@@ -872,7 +872,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         webSocketClient.removeListener(webSocketListener)
         // 注册新的监听器
         webSocketClient.addListener(webSocketListener)
-        Timber.d("已注册 MainViewModel WebSocket 监听器")
+        Timber.d("[WebSocket] 已注册 MainViewModel WebSocket 监听器")
     }
     
     /**
@@ -901,37 +901,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 Timber.d("[SongStructure] 📋 MainViewModel: metadata.songStructures = $metadataStructures")
                 Timber.d("[SongStructure] 📋 metadataStructures.isNullOrEmpty() = ${metadataStructures.isNullOrEmpty()}")
                 if (!metadataStructures.isNullOrEmpty()) {
-                    Timber.d("[SongStructure] ✅ MainViewModel: 使用 TTML 元数据中的结构：${metadataStructures.size} 个")
+                    Timber.d("[SongStructure] ✅ MainViewModel: Using structures from TTML metadata: ${metadataStructures.size} items")
                     metadataStructures.forEachIndexed { index, structure ->
                         val startMin = structure.startTime / 60000
                         val startSec = (structure.startTime % 60000) / 1000
                         val endMin = structure.endTime / 60000
                         val endSec = (structure.endTime % 60000) / 1000
-                        Timber.d("  [$index] ${structure.label} (${structure.type.displayName}): ${String.format("%d:%02d", startMin, startSec)} - ${String.format("%d:%02d", endMin, endSec)}")
+                        Timber.d("[SongStructure]  [$index] ${structure.label} (${structure.type.displayName}): ${String.format("%d:%02d", startMin, startSec)} - ${String.format("%d:%02d", endMin, endSec)}")
                     }
                 } else {
-                    Timber.w("[SongStructure] ⚠️ MainViewModel: 无元数据结构，将触发 SongStructureParser.parseStructure() fallback")
-                    Timber.w("[SongStructure] ⚠️ 最终会显示为 '段落 1'")
+                    Timber.w("[SongStructure] ⚠️ MainViewModel: No metadata structures, will trigger SongStructureParser.parseStructure() fallback")
+                    Timber.w("[SongStructure] ⚠️ Will eventually display as '段落 1'")
                 }
                 
                 val structures = SongStructureParser.parseStructure(lyrics.lines, lyrics.metadata.songStructures, songDuration)
                 _songStructures.value = structures
-                Timber.d("[SongStructure] 🎯 MainViewModel: 最终 structures.size = ${structures.size}")
+                Timber.d("[SongStructure] 🎯 MainViewModel: final structures.size = ${structures.size}")
                 structures.forEachIndexed { index, structure ->
                     val startMin = structure.startTime / 60000
                     val startSec = (structure.startTime % 60000) / 1000
                     val endMin = structure.endTime / 60000
                     val endSec = (structure.endTime % 60000) / 1000
-                    Timber.d("  [$index] ${structure.label} (${structure.type.displayName}): ${String.format("%d:%02d", startMin, startSec)} - ${String.format("%d:%02d", endMin, endSec)}")
+                    Timber.d("[SongStructure]  [$index] ${structure.label} (${structure.type.displayName}): ${String.format("%d:%02d", startMin, startSec)} - ${String.format("%d:%02d", endMin, endSec)}")
                 }
                 
                 // 诊断最终结果
                 if (structures.size == 1 && structures[0].label == "段落 1") {
-                    Timber.w("[SongStructure] ❌ 检测到 fallback 结果：单一段落 '段落 1'")
-                    Timber.w("[SongStructure] ❌ 这表明原始 TTML 中没有有效的歌曲结构信息")
+                    Timber.w("[SongStructure] ❌ Detected fallback result: single paragraph '段落 1'")
+                    Timber.w("[SongStructure] ❌ This indicates no valid song structure info in original TTML")
                 }
             } catch (e: Exception) {
-                Timber.e(e, "[SongStructure] 解析歌曲结构失败")
+                Timber.e("[SongStructure] Failed to parse song structure: ${e.message}", e)
                 _songStructures.value = emptyList()
             }
         }
@@ -944,6 +944,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun refreshSongStructures() {
         val currentLyrics = _lyrics.value ?: return
         updateSongStructures(currentLyrics)
-        Timber.i("[SongStructure] 刷新歌曲结构")
+        Timber.i("[SongStructure] Refreshing song structures")
     }
 }

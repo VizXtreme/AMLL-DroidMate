@@ -50,7 +50,7 @@ object UnifiedLyricsParser {
         processMetadata: Boolean = true
     ): TTMLLyrics? {
         if (content.isBlank()) {
-            Timber.w("Empty lyrics content")
+            Timber.w("[UnifiedLyricsParser] Empty lyrics content")
             return null
         }
 
@@ -59,37 +59,37 @@ object UnifiedLyricsParser {
         // stripping a leading BOM before further processing.
         val normalizedContent = content.trim().trimStart('\uFEFF')
         if (normalizedContent != content) {
-            Timber.d("Normalized lyrics content by stripping leading BOM/whitespace")
+            Timber.d("[UnifiedLyricsParser] Normalized lyrics content by stripping leading BOM/whitespace")
         }
 
-        Timber.d("Lyrics content preview (first 300 chars): ${normalizedContent.take(300)}")
+        Timber.d("[UnifiedLyricsParser] Lyrics content preview (first 300 chars): ${normalizedContent.take(300)}")
         Timber.d("[BG-LYRICS-DEBUG] UnifiedLyricsParser.parse caller trace: ${callerTrace()}")
         
         return try {
             // 检测格式（使用归一化内容来避免 BOM 等前缀影响检测）
             val format = LyricsFormat.detect(normalizedContent)
-            Timber.i("Detected lyrics format: $format")
+            Timber.i("[UnifiedLyricsParser] Detected lyrics format: $format")
             
             // 使用相应的解析器解析
             val lines = when (format) {
                 LyricsFormat.QRC -> {
                     val parsed = QrcParser.parse(normalizedContent)
                     val firstLineWords = parsed.firstOrNull()?.words?.size ?: 0
-                    Timber.d("QRC parsed ${parsed.size} lines, first line word count=$firstLineWords")
+                    Timber.d("[UnifiedLyricsParser] QRC parsed ${parsed.size} lines, first line word count=$firstLineWords")
                     parsed
                 }
                 LyricsFormat.KRC -> {
                     val parsed = KrcParser.parse(normalizedContent)
-                    Timber.d("KRC parsed ${parsed.size} lines, first line words: ${parsed.firstOrNull()?.words?.size ?: 0}")
+                    Timber.d("[UnifiedLyricsParser] KRC parsed ${parsed.size} lines, first line words: ${parsed.firstOrNull()?.words?.size ?: 0}")
                     parsed
                 }
                 LyricsFormat.YRC -> {
                     val parsed = YrcParser.parse(normalizedContent)
-                    Timber.d("YRC parsed ${parsed.size} lines")
+                    Timber.d("[UnifiedLyricsParser] YRC parsed ${parsed.size} lines")
                     if (parsed.isEmpty()) {
-                        Timber.w("YRC parsing returned no lines, falling back to LRC parser")
+                        Timber.w("[UnifiedLyricsParser] YRC parsing returned no lines, falling back to LRC parser")
                         val lrcFallback = LrcParser.parse(normalizedContent)
-                        Timber.d("LRC fallback parsed ${lrcFallback.size} lines")
+                        Timber.d("[UnifiedLyricsParser] LRC fallback parsed ${lrcFallback.size} lines")
                         lrcFallback
                     } else {
                         parsed
@@ -97,17 +97,17 @@ object UnifiedLyricsParser {
                 }
                 LyricsFormat.ENHANCED_LRC -> {
                     val parsed = EnhancedLrcParser.parse(normalizedContent)
-                    Timber.d("Enhanced LRC parsed ${parsed.size} lines")
+                    Timber.d("[UnifiedLyricsParser] Enhanced LRC parsed ${parsed.size} lines")
                     parsed
                 }
                 LyricsFormat.LRC -> {
                     val parsed = LrcParser.parse(normalizedContent)
-                    Timber.d("LRC parsed ${parsed.size} lines")
+                    Timber.d("[UnifiedLyricsParser] LRC parsed ${parsed.size} lines")
                     parsed
                 }
                 LyricsFormat.TTML -> {
                     // TTML 格式使用专用解析器
-                    Timber.i("Parsing TTML format")
+                    Timber.i("[UnifiedLyricsParser] Parsing TTML format")
                     
                     // 诊断输入内容是否包含歌曲结构标签
                     val hasItunesSongPart = normalizedContent.contains("itunes:songPart") || normalizedContent.contains("itunes:song-part")
@@ -125,7 +125,7 @@ object UnifiedLyricsParser {
                     if (!songStructures.isNullOrEmpty()) {
                         Timber.d("[SongStructure] ✅ UnifiedLyricsParser 接收到 ${songStructures.size} 个结构")
                         songStructures.forEachIndexed { index, structure ->
-                            Timber.d("  [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms")
+                            Timber.d("[SongStructure]  [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms (${structure.duration}ms)")
                         }
                     } else {
                         Timber.w("[SongStructure] ❌ UnifiedLyricsParser 未接收到结构信息 - 可能原因:")
@@ -159,13 +159,13 @@ object UnifiedLyricsParser {
                 LyricsFormat.PLAIN_TEXT -> {
                     // 纯文本格式转换为简单行
                     val parsed = parsePlainText(normalizedContent)
-                    Timber.d("Plain text parsed ${parsed.size} lines")
+                    Timber.d("[UnifiedLyricsParser] Plain text parsed ${parsed.size} lines")
                     parsed
                 }
             }
             
             if (lines.isEmpty()) {
-                Timber.e("No lyrics lines parsed")
+                Timber.e("[UnifiedLyricsParser] No lyrics lines parsed")
                 return null
             }
             
@@ -209,7 +209,7 @@ object UnifiedLyricsParser {
                 lines = sortedLines
             )
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse lyrics")
+            Timber.e("[UnifiedLyricsParser] Failed to parse lyrics", e)
             null
         }
     }

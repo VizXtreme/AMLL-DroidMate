@@ -40,7 +40,7 @@ object SongStructureParser {
         if (!metadataStructure.isNullOrEmpty()) {
             Timber.d("[SongStructure] ✅ 使用元数据结构信息：${metadataStructure.size} 个段落")
             metadataStructure.forEachIndexed { index, structure ->
-                Timber.d("  [$index] ${structure.label} (${structure.type.displayName}): ${formatTime(structure.startTime)} - ${formatTime(structure.endTime)}")
+                Timber.d("[SongStructure]  [$index] ${structure.label} (${structure.type.displayName}): ${formatTime(structure.startTime)} - ${formatTime(structure.endTime)} (${structure.duration}ms)")
             }
             return metadataStructure
         }
@@ -143,7 +143,7 @@ object SongStructureParser {
         
         Timber.d("[SongStructure] 推断完成：${structures.size} 个段落")
         structures.forEachIndexed { index, structure ->
-            Timber.d("  [$index] ${structure.label} (${structure.type}): ${formatTime(structure.startTime)} - ${formatTime(structure.endTime)}")
+            Timber.d("[SongStructure]  [$index] ${structure.label} (${structure.type}): ${formatTime(structure.startTime)} - ${formatTime(structure.endTime)} (${structure.duration}ms)")
         }
         
         return structures

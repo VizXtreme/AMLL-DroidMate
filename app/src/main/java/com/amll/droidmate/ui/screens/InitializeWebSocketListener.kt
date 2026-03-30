@@ -37,7 +37,7 @@ fun InitializeWebSocketListener(
     LaunchedEffect(Unit) {
         if (AppSettings.isWebSocketProtocolEnabled(context)) {
             val wsAddress = AppSettings.getWebSocketProtocolAddress(context)
-            Timber.d("[$debugSource] 开始初始化 WebSocket 监听器：$wsAddress")
+            Timber.d("[WebSocketInit] 开始初始化 WebSocket 监听器：$wsAddress")
 
             // 定义连接成功后的额外操作
             val connectedCallback: () -> Unit = {
@@ -48,17 +48,17 @@ fun InitializeWebSocketListener(
                 if (musicName.isNotEmpty() && musicName != "Unknown" || musicId.isNotEmpty()) {
                     webSocketClient.sendMusicInfo(musicId, musicName, albumName, artistName, duration)
                 } else {
-                    Timber.d("[$debugSource] 无有效歌曲信息，跳过发送")
+                    Timber.d("[WebSocketInit] 无有效歌曲信息，跳过发送")
                 }
                 lyrics?.lines?.let { lines ->
                     try {
                         val ttmlContent = TTMLConverter.toTTMLString(lyrics)
                         if (ttmlContent.isNotBlank()) {
                             webSocketClient.sendLyrics(ttmlContent)
-                            Timber.d("[$debugSource] 已发送初始歌词")
+                            Timber.d("[WebSocketInit] 已发送初始歌词")
                         }
                     } catch (e: Exception) {
-                        Timber.e(e, "[$debugSource] 发送初始歌词失败")
+                        Timber.e("[WebSocketInit] 发送初始歌词失败", e)
                     }
                 }
             }
@@ -80,7 +80,7 @@ fun InitializeWebSocketListener(
             )
 
             webSocketClient.addListener(listener)
-            Timber.d("[$debugSource] WebSocket 监听器已添加")
+            Timber.d("[WebSocketInit] WebSocket 监听器已添加")
         }
     }
 }

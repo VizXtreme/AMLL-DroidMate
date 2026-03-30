@@ -45,11 +45,11 @@ class WebSocketForegroundService : Service() {
          */
         fun start(context: Context, serverUrl: String) {
             if (isRunning) {
-                Timber.w("WebSocketForegroundService 已在运行，跳过启动")
+                Timber.w("[WebSocketService] Service already running, skipping start")
                 return
             }
             
-            Timber.i("启动 WebSocketForegroundService")
+            Timber.i("[WebSocketService] Starting WebSocketForegroundService")
             val intent = Intent(context, WebSocketForegroundService::class.java).apply {
                 putExtra("server_url", serverUrl)
             }
@@ -67,11 +67,11 @@ class WebSocketForegroundService : Service() {
          */
         fun stop(context: Context) {
             if (!isRunning) {
-                Timber.w("WebSocketForegroundService 未运行，跳过停止")
+                Timber.w("[WebSocketService] Service not running, skipping stop")
                 return
             }
             
-            Timber.i("停止 WebSocketForegroundService")
+            Timber.i("[WebSocketService] Stopping WebSocketForegroundService")
             val intent = Intent(context, WebSocketForegroundService::class.java)
             context.stopService(intent)
         }
@@ -95,23 +95,23 @@ class WebSocketForegroundService : Service() {
     // WebSocket 监听器
     private val webSocketListener = object : AMLLWebSocketClient.Listener {
         override fun onConnected() {
-            Timber.d("WebSocketForegroundService: WebSocket 已连接")
+            Timber.d("[WebSocketService] WebSocket connected")
             _connectionState.value = true
             updateNotificationConnectionState(connected = true)
         }
         
         override fun onDisconnected() {
-            Timber.w("WebSocketForegroundService: WebSocket 已断开")
+            Timber.w("[WebSocketService] WebSocket disconnected")
             _connectionState.value = false
             updateNotificationConnectionState(connected = false)
         }
         
         override fun onMessageReceived(message: String) {
-            Timber.d("WebSocketForegroundService: 收到消息：$message")
+            Timber.d("[WebSocketService] Received message: $message")
         }
         
         override fun onError(error: Throwable) {
-            Timber.e(error, "WebSocketForegroundService: WebSocket 错误")
+            Timber.e("[WebSocketService] WebSocket error: ${error.message}", error)
             _connectionState.value = false
         }
         
@@ -119,7 +119,7 @@ class WebSocketForegroundService : Service() {
             // 从 MediaInfoService 获取当前播放状态
             val music = mediaInfoService.nowPlayingMusic.value
             if (music == null) {
-                Timber.d("WebSocketForegroundService: 无播放内容")
+                Timber.d("[WebSocketService] No active playback")
                 return null
             }
             
@@ -127,7 +127,7 @@ class WebSocketForegroundService : Service() {
                 ?: music.title.takeIf { it.isNotEmpty() && it != "Unknown" }
             
             if (validMusicId == null) {
-                Timber.d("WebSocketForegroundService: 无有效歌曲信息")
+                Timber.d("[WebSocketService] No valid song info")
                 return null
             }
             
@@ -146,7 +146,7 @@ class WebSocketForegroundService : Service() {
     
     override fun onCreate() {
         super.onCreate()
-        Timber.i("WebSocketForegroundService 已创建")
+        Timber.i("[WebSocketService] Service created")
         
         serviceScope = CoroutineScope(Dispatchers.Main + Job())
         mediaInfoService = MediaInfoService(this)
@@ -159,7 +159,7 @@ class WebSocketForegroundService : Service() {
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Timber.i("WebSocketForegroundService 启动")
+        Timber.i("[WebSocketService] Service started")
         
         // 获取服务器地址
         serverUrl = intent?.getStringExtra("server_url")
@@ -233,7 +233,7 @@ class WebSocketForegroundService : Service() {
         
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
-        Timber.d("通知渠道已创建：$CHANNEL_ID")
+        Timber.d("[WebSocketService] 通知渠道已创建：$CHANNEL_ID")
     }
     
     /**
@@ -318,14 +318,14 @@ class WebSocketForegroundService : Service() {
      * 开始监听媒体信息
      */
     private fun startListening() {
-        Timber.i("开始监听媒体信息")
+        Timber.i("[WebSocketService] 开始监听媒体信息")
         mediaInfoService.startListening()
         
         // 监听媒体信息变化并同步到 WebSocket
         serviceScope.launch {
             mediaInfoService.nowPlayingMusic.collect { music ->
                 if (music != null && webSocketClient.isConnected()) {
-                    Timber.d("媒体信息变化：${music.title} - ${music.artist}")
+                    Timber.d("[WebSocketService] 媒体信息变化：${music.title} - ${music.artist}")
                     // 这里可以根据需要自动同步状态到 WebSocket
                 }
             }
@@ -336,7 +336,7 @@ class WebSocketForegroundService : Service() {
      * 停止监听媒体信息
      */
     private fun stopListening() {
-        Timber.i("停止监听媒体信息")
+        Timber.i("[WebSocketService] 停止监听媒体信息")
         mediaInfoService.stopListening()
     }
 }

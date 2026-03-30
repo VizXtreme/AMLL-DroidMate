@@ -5,42 +5,57 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
-import android.os.Handler
-import android.os.Looper
 import com.amll.droidmate.domain.model.NowPlayingMusic
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 媒体信息监听服务 - 获取当前播放的歌曲信息
+ * 
+ * 性能优化：
+ * - 使用 Coroutine + Dispatchers.IO 在后台线程执行轮询
+ * - 专辑图片异步处理 + 内存/磁盘缓存
+ * - Flow 发射优化，仅在关键数据变化时更新
  */
 class MediaInfoService(private val context: Context) {
     
     private val _nowPlayingMusic = MutableStateFlow<NowPlayingMusic?>(null)
     val nowPlayingMusic: StateFlow<NowPlayingMusic?> = _nowPlayingMusic
     
+    // 后台协程作用域，使用 IO 调度器
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    
     private val mediaSessionManager: MediaSessionManager? = try {
         context.getSystemService(Context.MEDIA_SESSION_SERVICE) as? MediaSessionManager
     } catch (e: Exception) {
-        Timber.e(e, "Failed to get MediaSessionManager")
+        Timber.e("[MediaInfoService] Failed to get MediaSessionManager", e)
         null
     }
 
     private val listenerComponentName = ComponentName(context, MediaListenerService::class.java)
     
-    private val handler = Handler(Looper.getMainLooper())
-    private var updateRunnable: Runnable? = null
     private var currentController: MediaController? = null
+    
+    // 专辑封面缓存，避免重复保存相同图片
+    private val albumArtCache = ConcurrentHashMap<String, String>()
     
     /**
      * 启动监听
      */
     fun startListening() {
-        Timber.i("Starting media info listener")
-        updateMediaInfo()
+        Timber.i("[MediaInfoService] Starting media info listener")
         scheduleNextUpdate()
     }
     
@@ -48,16 +63,20 @@ class MediaInfoService(private val context: Context) {
      * 停止监听
      */
     fun stopListening() {
-        Timber.i("Stopping media info listener")
-        updateRunnable?.let { handler.removeCallbacks(it) }
+        Timber.i("[MediaInfoService] Stopping media info listener")
+        serviceScope.cancel()
     }
     
     /**
-     * 更新媒体信息
+     * 更新媒体信息（在 IO 线程执行）
      */
-    private fun updateMediaInfo() {
+    private suspend fun updateMediaInfo() {
+        if (!serviceScope.isActive) return
+        
         try {
-            val activeSessions = mediaSessionManager?.getActiveSessions(listenerComponentName)
+            val activeSessions = withContext(Dispatchers.IO) {
+                mediaSessionManager?.getActiveSessions(listenerComponentName)
+            }
             
             if (activeSessions != null && activeSessions.isNotEmpty()) {
                 val controller = activeSessions[0]
@@ -74,41 +93,21 @@ class MediaInfoService(private val context: Context) {
                     val position = playbackState.position
                     val isPlaying = playbackState.state == android.media.session.PlaybackState.STATE_PLAYING
                     
-                    // 获取专辑封面 - 优先获取 Bitmap，然后保存并返回 URI
-                    val albumArtUri = try {
-                        Timber.d("尝试获取专辑图...")
-                        val albumArtBitmap = metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
-                            ?: metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
-                        
-                        if (albumArtBitmap != null) {
-                            Timber.d("获取到专辑图 Bitmap: ${albumArtBitmap.width}x${albumArtBitmap.height}")
-                            // 如果有 Bitmap，保存到缓存并返回 content:// URI
-                            val uri = saveAlbumArtToCache(
-                                bitmap = albumArtBitmap,
-                                title = title,
-                                artist = artist,
-                                packageName = packageName
-                            )
-                            Timber.d("专辑图已保存到：$uri")
-                            uri
-                        } else {
-                            Timber.w("未获取到专辑图 Bitmap，尝试获取 URI")
-                            // 否则尝试获取 URI
-                            val uri = metadata.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
-                                ?: metadata.getString(android.media.MediaMetadata.METADATA_KEY_ART_URI)
-                            if (uri != null) {
-                                Timber.d("获取到专辑图 URI: $uri")
-                            } else {
-                                Timber.w("既无 Bitmap 也无 URI")
-                            }
-                            uri
-                        }
-                    } catch (e: Exception) {
-                        Timber.e(e, "Failed to get album art")
-                        null
+                    // 检查是否为同一首歌
+                    val oldMusic = _nowPlayingMusic.value
+                    val isSameSong = oldMusic?.title == title && 
+                                     oldMusic?.artist == artist && 
+                                     oldMusic?.packageName == packageName
+                    
+                    // 仅在歌曲变化时才处理专辑图
+                    val albumArtUri = if (!isSameSong) {
+                        processAlbumArtAsync(metadata, title, artist, packageName)
+                    } else {
+                        oldMusic?.albumArtUri
                     }
                     
-                    _nowPlayingMusic.value = NowPlayingMusic(
+                    // 构建新的音乐对象
+                    val newMusic = NowPlayingMusic(
                         title = title,
                         artist = artist,
                         album = album,
@@ -120,19 +119,33 @@ class MediaInfoService(private val context: Context) {
                         timestamp = System.currentTimeMillis()
                     )
                     
-                    Timber.d("Updated media info: $title - $artist (from $packageName)")
+                    // 仅在关键数据变化时才更新 Flow
+                    if (shouldUpdate(oldMusic, newMusic)) {
+                        _nowPlayingMusic.value = newMusic
+                        Timber.d("[MediaInfoService] Updated media info: $title - $artist (from $packageName)")
+                    }
                 }
             } else {
-                Timber.w("No active media sessions found")
+                Timber.w("[MediaInfoService] No active media sessions found")
                 currentController = null
             }
         } catch (e: SecurityException) {
-            Timber.e("Permission denied to access media sessions")
-            // 尝试通过其他方式获取
+            Timber.e("[MediaInfoService] Permission denied to access media sessions")
             updateMediaInfoViaContentResolver()
         } catch (e: Exception) {
-            Timber.e(e, "Error updating media info")
+            Timber.e("[MediaInfoService] Error updating media info", e)
         }
+    }
+    
+    /**
+     * 判断是否需要更新 Flow
+     */
+    private fun shouldUpdate(old: NowPlayingMusic?, new: NowPlayingMusic): Boolean {
+        return old?.title != new.title ||
+               old?.artist != new.artist ||
+               old?.isPlaying != new.isPlaying ||
+               old?.albumArtUri != new.albumArtUri ||
+               old?.packageName != new.packageName
     }
     
     /**
@@ -140,54 +153,137 @@ class MediaInfoService(private val context: Context) {
      */
     private fun updateMediaInfoViaContentResolver() {
         try {
-            // 注: 这是一个简化的实现
+            // 注：这是一个简化的实现
             // 实际应用可能需要使用 MediaStore 或其他方式
-            Timber.i("Attempting to get media info via ContentResolver")
+            Timber.i("[MediaInfoService] Attempting to get media info via ContentResolver")
         } catch (e: Exception) {
-            Timber.e(e, "Error getting media info via ContentResolver")
+            Timber.e("[MediaInfoService] Error getting media info via ContentResolver", e)
         }
     }
     
     /**
-     * 保存专辑封面到缓存并返回 file:// URI
+     * 异步处理专辑封面（在 IO 线程执行）
+     * 
+     * 优化：
+     * - 内存缓存避免重复加载
+     * - 限制图片尺寸（最大 512x512）减少内存占用
+     * - 降低压缩质量（75%）减少 I/O
      */
-    private fun saveAlbumArtToCache(
-        bitmap: Bitmap,
+    private suspend fun processAlbumArtAsync(
+        metadata: android.media.MediaMetadata,
         title: String,
         artist: String,
         packageName: String?
+    ): String? = withContext(Dispatchers.IO) {
+        try {
+            // 生成缓存 key
+            val cacheKey = "${packageName ?: "unknown"}_${title}_$artist"
+            
+            // 检查内存缓存
+            albumArtCache[cacheKey]?.takeIf { File(it).exists() }?.let { cached ->
+                Timber.d("[AlbumArtExtractor] Hit memory cache: $cached")
+                return@withContext cached
+            }
+            
+            // 获取专辑图 Bitmap
+            val albumArtBitmap = metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
+                ?: metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
+            
+            if (albumArtBitmap == null) {
+                Timber.w("[AlbumArtExtractor] Failed to get bitmap, trying URI")
+                return@withContext metadata.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
+                    ?: metadata.getString(android.media.MediaMetadata.METADATA_KEY_ART_URI)
+            }
+            
+            // 保存到缓存
+            val uri = saveAlbumArtToCacheOptimized(
+                bitmap = albumArtBitmap,
+                title = title,
+                artist = artist,
+                packageName = packageName,
+                cacheKey = cacheKey
+            )
+            
+            uri?.also {
+                Timber.d("[AlbumArtExtractor] Album art saved to: $it")
+                albumArtCache[cacheKey] = it
+            }
+            
+            uri
+        } catch (e: Exception) {
+            Timber.e("[AlbumArtExtractor] Failed to process album art", e)
+            null
+        }
+    }
+    
+    /**
+     * 优化版的专辑图保存方法
+     * - 限制尺寸
+     * - 降低质量
+     * - 复用文件名
+     */
+    private fun saveAlbumArtToCacheOptimized(
+        bitmap: Bitmap,
+        title: String,
+        artist: String,
+        packageName: String?,
+        cacheKey: String
     ): String? {
         return try {
             val cacheDir = File(context.cacheDir, "album_art")
             if (!cacheDir.exists()) {
                 cacheDir.mkdirs()
             }
-
-            // 基于歌曲信息生成文件名，避免切歌后因同名文件导致 UI 缓存不刷新
-            val safeKey = ("${packageName ?: "unknown"}_${title}_${artist}").hashCode().toUInt().toString(16)
+            
+            // 使用哈希值作为文件名，避免特殊字符问题
+            val safeKey = cacheKey.hashCode().toUInt().toString(16)
             val file = File(cacheDir, "album_art_${safeKey}.jpg")
-            FileOutputStream(file).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            
+            // 如果文件已存在且大小合理，直接返回（避免重复写入）
+            if (file.exists() && file.length() > 1024) {
+                return "file://${file.absolutePath}"
             }
             
-            val uri = "file://${file.absolutePath}"
-            Timber.d("Saved album art to cache: $uri")
-            uri
+            // 缩放图片至最大 512x512，减少内存占用
+            val scaledBitmap = resizeBitmap(bitmap, 512)
+            
+            FileOutputStream(file).use { out ->
+                // 压缩质量从 90 降至 75，显著减少文件大小
+                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, out)
+                scaledBitmap.recycle() // 及时释放内存
+            }
+            
+            "file://${file.absolutePath}"
         } catch (e: Exception) {
-            Timber.e(e, "Failed to save album art to cache")
+            Timber.e("[AlbumArtExtractor] Failed to save album art to cache", e)
             null
         }
     }
     
     /**
-     * 定时更新媒体信息
+     * 缩放 Bitmap 到目标尺寸
+     */
+    private fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
+        if (bitmap.width <= maxSize && bitmap.height <= maxSize) {
+            return bitmap
+        }
+        
+        val ratio = minOf(maxSize.toFloat() / bitmap.width, maxSize.toFloat() / bitmap.height)
+        val newWidth = (bitmap.width * ratio).toInt()
+        val newHeight = (bitmap.height * ratio).toInt()
+        
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+    }
+    
+    /**
+     * 定时更新媒体信息（使用协程而非 Handler）
      */
     private fun scheduleNextUpdate() {
-        updateRunnable = Runnable {
-            updateMediaInfo()
-            scheduleNextUpdate()
-        }.also { runnable ->
-            handler.postDelayed(runnable, UPDATE_INTERVAL_MS)
+        serviceScope.launch {
+            while (isActive) {
+                updateMediaInfo()
+                delay(UPDATE_INTERVAL_MS)
+            }
         }
     }
     
@@ -196,45 +292,45 @@ class MediaInfoService(private val context: Context) {
      */
     fun play() {
         currentController?.transportControls?.play()
-        Timber.i("Play command sent")
+        Timber.i("[PlaybackControl] Play command sent")
     }
     
     fun pause() {
         currentController?.transportControls?.pause()
-        Timber.i("Pause command sent")
+        Timber.i("[PlaybackControl] Pause command sent")
     }
     
     fun skipToNext() {
         currentController?.transportControls?.skipToNext()
-        Timber.i("Skip to next command sent")
+        Timber.i("[PlaybackControl] Skip to next command sent")
     }
     
     fun skipToPrevious() {
         currentController?.transportControls?.skipToPrevious()
-        Timber.i("Skip to previous command sent")
+        Timber.i("[PlaybackControl] Skip to previous command sent")
     }
     
     fun seekTo(position: Long) {
         val controller = currentController
         if (controller == null) {
-            Timber.e("Seek ignored: no active MediaController, target=$position ms")
+            Timber.e("[PlaybackControl] Seek ignored: no active MediaController, target=$position ms")
             return
         }
 
         val packageName = controller.packageName
         val playbackState = controller.playbackState?.state
         controller.transportControls.seekTo(position)
-        Timber.i("Seek command sent: target=$position ms, package=$packageName, playbackState=$playbackState")
+        Timber.i("[PlaybackControl] Seek command sent: target=$position ms, package=$packageName, playbackState=$playbackState")
     }
     
     fun fastForward() {
         currentController?.transportControls?.fastForward()
-        Timber.i("Fast forward command sent")
+        Timber.i("[PlaybackControl] Fast forward command sent")
     }
     
     fun rewind() {
         currentController?.transportControls?.rewind()
-        Timber.i("Rewind command sent")
+        Timber.i("[PlaybackControl] Rewind command sent") 
     }
     
     companion object {

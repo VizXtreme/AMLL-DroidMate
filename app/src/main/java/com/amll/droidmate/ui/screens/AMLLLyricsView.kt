@@ -50,11 +50,11 @@ private const val AMLL_LOG_TAG = "AMLL"
 private val AMLL_VIEW_INSTANCE_COUNTER = AtomicInteger(0)
 
 private fun amllDebug(message: String) {
-    Timber.d(message)
+    Timber.d("[AMLLLyrics] $message")
 }
 
 private fun amllInfo(message: String) {
-    Timber.i(message)
+    Timber.i("[AMLLLyrics] $message")
 }
 
 @Composable
@@ -98,7 +98,7 @@ fun AMLLLyricsView(
         onCommandReceived = { command, valueObj ->
             when (command) {
                 "pause" -> {
-                    Timber.i("[$debugSource] 收到暂停命令，执行暂停操作")
+                    Timber.i("[AMLLLyrics] 收到暂停命令，执行暂停操作")
                     // 发送系统广播：媒体按钮事件（暂停）
                     val pauseIntent = android.content.Intent("android.intent.action.MEDIA_BUTTON").apply {
                         putExtra(android.content.Intent.EXTRA_KEY_EVENT, android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MEDIA_PAUSE))
@@ -107,7 +107,7 @@ fun AMLLLyricsView(
                     context.sendBroadcast(pauseIntent)
                 }
                 "resume" -> {
-                    Timber.i("[$debugSource] 收到恢复播放命令，执行播放操作")
+                    Timber.i("[AMLLLyrics] 收到恢复播放命令，执行播放操作")
                     // 发送系统广播：媒体按钮事件（播放）
                     val playIntent = android.content.Intent("android.intent.action.MEDIA_BUTTON").apply {
                         putExtra(android.content.Intent.EXTRA_KEY_EVENT, android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MEDIA_PLAY))
@@ -116,7 +116,7 @@ fun AMLLLyricsView(
                     context.sendBroadcast(playIntent)
                 }
                 "forwardSong" -> {
-                    Timber.i("[$debugSource] 收到下一首命令，执行下一首操作")
+                    Timber.i("[AMLLLyrics] 收到下一首命令，执行下一首操作")
                     // 发送系统广播：媒体按钮事件（下一首）
                     val nextIntent = android.content.Intent("android.intent.action.MEDIA_BUTTON").apply {
                         putExtra(android.content.Intent.EXTRA_KEY_EVENT, android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MEDIA_NEXT))
@@ -125,7 +125,7 @@ fun AMLLLyricsView(
                     context.sendBroadcast(nextIntent)
                 }
                 "backwardSong" -> {
-                    Timber.i("[$debugSource] 收到上一首命令，执行上一首操作")
+                    Timber.i("[AMLLLyrics] 收到上一首命令，执行上一首操作")
                     // 发送系统广播：媒体按钮事件（上一首）
                     val prevIntent = android.content.Intent("android.intent.action.MEDIA_BUTTON").apply {
                         putExtra(android.content.Intent.EXTRA_KEY_EVENT, android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS))
@@ -136,18 +136,18 @@ fun AMLLLyricsView(
                 "seekPlayProgress" -> {
                     val progress = valueObj?.get("progress")?.jsonPrimitive?.content?.toLongOrNull()
                     if (progress != null) {
-                        Timber.i("[$debugSource] 收到跳转进度命令：$progress ms，执行跳转操作")
+                        Timber.i("[AMLLLyrics] 收到跳转进度命令：$progress ms，执行跳转操作")
                         // 使用 MediaInfoService 进行跳转
                         val mediaInfoService = com.amll.droidmate.service.MediaInfoService(context)
                         mediaInfoService.seekTo(progress)
                     } else {
-                        Timber.w("[$debugSource] 跳转进度命令参数无效")
+                        Timber.w("[AMLLLyrics] 跳转进度命令参数无效")
                     }
                 }
                 "setVolume" -> {
                     val volume = valueObj?.get("volume")?.jsonPrimitive?.content?.toDoubleOrNull()
                     if (volume != null) {
-                        Timber.i("[$debugSource] 收到音量设置命令：$volume")
+                        Timber.i("[AMLLLyrics] 收到音量设置命令：$volume")
                         // 使用 AudioManager 设置系统音量
                         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
                         // 将 0.0-1.0 的音量转换为系统音量级别（0-15）
@@ -158,44 +158,44 @@ fun AMLLLyricsView(
                             targetVolume,
                             0  // 不显示音量 UI
                         )
-                        Timber.d("[$debugSource] 音量已设置：${volume} -> $targetVolume/$maxVolume")
+                        Timber.d("[AMLLLyrics] 音量已设置：${volume} -> $targetVolume/$maxVolume")
                     } else {
-                        Timber.w("[$debugSource] 音量设置命令参数无效")
+                        Timber.w("[AMLLLyrics] 音量设置命令参数无效")
                     }
                 }
                 "setRepeatMode", "setShuffleMode" -> {
-                    Timber.d("[$debugSource] 收到不支持的命令：$command，忽略")
+                    Timber.d("[AMLLLyrics] 收到不支持的命令：$command，忽略")
                     // 忽略这些命令，不回复错误（避免频繁发送错误消息）
                 }
                 else -> {
-                    Timber.d("[$debugSource] 未知命令：$command")
+                    Timber.d("[AMLLLyrics] 未知命令：$command")
                 }
             }
         },
         onConnectedCallback = {
             isWebSocketConnected = true
-            Timber.d("[$debugSource] WebSocket 已连接，当前歌曲信息：musicId=$musicId, musicName=$musicName, artist=$artistName")
+            Timber.d("[AMLLLyrics] WebSocket 已连接，当前歌曲信息：musicId=$musicId, musicName=$musicName, artist=$artistName")
         },
         onErrorCallback = { error ->
             isWebSocketConnected = false
             // 打印更详细的错误信息
             when (error) {
                 is java.io.EOFException -> {
-                    Timber.e("服务器主动断开了连接，可能原因：")
-                    Timber.e("  1. 服务器未运行或已关闭")
-                    Timber.e("  2. 协议格式不匹配（检查 Initialize 消息格式）")
-                    Timber.e("  3. 网络问题导致连接中断")
-                    Timber.e("  4. 防火墙/安全软件阻止连接")
+                    Timber.e("[AMLLLyrics] 服务器主动断开了连接，可能原因：")
+                    Timber.e("[AMLLLyrics]   1. 服务器未运行或已关闭")
+                    Timber.e("[AMLLLyrics]   2. 协议格式不匹配（检查 Initialize 消息格式）")
+                    Timber.e("[AMLLLyrics]   3. 网络问题导致连接中断")
+                    Timber.e("[AMLLLyrics]   4. 防火墙/安全软件阻止连接")
                 }
                 is java.net.ConnectException -> {
-                    Timber.e("无法连接到服务器")
-                    Timber.e("请检查：")
-                    Timber.e("  1. 服务器是否正在运行")
-                    Timber.e("  2. IP 地址和端口是否正确")
-                    Timber.e("  3. 设备是否在同一局域网内")
+                    Timber.e("[AMLLLyrics] 无法连接到服务器")
+                    Timber.e("[AMLLLyrics] 请检查：")
+                    Timber.e("[AMLLLyrics]   1. 服务器是否正在运行")
+                    Timber.e("[AMLLLyrics]   2. IP 地址和端口是否正确")
+                    Timber.e("[AMLLLyrics]   3. 设备是否在同一局域网内")
                 }
                 else -> {
-                    Timber.e("未知错误类型：${error.javaClass.simpleName}")
+                    Timber.e("[AMLLLyrics] 未知错误类型：${error.javaClass.simpleName}")
                 }
             }
         }
@@ -203,7 +203,7 @@ fun AMLLLyricsView(
     
     // 如果 WebView 被禁用，不渲染歌词 UI，但仍保持 WebSocket 通信
     if (!webViewEnabled) {
-        Timber.d("[$debugSource] WebView 已禁用，跳过歌词渲染（但 WebSocket 仍在运行）")
+        Timber.d("[WebView] [$debugSource] WebView 已禁用，跳过歌词渲染（但 WebSocket 仍在运行）")
         return
     }
     
@@ -231,7 +231,7 @@ fun AMLLLyricsView(
     // 仅在歌曲信息或播放状态变化时发送，播放进度惯性除外
     fun sendPlaybackStatusToWebSocket(currentTime: Long, isPlaying: Boolean) {
         if (!isWebSocketConnected) {
-            Timber.d("[$debugSource#$instanceId] WebSocket 未连接，跳过发送")
+            Timber.d("[WebSocket] [$debugSource#$instanceId] WebSocket 未连接，跳过发送")
             return
         }
             
@@ -260,7 +260,7 @@ fun AMLLLyricsView(
                     artists = listOf(com.amll.droidmate.websocket.WsProtocolV2Helper.Artist("1", artistName)),
                     duration = duration
                 )
-                Timber.d("[$debugSource#$instanceId] 发送歌曲信息 (V2 JSON): $musicName")
+                Timber.d("[WebSocket] [$debugSource#$instanceId] 发送歌曲信息 (V2 JSON): $musicName")
                 webSocketClient.send(message)
                 
                 // 更新记录的状态
@@ -278,7 +278,7 @@ fun AMLLLyricsView(
                     com.amll.droidmate.websocket.WsProtocolV2Helper.createPausedUpdate()
                 }
                 
-                Timber.d("[$debugSource#$instanceId] 发送播放状态消息 (V2 JSON): isPlaying=$isPlaying")
+                Timber.d("[WebSocket] [$debugSource#$instanceId] 发送播放状态消息 (V2 JSON): isPlaying=$isPlaying")
                 webSocketClient.send(stateMessage)
                 
                 // 更新记录的状态
@@ -287,7 +287,7 @@ fun AMLLLyricsView(
             
             // 注意：不发送播放进度更新（currentTime），避免频繁网络请求
         } catch (e: Exception) {
-            Timber.e(e, "[$debugSource#$instanceId] 发送 V2 消息失败")
+            Timber.e("[WebSocket] [$debugSource#$instanceId] 发送 V2 消息失败", e)
         }
     }
     
@@ -389,7 +389,7 @@ fun AMLLLyricsView(
                 }
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
-                        val logMessage = "[$debugSource#$instanceId] JS Console(@${consoleMessage.sourceId()}:${consoleMessage.lineNumber()}): ${consoleMessage.message()}"
+                        val logMessage = "[WebView] [$debugSource#$instanceId] JS Console(@${consoleMessage.sourceId()}:${consoleMessage.lineNumber()}): ${consoleMessage.message()}"
                         when (consoleMessage.messageLevel()) {
                             ConsoleMessage.MessageLevel.DEBUG -> amllDebug(logMessage)
                             ConsoleMessage.MessageLevel.LOG -> amllInfo(logMessage)
@@ -485,7 +485,7 @@ fun AMLLLyricsView(
             amllDebug("[$debugSource#$instanceId] Update callback - WebView actual size: width=${view.width}, height=${view.height}, measuredWidth=${view.measuredWidth}, measuredHeight=${view.measuredHeight}")
 
             // 立即更新时间，减少歌词行激活延迟
-            Timber.d("[$debugSource#$instanceId] Bridge call: updateTime($currentTime)")
+            Timber.d("[WebView] [$debugSource#$instanceId] Bridge call: updateTime($currentTime)")
             view.evaluateJavascript("window.updateTime && window.updateTime($currentTime);", null)
             
             // 同时通过 WebSocket 发送到外部服务
@@ -549,9 +549,9 @@ fun AMLLLyricsView(
                             // {"update":"SetLyric","value":{"format":"Ttml","data":"..."}}
                             val lyricMessage = """{"update":"SetLyric","value":{"format":"Ttml","data":$lyricsJson}}"""
                             webSocketClient.send(lyricMessage)
-                            amllDebug("[$debugSource#$instanceId] 已通过 WebSocket 发送歌词")
+                            amllDebug("[WebSocket] [$debugSource#$instanceId] 已通过 WebSocket 发送歌词")
                         } catch (e: Exception) {
-                            Timber.e(e, "[$debugSource#$instanceId] 通过 WebSocket 发送歌词失败")
+                            Timber.e("[WebSocket] [$debugSource#$instanceId] 通过 WebSocket 发送歌词失败", e)
                         }
                     }
                 } else {
@@ -793,11 +793,11 @@ class AMLLInterface(
     fun log(message: String, level: String = "debug") {
         val levelUpper = level.uppercase()
         when (levelUpper) {
-            "DEBUG" -> amllDebug("JS: $message")
-            "INFO" -> amllInfo("JS: $message")
-            "WARN" -> Timber.w("JS: $message")
-            "ERROR" -> Timber.e("JS: $message")
-            else -> amllDebug("JS: $message")
+            "DEBUG" -> amllDebug("[WebView] JS: $message")
+            "INFO" -> amllInfo("[WebView] JS: $message")
+            "WARN" -> Timber.w("[WebView] JS: $message")
+            "ERROR" -> Timber.e("[WebView] JS: $message")
+            else -> amllDebug("[WebView] JS: $message")
         }
     }
 
@@ -841,7 +841,7 @@ class AMLLInterface(
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "[$debugSource#$instanceId] 发送 WebSocket 消息失败")
+            Timber.e("[WebView] [$debugSource#$instanceId] 发送 WebSocket 消息失败", e)
         }
     }
 }
@@ -865,7 +865,7 @@ private fun convertFileUriToDataUrl(context: Context, uriString: String?): Strin
                 context.contentResolver.openInputStream(uri)
             }
             else -> {
-                Timber.w("Unsupported URI scheme: $uriString")
+                Timber.w("[WebView] Unsupported URI scheme: $uriString")
                 return uriString // 直接返回原始字符串（可能是 data URL）
             }
         }
@@ -877,7 +877,7 @@ private fun convertFileUriToDataUrl(context: Context, uriString: String?): Strin
             "data:$mimeType;base64,$base64"
         }
     } catch (e: Exception) {
-        Timber.e(e, "Failed to convert file URI to data URL: $uriString")
+        Timber.e("[WebView] Failed to convert file URI to data URL: $uriString", e)
         null
     }
 }

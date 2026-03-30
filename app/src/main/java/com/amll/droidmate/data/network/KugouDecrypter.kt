@@ -31,11 +31,11 @@ object KugouDecrypter {
         return try {
             // Step 1: Base64 解码
             val encryptedBytes = Base64.decode(encryptedBase64, Base64.DEFAULT)
-            Timber.d("KRC encrypted data length: ${encryptedBytes.size}")
+            Timber.d("[KugouDecrypter] KRC encrypted data length: ${encryptedBytes.size}")
             
             // 检查最小长度（需要至少 4 字节 header）
             if (encryptedBytes.size < 4) {
-                Timber.e("KRC encrypted data too short: ${encryptedBytes.size} bytes")
+                Timber.e("[KugouDecrypter] KRC encrypted data too short: ${encryptedBytes.size} bytes")
                 return null
             }
             
@@ -54,7 +54,7 @@ object KugouDecrypter {
             // Step 5: 转换为 UTF-8 字符串
             String(decompressed, Charsets.UTF_8)
         } catch (e: Exception) {
-            Timber.e(e, "Failed to decrypt KRC lyrics")
+            Timber.e("[KugouDecrypter] Failed to decrypt KRC lyrics", e)
             null
         }
     }
@@ -68,7 +68,7 @@ object KugouDecrypter {
             val inflater = InflaterInputStream(input)
             inflater.readBytes()
         } catch (e: Exception) {
-            Timber.e(e, "Failed to decompress")
+            Timber.e("[KugouDecrypter] Failed to decompress", e)
             data  // 如果解压失败，返回原数据
         }
     }

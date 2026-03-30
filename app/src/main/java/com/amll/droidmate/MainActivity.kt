@@ -25,6 +25,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        // 初始化 Timber 以捕获应用日志
+        if (Timber.treeCount == 0) {
+            Timber.plant(com.amll.droidmate.util.LogHelper.LogHelperTree())
+        }
+        
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         
@@ -44,7 +49,7 @@ class MainActivity : ComponentActivity() {
                         )
                         DynamicThemeManager.updateColorScheme(colors)
                     } catch (e: Exception) {
-                        Timber.e(e, "Error extracting colors from album art")
+                        Timber.e("[AlbumArtExtractor] Failed to extract colors from album art", e)
                         DynamicThemeManager.clearColorScheme()
                     }
                 } else {

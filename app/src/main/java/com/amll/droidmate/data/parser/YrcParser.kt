@@ -15,7 +15,7 @@ object YrcParser {
         val metadata = mutableMapOf<String, MutableList<String>>()
         
         val contentLines = content.lines()
-        Timber.i("YrcParser: parsing ${contentLines.size} lines")
+        Timber.i("[YrcParser] Parsing $contentLines.size lines")
 
         for ((index, raw) in contentLines.withIndex()) {
             val lineNum = index + 1
@@ -32,20 +32,20 @@ object YrcParser {
                     parseYrcLine(line)?.let {
                         lines.add(it)
                         if (lines.size <= 3) {
-                            Timber.d("YrcParser: parsed line $lineNum - ${it.text.take(30)}")
+                            Timber.d("[YrcParser] Parsed line $lineNum - ${it.text.take(30)}")
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.w(e, "Failed to parse YRC line $lineNum")
+                    Timber.w("[YrcParser] Failed to parse YRC line $lineNum", e)
                 }
             } else {
                 if (lineNum <= 5 || (lineNum > contentLines.size - 3)) {
-                    Timber.d("YrcParser: skipping line $lineNum (not matching YRC format): ${line.take(50)}")
+                    Timber.d("[YrcParser] Skipping line $lineNum (not matching YRC format): ${line.take(50)}")
                 }
             }
         }
         
-        Timber.d("YrcParser: parsed ${lines.size} lyric lines total")
+        Timber.d("[YrcParser] Parsed $lines.size lyric lines total")
         return lines
     }
 
@@ -75,7 +75,7 @@ object YrcParser {
                 metadata.getOrPut(key) { mutableListOf() }.add(values.joinToString(", "))
             }
         } catch (e: Exception) {
-            Timber.w(e, "YRC metadata parse failed on line $lineNum")
+            Timber.w("[YrcParser] Metadata parse failed on line $lineNum", e)
         }
     }
 

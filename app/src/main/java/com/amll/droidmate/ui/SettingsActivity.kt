@@ -531,6 +531,20 @@ private fun SettingsPage(
             }
 
             Text(
+                text = "开发者工具",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, LogDisplayActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("查看日志")
+            }
+
+            Text(
                 text = "项目与贡献",
                 style = MaterialTheme.typography.titleMedium
             )
