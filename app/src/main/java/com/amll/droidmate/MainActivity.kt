@@ -25,6 +25,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        // 初始化 LogHelper (必须在 Timber 之前)
+        com.amll.droidmate.util.LogHelper.init(this)
+        
         // 初始化 Timber 以捕获应用日志
         if (Timber.treeCount == 0) {
             Timber.plant(com.amll.droidmate.util.LogHelper.LogHelperTree())

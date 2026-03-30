@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
@@ -58,12 +59,16 @@ private fun logDisplayPage(onBack: () -> Unit) {
     var autoScrollEnabled by remember { mutableStateOf(true) }
     var isPaused by remember { mutableStateOf(false) }
     
-    // 日志记录控制
-    var isLoggingPaused by remember { mutableStateOf(false) }
+    // 日志记录控制 - 从持久化存储读取
+    var isLoggingPaused by remember {
+        mutableStateOf(LogHelper.isLoggingPaused())
+    }
     
-    // 日志等级筛选 - 单选模式，选择最低显示等级，自动包含更高等级
+    // 日志等级筛选 - 从持久化存储读取
     var showFilterDropdown by remember { mutableStateOf(false) }
-    var minLogLevel by remember { mutableStateOf("V") } // 默认显示所有等级
+    var minLogLevel by remember {
+        mutableStateOf(LogHelper.getMinLogLevel())
+    }
     
     // 日志统计
     val stats by remember { mutableStateOf(LogHelper.getLogStats()) }
@@ -94,24 +99,27 @@ private fun logDisplayPage(onBack: () -> Unit) {
         }
     }
     
-    // 实时刷新日志
+    // 实时刷新日志 - 持续轮询模式
     LaunchedEffect(Unit) {
         while (true) {
             delay(500) // 每 500ms 刷新一次
             
-            // 如果暂停了记录，就不更新日志列表
-            if (!isLoggingPaused) {
-                // 根据选择的等级过滤日志（自动包含更高等级）
-                logEntries = LogHelper.getFilteredLogsByMinLevel(minLogLevel)
-                
-                // 如果启用了自动滚动且未暂停，滚动到最后
-                if (autoScrollEnabled && !isPaused && logEntries.isNotEmpty()) {
-                    scope.launch {
-                        listState.scrollToItem(logEntries.lastIndex)
-                    }
+            // 无论暂停状态如何，都根据选择的等级过滤日志（自动包含更高等级）
+            // 这样在暂停时也能看到筛选效果
+            logEntries = LogHelper.getFilteredLogsByMinLevel(minLogLevel)
+            
+            // 如果未暂停记录且启用了自动滚动，滚动到最后
+            if (!isLoggingPaused && autoScrollEnabled && !isPaused && logEntries.isNotEmpty()) {
+                scope.launch {
+                    listState.scrollToItem(logEntries.lastIndex)
                 }
             }
         }
+    }
+    
+    // 监听筛选等级变化，立即更新日志列表
+    LaunchedEffect(minLogLevel) {
+        logEntries = LogHelper.getFilteredLogsByMinLevel(minLogLevel)
     }
     
     // 监听列表滚动，如果用户手动滚动则暂停自动滚动
@@ -157,10 +165,11 @@ private fun logDisplayPage(onBack: () -> Unit) {
                     // 筛选下拉菜单
                     DropdownMenu(
                         expanded = showFilterDropdown,
-                        onDismissRequest = { showFilterDropdown = false }
+                        onDismissRequest = { showFilterDropdown = false },
+                        containerColor = MaterialTheme.colorScheme.background
                     ) {
                         Text(
-                            text = "选择最低显示等级",
+                            text = "日志等级",
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -191,10 +200,12 @@ private fun logDisplayPage(onBack: () -> Unit) {
                                             selected = minLogLevel == level,
                                             onClick = {
                                                 minLogLevel = level
+                                                // 保存到持久化存储（即使暂停也能筛选）
+                                                LogHelper.setMinLogLevel(level)
                                                 showFilterDropdown = false
                                             },
                                             colors = RadioButtonDefaults.colors(
-                                                selectedColor = MaterialTheme.colorScheme.primary,
+                                                selectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         )
@@ -202,11 +213,17 @@ private fun logDisplayPage(onBack: () -> Unit) {
                                 },
                                 onClick = {
                                     minLogLevel = level
+                                    // 保存到持久化存储（即使暂停也能筛选）
+                                    LogHelper.setMinLogLevel(level)
                                     showFilterDropdown = false
                                 },
-                                colors = MenuDefaults.itemColors(
+                                colors = MenuItemColors(
                                     textColor = MaterialTheme.colorScheme.onSurface,
-                                    leadingIconColor = MaterialTheme.colorScheme.onSurface
+                                    leadingIconColor = Color.Unspecified,
+                                    trailingIconColor = Color.Unspecified,
+                                    disabledTextColor = Color.Unspecified,
+                                    disabledLeadingIconColor = Color.Unspecified,
+                                    disabledTrailingIconColor = Color.Unspecified
                                 )
                             )
                         }
@@ -216,13 +233,15 @@ private fun logDisplayPage(onBack: () -> Unit) {
                 // 暂停/继续记录按钮
                 IconButton(onClick = { 
                     isLoggingPaused = !isLoggingPaused
+                    // 保存到持久化存储
+                    LogHelper.setLoggingPaused(isLoggingPaused)
                     val action = if (isLoggingPaused) "暂停" else "继续"
                     Toast.makeText(context, "已$action 记录日志", Toast.LENGTH_SHORT).show()
                 }) {
                     Icon(
                         imageVector = if (isLoggingPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
                         contentDescription = if (isLoggingPaused) "继续记录" else "暂停记录",
-                        tint = if (isLoggingPaused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 
@@ -235,7 +254,7 @@ private fun logDisplayPage(onBack: () -> Unit) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "清除日志",
-                        tint = MaterialTheme.colorScheme.error
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 
@@ -292,27 +311,22 @@ private fun logDisplayPage(onBack: () -> Unit) {
                             Icon(
                                 imageVector = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
                                 contentDescription = if (isPaused) "恢复滚动" else "暂停滚动",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         
                         // 立即滚动到底部按钮
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    if (logEntries.isNotEmpty()) {
-                                        listState.scrollToItem(logEntries.lastIndex)
-                                    }
+                        IconButton(onClick = {
+                            scope.launch {
+                                if (logEntries.isNotEmpty()) {
+                                    listState.scrollToItem(logEntries.lastIndex)
                                 }
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Text(
-                                text = "底部",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onPrimary
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowDown,
+                                contentDescription = "滚动到底部",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

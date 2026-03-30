@@ -1,6 +1,8 @@
 package com.amll.droidmate.util
 
+import android.content.Context
 import android.util.Log
+import kotlinx.coroutines.Job
 import timber.log.Timber
 import java.io.File
 import java.io.FileWriter
@@ -26,10 +28,54 @@ import java.util.concurrent.ConcurrentLinkedDeque
 object LogHelper {
     
     private const val MAX_LOG_ENTRIES = 3000 // 最多保留 3000 条日志
+    private const val PREFS_NAME = "droidmate_log_settings"
+    private const val KEY_LOGGING_PAUSED = "logging_paused"
+    private const val KEY_MIN_LOG_LEVEL = "min_log_level"
     
     private val logEntries = ConcurrentLinkedDeque<LogEntry>()
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
     private var nextId = 0L // 自增 ID 生成器
+    
+    // 持久化设置
+    private var prefs: PreferenceHelper? = null
+    private var saveJob: Job? = null
+    
+    /**
+     * 初始化 LogHelper，必须在应用启动时调用
+     */
+    fun init(context: Context) {
+        if (prefs == null) {
+            prefs = PreferenceHelper(context, PREFS_NAME)
+        }
+    }
+    
+    /**
+     * 获取日志记录是否暂停
+     */
+    fun isLoggingPaused(): Boolean {
+        return prefs?.getBoolean(KEY_LOGGING_PAUSED, false) ?: false
+    }
+    
+    /**
+     * 设置日志记录暂停状态
+     */
+    fun setLoggingPaused(paused: Boolean) {
+        prefs?.putBooleanAsync(KEY_LOGGING_PAUSED, paused)
+    }
+    
+    /**
+     * 获取最小日志等级
+     */
+    fun getMinLogLevel(): String {
+        return prefs?.getString(KEY_MIN_LOG_LEVEL, "V") ?: "V"
+    }
+    
+    /**
+     * 设置最小日志等级
+     */
+    fun setMinLogLevel(level: String) {
+        prefs?.putStringAsync(KEY_MIN_LOG_LEVEL, level)
+    }
     
     /**
      * 日志条目数据类
