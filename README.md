@@ -31,3 +31,5 @@
 - 多源歌词匹配：[Unilyric `apoint123/Unilyric`](https://github.com/apoint123/Unilyric)
 - 优质歌词来源：[AMLL TTML DB `amll-dev/amll-ttml-db`](https://github.com/amll-dev/amll-ttml-db)
 
+## 提示
+本项目目前 100% HITL Vibe coding。
