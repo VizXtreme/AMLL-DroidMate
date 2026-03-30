@@ -25,7 +25,7 @@ Timber.wtf("[Config] Critical configuration file missing")
 ---
 
 ### 🟠 `Timber.e()` - 错误 (Error)
-**定义：** 非预期的错误，会造成功能出错
+**定义：** 非预期的错误，会导致功能出错
 
 **使用场景：**
 - 网络请求失败
@@ -49,11 +49,9 @@ Timber.e("[WebSocket] Invalid WebSocket message format", e)
 ---
 
 ### 🟡 `Timber.w()` - 警告 (Warning)
-**定义：** 非预期的错误，但功能几乎不影响
+**定义：** 非预期的错误，但功能几乎不影响或较少影响
 
 **使用场景：**
-- 可恢复的错误
-- 降级处理的情况
 - 非关键功能失败
 - 性能问题的预警
 - 已捕获但有潜在风险的异常
@@ -75,23 +73,27 @@ Timber.w("[DataParser] Unknown lyric format version, assuming v1")
 // 性能预警（操作成功但较慢）
 Timber.w("[CacheManager] Cache cleanup took longer than expected: 2.5s")
 
-// 已捕获的异常（有降级方案）
-Timber.w("[Storage] Failed to save to external storage, using internal cache", e)
 ```
 
 
 ---
 
 ### 🟢 `Timber.i()` - 信息 (Info)
-**定义：** 一个阶段的完成，或是程序进入哪个分支结构（fallback到什么方法），有可能出现的合理的无法获取
+**定义：** 一个阶段的完成，或是程序进入哪个分支结构（fallback 到什么方法），有可能出现的合理的无法获取
+
+**⚠️ 重要说明：**
+- **阶段开始 vs 完成**：一个阶段的**开始**一般使用 `Debug` 级别，**完成**使用 `Info` 级别
+- **非预期完成**：如果出现非预期的完成情况（如失败、异常），应使用相应的 `Warn`/`Error`/`Wtf` 级别
+- **边缘但可能的情况**：一些发生概率较低但合理的边缘情况（如资源未找到、降级处理），使用 `Info` 级别
 
 **使用场景：**
-- 重要流程的开始/结束
+- 重要流程的完成
 - 状态转换（如：连接建立、断开）
 - 用户关键操作的记录
 - 有可能出现的合理异常情况（如：资源不存在）
 - 功能模块初始化完成
 - 条件分支的选择
+- Fallback
 
 **示例：**
 ```kotlin
@@ -128,6 +130,20 @@ Timber.i("[Storage] 外部存储不可用，使用内部存储")
 Timber.i("[MediaSession] 当前无播放会话，等待用户操作")
 Timber.i("[WebSocket] 连接已断开，将在后台重试")
 Timber.i("[Permission] 通知权限未授予，使用基础功能")
+
+// ✅ 边缘但可能的情况（发生概率低但是合理的）
+Timber.i("[CustomLyrics] 自定义歌词文件不存在，使用默认歌词")
+Timber.i("[CacheManager] 缓存已过期，从网络重新获取")
+Timber.i("[ThemeEngine] 深色模式资源未找到，回退到浅色主题")
+
+// ✅ 正确示例：阶段开始用 d，完成用 i
+Timber.d("[DownloadManager] Starting download: $url")  // 阶段开始
+// ... 下载过程 ...
+Timber.i("[DownloadManager] Download completed: ${file.size} bytes")  // 阶段完成
+
+// ❌ 错误示例：非预期的完成应该使用 w/e
+// Timber.i("[DownloadManager] Download failed with error: $error")  // ❌ 应该用 e
+// Timber.e("[DownloadManager] Download started")  // ❌ 开始不应该用 e
 ```
 
 ---
@@ -143,6 +159,13 @@ Timber.i("[Permission] 通知权限未授予，使用基础功能")
 - 条件判断的详细路径
 - 数据转换的细节
 
+**⚠️ 重要限制：**
+- **长内容行数限制**：单条 debug 日志的内容不得超过 10 行
+- **超出降级规则**：如必须超出 10 行，超出的部分应降级为 `Timber.v()`（Verbose）
+- **目的**：避免 logcat 被大量 debug 日志刷屏，保持日志可读性
+- **禁止逐行发送**：除非是分步执行的操作，否则不应一行发送一次日志，应当使用换行符 `\n` 合并多条信息
+- **等级限制**：展示长内容的日志等级不得高于 Debug（即只能使用 `d` 或 `v`，不能使用 `i`、`w`、`e`）
+
 **示例：**
 ```kotlin
 // 数据处理过程
@@ -157,19 +180,52 @@ Timber.d("[CacheManager] Skipping cache check because forceRefresh=true")
 
 // 方法入口（复杂逻辑）
 Timber.d("[UIUpdate] Entering syncLyricsWithProgress() with progress: $progress")
+
+// ✅ 正确示例：使用换行符合并信息，避免逐行发送
+val debugInfo = buildString {
+    appendLine("Processing ${items.size} items:")
+    items.take(10).forEachIndexed { index, item ->
+        appendLine("  [$index] ${item.id}: ${item.name}")
+    }
+    if (items.size > 10) {
+        appendLine("  ... and ${items.size - 10} more")
+    }
+}
+Timber.d("[DataProcessor] $debugInfo")
+
+// ✅ 正确示例：长内容控制在 10 行以内
+Timber.d("[DataParser] Parsing lyrics (${lines.size} lines):")
+lines.take(10).forEachIndexed { index, line ->
+    Timber.d("[DataParser]   [$index] ${line.timestamp}: ${line.content}")
+}
+if (lines.size > 10) {
+    Timber.v("[DataParser] ... and ${lines.size - 10} more lines (truncated)")
+}
+
+// ❌ 错误示例：逐行发送多条日志（会造成 logcat 刷屏）
+// Timber.d("[Processor] Item 1: $item1")
+// Timber.d("[Processor] Item 2: $item2")
+// Timber.d("[Processor] Item 3: $item3")
+// ... 不应该这样连续发送多条独立的日志
+
+// ❌ 错误示例：使用 i/w/e 等级输出长内容
+// Timber.i("[DataParser] Processing ${lines.size} lines:\n" +  // ❌ 不应该使用 i 级别
+//     lines.joinToString("\n") { "${it.timestamp}: ${it.content}" })
+// Timber.w("[Debug] Long debug content with multiple lines...")  // ❌ 不应该使用 w 级别
+
+// ❌ 错误示例：超出 10 行仍使用 d 级别
+// 不应该一次性输出 100 行歌词详情（会造成 logcat 刷屏）
 ```
 
 ---
 
 ### ⚪ `Timber.v()` - 详细 (Verbose)
-**定义：** 持续性的检查但是发现没有变动
+**定义：** 持续性的检查但是发现没有变动，或超出debug行数限制的长内容
 
 **使用场景：**
 - 高频次的轮询检查
 - 状态未改变的重复验证
-- 非常详细的跟踪信息
-- 开发期间的超详细日志
-- 性能监控的原始数据
+- 超出debug行数限制的长内容
 
 **示例：**
 ```kotlin
@@ -182,8 +238,6 @@ Timber.v("[Validation] Validation passed (same as previous)")
 // 心跳检测
 Timber.v("[WebSocket] Heartbeat check: connection stable")
 
-// UI 刷新检查
-Timber.v("[UIUpdate] UI update skipped, data unchanged")
 ```
 
 ---
@@ -393,11 +447,6 @@ Timber.d("[LyricsMatcher] Processing ${items.size} items with filter: $filterTyp
 // 合理使用 wtf（带模块标记）
 Timber.wtf("[Database] Integrity check failed, app cannot continue", e)
 
-// 适度使用 v（带模块标记）
-if (BuildConfig.DEBUG) {
-    Timber.v("[CacheManager] Cache size: ${cache.size()} bytes")
-}
-
 // 脱敏处理（带模块标记）
 Timber.d("[AuthService] User authenticated: ${user.id.hashCode()}")
 
@@ -424,22 +473,22 @@ Timber.w("[AlbumArtExtractor] Extraction failed, using default image")
 是 → Timber.e()
 否
   ↓
-是否是可恢复的问题？
+是否是未逾期但不严重的问题？
   ↓
 是 → Timber.w()
 否
   ↓
-是否是重要节点或预期情况？
+是否是阶段完成/出现分支/合理边缘情况？
   ↓
 是 → Timber.i()
 否
   ↓
-是否需要调试追踪？
+是否是阶段内操作？
   ↓
 是 → Timber.d()
 否
   ↓
-是否是无变化的持续检查？
+是否是无变化的持续检查或行数限制外内容？
   ↓
 是 → Timber.v()
 ```

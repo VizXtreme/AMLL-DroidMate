@@ -18,20 +18,20 @@ object QqMusicQrcCrypto {
     private val codec = QqMusicCodec()
 
     fun decryptQrcHex(encryptedText: String): String {
-        Timber.tag("QqMusicQrcCrypto").d("Starting Hex+3DES+Zlib decryption, input length: ${encryptedText.length}")
-        Timber.tag("QqMusicQrcCrypto").d("Input preview (first 200 chars): ${encryptedText.take(200)}")
+        Timber.d("[QqMusicQrcCrypto] Starting Hex+3DES+Zlib decryption, input length: ${encryptedText.length}")
+        Timber.d("[QqMusicQrcCrypto] Input preview (first 200 chars): ${encryptedText.take(200)}")
 
         // Prefer the native Rust decoder when available, as it matches the upstream Unilyric logic.
         runCatching {
             QqMusicQrcNative.decryptQrcHex(encryptedText)
         }.getOrNull()?.let { nativeResult ->
             if (nativeResult.isNotBlank()) {
-                Timber.tag("QqMusicQrcCrypto").d("Decoded using native Rust decoder (length=${nativeResult.length})")
+                Timber.d("[QqMusicQrcCrypto] Decoded using native Rust decoder (length=${nativeResult.length})")
                 return nativeResult
             }
         }
 
-        Timber.tag("QqMusicQrcCrypto").i("Native Rust decoder returned empty or failed; falling back to Kotlin implementation")
+        Timber.i("[QqMusicQrcCrypto] Native Rust decoder returned empty or failed; falling back to Kotlin implementation")
 
         val encryptedBytes = decodeHex(encryptedText)
         Timber.d("[QqMusicQrcCrypto] After Hex decode: ${encryptedBytes.size} bytes")

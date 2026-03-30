@@ -36,15 +36,15 @@ object WebSocketErrorHandler {
         
         val userMessage = when (error) {
             is EOFException -> {
-                Timber.e("[WebSocketErrorHandler] 服务器主动断开连接")
+                Timber.e("[WebSocketErrorHandler] Server disconnected actively")
                 "服务器已断开连接"
             }
             is ConnectException -> {
-                Timber.e("[WebSocketErrorHandler] 无法连接到服务器")
+                Timber.e("[WebSocketErrorHandler] Cannot connect to server")
                 "无法连接到服务器，请检查网络设置"
             }
             else -> {
-                Timber.e("[WebSocketErrorHandler] 未知错误类型：${error.javaClass.simpleName}")
+                Timber.e("[WebSocketErrorHandler] Unknown error type: ${error.javaClass.simpleName}")
                 "发生未知错误：${error.message}"
             }
         }

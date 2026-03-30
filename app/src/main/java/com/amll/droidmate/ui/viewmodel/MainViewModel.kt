@@ -232,7 +232,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val deleteReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: android.content.Intent?) {
             if (intent?.action == LyricNotificationManager.ACTION_LYRIC_NOTIFICATION_DISMISSED) {
-                Timber.i("[NotificationListener] Lyric notification dismissed by user, cancelling")
+                Timber.i("[NotificationListener] Lyric notification dismissed by user")
                 lyricNotificationManager.cancel()
             }
         }
@@ -260,7 +260,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     @androidx.annotation.VisibleForTesting(otherwise = androidx.annotation.VisibleForTesting.PRIVATE)
     internal fun onNotificationDeletedByUser() {
-        Timber.i("[NotificationListener] Lyric notification deleted by user (test helper)")
+        Timber.i("[NotificationListener] Lyric notification deleted by user")
         lyricNotificationManager.cancel()
     }
 
@@ -898,37 +898,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 
                 // 检查是否有元数据中的结构信息
                 val metadataStructures = lyrics.metadata.songStructures
-                Timber.d("[SongStructure] 📋 MainViewModel: metadata.songStructures = $metadataStructures")
-                Timber.d("[SongStructure] 📋 metadataStructures.isNullOrEmpty() = ${metadataStructures.isNullOrEmpty()}")
+                Timber.d("[SongStructure] Metadata structures count: ${metadataStructures?.size ?: 0}")
                 if (!metadataStructures.isNullOrEmpty()) {
-                    Timber.d("[SongStructure] ✅ MainViewModel: Using structures from TTML metadata: ${metadataStructures.size} items")
+                    Timber.d("[SongStructure] Using ${metadataStructures.size} structures from TTML metadata")
                     metadataStructures.forEachIndexed { index, structure ->
                         val startMin = structure.startTime / 60000
                         val startSec = (structure.startTime % 60000) / 1000
                         val endMin = structure.endTime / 60000
                         val endSec = (structure.endTime % 60000) / 1000
-                        Timber.d("[SongStructure]  [$index] ${structure.label} (${structure.type.displayName}): ${String.format("%d:%02d", startMin, startSec)} - ${String.format("%d:%02d", endMin, endSec)}")
+                        Timber.d("[SongStructure] [$index] ${structure.label} (${structure.type.displayName}): ${String.format("%d:%02d", startMin, startSec)} - ${String.format("%d:%02d", endMin, endSec)}")
                     }
                 } else {
-                    Timber.w("[SongStructure] ⚠️ MainViewModel: No metadata structures, will trigger SongStructureParser.parseStructure() fallback")
-                    Timber.w("[SongStructure] ⚠️ Will eventually display as '段落 1'")
+                    Timber.w("[SongStructure] No metadata structures found, will use SongStructureParser fallback")
                 }
                 
                 val structures = SongStructureParser.parseStructure(lyrics.lines, lyrics.metadata.songStructures, songDuration)
                 _songStructures.value = structures
-                Timber.d("[SongStructure] 🎯 MainViewModel: final structures.size = ${structures.size}")
+                Timber.d("[SongStructure] Parsed ${structures.size} structures")
                 structures.forEachIndexed { index, structure ->
                     val startMin = structure.startTime / 60000
                     val startSec = (structure.startTime % 60000) / 1000
                     val endMin = structure.endTime / 60000
                     val endSec = (structure.endTime % 60000) / 1000
-                    Timber.d("[SongStructure]  [$index] ${structure.label} (${structure.type.displayName}): ${String.format("%d:%02d", startMin, startSec)} - ${String.format("%d:%02d", endMin, endSec)}")
+                    Timber.d("[SongStructure] [$index] ${structure.label} (${structure.type.displayName}): ${String.format("%d:%02d", startMin, startSec)} - ${String.format("%d:%02d", endMin, endSec)}")
                 }
                 
                 // 诊断最终结果
                 if (structures.size == 1 && structures[0].label == "段落 1") {
-                    Timber.w("[SongStructure] ❌ Detected fallback result: single paragraph '段落 1'")
-                    Timber.w("[SongStructure] ❌ This indicates no valid song structure info in original TTML")
+                    Timber.w("[SongStructure] Fallback result: single paragraph structure")
                 }
             } catch (e: Exception) {
                 Timber.e("[SongStructure] Failed to parse song structure: ${e.message}", e)

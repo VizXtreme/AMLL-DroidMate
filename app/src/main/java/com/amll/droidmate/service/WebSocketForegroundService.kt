@@ -190,7 +190,7 @@ class WebSocketForegroundService : Service() {
     }
     
     override fun onDestroy() {
-        Timber.i("WebSocketForegroundService 销毁")
+        Timber.i("[WebSocketService] Service destroying")
         
         isRunning = false
         
@@ -233,7 +233,7 @@ class WebSocketForegroundService : Service() {
         
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
-        Timber.d("[WebSocketService] 通知渠道已创建：$CHANNEL_ID")
+        Timber.d("[WebSocketService] Notification channel created: $CHANNEL_ID")
     }
     
     /**
@@ -318,14 +318,14 @@ class WebSocketForegroundService : Service() {
      * 开始监听媒体信息
      */
     private fun startListening() {
-        Timber.i("[WebSocketService] 开始监听媒体信息")
+        Timber.i("[WebSocketService] Starting media info listening")
         mediaInfoService.startListening()
         
         // 监听媒体信息变化并同步到 WebSocket
         serviceScope.launch {
             mediaInfoService.nowPlayingMusic.collect { music ->
                 if (music != null && webSocketClient.isConnected()) {
-                    Timber.d("[WebSocketService] 媒体信息变化：${music.title} - ${music.artist}")
+                    Timber.d("[WebSocketService] Media info changed: ${music.title} - ${music.artist}")
                     // 这里可以根据需要自动同步状态到 WebSocket
                 }
             }
@@ -336,7 +336,7 @@ class WebSocketForegroundService : Service() {
      * 停止监听媒体信息
      */
     private fun stopListening() {
-        Timber.i("[WebSocketService] 停止监听媒体信息")
+        Timber.i("[WebSocketService] Stopping media info listening")
         mediaInfoService.stopListening()
     }
 }

@@ -728,6 +728,9 @@ private fun buildLyricsJson(lyrics: TTMLLyrics): String {
     val sampleBg = bgLines.firstOrNull()
     amllDebug("[BG-LYRICS-DEBUG] buildLyricsJson summary: total=${lyrics.lines.size}, bg=${bgLines.size}, bgWithTrans=$bgWithTranslation, bgWithRoman=$bgWithRoman, sampleBg='${sampleBg?.text ?: ""}', sampleTrans='${sampleBg?.translation ?: ""}'")
 
+    // 调试日志：限制在 10 行以内，超出的降级为 v 级别
+    var debugCount = 0
+    
     val linesJson = lyrics.lines.joinToString(",") { line ->
         val text = line.text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
         val translation = line.translation?.replace("\\", "\\\\")?.replace("\"", "\\\"") ?: ""
@@ -745,9 +748,14 @@ private fun buildLyricsJson(lyrics: TTMLLyrics): String {
             """{"word":"$wordText","startTime":${line.startTime},"endTime":${line.endTime}}"""
         }
         
-        // 调试日志
+        // 调试日志：前 10 行使用 d 级别，其余使用 v 级别
         if (line.words.isNotEmpty()) {
-            amllDebug("Building JSON for line: '${line.text}' with ${line.words.size} words")
+            if (debugCount < 10) {
+                amllDebug("Building JSON for line: '${line.text}' with ${line.words.size} words")
+                debugCount++
+            } else {
+                amllVerbose("Building JSON for line: '${line.text}' with ${line.words.size} words")
+            }
         }
         
         // 调试背景歌词的数据传递
