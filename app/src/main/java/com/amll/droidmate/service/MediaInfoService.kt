@@ -99,15 +99,40 @@ class MediaInfoService(private val context: Context) {
                                      oldMusic?.artist == artist && 
                                      oldMusic?.packageName == packageName
                     
-                    // 仅在歌曲变化时才处理专辑图
-                    val albumArtUri = if (!isSameSong) {
-                        processAlbumArtAsync(metadata, title, artist, packageName)
-                    } else {
-                        oldMusic?.albumArtUri
+                    // ✅ 统一逻辑：通过检查专辑图 Bitmap 是否变化来决定是否更新
+                    val currentAlbumArtUri = oldMusic?.albumArtUri
+                    
+                    // 尝试从播放源获取专辑图 Bitmap（不是 URI）
+                    val newAlbumArtBitmap = metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
+                        ?: metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
+                    
+                    // 智能判断是否需要处理专辑图
+                    val finalAlbumArtUri = when {
+                        // 情况 1: 获取到了新的 Bitmap → 重新处理
+                        newAlbumArtBitmap != null -> {
+                            Timber.d("[MediaInfoService] Got album art bitmap, processing...")
+                            processAlbumArtBitmap(bitmap = newAlbumArtBitmap, title, artist, packageName)
+                        }
+                        // 情况 2: 当前没有专辑图，尝试从 URI 获取
+                        currentAlbumArtUri.isNullOrBlank() -> {
+                            val uriString = metadata.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
+                                ?: metadata.getString(android.media.MediaMetadata.METADATA_KEY_ART_URI)
+                            if (!uriString.isNullOrBlank()) {
+                                Timber.d("[MediaInfoService] No cached album art, fetching from URI...")
+                                processAlbumArtAsync(metadata, title, artist, packageName)
+                            } else {
+                                null
+                            }
+                        }
+                        // 情况 3: 保持使用当前的专辑图（无变化）
+                        else -> {
+                            Timber.v("[MediaInfoService] Album art unchanged, using cache")
+                            currentAlbumArtUri
+                        }
                     }
                     
-                    // 构建新的音乐对象
-                    val newMusic = NowPlayingMusic(
+                    // 构建最终的音乐对象（包含最新播放时间和专辑图）
+                    val updatedMusic = NowPlayingMusic(
                         title = title,
                         artist = artist,
                         album = album,
@@ -115,14 +140,17 @@ class MediaInfoService(private val context: Context) {
                         currentPosition = position,
                         isPlaying = isPlaying,
                         packageName = packageName,
-                        albumArtUri = albumArtUri,
+                        albumArtUri = finalAlbumArtUri,
                         timestamp = System.currentTimeMillis()
                     )
                     
-                    // 仅在关键数据变化时才更新 Flow
-                    if (shouldUpdate(oldMusic, newMusic)) {
-                        _nowPlayingMusic.value = newMusic
-                        Timber.d("[MediaInfoService] Updated media info: $title - $artist (from $packageName)")
+                    // 只有数据真正变化时才更新 Flow
+                    if (shouldUpdateBasicInfo(oldMusic, updatedMusic)) {
+                        _nowPlayingMusic.value = updatedMusic
+                        val hasAlbumArtChanged = finalAlbumArtUri != currentAlbumArtUri
+                        Timber.d("[MediaInfoService] Updated: pos=$position ms, albumArt=${!finalAlbumArtUri.isNullOrBlank()}, changed=$hasAlbumArtChanged")
+                    } else {
+                        Timber.v("[MediaInfoService] No significant changes, skipped update")
                     }
                 }
             } else {
@@ -138,7 +166,27 @@ class MediaInfoService(private val context: Context) {
     }
     
     /**
-     * 判断是否需要更新 Flow
+     * 判断基础信息是否需要更新（不包括专辑图）
+     */
+    private fun shouldUpdateBasicInfo(old: NowPlayingMusic?, new: NowPlayingMusic): Boolean {
+        // 歌曲基本信息变化时立即更新
+        val isBasicInfoChanged = old?.title != new.title ||
+                                 old?.artist != new.artist ||
+                                 old?.isPlaying != new.isPlaying ||
+                                 old?.packageName != new.packageName
+        
+        if (isBasicInfoChanged) return true
+        
+        // ✅ 关键修复：添加播放时间检查，但只在变化超过阈值时才更新（避免过于频繁）
+        // 每 500ms 更新一次进度，与 UPDATE_INTERVAL_MS 保持一致
+        val positionChanged = kotlin.math.abs((old?.currentPosition ?: 0L) - new.currentPosition)
+        val isProgressSignificant = positionChanged >= PROGRESS_UPDATE_THRESHOLD_MS
+        
+        return isProgressSignificant
+    }
+    
+    /**
+     * 判断是否需要更新 Flow（包括专辑图）
      */
     private fun shouldUpdate(old: NowPlayingMusic?, new: NowPlayingMusic): Boolean {
         return old?.title != new.title ||
@@ -162,12 +210,41 @@ class MediaInfoService(private val context: Context) {
     }
     
     /**
+     * 直接从 Bitmap 处理专辑图（新增方法）
+     */
+    private suspend fun processAlbumArtBitmap(
+        bitmap: android.graphics.Bitmap,
+        title: String,
+        artist: String,
+        packageName: String?
+    ): String? = withContext(Dispatchers.IO) {
+        try {
+            // 生成缓存 key
+            val cacheKey = "${packageName ?: "unknown"}_${title}_$artist"
+            
+            // 检查内存缓存（可选：可以添加 Bitmap 哈希比较）
+            albumArtCache[cacheKey]?.takeIf { File(it).exists() }?.let { cached ->
+                Timber.d("[AlbumArtExtractor] Hit memory cache: $cached")
+                return@withContext cached
+            }
+            
+            // 保存到缓存
+            saveAlbumArtBitmapToCache(
+                bitmap = bitmap,
+                title = title,
+                artist = artist,
+                packageName = packageName,
+                cacheKey = cacheKey
+            )
+        } catch (e: Exception) {
+            Timber.e("[AlbumArtExtractor] Failed to process album art bitmap", e)
+            null
+        }
+    }
+    
+    /**
      * 异步处理专辑封面（在 IO 线程执行）
-     * 
-     * 优化：
-     * - 内存缓存避免重复加载
-     * - 限制图片尺寸（最大 512x512）减少内存占用
-     * - 降低压缩质量（75%）减少 I/O
+     * 从 URI 获取专辑图
      */
     private suspend fun processAlbumArtAsync(
         metadata: android.media.MediaMetadata,
@@ -196,20 +273,13 @@ class MediaInfoService(private val context: Context) {
             }
             
             // 保存到缓存
-            val uri = saveAlbumArtToCacheOptimized(
+            saveAlbumArtBitmapToCache(
                 bitmap = albumArtBitmap,
                 title = title,
                 artist = artist,
                 packageName = packageName,
                 cacheKey = cacheKey
             )
-            
-            uri?.also {
-                Timber.d("[AlbumArtExtractor] Album art saved to: $it")
-                albumArtCache[cacheKey] = it
-            }
-            
-            uri
         } catch (e: Exception) {
             Timber.e("[AlbumArtExtractor] Failed to process album art", e)
             null
@@ -217,12 +287,9 @@ class MediaInfoService(private val context: Context) {
     }
     
     /**
-     * 优化版的专辑图保存方法
-     * - 限制尺寸
-     * - 降低质量
-     * - 复用文件名
+     * 保存专辑图 Bitmap 到缓存
      */
-    private fun saveAlbumArtToCacheOptimized(
+    private fun saveAlbumArtBitmapToCache(
         bitmap: Bitmap,
         title: String,
         artist: String,
@@ -253,7 +320,10 @@ class MediaInfoService(private val context: Context) {
                 scaledBitmap.recycle() // 及时释放内存
             }
             
-            "file://${file.absolutePath}"
+            val uri = "file://${file.absolutePath}"
+            Timber.d("[AlbumArtExtractor] Album art saved to: $uri")
+            albumArtCache[cacheKey] = uri
+            uri
         } catch (e: Exception) {
             Timber.e("[AlbumArtExtractor] Failed to save album art to cache", e)
             null
@@ -335,5 +405,6 @@ class MediaInfoService(private val context: Context) {
     
     companion object {
         private const val UPDATE_INTERVAL_MS = 500L  // 每 500ms 更新一次
+        private const val PROGRESS_UPDATE_THRESHOLD_MS = 400L  // 播放时间变化超过 400ms 才更新（略小于更新间隔）
     }
 }

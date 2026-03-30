@@ -550,14 +550,31 @@ fun AMLLLyricsView(
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Lyrics reference unchanged")
             }
 
+            // 专辑图更新：添加数据验证和去重
             if (lastAlbumArtUri != albumArtUri) {
-                // 将 file:// URI 转换为 base64 data URL，因为 WebView 的 Fetch API 不支持 file:// 协议
-                val albumArtDataUrl = convertFileUriToDataUrl(view.context, albumArtUri ?: "")
-                val escapedAlbumUri = escapeJsString(albumArtDataUrl ?: "")
-                val uriDesc = if (albumArtDataUrl.isNullOrBlank()) "empty" else "present (${albumArtDataUrl.length} chars)"
-                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: updateAlbumArt(uri=$uriDesc)")
-                view.evaluateJavascript("window.updateAlbumArt && window.updateAlbumArt(\"$escapedAlbumUri\");", null)
-                lastAlbumArtUri = albumArtUri
+                // 验证专辑图 URI 是否有效
+                val isValidAlbumArt = !albumArtUri.isNullOrBlank() && 
+                                      albumArtUri.length > 20 // 有效的 data URL 应该有一定长度
+                
+                if (isValidAlbumArt) {
+                    // 将 file:// URI 转换为 base64 data URL，因为 WebView 的 Fetch API 不支持 file:// 协议
+                    val albumArtDataUrl = convertFileUriToDataUrl(view.context, albumArtUri)
+                    
+                    // 再次检查转换后的数据是否有效
+                    if (!albumArtDataUrl.isNullOrBlank() && albumArtDataUrl.length > 100) {
+                        val escapedAlbumUri = escapeJsString(albumArtDataUrl)
+                        Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: updateAlbumArt(uri=present, ${albumArtDataUrl.length} chars)")
+                        view.evaluateJavascript("window.updateAlbumArt && window.updateAlbumArt(\"$escapedAlbumUri\");", null)
+                        lastAlbumArtUri = albumArtUri
+                    } else {
+                        Timber.w("[AMLLLyrics] [$debugSource#$instanceId] Album art conversion failed or invalid data URL")
+                    }
+                } else {
+                    // 如果专辑图为空或无效，不发送到前端，避免污染 BackgroundRender 状态
+                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Album art is empty/invalid, skipping update to avoid dirty state")
+                    // 但仍然更新 lastAlbumArtUri，避免重复尝试发送无效数据
+                    lastAlbumArtUri = albumArtUri
+                }
             }
 
             val configuredFontFamily = AppSettings.getAmllFontFamily(view.context)

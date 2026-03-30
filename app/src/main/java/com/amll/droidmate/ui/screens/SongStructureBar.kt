@@ -72,7 +72,14 @@ fun SongStructureBar(
     val availableWidthPx = maxOf(0, containerWidthPx - 2 * horizontalPaddingPx)
     
     // 存储每个 chip 的自然宽度（像素），使用不可变 Map 避免状态变更问题
+    // 使用 structures 作为 key，当 structures 变化时自动重置测量状态
     var chipNaturalWidthsPx by remember { mutableStateOf<Map<Int, Int>>(emptyMap()) }
+    
+    // 添加一个 key 用于追踪 structures 的变化，确保切歌时重置测量状态
+    val structuresKey = remember(structures) {
+        // 生成 structures 的唯一标识符，当内容变化时会改变
+        structures.hashCode() xor structures.size
+    }
     
     // 计算所有 chips 的总自然宽度
     val totalNaturalWidthPx = chipNaturalWidthsPx.values.sum()
@@ -92,7 +99,8 @@ fun SongStructureBar(
                        structures.isNotEmpty()
     
     // 计算每个 chip 应该分配的宽度（如果需要扩展）
-    val expandedChipWidthsPx by remember(structures, chipNaturalWidthsPx, availableWidthPx, shouldExpand) {
+    // 依赖 structuresKey 确保 structures 内容变化时重新计算
+    val expandedChipWidthsPx by remember(structuresKey, chipNaturalWidthsPx, availableWidthPx, shouldExpand) {
         derivedStateOf<Map<Int, Int>> {
             if (!shouldExpand || structures.isEmpty()) {
                 emptyMap()
@@ -110,7 +118,8 @@ fun SongStructureBar(
     }
     
     // 添加布局完成标志：确保所有芯片都完成测量后再执行滚动
-    val allChipsMeasured by remember(structures, chipNaturalWidthsPx, expandedChipWidthsPx, shouldExpand) {
+    // 依赖 structuresKey 确保 structures 内容变化时重新检查
+    val allChipsMeasured by remember(structuresKey, chipNaturalWidthsPx, expandedChipWidthsPx, shouldExpand) {
         derivedStateOf {
             val targetWidths = if (shouldExpand && expandedChipWidthsPx.isNotEmpty()) {
                 expandedChipWidthsPx
@@ -126,6 +135,12 @@ fun SongStructureBar(
         derivedStateOf {
             structures.indexOfFirst { currentTime in it.startTime..it.endTime }
         }
+    }
+    
+    // 当 structures 变化时，重置 chip 宽度测量状态
+    LaunchedEffect(structuresKey) {
+        // 清空旧的测量数据，让新歌词/chips 重新测量
+        chipNaturalWidthsPx = emptyMap()
     }
     
     // 当 currentStructureIndex 变化时，自动滚动到该位置并居中

@@ -177,6 +177,9 @@ fun MainScreen() {
     var autoUpdateDialogMessage by remember { mutableStateOf("") }
     var autoUpdateDialogUrl by remember { mutableStateOf<String?>(null) }
     var spinnerVisible by remember { mutableStateOf(false) }
+    
+    // 在 Composable 上下文中创建协程作用域，供回调函数使用
+    val scope = rememberCoroutineScope()
 
     AdaptiveStatusBarStyle(useDarkIcons = !isLyricsFullscreen && MaterialTheme.colorScheme.background.luminance() > 0.5f)
 
@@ -334,10 +337,41 @@ fun MainScreen() {
                                     leadingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) },
                                     text = { Text("刷新") },
                                     onClick = { 
-                                        viewModel.fetchLyrics()
-                                        viewModel.refreshWebSocketConnection()
-                                        webViewReloadKey++
-                                        showMenu = false 
+                                        // 在协程中执行刷新操作，以支持 suspend 函数调用
+                                        scope.launch {
+                                            // 1. 数据层刷新：重新匹配和获取歌词
+                                            viewModel.fetchLyrics()
+                                            
+                                            // 2. 连接层刷新：强制重连 WebSocket（如果已启用）
+                                            viewModel.refreshWebSocketConnection()
+                                            
+                                            // 3. UI 组件刷新：
+                                            //    - 递增 key 以强制重组并重新加载歌词 WebView 组件
+                                            webViewReloadKey++
+                                            
+                                            //    - 触发专辑图及其提取的动态主题色的重新计算与应用
+                                            //      通过改变 key 触发 LaunchedEffect 重新执行 AlbumColorExtractor
+                                            val currentUri = nowPlaying?.albumArtUri
+                                            if (!currentUri.isNullOrBlank()) {
+                                                try {
+                                                    val colors = AlbumColorExtractor.extractColorsFromAlbumArt(context, currentUri, isDarkTheme)
+                                                    rippleColor.value = colors?.primary ?: initialPrimary
+                                                } catch (_: Exception) {
+                                                    rippleColor.value = initialPrimary
+                                                }
+                                            } else {
+                                                rippleColor.value = initialPrimary
+                                            }
+                                            
+                                            //    - 刷新歌词结构条的显示（fetchLyrics 会自动触发，但这里显式调用确保及时更新）
+                                            viewModel.refreshSongStructures()
+                                            
+                                            // 4. 状态重置：关闭菜单
+                                            showMenu = false
+                                            
+                                            // 提供视觉反馈（可选）
+                                            Timber.d("[UI] 刷新按钮被点击：webViewReloadKey=$webViewReloadKey")
+                                        }
                                     }
                                 )
                                 DropdownMenuItem(

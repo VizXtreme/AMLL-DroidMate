@@ -48,6 +48,8 @@ interface LyricsPayload {
 let player: LyricPlayerRef | null = null
 let backgroundRender: any = null
 let lastAlbumArt = ''
+let albumArtRetryCount = 0
+const MAX_ALBUM_ART_RETRIES = 3
 
 // Global state for Android bridge
 interface AMLLGlobal {
@@ -252,17 +254,94 @@ function App() {
     }
 
     window.updateAlbumArt = async function (uri: string) {
-      setAlbumUri(uri || demoAlbumArt)
-      lastAlbumArt = uri
-      logToAndroid(`Album art updated: ${uri ? 'present' : 'empty'}`, 'debug')
-      
-      // Also update BackgroundRender directly if available
-      if (window.__amll?.backgroundRender) {
-        const bgRender = window.__amll.backgroundRender
-        if (bgRender.setAlbum) {
-          bgRender.setAlbum(uri || '')
-          logToAndroid('BackgroundRender album updated directly', 'debug')
+      try {
+        // 验证 URI 有效性
+        const isValidUri = uri && typeof uri === 'string' && uri.trim().length > 0
+        
+        if (!isValidUri) {
+          logToAndroid('updateAlbumArt: received empty/invalid URI, using placeholder only', 'warn')
+          // 仅更新 Jotai state 使用占位图，不污染 BackgroundRender
+          setAlbumUri(demoAlbumArt)
+          lastAlbumArt = ''
+          return
         }
+        
+        // 检查是否为有效的 data URL 或 http(s) URL
+        const isDataUrl = uri.startsWith('data:')
+        const isHttpUrl = uri.startsWith('http://') || uri.startsWith('https://')
+        const isFileUrl = uri.startsWith('file:')
+        
+        if (!isDataUrl && !isHttpUrl && !isFileUrl) {
+          logToAndroid(`updateAlbumArt: invalid URI format: ${uri.substring(0, 50)}...`, 'error')
+          setAlbumUri(demoAlbumArt)
+          lastAlbumArt = ''
+          return
+        }
+        
+        // 对于 file:// URL，尝试加载并转换为 data URL
+        let finalUri = uri
+        if (isFileUrl) {
+          try {
+            logToAndroid('updateAlbumArt: attempting to load file:// URI', 'debug')
+            const response = await fetch(uri)
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`)
+            }
+            const blob = await response.blob()
+            const reader = new FileReader()
+            finalUri = await new Promise<string>((resolve, reject) => {
+              reader.onload = () => resolve(reader.result as string)
+              reader.onerror = () => reject(reader.error)
+              reader.readAsDataURL(blob)
+            })
+            logToAndroid('updateAlbumArt: successfully loaded file:// URI', 'debug')
+          } catch (error) {
+            logToAndroid(`updateAlbumArt: failed to load file:// URI: ${(error as Error).message}`, 'error')
+            // 如果文件加载失败，使用占位图但不更新 BackgroundRender
+            setAlbumUri(demoAlbumArt)
+            lastAlbumArt = ''
+            return
+          }
+        }
+        
+        // ✅ 关键改进：检查专辑图是否真的变化了
+        const hasAlbumArtChanged = lastAlbumArt !== uri
+        
+        if (!hasAlbumArtChanged) {
+          logToAndroid('updateAlbumArt: album art unchanged, skipping update', 'debug')
+          return
+        }
+        
+        // 更新 Jotai state
+        setAlbumUri(finalUri || demoAlbumArt)
+        lastAlbumArt = uri
+        logToAndroid(`Album art CHANGED and updated: ${uri ? 'present' : 'empty'}`, 'info')
+        
+        // 重置重试计数器
+        albumArtRetryCount = 0
+        
+        // 直接调用 BackgroundRender 的 setAlbum 方法
+        if (window.__amll?.backgroundRender) {
+          const bgRender = window.__amll.backgroundRender
+          if (bgRender.setAlbum) {
+            try {
+              await bgRender.setAlbum(finalUri || '')
+              logToAndroid('BackgroundRender album updated successfully', 'debug')
+            } catch (error) {
+              logToAndroid(`BackgroundRender.setAlbum error: ${(error as Error).message}`, 'error')
+              // 如果设置失败，增加重试计数
+              albumArtRetryCount++
+              if (albumArtRetryCount < MAX_ALBUM_ART_RETRIES) {
+                logToAndroid(`Will retry album art update (${albumArtRetryCount}/${MAX_ALBUM_ART_RETRIES})`, 'warn')
+                setTimeout(() => {
+                  window.updateAlbumArt?.(uri)
+                }, 500 * albumArtRetryCount)
+              }
+            }
+          }
+        }
+      } catch (error) {
+        logToAndroid(`updateAlbumArt error: ${(error as Error).message}`, 'error')
       }
     }
 

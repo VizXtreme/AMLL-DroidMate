@@ -51704,6 +51704,9 @@ void main(void)
   const PLAYER_BACKGROUND = "transparent";
   const demoAlbumArt = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJyZ2JhKDAsMCwwLDAuMSkiLz48L3N2Zz4=";
   let backgroundRender = null;
+  let lastAlbumArt = "";
+  let albumArtRetryCount = 0;
+  const MAX_ALBUM_ART_RETRIES = 3;
   function applyAMLLPatch() {
     logToAndroid("Applying AMLL patch for generateFadeGradient", "info");
     const style = document.createElement("style");
@@ -51842,14 +51845,75 @@ void main(void)
         }
       };
       window.updateAlbumArt = async function(uri2) {
-        setAlbumUri(uri2 || demoAlbumArt);
-        logToAndroid(`Album art updated: ${uri2 ? "present" : "empty"}`, "debug");
-        if (window.__amll?.backgroundRender) {
-          const bgRender = window.__amll.backgroundRender;
-          if (bgRender.setAlbum) {
-            bgRender.setAlbum(uri2 || "");
-            logToAndroid("BackgroundRender album updated directly", "debug");
+        try {
+          const isValidUri = uri2 && typeof uri2 === "string" && uri2.trim().length > 0;
+          if (!isValidUri) {
+            logToAndroid("updateAlbumArt: received empty/invalid URI, using placeholder only", "warn");
+            setAlbumUri(demoAlbumArt);
+            lastAlbumArt = "";
+            return;
           }
+          const isDataUrl = uri2.startsWith("data:");
+          const isHttpUrl = uri2.startsWith("http://") || uri2.startsWith("https://");
+          const isFileUrl = uri2.startsWith("file:");
+          if (!isDataUrl && !isHttpUrl && !isFileUrl) {
+            logToAndroid(`updateAlbumArt: invalid URI format: ${uri2.substring(0, 50)}...`, "error");
+            setAlbumUri(demoAlbumArt);
+            lastAlbumArt = "";
+            return;
+          }
+          let finalUri = uri2;
+          if (isFileUrl) {
+            try {
+              logToAndroid("updateAlbumArt: attempting to load file:// URI", "debug");
+              const response = await fetch(uri2);
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+              }
+              const blob = await response.blob();
+              const reader = new FileReader();
+              finalUri = await new Promise((resolve, reject) => {
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(blob);
+              });
+              logToAndroid("updateAlbumArt: successfully loaded file:// URI", "debug");
+            } catch (error) {
+              logToAndroid(`updateAlbumArt: failed to load file:// URI: ${error.message}`, "error");
+              setAlbumUri(demoAlbumArt);
+              lastAlbumArt = "";
+              return;
+            }
+          }
+          const hasAlbumArtChanged = lastAlbumArt !== uri2;
+          if (!hasAlbumArtChanged) {
+            logToAndroid("updateAlbumArt: album art unchanged, skipping update", "debug");
+            return;
+          }
+          setAlbumUri(finalUri || demoAlbumArt);
+          lastAlbumArt = uri2;
+          logToAndroid(`Album art CHANGED and updated: ${uri2 ? "present" : "empty"}`, "info");
+          albumArtRetryCount = 0;
+          if (window.__amll?.backgroundRender) {
+            const bgRender = window.__amll.backgroundRender;
+            if (bgRender.setAlbum) {
+              try {
+                await bgRender.setAlbum(finalUri || "");
+                logToAndroid("BackgroundRender album updated successfully", "debug");
+              } catch (error) {
+                logToAndroid(`BackgroundRender.setAlbum error: ${error.message}`, "error");
+                albumArtRetryCount++;
+                if (albumArtRetryCount < MAX_ALBUM_ART_RETRIES) {
+                  logToAndroid(`Will retry album art update (${albumArtRetryCount}/${MAX_ALBUM_ART_RETRIES})`, "warn");
+                  setTimeout(() => {
+                    window.updateAlbumArt?.(uri2);
+                  }, 500 * albumArtRetryCount);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          logToAndroid(`updateAlbumArt error: ${error.message}`, "error");
         }
       };
       window.setPaused = function(paused) {
