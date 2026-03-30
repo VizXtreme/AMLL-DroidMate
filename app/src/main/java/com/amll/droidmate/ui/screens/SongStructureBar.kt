@@ -151,16 +151,22 @@ fun SongStructureBar(
                 ?: chipNaturalWidthsPx[currentStructureIndex] 
                 ?: 0
             
-            // 计算从列表起始位置到目标 chip 中心的累计距离
-            val distanceToTargetCenter = calculateDistanceToCenter(
+            // 计算从列表起始位置到目标 chip 起始位置的累计距离（不含目标 chip 自身宽度）
+            val distanceToTargetStart = calculateDistanceToTargetStart(
                 targetIndex = currentStructureIndex,
                 chipWidths = if (expandedChipWidthsPx.isNotEmpty()) expandedChipWidthsPx else chipNaturalWidthsPx,
                 spacingPx = chipSpacingPx,
                 startPaddingPx = horizontalPaddingPx
             )
             
-            // 计算需要的滚动偏移量以实现居中：目标中心 - 容器一半宽度
-            val scrollOffset = distanceToTargetCenter - (containerWidthPx / 2)
+            // 计算目标 chip 中心点位置
+            val targetCenterPx = distanceToTargetStart + (targetChipWidthPx / 2)
+            
+            // 计算需要的滚动偏移量以实现居中：
+            // scrollOffset = 目标 item 应该停留的位置 - 目标 item 的起始位置
+            // 要让目标 chip 居中，需要让它停在：容器中心点 - 目标 chip 半宽
+            val targetPositionPx = (containerWidthPx / 2) - (targetChipWidthPx / 2)
+            val scrollOffset = targetPositionPx - distanceToTargetStart
             
             // 执行平滑滚动动画
             listState.animateScrollToItem(
@@ -207,15 +213,15 @@ fun SongStructureBar(
 }
 
 /**
- * 计算从列表起始位置到目标 chip 中心的累计距离
+ * 计算从列表起始位置到目标 chip 起始位置的累计距离（不含目标 chip 自身宽度）
  * 
  * @param targetIndex 目标 chip 的索引
  * @param chipWidths 每个 chip 的宽度（像素）映射表
  * @param spacingPx chip 之间的间距（像素）
  * @param startPaddingPx 列表起始的内边距（像素）
- * @return 从列表开始到目标 chip 中心的距离（像素）
+ * @return 从列表开始到目标 chip 起始位置的距离（像素）
  */
-private fun calculateDistanceToCenter(
+private fun calculateDistanceToTargetStart(
     targetIndex: Int,
     chipWidths: Map<Int, Int>,
     spacingPx: Int,
@@ -226,8 +232,6 @@ private fun calculateDistanceToCenter(
         distance += chipWidths[i] ?: 0
         distance += spacingPx
     }
-    // 加上目标 chip 自身宽度的一半，得到中心点位置
-    distance += (chipWidths[targetIndex] ?: 0) / 2
     return distance
 }
 

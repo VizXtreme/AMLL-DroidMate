@@ -65,7 +65,9 @@ data class TTMLMetadata(
     val language: String = "ja",
     val duration: Long = 0L,
     val source: String = "DroidMate",
-    val songStructures: List<SongStructure>? = null // 从 TTML 元数据中解析的歌曲结构
+    val songStructures: List<SongStructure>? = null, // 从 TTML 元数据中解析的歌曲结构
+    // 保留原始 TTML 的完整 metadata 元素内容（用于未来扩展和保留未使用的 XML 信息）
+    val rawXmlMetadata: String? = null
 )
 
 /**

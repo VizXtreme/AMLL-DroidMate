@@ -11,6 +11,9 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
 
 /**
  * TTML 格式解析器
@@ -157,8 +160,13 @@ object TTMLParser {
             var artist: String? = null
             var album: String? = null
             var language = "ja"
+            var rawXmlMetadata: String? = null
             
             if (metadataElement != null) {
+                // ✅ 保存原始 metadata 元素的完整 XML，用于未来扩展和保留未使用的信息
+                rawXmlMetadata = elementToXml(metadataElement)
+                Timber.d("[TTMLParser] Saved raw XML metadata (${rawXmlMetadata.length} chars) for future extensibility")
+                
                 // 尝试从 amll:meta 标签中读取元数据
                 val metaElements = metadataElement.getElementsByTagName("amll:meta")
                 for (i in 0 until metaElements.length) {
@@ -190,7 +198,8 @@ object TTMLParser {
                 title = title ?: "Unknown",
                 artist = artist ?: "Unknown",
                 album = album,
-                language = language
+                language = language,
+                rawXmlMetadata = rawXmlMetadata
             )
         } catch (e: Exception) {
             Timber.w("[TTMLParser] Failed to parse metadata", e)
@@ -601,137 +610,83 @@ object TTMLParser {
     
     /**
      * 解析 TTML 元数据中的歌曲结构信息
-     * 支持两种格式：
-     * 1. <head><metadata> 中的 <itunes:songPart> 元素
-     * 2. <div> 或 <p> 标签上的 itunes:song-part/songPart 属性
+     * 只支持一种标准格式：<body> 中 <div> 标签上的 itunes:song-part/songPart 属性
      */
     private fun parseSongStructuresFromMetadata(doc: Document): List<SongStructure> {
         val structures = mutableListOf<SongStructure>()
                     
         try {
-            Timber.d("[SongStructure] Starting metadata structure parsing")
+            Timber.d("[SongStructure] 🔍 Starting metadata structure parsing (only from <div> itunes:songPart attributes)")
             
-            // 方式 1: 解析 <head><metadata> 中的 <itunes:songPart> 元素
-            val head = doc.getElementsByTagName("head").item(0) as? Element
-            if (head != null) {
-                Timber.d("[SongStructure] Found <head> element, parsing from head")
-                parseSongStructuresFromHeadElement(head, structures)
-            } else {
-                Timber.d("[SongStructure] No <head> element found in document")
-            }
-                
-            // 方式 2: 解析 <body> 中 <div> 和 <p> 标签上的 itunes:song-part/songPart 属性
-            Timber.d("[SongStructure] Parsing structures from body elements")
+            // 唯一合法的方式：从 <body> 中的 <div> 标签解析 itunes:song-part/songPart 属性
+            Timber.d("[SongStructure] 📁 Parsing structures from <div> elements in <body>")
             parseSongStructuresFromBodyElements(doc, structures)
-                
-            // 如果没有找到 itunes:song-part，尝试解析 amll:meta
+            
             if (structures.isEmpty()) {
-                Timber.i("[SongStructure] No structures found from itunes:song-part, trying amll:meta fallback")
-                parseAmllMetaStructures(doc, structures)
+                Timber.i("[SongStructure] ⚠️ No songPart attributes found on <div> elements")
+            } else {
+                Timber.d("[SongStructure] ✅ Found ${structures.size} structures from <div> itunes:songPart attributes")
             }
             
-            Timber.d("[SongStructure] Metadata parsing complete: found ${structures.size} structures")
+            Timber.d("[SongStructure] 📊 Metadata parsing complete: total ${structures.size} structures")
                     
         } catch (e: Exception) {
-            Timber.e("[SongStructure] Error parsing metadata", e)
+            Timber.e("[SongStructure] ❌ Error parsing metadata", e)
         }
                 
         return structures
     }
         
-    /**
-     * 从 <head> 元素解析歌曲结构（针对 <itunes:songPart> 元素）
-     */
-    private fun parseSongStructuresFromHeadElement(head: Element, structures: MutableList<SongStructure>) {
-        val metadataElement = head.getElementsByTagName("metadata").item(0) as? Element ?: run {
-            Timber.d("[SongStructure] No <metadata> element found in <head>")
-            return
-        }
-            
-        // 尝试解析 itunes:songPart 元素（支持驼峰和连字符两种命名）
-        var songPartElements = metadataElement.getElementsByTagName("itunes:songPart")
-        if (songPartElements.length == 0) {
-            songPartElements = metadataElement.getElementsByTagName("itunes:song-part")
-        }
-        
-        Timber.d("[SongStructure] Found ${songPartElements.length} song-part elements in <head> metadata")
-                
-        if (songPartElements.length > 0) {
-            Timber.d("[SongStructure] Found ${songPartElements.length} song-part elements in <head>")
-            for (i in 0 until songPartElements.length) {
-                val element = songPartElements.item(i) as? Element ?: continue
-                
-                // 记录元素属性以便调试
-                val label = element.getAttribute("itunes:label")
-                val startTime = element.getAttribute("itunes:start-time")
-                val duration = element.getAttribute("itunes:duration")
-                Timber.d("[SongStructure] Parsing songPart[$i]: label='$label', start='$startTime', duration='$duration'")
-                
-                parseSongStructureFromElement(element, i, structures)
-            }
-        } else {
-            Timber.d("[SongStructure] No itunes:songPart elements found in <head> metadata")
-        }
-    }
+
         
     /**
-     * 从 <body> 中的 <div> 和 <p> 标签解析歌曲结构（针对 itunes:song-part/songPart 属性）
+     * 从 <body> 中的 <div> 标签解析歌曲结构（唯一合法方式）
+     * 优先查找 itunes:songPart 属性，兼容 itunes:song-part 属性
      */
     private fun parseSongStructuresFromBodyElements(doc: Document, structures: MutableList<SongStructure>) {
         val body = doc.getElementsByTagName("body").item(0) as? Element ?: run {
-            Timber.d("[SongStructure] No <body> element found")
+            Timber.d("[SongStructure] ⚠️ No <body> element found")
             return
         }
             
-        // 查找所有带有 itunes:song-part 或 itunes:songPart 属性的 div 和 p 元素
+        // 优先查找带有 itunes:songPart 或 itunes:song-part 属性的 div 元素
         val divs = body.getElementsByTagName("div")
-        val paragraphs = body.getElementsByTagName("p")
         
-        Timber.d("[SongStructure] Checking $divs divs and $paragraphs paragraphs for song-part attributes")
+        Timber.d("[SongStructure] 🔍 Checking $divs divs for songPart attributes")
             
         var index = 0
         var foundCount = 0
             
-        // 处理 div 元素
+        // 只处理 div 元素
         for (i in 0 until divs.length) {
             val div = divs.item(i) as? Element ?: continue
             val songPartAttr = readSongPartAttribute(div)
             if (songPartAttr != null) {
                 foundCount++
-                Timber.d("[SongStructure] Found song-part attribute on div[$i]: $songPartAttr")
+                Timber.d("[SongStructure] 🎵 Found songPart attribute on div[$i]: $songPartAttr")
                 parseSongStructureFromAttribute(div, songPartAttr, index++, structures)
-            }
-        }
-            
-        // 处理 p 元素
-        for (i in 0 until paragraphs.length) {
-            val p = paragraphs.item(i) as? Element ?: continue
-            val songPartAttr = readSongPartAttribute(p)
-            if (songPartAttr != null) {
-                foundCount++
-                Timber.d("[SongStructure] Found song-part attribute on p[$i]: $songPartAttr")
-                parseSongStructureFromAttribute(p, songPartAttr, index++, structures)
             }
         }
         
         if (foundCount == 0) {
-            Timber.d("[SongStructure] No song-part attributes found on body elements")
+            Timber.d("[SongStructure] ⚠️ No songPart attributes found on <div> elements")
         } else {
-            Timber.d("[SongStructure] Found $foundCount elements with song-part attributes")
+            Timber.d("[SongStructure] ✅ Found $foundCount <div> elements with songPart attributes")
         }
     }
         
     /**
-     * 读取元素的 itunes:song-part 或 itunes:songPart 属性值
+     * 读取元素的 itunes:songPart 或 itunes:song-part 属性值
+     * 优先使用 itunes:songPart（iTunes 官方标准），兼容 itunes:song-part
      */
     private fun readSongPartAttribute(element: Element): String? {
-        // 尝试连字符式 itunes:song-part
-        val kebabCase = element.getAttribute("itunes:song-part").takeIf { it.isNotEmpty() }
-        if (kebabCase != null) return kebabCase
-            
-        // 尝试驼峰式 itunes:songPart
+        // 优先尝试驼峰式 itunes:songPart（iTunes 官方标准）
         val camelCase = element.getAttribute("itunes:songPart").takeIf { it.isNotEmpty() }
         if (camelCase != null) return camelCase
+            
+        // 兼容连字符式 itunes:song-part
+        val kebabCase = element.getAttribute("itunes:song-part").takeIf { it.isNotEmpty() }
+        if (kebabCase != null) return kebabCase
             
         return null
     }
@@ -773,76 +728,7 @@ object TTMLParser {
             Timber.d("[SongStructure] Skipping structure without begin/end attributes")
         }
     }
-        
-    /**
-     * 从元素解析歌曲结构（针对 <itunes:songPart> 元素）
-     */
-    private fun parseSongStructureFromElement(
-        element: Element,
-        index: Int,
-        structures: MutableList<SongStructure>
-    ) {
-        val label = element.getAttribute("itunes:label")
-        val startTimeStr = element.getAttribute("itunes:start-time")
-        val durationStr = element.getAttribute("itunes:duration")
-                    
-        Timber.d("[SongStructure] Parsing structure from element: index=$index, label='$label'")
-        
-        if (startTimeStr.isNotBlank() && durationStr.isNotBlank()) {
-            val startTime = timeStrToMillis(startTimeStr)
-            val duration = timeStrToMillis(durationStr)
-            val endTime = startTime + duration
-                        
-            val type = mapStructureType(label)
-            val structure = SongStructure(
-                label = label.ifBlank { "段落 ${index + 1}" },
-                startTime = startTime,
-                endTime = endTime,
-                type = type
-            )
-            structures.add(structure)
-                        
-            Timber.d("[SongStructure] ✅ Parsed structure: $label ($type) ${formatTime(startTime)} - ${formatTime(endTime)}")
-        } else {
-            Timber.w("[SongStructure] ⚠️ Missing start-time or duration for structure at index=$index")
-        }
-    }
-        
-    /**
-     * 解析 amll:meta 中的歌曲结构（备用方案）
-     */
-    private fun parseAmllMetaStructures(doc: Document, structures: MutableList<SongStructure>) {
-        val head = doc.getElementsByTagName("head").item(0) as? Element ?: run {
-            Timber.d("[SongStructure] No <head> for amll:meta parsing")
-            return
-        }
-        val amllMetaElements = head.getElementsByTagName("amll:meta")
-        Timber.d("[SongStructure] Found ${amllMetaElements.length} amll:meta elements for fallback parsing")
-        
-        if (amllMetaElements.length > 0) {
-            Timber.d("[SongStructure] Checking amll:meta elements for song-structure data")
-            for (i in 0 until amllMetaElements.length) {
-                val element = amllMetaElements.item(i) as? Element ?: continue
-                val name = element.getAttribute("name")
-                val content = element.getAttribute("content")
-                
-                Timber.d("[SongStructure] amll:meta[$i]: name='$name', content blank=${content.isBlank()}")
-                            
-                if (name == "song-structure" && content.isNotBlank()) {
-                    try {
-                        val jsonStructures = parseJsonStructures(content)
-                        structures.addAll(jsonStructures)
-                        Timber.d("[SongStructure] ✅ Parsed ${jsonStructures.size} structures from amll:meta")
-                    } catch (e: Exception) {
-                        Timber.e("[SongStructure] Failed to parse JSON structures", e)
-                    }
-                } else {
-                    Timber.d("[SongStructure] Skipping amll:meta: name='$name', content blank=${content.isBlank()}")
-                }
-            }
-        }
-    }
-        
+    
     /**
      * 将结构标签映射到 SongStructureType
      */
@@ -861,49 +747,7 @@ object TTMLParser {
             else -> SongStructureType.UNKNOWN
         }
     }
-        
-    /**
-     * 解析 JSON 格式的歌曲结构
-     */
-    private fun parseJsonStructures(jsonContent: String): List<SongStructure> {
-        // 简单的 JSON 解析，格式：[{"label":"Verse","start":0,"end":30000,"type":"verse"},...]
-        val structures = mutableListOf<SongStructure>()
-        try {
-            val json = org.json.JSONArray(jsonContent)
-            for (i in 0 until json.length()) {
-                val obj = json.getJSONObject(i)
-                val label = obj.optString("label", "段落 ${i + 1}")
-                val start = obj.optLong("start", 0)
-                val end = obj.optLong("end", 0)
-                val typeStr = obj.optString("type", "unknown")
-                    
-                val type = when (typeStr.lowercase()) {
-                    "verse" -> SongStructureType.VERSE
-                    "chorus" -> SongStructureType.CHORUS
-                    "bridge" -> SongStructureType.BRIDGE
-                    "pre-chorus" -> SongStructureType.PRE_CHORUS
-                    "intro" -> SongStructureType.INTRO
-                    "interlude" -> SongStructureType.INTERLUDE
-                    "outro" -> SongStructureType.OUTRO
-                    "solo" -> SongStructureType.SOLO
-                    "break" -> SongStructureType.BREAK
-                    else -> SongStructureType.UNKNOWN
-                }
-                    
-                structures.add(
-                    SongStructure(
-                        label = label,
-                        startTime = start,
-                        endTime = end,
-                        type = type
-                    )
-                )
-            }
-        } catch (e: Exception) {
-            Timber.e("[SongStructure] Failed to parse JSON", e)
-        }
-        return structures
-    }
+
         
     /**
      * 格式化时间为 mm:ss 格式（用于日志）
@@ -958,6 +802,29 @@ object TTMLParser {
             Timber.e("[TTMLParser] Failed to parse time string: $timeStr", e)
             0L
         }
+    }
+
+    /**
+     * 将 XML Element 转换为字符串（保留所有属性和子元素）
+     */
+    private fun elementToXml(element: Element): String {
+        val transformerFactory = TransformerFactory.newInstance()
+        val transformer = transformerFactory.newTransformer()
+        
+        // 配置输出格式
+        val output = java.io.StringWriter()
+        val result = StreamResult(output)
+        
+        // 设置缩进和编码
+        transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "no")
+        transformer.setOutputProperty(javax.xml.transform.OutputKeys.ENCODING, "UTF-8")
+        transformer.setOutputProperty(javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION, "yes")
+        
+        // 执行转换
+        val source = DOMSource(element.ownerDocument)
+        transformer.transform(source, result)
+        
+        return output.toString()
     }
 
     /**
