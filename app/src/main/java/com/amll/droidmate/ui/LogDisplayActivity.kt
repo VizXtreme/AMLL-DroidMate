@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
@@ -60,6 +61,10 @@ private fun logDisplayPage(onBack: () -> Unit) {
     // 日志记录控制
     var isLoggingPaused by remember { mutableStateOf(false) }
     
+    // 日志等级筛选 - 单选模式，选择最低显示等级，自动包含更高等级
+    var showFilterDropdown by remember { mutableStateOf(false) }
+    var minLogLevel by remember { mutableStateOf("V") } // 默认显示所有等级
+    
     // 日志统计
     val stats by remember { mutableStateOf(LogHelper.getLogStats()) }
     
@@ -96,7 +101,8 @@ private fun logDisplayPage(onBack: () -> Unit) {
             
             // 如果暂停了记录，就不更新日志列表
             if (!isLoggingPaused) {
-                logEntries = LogHelper.getAllLogs()
+                // 根据选择的等级过滤日志（自动包含更高等级）
+                logEntries = LogHelper.getFilteredLogsByMinLevel(minLogLevel)
                 
                 // 如果启用了自动滚动且未暂停，滚动到最后
                 if (autoScrollEnabled && !isPaused && logEntries.isNotEmpty()) {
@@ -138,6 +144,75 @@ private fun logDisplayPage(onBack: () -> Unit) {
                 }
             },
             actions = {
+                // 日志等级筛选按钮
+                Box {
+                    IconButton(onClick = { showFilterDropdown = true }) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = "筛选日志",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    
+                    // 筛选下拉菜单
+                    DropdownMenu(
+                        expanded = showFilterDropdown,
+                        onDismissRequest = { showFilterDropdown = false }
+                    ) {
+                        Text(
+                            text = "选择最低显示等级",
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        // 各个等级选项（按等级排序）
+                        val levels = listOf(
+                            "V" to "详细 (全部)",
+                            "D" to "调试",
+                            "I" to "信息",
+                            "W" to "警告",
+                            "E" to "错误"
+                        )
+                        
+                        levels.forEach { (level, label) ->
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        RadioButton(
+                                            selected = minLogLevel == level,
+                                            onClick = {
+                                                minLogLevel = level
+                                                showFilterDropdown = false
+                                            },
+                                            colors = RadioButtonDefaults.colors(
+                                                selectedColor = MaterialTheme.colorScheme.primary,
+                                                unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    minLogLevel = level
+                                    showFilterDropdown = false
+                                },
+                                colors = MenuDefaults.itemColors(
+                                    textColor = MaterialTheme.colorScheme.onSurface,
+                                    leadingIconColor = MaterialTheme.colorScheme.onSurface
+                                )
+                            )
+                        }
+                    }
+                }
+                
                 // 暂停/继续记录按钮
                 IconButton(onClick = { 
                     isLoggingPaused = !isLoggingPaused
@@ -281,7 +356,7 @@ private fun logDisplayPage(onBack: () -> Unit) {
 @Composable
 private fun logEntryItem(entry: LogHelper.LogEntry) {
     val (bgColor, textColor) = when (entry.level) {
-        "V" -> Color(0xFF9E9E9E) to Color(0xFFBDBDBD)
+        "V" -> Color(0xFFE1BEE7).copy(alpha = 0.15f) to Color(0xFF8E24AA) // 紫色，更醒目
         "D" -> Color(0xFF2196F3).copy(alpha = 0.1f) to Color(0xFF1976D2)
         "I" -> Color(0xFF4CAF50).copy(alpha = 0.1f) to Color(0xFF388E3C)
         "W" -> Color(0xFFFF9800).copy(alpha = 0.1f) to Color(0xFFF57C00)

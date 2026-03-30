@@ -15,7 +15,7 @@ object YrcParser {
         val metadata = mutableMapOf<String, MutableList<String>>()
         
         val contentLines = content.lines()
-        Timber.i("[YrcParser] Parsing $contentLines.size lines")
+        Timber.d("[YrcParser] Parsing $contentLines.size lines")
 
         for ((index, raw) in contentLines.withIndex()) {
             val lineNum = index + 1

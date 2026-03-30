@@ -626,7 +626,7 @@ object TTMLParser {
                 
             // 如果没有找到 itunes:song-part，尝试解析 amll:meta
             if (structures.isEmpty()) {
-                Timber.d("[SongStructure] No structures found from itunes:song-part, trying amll:meta fallback")
+                Timber.i("[SongStructure] No structures found from itunes:song-part, trying amll:meta fallback")
                 parseAmllMetaStructures(doc, structures)
             }
             

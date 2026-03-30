@@ -49,14 +49,6 @@ enum class AMLLRenderMode {
 private const val AMLL_LOG_TAG = "AMLL"
 private val AMLL_VIEW_INSTANCE_COUNTER = AtomicInteger(0)
 
-private fun amllDebug(message: String) {
-    Timber.d("[AMLLLyrics] $message")
-}
-
-private fun amllInfo(message: String) {
-    Timber.i("[AMLLLyrics] $message")
-}
-
 @Composable
 fun AMLLLyricsView(
     lyrics: TTMLLyrics?,
@@ -195,7 +187,7 @@ fun AMLLLyricsView(
     
     // 如果 WebView 被禁用，不渲染歌词 UI，但仍保持 WebSocket 通信
     if (!webViewEnabled) {
-        Timber.d("[WebView] [$debugSource] WebView 已禁用，跳过歌词渲染（但 WebSocket 仍在运行）")
+        Timber.d("[AMLLLyrics] [WebView] [$debugSource] WebView 已禁用，跳过歌词渲染（但 WebSocket 仍在运行）")
         return
     }
     
@@ -223,7 +215,7 @@ fun AMLLLyricsView(
     // 仅在歌曲信息或播放状态变化时发送，播放进度惯性除外
     fun sendPlaybackStatusToWebSocket(currentTime: Long, isPlaying: Boolean) {
         if (!isWebSocketConnected) {
-            Timber.d("[WebSocket] [$debugSource#$instanceId] WebSocket 未连接，跳过发送")
+            Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] WebSocket 未连接，跳过发送")
             return
         }
             
@@ -252,7 +244,7 @@ fun AMLLLyricsView(
                     artists = listOf(com.amll.droidmate.websocket.WsProtocolV2Helper.Artist("1", artistName)),
                     duration = duration
                 )
-                Timber.d("[WebSocket] [$debugSource#$instanceId] 发送歌曲信息 (V2 JSON): $musicName")
+                Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 发送歌曲信息 (V2 JSON): $musicName")
                 webSocketClient.send(message)
                 
                 // 更新记录的状态
@@ -270,7 +262,7 @@ fun AMLLLyricsView(
                     com.amll.droidmate.websocket.WsProtocolV2Helper.createPausedUpdate()
                 }
                 
-                Timber.d("[WebSocket] [$debugSource#$instanceId] 发送播放状态消息 (V2 JSON): isPlaying=$isPlaying")
+                Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 发送播放状态消息 (V2 JSON): isPlaying=$isPlaying")
                 webSocketClient.send(stateMessage)
                 
                 // 更新记录的状态
@@ -279,7 +271,7 @@ fun AMLLLyricsView(
             
             // 注意：不发送播放进度更新（currentTime），避免频繁网络请求
         } catch (e: Exception) {
-            Timber.e("[WebSocket] [$debugSource#$instanceId] 发送 V2 消息失败", e)
+            Timber.e("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 发送 V2 消息失败", e)
         }
     }
     
@@ -297,7 +289,7 @@ fun AMLLLyricsView(
 
     
     fun injectWebSocketBridge(view: WebView) {
-        amllDebug("[$debugSource#$instanceId] 注入 WebSocket 桥接代码")
+        Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 注入 WebSocket 桥接代码")
         
         // 注入 JavaScript 代码，让前端可以发送消息到 Android WebSocket 客户端
         view.evaluateJavascript(
@@ -331,7 +323,7 @@ fun AMLLLyricsView(
     AndroidView(
         modifier = modifier,
         factory = { context ->
-            amllInfo("[$debugSource#$instanceId] Creating AMLL WebView, onLineSeek=${onLineSeekState.value != null}")
+            Timber.i("[AMLLLyrics] [$debugSource#$instanceId] Creating AMLL WebView, onLineSeek=${onLineSeekState.value != null}")
             WebView.setWebContentsDebuggingEnabled(true)
             WebView(context).apply {
                 // 设置 WebView 的 LayoutParams 为 MATCH_PARENT
@@ -349,7 +341,7 @@ fun AMLLLyricsView(
                         lastLyricsPayload = null
                         lastAlbumArtUri = null
                         lastFontConfigSignature = null
-                        amllDebug("[$debugSource#$instanceId] WebView page started: $url")
+                        Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView page started: $url")
                     }
 
                     override fun onPageFinished(view: WebView, url: String) {
@@ -361,7 +353,7 @@ fun AMLLLyricsView(
                         // lastLyrics = null
                         // 页面刷新完成后如果我们之前有歌词 JSON 且当前仍然有 lyrics（不是因歌曲切换而清空），先立刻重新下发
                         if (lastLyricsPayload != null && lastLyrics != null) {
-                            amllDebug("[$debugSource#$instanceId] reapplying lyrics payload after page finish")
+                            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] reapplying lyrics payload after page finish")
                             view.evaluateJavascript("window.updateLyrics && window.updateLyrics($lastLyricsPayload);", null)
                         }
                         // 不清空 payload，让 update() 继续根据 lyrics 对象决定重新生成
@@ -376,18 +368,18 @@ fun AMLLLyricsView(
                             injectWebSocketBridge(view)
                         }
                         
-                        amllDebug("[$debugSource#$instanceId] WebView page finished: $url")
+                        Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView page finished: $url")
                     }
                 }
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
-                        val logMessage = "[WebView] [$debugSource#$instanceId] JS Console(@${consoleMessage.sourceId()}:${consoleMessage.lineNumber()}): ${consoleMessage.message()}"
+                        val logMessage = "[AMLLLyrics] [WebView] [$debugSource#$instanceId] JS Console(@${consoleMessage.sourceId()}:${consoleMessage.lineNumber()}): ${consoleMessage.message()}"
                         when (consoleMessage.messageLevel()) {
-                            ConsoleMessage.MessageLevel.DEBUG -> amllDebug(logMessage)
-                            ConsoleMessage.MessageLevel.LOG -> amllInfo(logMessage)
+                            ConsoleMessage.MessageLevel.DEBUG -> Timber.d(logMessage)
+                            ConsoleMessage.MessageLevel.LOG -> Timber.i(logMessage)
                             ConsoleMessage.MessageLevel.WARNING -> Timber.w(logMessage)
                             ConsoleMessage.MessageLevel.ERROR -> Timber.e(logMessage)
-                            else -> amllDebug(logMessage)
+                            else -> Timber.d(logMessage)
                         }
                         return super.onConsoleMessage(consoleMessage)
                     }
@@ -452,32 +444,32 @@ fun AMLLLyricsView(
                     ),
                     "Android"
                 )
-                amllDebug("[$debugSource#$instanceId] JavascriptInterface added as Android")
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] JavascriptInterface added as Android")
 
                 setOnClickListener {
-                    amllDebug("[$debugSource#$instanceId] WebView onClick listener fired")
+                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView onClick listener fired")
                     onLyricsClickState.value?.invoke()
                 }
 
                 loadUrl("file:///android_asset/amll/index.html")
 
                 post {
-                    amllDebug("[$debugSource#$instanceId] WebView size after layout: width=$width, height=$height, measuredWidth=$measuredWidth, measuredHeight=$measuredHeight")
+                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView size after layout: width=$width, height=$height, measuredWidth=$measuredWidth, measuredHeight=$measuredHeight")
                 }
 
-                amllDebug("[$debugSource#$instanceId] WebView initialized with URL: file:///android_asset/amll/index.html")
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView initialized with URL: file:///android_asset/amll/index.html")
             }
         },
         update = { view ->
             if (!isPageReady) {
-                amllDebug("[$debugSource#$instanceId] Bridge skipped: page not ready")
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge skipped: page not ready")
                 return@AndroidView
             }
 
-            amllDebug("[$debugSource#$instanceId] Update callback - WebView actual size: width=${view.width}, height=${view.height}, measuredWidth=${view.measuredWidth}, measuredHeight=${view.measuredHeight}")
+            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Update callback - WebView actual size: width=${view.width}, height=${view.height}, measuredWidth=${view.measuredWidth}, measuredHeight=${view.measuredHeight}")
 
             // 立即更新时间，减少歌词行激活延迟
-            Timber.d("[WebView] [$debugSource#$instanceId] Bridge call: updateTime($currentTime)")
+            Timber.d("[AMLLLyrics] [WebView] [$debugSource#$instanceId] Bridge call: updateTime($currentTime)")
             view.evaluateJavascript("window.updateTime && window.updateTime($currentTime);", null)
             
             // 同时通过 WebSocket 发送到外部服务
@@ -485,7 +477,7 @@ fun AMLLLyricsView(
 
             val modeValue = if (renderMode == AMLLRenderMode.DOM) "dom" else "dom-lite"
             if (lastModeValue != modeValue) {
-                amllDebug("[$debugSource#$instanceId] Bridge call: setRenderMode($modeValue)")
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setRenderMode($modeValue)")
                 view.evaluateJavascript("window.setRenderMode && window.setRenderMode('$modeValue');", null)
                 lastModeValue = modeValue
             }
@@ -499,7 +491,7 @@ fun AMLLLyricsView(
                 """{"renderer":"pixi","fps":$fpsValue,"flowSpeed":1.4,"renderScale":0.65,"staticMode":false,"lowFreqVolume":1.0}"""
             }
             if (lastBackgroundProfileValue != backgroundProfile) {
-                amllDebug("[$debugSource#$instanceId] Bridge call: configureBackgroundEffect(profile=$backgroundProfile)")
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureBackgroundEffect(profile=$backgroundProfile)")
                 view.evaluateJavascript(
                     "window.configureBackgroundEffect && window.configureBackgroundEffect($backgroundProfile);",
                     null
@@ -516,20 +508,20 @@ fun AMLLLyricsView(
             }""".trimIndent().replace("\n", "")
 
             if (lastMotionConfigValue != motionConfig) {
-                amllDebug("[$debugSource#$instanceId] Bridge call: configureLyricMotion(profile=$motionConfig)")
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureLyricMotion(profile=$motionConfig)")
                 view.evaluateJavascript("window.configureLyricMotion && window.configureLyricMotion($motionConfig);", null)
                 lastMotionConfigValue = motionConfig
             }
 
             // 只在 lyrics 对象引用改变时才重新构建 JSON（避免每秒都构建）
             if (lyrics !== lastLyrics) {
-                amllDebug("[$debugSource#$instanceId] Lyrics changed: ${lyrics?.lines?.size ?: 0} lines")
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Lyrics changed: ${lyrics?.lines?.size ?: 0} lines")
                 if (lyrics != null && lyrics.lines.isNotEmpty()) {
                     val lyricsJson = buildLyricsJson(lyrics)
-                    amllDebug("[$debugSource#$instanceId] Bridge call: updateLyrics(lines=${lyrics.lines.size})")
+                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: updateLyrics(lines=${lyrics.lines.size})")
                     // 添加详细日志，显示前几行歌词内容
                     lyrics.lines.take(3).forEachIndexed { idx, line ->
-                        amllDebug("  Line $idx: text='${line.text}', words=${line.words.size}, isBG=${line.isBG}")
+                        Timber.d("[AMLLLyrics]   Line $idx: text='${line.text}', words=${line.words.size}, isBG=${line.isBG}")
                     }
                     view.evaluateJavascript("window.updateLyrics && window.updateLyrics($lyricsJson);", null)
                     lastLyricsPayload = lyricsJson
@@ -541,28 +533,29 @@ fun AMLLLyricsView(
                             // {"update":"SetLyric","value":{"format":"Ttml","data":"..."}}
                             val lyricMessage = """{"update":"SetLyric","value":{"format":"Ttml","data":$lyricsJson}}"""
                             webSocketClient.send(lyricMessage)
-                            amllDebug("[WebSocket] [$debugSource#$instanceId] 已通过 WebSocket 发送歌词")
+                            Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 已通过 WebSocket 发送歌词")
                         } catch (e: Exception) {
-                            Timber.e("[WebSocket] [$debugSource#$instanceId] 通过 WebSocket 发送歌词失败", e)
+                            Timber.e("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 通过 WebSocket 发送歌词失败", e)
                         }
                     }
                 } else {
                     // 如果 lyrics 为空或 null，注入测试歌词以便调试
-                    amllDebug("[$debugSource#$instanceId] No lyrics provided, injecting test lyrics")
+                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] No lyrics provided, injecting test lyrics")
                     val testLyricsJson = """{"metadata":{"title":"Test","artist":"AMLL"},"lines":[{"startTime":0,"endTime":3000,"text":"测试歌词","translatedLyric":"","romanLyric":"","words":[{"word":"测试","startTime":0,"endTime":1500},{"word":"歌词","startTime":1500,"endTime":3000}],"isBG":false,"isDuet":false},{"startTime":3000,"endTime":6000,"text":"第二行歌词","translatedLyric":"","romanLyric":"","words":[{"word":"第二行","startTime":3000,"endTime":4500},{"word":"歌词","startTime":4500,"endTime":6000}],"isBG":false,"isDuet":false}]}"""
                     view.evaluateJavascript("window.updateLyrics && window.updateLyrics($testLyricsJson);", null)
                     lastLyricsPayload = testLyricsJson
                 }
                 lastLyrics = lyrics
             } else {
-                amllDebug("[$debugSource#$instanceId] Lyrics reference unchanged")
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Lyrics reference unchanged")
             }
 
             if (lastAlbumArtUri != albumArtUri) {
                 // 将 file:// URI 转换为 base64 data URL，因为 WebView 的 Fetch API 不支持 file:// 协议
                 val albumArtDataUrl = convertFileUriToDataUrl(view.context, albumArtUri ?: "")
                 val escapedAlbumUri = escapeJsString(albumArtDataUrl ?: "")
-                amllDebug("[$debugSource#$instanceId] Bridge call: updateAlbumArt(uri=${if (albumArtDataUrl.isNullOrBlank()) "empty" else "present (${albumArtDataUrl.length} chars)"})")
+                val uriDesc = if (albumArtDataUrl.isNullOrBlank()) "empty" else "present (${albumArtDataUrl.length} chars)"
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: updateAlbumArt(uri=$uriDesc)")
                 view.evaluateJavascript("window.updateAlbumArt && window.updateAlbumArt(\"$escapedAlbumUri\");", null)
                 lastAlbumArtUri = albumArtUri
             }
@@ -610,8 +603,8 @@ fun AMLLLyricsView(
 
             if (lastFontConfigSignature != fontSignature) {
                 val script = buildApplyFontScript(effectiveFamily, fontFiles)
-                amllDebug(
-                    "[$debugSource#$instanceId] Bridge call: applyFontSettings(enabled=${enabledFamilies.size}, files=${fontFiles.size})"
+                Timber.d(
+                    "[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyFontSettings(enabled=${enabledFamilies.size}, files=${fontFiles.size})"
                 )
                 view.evaluateJavascript(script, null)
                 lastFontConfigSignature = fontSignature
@@ -619,7 +612,7 @@ fun AMLLLyricsView(
         },
         onRelease = { view ->
             // 当组件被销毁时，销毁 WebView 以避免内存泄漏
-            amllInfo("[$debugSource] Destroying AMLL WebView")
+            Timber.i("[AMLLLyrics] [$debugSource] Destroying AMLL WebView")
             view.stopLoading()
             view.clearHistory()
             view.clearCache(true)
@@ -726,7 +719,7 @@ private fun buildLyricsJson(lyrics: TTMLLyrics): String {
     val bgWithTranslation = bgLines.count { !it.translation.isNullOrBlank() }
     val bgWithRoman = bgLines.count { !it.transliteration.isNullOrBlank() }
     val sampleBg = bgLines.firstOrNull()
-    amllDebug("[BG-LYRICS-DEBUG] buildLyricsJson summary: total=${lyrics.lines.size}, bg=${bgLines.size}, bgWithTrans=$bgWithTranslation, bgWithRoman=$bgWithRoman, sampleBg='${sampleBg?.text ?: ""}', sampleTrans='${sampleBg?.translation ?: ""}'")
+    Timber.d("[BG-LYRICS-DEBUG] buildLyricsJson summary: total=${lyrics.lines.size}, bg=${bgLines.size}, bgWithTrans=$bgWithTranslation, bgWithRoman=$bgWithRoman, sampleBg='${sampleBg?.text ?: ""}', sampleTrans='${sampleBg?.translation ?: ""}'")
 
     // 调试日志：限制在 10 行以内，超出的降级为 v 级别
     var debugCount = 0
@@ -748,19 +741,17 @@ private fun buildLyricsJson(lyrics: TTMLLyrics): String {
             """{"word":"$wordText","startTime":${line.startTime},"endTime":${line.endTime}}"""
         }
         
-        // 调试日志：前 10 行使用 d 级别，其余使用 v 级别
+        // 调试日志：只记录前 5 行
         if (line.words.isNotEmpty()) {
-            if (debugCount < 10) {
-                amllDebug("Building JSON for line: '${line.text}' with ${line.words.size} words")
+            if (debugCount < 5) {
+                Timber.d("[AMLLLyrics] Building JSON for line: '${line.text}' with ${line.words.size} words")
                 debugCount++
-            } else {
-                amllVerbose("Building JSON for line: '${line.text}' with ${line.words.size} words")
             }
         }
         
         // 调试背景歌词的数据传递
         if (line.isBG) {
-            amllDebug("[BG-LYRICS-DEBUG] JSON for BG line: text='$text' translation='$translation' roman='$transliteration' isBG=${line.isBG}")
+            Timber.d("[BG-LYRICS-DEBUG] JSON for BG line: text='$text' translation='$translation' roman='$transliteration' isBG=${line.isBG}")
         }
         
         """{
@@ -793,17 +784,17 @@ class AMLLInterface(
     fun log(message: String, level: String = "debug") {
         val levelUpper = level.uppercase()
         when (levelUpper) {
-            "DEBUG" -> amllDebug("[WebView] JS: $message")
-            "INFO" -> amllInfo("[WebView] JS: $message")
-            "WARN" -> Timber.w("[WebView] JS: $message")
-            "ERROR" -> Timber.e("[WebView] JS: $message")
-            else -> amllDebug("[WebView] JS: $message")
+            "DEBUG" -> Timber.d("[AMLLLyrics] [WebView] JS: $message")
+            "INFO" -> Timber.i("[AMLLLyrics] [WebView] JS: $message")
+            "WARN" -> Timber.w("[AMLLLyrics] [WebView] JS: $message")
+            "ERROR" -> Timber.e("[AMLLLyrics] [WebView] JS: $message")
+            else -> Timber.d("[AMLLLyrics] [WebView] JS: $message")
         }
     }
 
     @JavascriptInterface
     fun onLineClick(lineIndex: Int, startTime: Long) {
-        amllInfo("[$debugSource#$instanceId] User clicked lyric line: index=$lineIndex, startTime=$startTime, callbackPresent=${onLineSeek != null}")
+        Timber.i("[AMLLLyrics] [$debugSource#$instanceId] User clicked lyric line: index=$lineIndex, startTime=$startTime, callbackPresent=${onLineSeek != null}")
         onSeekRequested?.invoke(startTime)
         onLineSeek?.invoke(startTime)
     }
@@ -816,7 +807,7 @@ class AMLLInterface(
     @JavascriptInterface
     fun sendWebSocketMessage(message: String) {
         // 通过 WebSocket 发送到外部 AMLL 服务
-        amllDebug("[$debugSource#$instanceId] 发送 WebSocket 消息：$message")
+        Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 发送 WebSocket 消息：$message")
         
         try {
             // 解析消息并转发到 WebSocket 客户端
@@ -827,17 +818,17 @@ class AMLLInterface(
                 "ping" -> {
                     // 响应 ping 消息
                     webSocketClient?.send("{\"type\":\"pong\"}")
-                    amllDebug("[$debugSource#$instanceId] 已响应 ping 消息")
+                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 已响应 ping 消息")
                 }
                 "seek" -> {
                     // 处理 seek 命令（如果需要）
                     val time = jsonObject.optLong("time", 0L)
-                    amllDebug("[$debugSource#$instanceId] 收到 seek 命令：time=$time")
+                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 收到 seek 命令：time=$time")
                 }
                 else -> {
                     // 其他类型的消息直接转发
                     webSocketClient?.send(message)
-                    amllDebug("[$debugSource#$instanceId] 已转发 WebSocket 消息：type=$type")
+                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 已转发 WebSocket 消息：type=$type")
                 }
             }
         } catch (e: Exception) {
@@ -865,7 +856,7 @@ private fun convertFileUriToDataUrl(context: Context, uriString: String?): Strin
                 context.contentResolver.openInputStream(uri)
             }
             else -> {
-                Timber.w("[WebView] Unsupported URI scheme: $uriString")
+                Timber.w("[AMLLLyrics] [WebView] Unsupported URI scheme: $uriString")
                 return uriString // 直接返回原始字符串（可能是 data URL）
             }
         }
@@ -877,7 +868,7 @@ private fun convertFileUriToDataUrl(context: Context, uriString: String?): Strin
             "data:$mimeType;base64,$base64"
         }
     } catch (e: Exception) {
-        Timber.e("[WebView] Failed to convert file URI to data URL: $uriString", e)
+        Timber.e("[AMLLLyrics] [WebView] Failed to convert file URI to data URL: $uriString", e)
         null
     }
 }
@@ -907,8 +898,8 @@ private fun WebView.clearAllCache() {
         settings.domStorageEnabled = false
         settings.domStorageEnabled = true
         
-        amllDebug("WebView cache cleared")
+        Timber.d("[AMLLLyrics] WebView cache cleared")
     } catch (e: Exception) {
-        amllDebug("Failed to clear WebView cache: ${e.message}")
+        Timber.d("[AMLLLyrics] Failed to clear WebView cache: ${e.message}")
     }
 }

@@ -190,7 +190,7 @@ class MediaInfoService(private val context: Context) {
                 ?: metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
             
             if (albumArtBitmap == null) {
-                Timber.w("[AlbumArtExtractor] Failed to get bitmap, trying URI")
+                Timber.i("[AlbumArtExtractor] Failed to get bitmap, trying URI")
                 return@withContext metadata.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
                     ?: metadata.getString(android.media.MediaMetadata.METADATA_KEY_ART_URI)
             }

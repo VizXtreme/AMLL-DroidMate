@@ -909,7 +909,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         Timber.d("[SongStructure] [$index] ${structure.label} (${structure.type.displayName}): ${String.format("%d:%02d", startMin, startSec)} - ${String.format("%d:%02d", endMin, endSec)}")
                     }
                 } else {
-                    Timber.w("[SongStructure] No metadata structures found, will use SongStructureParser fallback")
+                    Timber.i("[SongStructure] No metadata structures found, will use SongStructureParser fallback")
                 }
                 
                 val structures = SongStructureParser.parseStructure(lyrics.lines, lyrics.metadata.songStructures, songDuration)
@@ -925,7 +925,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 
                 // 诊断最终结果
                 if (structures.size == 1 && structures[0].label == "段落 1") {
-                    Timber.w("[SongStructure] Fallback result: single paragraph structure")
+                    Timber.i("[SongStructure] Fallback result: single paragraph structure")
                 }
             } catch (e: Exception) {
                 Timber.e("[SongStructure] Failed to parse song structure: ${e.message}", e)

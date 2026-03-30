@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentLinkedDeque
  */
 object LogHelper {
     
-    private const val MAX_LOG_ENTRIES = 1000 // 最多保留 1000 条日志
+    private const val MAX_LOG_ENTRIES = 3000 // 最多保留 3000 条日志
     
     private val logEntries = ConcurrentLinkedDeque<LogEntry>()
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
@@ -131,6 +131,41 @@ object LogHelper {
      */
     fun getAllLogs(): List<LogEntry> {
         return logEntries.toList()
+    }
+    
+    /**
+     * 根据等级获取过滤后的日志
+     * @param levels 要显示的日志等级列表，如 listOf("E", "W") 只显示错误和警告
+     */
+    fun getFilteredLogs(levels: Set<String>): List<LogEntry> {
+        if (levels.isEmpty()) {
+            return logEntries.toList()
+        }
+        return logEntries.filter { it.level in levels }
+    }
+    
+    /**
+     * 根据最低日志等级过滤（自动包含更高等级）
+     * 等级顺序：V < D < I < W < E < A
+     * 
+     * @param minLevel 最低显示等级，例如 "W" 会显示 W、E、A
+     */
+    fun getFilteredLogsByMinLevel(minLevel: String): List<LogEntry> {
+        val levelOrder = mapOf(
+            "V" to 0,
+            "D" to 1,
+            "I" to 2,
+            "W" to 3,
+            "E" to 4,
+            "A" to 5
+        )
+        
+        val minLevelValue = levelOrder[minLevel] ?: 0
+        
+        return logEntries.filter { entry ->
+            val entryLevelValue = levelOrder[entry.level] ?: 0
+            entryLevelValue >= minLevelValue
+        }
     }
     
     /**

@@ -62,7 +62,7 @@ object UnifiedLyricsParser {
         return try {
             // 检测格式（使用归一化内容来避免 BOM 等前缀影响检测）
             val format = LyricsFormat.detect(normalizedContent)
-            Timber.i("[UnifiedLyricsParser] Detected lyrics format: $format")
+            Timber.d("[UnifiedLyricsParser] Detected lyrics format: $format")
             
             // 使用相应的解析器解析
             val lines = when (format) {

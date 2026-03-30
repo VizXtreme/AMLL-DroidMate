@@ -70,7 +70,7 @@ object SongStructureParser {
      */
     private fun inferStructureFromLyrics(lines: List<LyricLine>, songDuration: Long = 0L): List<SongStructure> {
         if (lines.isEmpty()) {
-            Timber.w("[SongStructure] Fallback: 歌词行为空，返回空结构")
+            Timber.w("[SongStructure] 歌词行为空，返回空结构")
             return emptyList()
         }
         

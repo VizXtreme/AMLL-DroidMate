@@ -449,7 +449,7 @@ open class LyricsRepository(
 
             mainLyrics.copy(lines = mergeLyricLines(mainLyrics.lines, translationLines, romanizationLines))
         } catch (e: Exception) {
-            Timber.e("[LyricsRepository] QQ lyric_download failed, fallback to PlayLyricInfo", e)
+            Timber.i("[LyricsRepository] QQ lyric_download failed, fallback to PlayLyricInfo", e)
             null
         }
     }
@@ -476,7 +476,7 @@ open class LyricsRepository(
     suspend fun searchNetease(title: String, artist: String): List<LyricsSearchResult> {
         return try {
             val keyword = "$title $artist".trim()
-            Timber.i("[LyricsRepository] Netease search starting for keyword: $keyword")
+            Timber.d("[LyricsRepository] Netease search starting for keyword: $keyword")
 
             val payload = buildJsonObject {
                 put("s", keyword)
@@ -688,7 +688,7 @@ open class LyricsRepository(
             val query = title.trim()
             if (query.isEmpty()) return emptyList()
 
-            Timber.i("[LyricsRepository] AMLL DB search starting for title: $query")
+            Timber.d("[LyricsRepository] AMLL DB search starting for title: $query")
 
             val payload = buildJsonObject {
                 put("query", query)
@@ -719,10 +719,9 @@ open class LyricsRepository(
 
                             val responseBody = response.body<String>()
                             Timber.d("[LyricsRepository] AMLL DB search response from $endpoint (len=${responseBody.length}): ${responseBody.take(200)}")
-                            println("[DEBUG] AMLL response body: $responseBody")
 
                             val resultArray = Json.parseToJsonElement(responseBody).jsonArray
-                            println("[DEBUG] AMLL parsed array size: ${resultArray.size}")
+                            Timber.d("[LyricsRepository] AMLL parsed array size: ${resultArray.size}")
                             if (resultArray.isEmpty()) return@runCatching emptyList<LyricsSearchResult>()
 
                             // helper to extract a list of strings from either a primitive or an array
@@ -759,7 +758,7 @@ open class LyricsRepository(
                                         compareArtists(artist, candidate)?.score ?: 0
                                     } ?: artistCandidates.first()
 
-                                println("[DEBUG] AMLL item: platform=$platform id=$id actualId=$actualId titleCandidates=$titleCandidates artistCandidates=$artistCandidates album=$albumRes bestDisplayArtist=$bestDisplayArtist")
+                                Timber.d("[LyricsRepository] AMLL item: platform=$platform id=$id actualId=$actualId titleCandidates=$titleCandidates artistCandidates=$artistCandidates album=$albumRes bestDisplayArtist=$bestDisplayArtist")
 
                                 // Evaluate each title candidate and pick the one with the highest confidence.
                                 val (bestTitle, bestEval) = titleCandidates
@@ -793,7 +792,7 @@ open class LyricsRepository(
                                         compareName(title, titleCandidates.first())?.score ?: 0
                                     )
 
-                                println("[DEBUG] AMLL bestTitle=$bestTitle confidence=${bestEval.confidence} matchType=${bestEval.matchType}")
+                                Timber.d("[LyricsRepository] AMLL bestTitle=$bestTitle confidence=${bestEval.confidence} matchType=${bestEval.matchType}")
 
                                 val confidence = bestEval.confidence
                                 val matchType = bestEval.matchType
@@ -833,8 +832,8 @@ open class LyricsRepository(
             }
 
             // Deduplicate by provider+songId and limit size
-            println("[DEBUG] AMLL joined size before dedupe: ${joined.size}")
-            println("[DEBUG] AMLL joined contents: $joined")
+            Timber.d("[LyricsRepository] AMLL joined size before dedupe: ${joined.size}")
+            Timber.d("[LyricsRepository] AMLL joined contents: $joined")
             joined
                 .distinctBy { "${it.provider}:${it.songId}" }
                 .take(20)
@@ -891,7 +890,7 @@ open class LyricsRepository(
     suspend fun searchKugou(title: String, artist: String): List<LyricsSearchResult> {
         return try {
             val keyword = "$title $artist".trim()
-            Timber.i("[LyricsRepository] Kugou search starting for keyword: $keyword")
+            Timber.d("[LyricsRepository] Kugou search starting for keyword: $keyword")
 
             // Step 1: 从 Kugou 搜歌曲获得哈希值（对齐 Unilyric）
             val searchResponse = httpClient.get("http://mobilecdn.kugou.com/api/v3/search/song") {
@@ -1031,7 +1030,7 @@ open class LyricsRepository(
             val candidates = searchJson["candidates"]?.jsonArray
             
             if (status != 200 || candidates.isNullOrEmpty()) {
-                Timber.e("[Kugou] Kugou lyrics search failed with status=$status or no candidates")
+                Timber.i("[Kugou] Kugou lyrics search failed with status=$status or no candidates")
                 return null
             }
             
@@ -1755,12 +1754,10 @@ open class LyricsRepository(
             for (url in endpoints) {
                 try {
                     Timber.d("[AMLLBridge] Fetching AMLL endpoint: $url")
-                    println("[DEBUG] getAMLL_TTMLLyrics requesting: $url")
+                    Timber.d("[AMLLBridge] Requesting URL: $url")
                     val response = httpClient.get(url)
-                    Timber.d("[AMLLBridge] AMLL endpoint response ${response.status.value}: $url")
-
                     if (!response.status.isSuccess()) {
-                        Timber.w("[AMLLBridge] AMLL endpoint non-success status ${response.status.value}: $url")
+                        Timber.i("[AMLLBridge] AMLL endpoint non-success status ${response.status.value}: $url")
                         continue
                     }
 
@@ -1813,7 +1810,7 @@ open class LyricsRepository(
             "Lyrics not found on AMLL mirrors for songId=$normalizedId (raw:$rawId)"
         }
 
-        Timber.w("[AMLLBridge] Error fetching AMLL TTML lyrics: $lastAmlLError")
+        Timber.i("[AMLLBridge] Lyrics not available from AMLL TTML DB: $lastAmlLError")
         return null
     }
 
@@ -1859,7 +1856,7 @@ open class LyricsRepository(
         }
 
         val qqMusicJob = launch {
-            Timber.i("[QQMusic] QQ Music search starting...")
+            Timber.d("[QQMusic] QQ Music search starting...")
             val list = runCatching { searchQQMusic(title, artist) }.getOrNull() ?: emptyList()
             Timber.i("[QQMusic] QQ Music search completed: found ${list.size} items")
             for (r in list) tryPublish(r)
@@ -1913,14 +1910,14 @@ open class LyricsRepository(
         }
 
         val kugouJob = launch {
-            Timber.i("[Kugou] Kugou search starting...")
+            Timber.d("[Kugou] Kugou search starting...")
             val list = runCatching { searchKugou(title, artist) }.getOrNull() ?: emptyList()
             Timber.i("[Kugou] Kugou search completed: found ${list.size} items")
             for (r in list) tryPublish(r)
         }
 
         val neteaseJob = launch {
-            Timber.i("[Netease] Netease search starting...")
+            Timber.d("[Netease] Netease search starting...")
             val list = runCatching { searchNetease(title, artist) }.getOrNull() ?: emptyList()
             Timber.i("[Netease] Netease search completed: found ${list.size} items")
             for (r in list) tryPublish(r)
@@ -1952,7 +1949,7 @@ open class LyricsRepository(
         }
 
         val amllDbJob = launch {
-            Timber.i("[AMLLBridge] AMLL DB search starting...")
+            Timber.d("[AMLLBridge] AMLL DB search starting...")
             val list = runCatching { searchAmlldb(title, artist) }.getOrNull() ?: emptyList()
             Timber.i("[AMLLBridge] AMLL DB search completed: found ${list.size} items")
             for (r in list) tryPublish(r)

@@ -138,7 +138,7 @@ object QrcParser {
         }
 
         if (extracted.isNotEmpty()) {
-            Timber.d("[QrcParser] Extracted $extracted.size LyricContent entries from QRC XML (regex)")
+            Timber.d("[QrcParser] Extracted $extracted.size LyricContent entries from QRC XML (regex): ${extracted.joinToString("\\n").take(500)}")
             return extracted.joinToString(separator = "\n")
         }
 

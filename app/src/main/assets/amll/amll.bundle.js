@@ -51795,7 +51795,7 @@ void main(void)
         try {
           const rawLines = Array.isArray(payload?.lines) ? payload.lines : [];
           const normalizedLines = normalizeLyricLines(rawLines);
-          logToAndroid(`updateLyrics called with ${rawLines.length} raw lines, ${normalizedLines.length} normalized`, "info");
+          logToAndroid(`updateLyrics called with ${rawLines.length} raw lines, ${normalizedLines.length} normalized`, "debug");
           if (normalizedLines.length === 0) {
             setLyricLines([
               {
@@ -51810,14 +51810,14 @@ void main(void)
             ]);
           } else {
             normalizedLines.slice(0, 3).forEach((line, idx) => {
-              logToAndroid(`Line ${idx}: text="${line.words.map((w2) => w2.word).join("")}", words=${line.words.length}, startTime=${line.startTime}, endTime=${line.endTime}`, "info");
+              logToAndroid(`Line ${idx}: text="${line.words.map((w2) => w2.word).join("")}", words=${line.words.length}, startTime=${line.startTime}, endTime=${line.endTime}`, "debug");
               line.words.slice(0, 2).forEach((word, wIdx) => {
                 logToAndroid(`  Word ${wIdx}: "${word.word}" ${word.startTime}-${word.endTime}ms`, "debug");
               });
             });
             setLyricLines(normalizedLines);
           }
-          logToAndroid(`Updated lyrics (${normalizedLines.length} lines)`, "info");
+          logToAndroid(`Updated lyrics (${normalizedLines.length} lines)`, "debug");
           if (playerRef.current?.lyricPlayer && currentTime > 0) {
             logToAndroid(`Force update LyricPlayer time to ${currentTime} after setting lyrics`, "info");
             playerRef.current.lyricPlayer.setCurrentTime(Math.trunc(currentTime), false);
@@ -51872,7 +51872,7 @@ void main(void)
         }
       };
       window.setRenderMode = function(mode) {
-        logToAndroid(`setRenderMode: ${mode}`, "info");
+        logToAndroid(`setRenderMode: ${mode}`, "debug");
       };
       return () => {
         delete window.__setLyricLines;
