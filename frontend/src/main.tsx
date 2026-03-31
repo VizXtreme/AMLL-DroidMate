@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { LyricPlayer, BackgroundRender } from '@applemusic-like-lyrics/react'
 import type { LyricPlayerRef } from '@applemusic-like-lyrics/react'
 import '@applemusic-like-lyrics/react-full/style.css'
+import '@applemusic-like-lyrics/core/style.css'
 import { useAtom, useSetAtom } from 'jotai'
 import {
   musicLyricLinesAtom,
@@ -58,15 +59,15 @@ interface AMLLGlobal {
   state: any
 }
 
-// 🔧 下游覆盖：修�?generateFadeGradient �?width 验证问题
-// �?AMLL 加载后立即应用补�?
+// 🔧 下游覆盖：修正 generateFadeGradient width 验证问题
+// 修正 AMLL 加载后立即应用补丁
 function applyAMLLPatch() {
   logToAndroid('Applying AMLL patch for generateFadeGradient', 'info')
   
-  // 方法 1：通过 CSS 变量设置安全�?
+  // 方法 1：通过 CSS 变量设置安全值
   const style = document.createElement('style')
   style.textContent = `
-    /* 确保 mask-image 相关 CSS 变量始终有安全默认�?*/
+    /* 确保 mask-image 相关 CSS 变量始终有安全默认值 */
     :root {
       --bright-mask-alpha: 1.0;
       --dark-mask-alpha: 0.2;
@@ -164,25 +165,39 @@ function App() {
       window.__amll.backgroundRender = backgroundRender
     }
 
-    // 关键修复：在替换全局 setter 之前，先检查是否有延迟的数据需要处�?
+    // 🔧 修复：添加 WebView 布局信息调试日志
+    logToAndroid(`WebView size: ${window.innerWidth}x${window.innerHeight}, DPR: ${window.devicePixelRatio || 1}`, 'info')
+    logToAndroid(`User Agent: ${navigator.userAgent}`, 'debug')
+    
+    // 检查 CSS 是否正确加载
+    const hasStyleElement = !!document.querySelector('style') || !!document.querySelector('link[rel="stylesheet"]')
+    logToAndroid(`CSS loaded: ${hasStyleElement}`, 'debug')
+    
+    // 检查 HTML 结构
+    const hasAppElement = !!document.getElementById('app')
+    logToAndroid(`App element exists: ${hasAppElement}`, 'debug')
+
+    // 关键修复：在替换全局 setter 之前，先检查是否有延迟的数据需要处理
     const pendingLyrics = globalSetLyricLines
     const pendingTime = globalSetCurrentTime
     const pendingAlbum = globalSetAlbumUri
     
-    // Expose global API for Android - 直接绑定�?Jotai �?setter
+    // Expose global API for Android - 直接绑定到 Jotai atom setter
     ;(window as any).__setLyricLines = setLyricLines
     ;(window as any).__setCurrentTime = setCurrentTime
     ;(window as any).__setAlbumUri = setAlbumUri
 
-    // 如果有延迟的数据，在替换 setter 后立即应�?
+    // 如果有延迟的数据，在替换 setter 后立即应用
     if (pendingLyrics && Array.isArray(pendingLyrics) && pendingLyrics.length > 0) {
+      logToAndroid(`Applying ${pendingLyrics.length} pending lyric lines`, 'info')
       setLyricLines(pendingLyrics)
-      logToAndroid(`Applied pending lyrics (${pendingLyrics.length} lines)`, 'info')
     }
     if (pendingTime !== null && typeof pendingTime === 'number') {
+      logToAndroid(`Applying pending time: ${pendingTime}ms`, 'debug')
       setCurrentTime(pendingTime)
     }
     if (pendingAlbum && typeof pendingAlbum === 'string') {
+      logToAndroid(`Applying pending album art`, 'debug')
       setAlbumUri(pendingAlbum)
     }
 
@@ -208,7 +223,7 @@ function App() {
             }
           ])
         } else {
-          // 调试：打印前几行歌词的详细信�?
+          // 调试：打印前几行歌词的详细信息
           normalizedLines.slice(0, 3).forEach((line, idx) => {
             logToAndroid(`Line ${idx}: text="${line.words.map(w => w.word).join('')}", words=${line.words.length}, startTime=${line.startTime}, endTime=${line.endTime}`, 'debug')
             line.words.slice(0, 2).forEach((word, wIdx) => {
@@ -222,14 +237,14 @@ function App() {
         logToAndroid(`Updated lyrics (${normalizedLines.length} lines)`, 'debug')
         
         // 关键修复：在设置歌词后，如果当前已经有时间值，强制 LyricPlayer 立即更新进度
-        // 这是因为 Android �?updateTime 可能�?updateLyrics 之前通过 evaluateJavascript 异步发�?
+        // 这是因为 Android updateTime 可能 updateLyrics 之前通过 evaluateJavascript 异步发送
         // 导致 initialLayoutFinished 检查失败而被跳过
         if (playerRef.current?.lyricPlayer && currentTime > 0) {
           logToAndroid(`Force update LyricPlayer time to ${currentTime} after setting lyrics`, 'info')
           playerRef.current.lyricPlayer.setCurrentTime(Math.trunc(currentTime), false)
               
-          // 额外修复：触发一�?mask-image 更新，确�?CSS 变量正确初始�?
-          // 这是因为 AMLL �?mask-image 生成依赖于布局测量，可能在初始渲染时未完成
+          // 额外修复：触发一次 mask-image 更新，确保 CSS 变量正确初始化
+          // 这是因为 AMLL mask-image 生成依赖于布局测量，可能在初始渲染时未完成
           setTimeout(() => {
             if (playerRef.current?.lyricPlayer) {
               logToAndroid('Triggering mask-image recalculation', 'debug')
@@ -244,10 +259,7 @@ function App() {
 
     window.updateTime = function (timeMs: number) {
       const parsedTime = Number(timeMs)
-      if (typeof (window as any).__setCurrentTime === 'function') {
-        ;(window as any).__setCurrentTime(parsedTime)
-      }
-      // playerRef.current.lyricPlayer 才是真正的歌词播放实�?
+      // playerRef.current.lyricPlayer 才是真正的歌词播放实例
       if (playerRef.current?.lyricPlayer) {
         playerRef.current.lyricPlayer.setCurrentTime(Math.trunc(parsedTime), false)
       }
@@ -382,6 +394,7 @@ function App() {
 
   // Sync playing state with Android
   useEffect(() => {
+    // Sync playing state with Android
     if (window.Android?.isPlaying) {
       try {
         const isPlaying = window.Android.isPlaying()
@@ -392,6 +405,17 @@ function App() {
         // Ignore
       }
     }
+    
+    // 🔧 修复：定期输出布局状态用于调试
+    const debugInterval = setInterval(() => {
+      if (playerRef.current?.lyricPlayer) {
+        const currentTime = playerRef.current.lyricPlayer.getCurrentTime()
+        const scrollToIndex = (playerRef.current.lyricPlayer as any).scrollToIndex
+        logToAndroid(`[DEBUG] LyricPlayer time: ${currentTime}ms, scrollToIndex: ${scrollToIndex}`, 'debug')
+      }
+    }, 5000) // 每 5 秒输出一次
+    
+    return () => clearInterval(debugInterval)
   }, [musicIsPlaying, setIsPlaying])
 
   const handleLineClick = (event: any) => {
@@ -433,7 +457,7 @@ function App() {
         enableScale={true}
         wordFadeWidth={0.5}
         alignAnchor="center"
-        alignPosition={0.5}
+        alignPosition={0.35}
         linePosYSpringParams={{ mass: 0.9, damping: 15, stiffness: 90 }}
         lineScaleSpringParams={{ mass: 2, damping: 25, stiffness: 100 }}
         onLyricLineClick={handleLineClick}
@@ -456,7 +480,7 @@ let globalSetCurrentTime: any = null
 let globalSetAlbumUri: any = null
 
 if (typeof window !== 'undefined') {
-  // 立即挂载全局 API，确�?Android 能随时调�?
+  // 立即挂载全局 API，确保 Android 能随时调用
   ;(window as any).__setLyricLines = (lines: any[]) => {
     globalSetLyricLines = lines
   }
@@ -472,7 +496,7 @@ if (typeof window !== 'undefined') {
       document.documentElement.style.background = 'transparent'
       document.body.style.background = 'transparent'
       
-      // 🔧 应用下游补丁
+      // 🔧 应用 AMLL 核心补丁（mask-image 等必要修复）
       applyAMLLPatch()
       
       const root = document.getElementById('app') || document.createElement('div')

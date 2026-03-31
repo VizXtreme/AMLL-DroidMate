@@ -28,6 +28,16 @@ Copy-Item -Path "$FrontendDist/*" -Destination $AndroidAssets -Force
 Copy-Item -Path "$ProjectRoot/frontend/index.html" -Destination "$AndroidAssets/index.html" -Force
 Write-Host "✓ Files copied`n" -ForegroundColor Green
 
+# 步骤 2.5: 执行 embed-css.js 将 CSS 嵌入到 HTML 中
+Write-Host "[2.5/4] Embedding CSS into HTML files..." -ForegroundColor Yellow
+Set-Location (Join-Path $ProjectRoot "frontend")
+& node "scripts/embed-css.js"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "✗ CSS embed failed!" -ForegroundColor Red
+    exit 1
+}
+Write-Host "✓ CSS embedded`n" -ForegroundColor Green
+
 # 步骤 3: 验证文件完整性
 Write-Host "[3/4] Verifying file integrity..." -ForegroundColor Yellow
 $RequiredFiles = @("amll.bundle.js", "frontend.css")
