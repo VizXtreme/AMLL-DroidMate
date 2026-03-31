@@ -116,8 +116,13 @@ object TTMLConverter {
                 val startTimeAttr = TimestampUtils.fromMillis(structure.startTime)
                 val endTimeAttr = TimestampUtils.fromMillis(structure.endTime)
                         
-                // ✅ 直接使用 type.displayName（现在是英文）写入 itunes:songPart 属性
-                sb.append("""${indent}${indent}<div itunes:songPart="${escapeXml(structure.type.displayName)}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
+                // ✅ 优先使用 structure.label（保留"段落 1"等 fallback 标签），其次使用 type.displayName
+                val songPartValue = if (structure.label.startsWith("段落")) {
+                    structure.label  // ✅ 保留 fallback 的"段落 X"标签
+                } else {
+                    structure.type.displayName  // 使用标准的类型名称（Verse、Chorus 等）
+                }
+                sb.append("""${indent}${indent}<div itunes:songPart="${escapeXml(songPartValue)}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
                         
                 // 添加该结构包含的歌词行
                 while (lineIndex < lyrics.lines.size) {

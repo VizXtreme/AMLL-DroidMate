@@ -89,7 +89,7 @@ object SongStructureParser {
                     label = "段落 1",
                     startTime = lines.first().startTime,
                     endTime = lines.last().endTime,
-                    type = SongStructureType.VERSE
+                    type = SongStructureType.UNKNOWN  // ✅ 使用 UNKNOWN 避免强行覆盖成 Verse
                 )
             )
         } else {
@@ -110,7 +110,7 @@ object SongStructureParser {
                                 label = "段落 $paragraphIndex",
                                 startTime = paragraphLines.first().startTime,
                                 endTime = paragraphLines.last().endTime,
-                                type = SongStructureType.VERSE
+                                type = SongStructureType.UNKNOWN  // ✅ 使用 UNKNOWN 避免强行覆盖成 Verse
                             )
                         )
                         paragraphIndex++
@@ -130,7 +130,7 @@ object SongStructureParser {
                         label = "段落 $paragraphIndex",
                         startTime = remainingLines.first().startTime,
                         endTime = remainingLines.last().endTime,
-                        type = SongStructureType.VERSE
+                        type = SongStructureType.UNKNOWN  // ✅ 使用 UNKNOWN 避免强行覆盖成 Verse
                     )
                 )
             }
