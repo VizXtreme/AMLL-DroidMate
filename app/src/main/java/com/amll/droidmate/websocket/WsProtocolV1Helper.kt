@@ -8,8 +8,67 @@ import java.nio.ByteOrder
  * AMLL WebSocket V1 二进制协议工具类
  * 
  * V1 协议使用二进制格式，通过 u16 Magic Number 区分消息类型
+ * 序列化规则：
+ * - 所有数值类型使用小端字节序（Little Endian）
+ * - 字符串使用 NullString（UTF-8 编码 + \0 结尾）
+ * - 线性表使用 Vec<T>（u32 数量 + 元素列表）
  */
 object WsProtocolV1Helper {
+    
+    // ==================== 数据结构定义 ====================
+    
+    /**
+     * 艺术家信息
+     */
+    data class Artist(
+        val id: String,
+        val name: String
+    )
+    
+    /**
+     * 歌词单词
+     */
+    data class LyricWord(
+        val startTime: Long,
+        val endTime: Long,
+        val word: String
+    )
+    
+    /**
+     * 歌词行
+     * @param flag 属性标记位：bit0=isBG, bit1=isDuet
+     */
+    data class LyricLine(
+        val startTime: Long,
+        val endTime: Long,
+        val words: List<LyricWord>,
+        val translatedLyric: String = "",
+        val romanLyric: String = "",
+        val isBG: Boolean = false,
+        val isDuet: Boolean = false
+    ) {
+        /**
+         * 计算 flag 字段值
+         * bit0: isBG, bit1: isDuet
+         */
+        fun getFlag(): Byte {
+            var flag: Byte = 0
+            if (isBG) flag = flag.toInt().or(0b01).toByte()
+            if (isDuet) flag = flag.toInt().or(0b10).toByte()
+            return flag
+        }
+        
+        companion object {
+            /**
+             * 从 flag 值解析 isBG 和 isDuet
+             */
+            fun fromFlag(flag: Byte): Pair<Boolean, Boolean> {
+                val isBG = (flag.toInt() and 0b01) != 0
+                val isDuet = (flag.toInt() and 0b10) != 0
+                return Pair(isBG, isDuet)
+            }
+        }
+    }
     
     // ==================== Magic Numbers ====================
     
@@ -52,6 +111,130 @@ object WsProtocolV1Helper {
             order(ByteOrder.LITTLE_ENDIAN)
             putShort(MAGIC_PONG.toShort())
         }.array()
+    }
+    
+    // ==================== 复杂消息编码方法 ====================
+    
+    /**
+     * 创建歌曲信息设置消息 (SetMusicInfo)
+     * Magic: 0x0002
+     * 
+     * 数据结构：
+     * - music_id: NullString
+     * - music_name: NullString
+     * - album_id: NullString
+     * - album_name: NullString
+     * - artists: Vec<Artist>
+     * - duration: u64 (毫秒)
+     */
+    fun encodeSetMusicInfo(
+        musicId: String,
+        musicName: String,
+        albumId: String,
+        albumName: String,
+        artists: List<Artist>,
+        duration: Long
+    ): ByteArray {
+        val baos = ByteArrayOutputStream()
+        
+        // 写入 Magic Number
+        baos.write(
+            ByteBuffer.allocate(2).apply {
+                order(ByteOrder.LITTLE_ENDIAN)
+                putShort(MAGIC_SET_MUSIC_INFO.toShort())
+            }.array()
+        )
+        
+        // 写入各个字段
+        baos.writeNullString(musicId)
+        baos.writeNullString(musicName)
+        baos.writeNullString(albumId)
+        baos.writeNullString(albumName)
+        // 写入 artists (Vec<Artist>)
+        baos.writeVec(artists) { artist -> this.writeArtist(artist) }
+        
+        // 写入时长
+        baos.write(
+            ByteBuffer.allocate(8).apply {
+                order(ByteOrder.LITTLE_ENDIAN)
+                putLong(duration)
+            }.array()
+        )
+        
+        return baos.toByteArray()
+    }
+    
+    /**
+     * 创建专辑封面 URI 设置消息 (SetMusicAlbumCoverImageURI)
+     * Magic: 0x0003
+     * 
+     * 数据结构：
+     * - img_url: NullString
+     */
+    fun encodeSetAlbumCoverURI(imgUrl: String): ByteArray {
+        val baos = ByteArrayOutputStream()
+        
+        // 写入 Magic Number
+        baos.write(
+            ByteBuffer.allocate(2).apply {
+                order(ByteOrder.LITTLE_ENDIAN)
+                putShort(MAGIC_SET_ALBUM_COVER_URI.toShort())
+            }.array()
+        )
+        
+        // 写入图片 URL
+        baos.writeNullString(imgUrl)
+        
+        return baos.toByteArray()
+    }
+    
+    /**
+     * 创建 TTML 歌词设置消息 (SetLyricFromTTML)
+     * Magic: 0x000B
+     * 
+     * 数据结构：
+     * - data: NullString (TTML 格式的歌词字符串)
+     */
+    fun encodeSetLyricFromTTML(ttmlContent: String): ByteArray {
+        val baos = ByteArrayOutputStream()
+        
+        // 写入 Magic Number
+        baos.write(
+            ByteBuffer.allocate(2).apply {
+                order(ByteOrder.LITTLE_ENDIAN)
+                putShort(MAGIC_SET_LYRIC_FROM_TTML.toShort())
+            }.array()
+        )
+        
+        // 写入 TTML 内容
+        baos.writeNullString(ttmlContent)
+        
+        return baos.toByteArray()
+    }
+    
+    /**
+     * 创建结构化歌词设置消息 (SetLyric) - 可选功能
+     * Magic: 0x000A
+     * 
+     * 数据结构：
+     * - data: Vec<LyricLine>
+     */
+    fun encodeSetLyric(lines: List<LyricLine>): ByteArray {
+        val baos = ByteArrayOutputStream()
+        
+        // 写入 Magic Number
+        baos.write(
+            ByteBuffer.allocate(2).apply {
+                order(ByteOrder.LITTLE_ENDIAN)
+                putShort(MAGIC_SET_LYRIC.toShort())
+            }.array()
+        )
+        
+        // 写入歌词行向量
+        // 写入歌词行向量
+        baos.writeVec(lines) { line -> this.writeLyricLine(line) }
+        
+        return baos.toByteArray()
     }
     
     /**
@@ -182,7 +365,178 @@ object WsProtocolV1Helper {
         return Pair(str, end + 1) // skip null terminator
     }
     
+    /**
+     * 写入 Vec<T>（先写 u32 数量，再写元素）
+     * 用于序列化线性列表数据结构
+     */
+    private fun <T> ByteArrayOutputStream.writeVec(
+        items: List<T>,
+        writeElement: ByteArrayOutputStream.(T) -> Unit
+    ) {
+        // 写入数量 (u32, 小端)
+        val size = items.size
+        ByteBuffer.allocate(4).apply {
+            order(ByteOrder.LITTLE_ENDIAN)
+            putInt(size)
+        }.let { write(it.array()) }
+        
+        // 写入每个元素
+        items.forEach { item -> this.writeElement(item) }
+    }
+    
+    /**
+     * 写入 Artist 数据结构
+     */
+    private fun ByteArrayOutputStream.writeArtist(artist: Artist) {
+        writeNullString(artist.id)
+        writeNullString(artist.name)
+    }
+    
+    /**
+     * 写入 LyricWord 数据结构
+     */
+    private fun ByteArrayOutputStream.writeLyricWord(word: LyricWord) {
+        ByteBuffer.allocate(20).apply {  // 8+8+4(min string len) = 至少 20 字节
+            order(ByteOrder.LITTLE_ENDIAN)
+            putLong(word.startTime)
+            putLong(word.endTime)
+        }.let { write(it.array()) }
+        writeNullString(word.word)
+    }
+    
+    /**
+     * 写入 LyricLine 数据结构
+     * 注意：根据 Rust v1.rs 的定义，写入顺序为：
+     * start_time, end_time, words(Vec), translated_lyric, roman_lyric, flag
+     */
+    private fun ByteArrayOutputStream.writeLyricLine(line: LyricLine) {
+        // startTime (u64) + endTime (u64)
+        ByteBuffer.allocate(16).apply {
+            order(ByteOrder.LITTLE_ENDIAN)
+            putLong(line.startTime)
+            putLong(line.endTime)
+        }.let { write(it.array()) }
+        
+        // 写入 words 向量（在 flag 之前！）
+        writeVec(line.words) { word -> writeLyricWord(word) }
+        
+        // 写入翻译歌词和罗马音歌词
+        writeNullString(line.translatedLyric)
+        writeNullString(line.romanLyric)
+        
+        // 最后写入 flag
+        write(line.getFlag().toInt())
+    }
+    
     // ==================== 解码方法 ====================
+    
+    /**
+     * 从字节数组读取 Vec<T>
+     * @return 读取的元素列表和新的偏移量
+     */
+    private fun <T> readVec(
+        data: ByteArray,
+        offset: Int,
+        readElement: (ByteArray, Int) -> Pair<T, Int>
+    ): Pair<List<T>, Int> {
+        require(data.size >= offset + 4) { "Vec 数据长度不足" }
+        
+        // 读取数量 (u32, 小端)
+        val size = ByteBuffer.wrap(data, offset, 4).apply {
+            order(ByteOrder.LITTLE_ENDIAN)
+        }.int
+        
+        var currentOffset = offset + 4
+        val items = mutableListOf<T>()
+        
+        // 读取每个元素
+        repeat(size) {
+            val (item, newOffset) = readElement(data, currentOffset)
+            items.add(item)
+            currentOffset = newOffset
+        }
+        
+        return Pair(items, currentOffset)
+    }
+    
+    /**
+     * 从字节数组读取 Artist
+     * @return Artist 对象和新的偏移量
+     */
+    private fun readArtist(data: ByteArray, offset: Int): Pair<Artist, Int> {
+        val (id, offset1) = readNullString(data, offset)
+        val (name, offset2) = readNullString(data, offset1)
+        return Pair(Artist(id, name), offset2)
+    }
+    
+    /**
+     * 从字节数组读取 LyricWord
+     * @return LyricWord 对象和新的偏移量
+     */
+    private fun readLyricWord(data: ByteArray, offset: Int): Pair<LyricWord, Int> {
+        require(data.size >= offset + 16) { "LyricWord 数据长度不足" }
+        
+        val buffer = ByteBuffer.wrap(data, offset, 16).apply {
+            order(ByteOrder.LITTLE_ENDIAN)
+        }
+        
+        val startTime = buffer.long
+        val endTime = buffer.long
+        val (word, newOffset) = readNullString(data, offset + 16)
+        
+        return Pair(LyricWord(startTime, endTime, word), newOffset)
+    }
+    
+    /**
+     * 从字节数组读取 LyricLine
+     * 注意：根据 Rust v1.rs 的定义，读取顺序为：
+     * start_time, end_time, words(Vec), translated_lyric, roman_lyric, flag
+     * @return LyricLine 对象和新的偏移量
+     */
+    private fun readLyricLine(data: ByteArray, offset: Int): Pair<LyricLine, Int> {
+        require(data.size >= offset + 16) { "LyricLine 数据长度不足（至少需要 16 字节用于 startTime+endTime）" }
+        
+        val buffer = ByteBuffer.wrap(data, offset, 16).apply {
+            order(ByteOrder.LITTLE_ENDIAN)
+        }
+        
+        val startTime = buffer.long
+        val endTime = buffer.long
+        
+        var currentOffset = offset + 16
+        
+        // 读取 words 向量（在 flag 之前！）
+        val (words, offsetAfterWords) = readVec(data, currentOffset) { d, o ->
+            readLyricWord(d, o)
+        }
+        currentOffset = offsetAfterWords
+        
+        // 读取翻译歌词
+        val (translatedLyric, offsetAfterTranslated) = readNullString(data, currentOffset)
+        currentOffset = offsetAfterTranslated
+        
+        // 读取罗马音歌词
+        val (romanLyric, offsetAfterRoman) = readNullString(data, currentOffset)
+        currentOffset = offsetAfterRoman
+        
+        // 最后读取 flag
+        require(data.size > currentOffset) { "flag 数据长度不足" }
+        val flag = data[currentOffset]
+        val (isBG, isDuet) = LyricLine.fromFlag(flag)
+        
+        return Pair(
+            LyricLine(
+                startTime = startTime,
+                endTime = endTime,
+                words = words,
+                translatedLyric = translatedLyric,
+                romanLyric = romanLyric,
+                isBG = isBG,
+                isDuet = isDuet
+            ),
+            currentOffset + 1 // flag 占用 1 字节
+        )
+    }
     
     /**
      * 解析消息类型
@@ -215,5 +569,121 @@ object WsProtocolV1Helper {
         return ByteBuffer.wrap(data, 2, 8).apply {
             order(ByteOrder.LITTLE_ENDIAN)
         }.double
+    }
+    
+    // ==================== 复杂消息解码方法 ====================
+    
+    /**
+     * 解析歌曲信息消息 (SetMusicInfo)
+     * Magic: 0x0002
+     * 
+     * @return SetMusicInfoData 对象，包含所有歌曲元数据
+     */
+    data class SetMusicInfoData(
+        val musicId: String,
+        val musicName: String,
+        val albumId: String,
+        val albumName: String,
+        val artists: List<Artist>,
+        val duration: Long
+    )
+    
+    fun parseSetMusicInfo(data: ByteArray): SetMusicInfoData {
+        require(data.size >= 2) { "消息数据太短" }
+        
+        // 验证 Magic Number
+        val magic = parseMessageType(data)
+        require(magic == MAGIC_SET_MUSIC_INFO) { "Magic Number 不匹配：期望 ${MAGIC_SET_MUSIC_INFO.toString(16)}, 实际 ${magic.toString(16)}" }
+        
+        var offset = 2
+        
+        // 读取 music_id
+        val (musicId, offset1) = readNullString(data, offset)
+        offset = offset1
+        
+        // 读取 music_name
+        val (musicName, offset2) = readNullString(data, offset)
+        offset = offset2
+        
+        // 读取 album_id
+        val (albumId, offset3) = readNullString(data, offset)
+        offset = offset3
+        
+        // 读取 album_name
+        val (albumName, offset4) = readNullString(data, offset)
+        offset = offset4
+        
+        // 读取 artists (Vec<Artist>)
+        val (artists, offset5) = readVec(data, offset) { d, o -> readArtist(d, o) }
+        offset = offset5
+        
+        // 读取 duration
+        require(data.size >= offset + 8) { "duration 数据长度不足" }
+        val duration = ByteBuffer.wrap(data, offset, 8).apply {
+            order(ByteOrder.LITTLE_ENDIAN)
+        }.long
+        
+        return SetMusicInfoData(
+            musicId = musicId,
+            musicName = musicName,
+            albumId = albumId,
+            albumName = albumName,
+            artists = artists,
+            duration = duration
+        )
+    }
+    
+    /**
+     * 解析专辑封面 URI 消息 (SetMusicAlbumCoverImageURI)
+     * Magic: 0x0003
+     * 
+     * @return imgUrl 字符串
+     */
+    fun parseSetAlbumCoverURI(data: ByteArray): String {
+        require(data.size >= 2) { "消息数据太短" }
+        
+        // 验证 Magic Number
+        val magic = parseMessageType(data)
+        require(magic == MAGIC_SET_ALBUM_COVER_URI) { "Magic Number 不匹配：期望 ${MAGIC_SET_ALBUM_COVER_URI.toString(16)}, 实际 ${magic.toString(16)}" }
+        
+        // 读取 img_url
+        val (imgUrl, _) = readNullString(data, 2)
+        return imgUrl
+    }
+    
+    /**
+     * 解析 TTML 歌词消息 (SetLyricFromTTML)
+     * Magic: 0x000B
+     * 
+     * @return ttmlContent TTML 格式的歌词字符串
+     */
+    fun parseSetLyricFromTTML(data: ByteArray): String {
+        require(data.size >= 2) { "消息数据太短" }
+        
+        // 验证 Magic Number
+        val magic = parseMessageType(data)
+        require(magic == MAGIC_SET_LYRIC_FROM_TTML) { "Magic Number 不匹配：期望 ${MAGIC_SET_LYRIC_FROM_TTML.toString(16)}, 实际 ${magic.toString(16)}" }
+        
+        // 读取 data
+        val (ttmlContent, _) = readNullString(data, 2)
+        return ttmlContent
+    }
+    
+    /**
+     * 解析结构化歌词消息 (SetLyric) - 可选功能
+     * Magic: 0x000A
+     * 
+     * @return lines 歌词行列表
+     */
+    fun parseSetLyric(data: ByteArray): List<LyricLine> {
+        require(data.size >= 2) { "消息数据太短" }
+        
+        // 验证 Magic Number
+        val magic = parseMessageType(data)
+        require(magic == MAGIC_SET_LYRIC) { "Magic Number 不匹配：期望 ${MAGIC_SET_LYRIC.toString(16)}, 实际 ${magic.toString(16)}" }
+        
+        // 读取 data (Vec<LyricLine>)
+        val (lines, _) = readVec(data, 2) { d, o -> readLyricLine(d, o) }
+        return lines
     }
 }

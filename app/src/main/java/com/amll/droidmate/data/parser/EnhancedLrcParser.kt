@@ -48,7 +48,8 @@ object EnhancedLrcParser {
             if (trimmed.isEmpty()) continue
             
             // 跳过元数据行
-            if (MetadataStripper.isMetadataLine(trimmed)) continue
+            // TEMPORARILY DISABLED: MetadataStripper.isMetadataLine(trimmed)
+            // if (MetadataStripper.isMetadataLine(trimmed)) continue
             
             try {
                 parseSingleLine(trimmed, contentLines, index)?.let { lines.add(it) }

@@ -500,6 +500,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                         content = input,
                         title = if (title.isBlank()) "自选歌词" else title,
                         artist = if (artist.isBlank()) "Unknown" else artist,
+                        // ⭐ 修复关键：只有在设置启用时才处理元数据
                         processMetadata = AppSettings.isMetadataProcessingEnabled(getApplication())
                     )
                     if (parsed != null) {

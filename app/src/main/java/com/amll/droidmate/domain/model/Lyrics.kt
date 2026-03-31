@@ -51,7 +51,9 @@ data class LyricLine(
 @Serializable
 data class TTMLLyrics(
     val metadata: TTMLMetadata,
-    val lines: List<LyricLine>
+    val lines: List<LyricLine>,
+    // 保留原始 TTML 字符串，用于 WebSocket 发送时直接使用，避免重新序列化
+    val rawTtml: String? = null
 )
 
 /**

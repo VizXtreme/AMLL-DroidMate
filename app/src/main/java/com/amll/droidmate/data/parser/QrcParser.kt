@@ -24,7 +24,8 @@ object QrcParser {
             val line = raw.trim()
             if (line.isEmpty()) continue
             // 使用统一的元数据检测函数
-            if (MetadataStripper.isMetadataLine(line)) continue
+            // TEMPORARILY DISABLED: MetadataStripper.isMetadataLine(line)
+            // if (MetadataStripper.isMetadataLine(line)) continue
 
             parseSingleLine(line)?.let { finalLines.add(it) }
         }

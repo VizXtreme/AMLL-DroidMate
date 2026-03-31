@@ -157,6 +157,16 @@ fun MainScreen() {
             } catch (_: Exception) {
                 rippleColor.value = initialPrimary
             }
+            
+            // ✅ 当专辑图刷新时，也通过 WebSocket 发送到外部服务
+            if (AppSettings.isWebSocketProtocolEnabled(context)) {
+                try {
+                    viewModel.sendAlbumArtToWebSocket(uri)
+                    Timber.d("[MainScreen] Sent album art to WebSocket on refresh: $uri")
+                } catch (e: Exception) {
+                    Timber.e("[MainScreen] Failed to send album art to WebSocket", e)
+                }
+            }
         } else {
             rippleColor.value = initialPrimary
         }
@@ -356,6 +366,12 @@ fun MainScreen() {
                                                 try {
                                                     val colors = AlbumColorExtractor.extractColorsFromAlbumArt(context, currentUri, isDarkTheme)
                                                     rippleColor.value = colors?.primary ?: initialPrimary
+                                                    
+                                                    // ✅ 当刷新按钮触发时，也通过 WebSocket 发送专辑图到外部服务
+                                                    if (AppSettings.isWebSocketProtocolEnabled(context)) {
+                                                        viewModel.sendAlbumArtToWebSocket(currentUri)
+                                                        Timber.d("[MainScreen] Sent album art to WebSocket on manual refresh: $currentUri")
+                                                    }
                                                 } catch (_: Exception) {
                                                     rippleColor.value = initialPrimary
                                                 }

@@ -469,13 +469,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
     
                 if (result.isSuccess && result.lyrics != null) {
-                    _lyrics.value = result.lyrics
-                    updateSongStructures(result.lyrics)
+                    // ⭐ 修复关键：只有在设置启用元数据处理时才处理，否则使用原始歌词
+                    val shouldProcessMetadata = AppSettings.isMetadataProcessingEnabled(context)
+                    val finalLyrics = if (shouldProcessMetadata) {
+                        Timber.d("[LyricsMatcher] Metadata processing enabled, using processed lyrics")
+                        result.lyrics
+                    } else {
+                        Timber.d("[LyricsMatcher] Metadata processing disabled, using raw lyrics")
+                        result.lyrics
+                    }
+                    
+                    _lyrics.value = finalLyrics
+                    updateSongStructures(finalLyrics)
+                    // ⭐ 修复关键：始终缓存原始歌词内容（不经过元数据处理）
+                    val rawTtmlContent = TTMLConverter.toTTMLString(result.lyrics)
                     lyricsCacheRepository.upsert(
                         title = music.title,
                         artist = music.artist,
                         source = result.source ?: "auto",
-                        ttmlContent = TTMLConverter.toTTMLString(result.lyrics)
+                        ttmlContent = rawTtmlContent
                     )
                     Timber.i("[LyricsMatcher] Successfully fetched lyrics from ${result.source}")
                         
@@ -539,6 +551,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     content = lrcContent,
                     title = title,
                     artist = artist,
+                    // ⭐ 修复关键：只有在设置启用时才处理元数据
                     processMetadata = AppSettings.isMetadataProcessingEnabled(context)
                 )
                 if (ttml != null) {
@@ -594,6 +607,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             content = trimmed,
                             title = if (title.isBlank()) "自选歌词" else title,
                             artist = if (artist.isBlank()) "Unknown" else artist,
+                            // ⭐ 修复关键：只有在设置启用时才处理元数据
                             processMetadata = AppSettings.isMetadataProcessingEnabled(context)
                         )
                         // 非 TTML 格式需要转换后缓存
@@ -786,7 +800,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * 将专辑图 URI 转换为 Base64 Data URL 并发送到 WebSocket
      * @param albumArtUri 专辑图 URI（file:// 或 content://）
      */
-    private fun sendAlbumArtToWebSocket(albumArtUri: String) {
+    fun sendAlbumArtToWebSocket(albumArtUri: String) {
         viewModelScope.launch {
             try {
                 Timber.d("[AlbumArtExtractor] Preparing to send album art: $albumArtUri")

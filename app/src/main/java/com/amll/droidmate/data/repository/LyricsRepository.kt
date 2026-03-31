@@ -2346,7 +2346,8 @@ open class LyricsRepository(
                     songStructures = songStructures  // 保留歌曲结构信息
                 )
                 
-                ttmlLyrics.copy(metadata = metadata)
+                // 保存原始 TTML 内容到 rawTtml 字段，用于后续 WebSocket 发送
+                ttmlLyrics.copy(metadata = metadata, rawTtml = ttmlContent)
             } catch (e: Exception) {
                 Timber.e("[TTMLParser] Error parsing TTML", e)
                 null

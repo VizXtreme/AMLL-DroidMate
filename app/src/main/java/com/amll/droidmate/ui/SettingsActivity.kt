@@ -292,9 +292,9 @@ private fun SettingsPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("处理元数据（实验性）", color = MaterialTheme.colorScheme.onSurface)
+                        Text("处理元数据（实验性）（当前版本请勿开启）", color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            text = "尝试自动移除歌词中的\"词:\", \"曲:\", \"编曲:\"等行，可能会误删。",
+                            text = "尝试自动移除歌词中的\"词:\", \"曲:\", \"编曲:\"等行，可能会误删。\n由于当前的处理实现会破坏结构，请勿开启。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -322,9 +322,9 @@ private fun SettingsPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("角色识别（实验性）", color = MaterialTheme.colorScheme.onSurface)
+                        Text("角色识别（实验性）（当前版本请勿开启）", color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            text = "尝试识别当前句由哪位歌手演唱并设置对唱歌词，可能存在错误。",
+                            text = "尝试识别当前句由哪位歌手演唱并设置对唱歌词，可能存在错误。\n由于当前的处理实现会破坏结构，请勿开启。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )

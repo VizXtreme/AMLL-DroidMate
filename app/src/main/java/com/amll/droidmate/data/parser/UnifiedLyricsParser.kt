@@ -160,32 +160,31 @@ object UnifiedLyricsParser {
                 return null
             }
             
-            // 非 TTML 格式才需要下面的统一处理流程
-            // 抛弃可能前/后端的元数据行（例如：词：..., 作曲：...）
-            val cleanedLines = if (processMetadata) {
-                MetadataStripper.stripMetadataLines(lines)
-            } else {
-                lines
-            }
+            // 【已临时禁用】元数据过滤功能
+            // TODO: 暂时不过滤元数据行，保留所有歌词行（包括"词：...", "作曲：..."等）
+            // val cleanedLines = if (processMetadata) {
+            //     MetadataStripper.stripMetadataLines(lines)
+            // } else {
+            //     lines
+            // }
+            val cleanedLines = lines  // 临时禁用：直接使用原始行，不过滤元数据
 
-            // 识别演唱者标记（A: XX），用于填充 agent/isDuet 信息
-            val annotatedLines = if (processMetadata) {
-                AgentRecognizer.recognizeAgents(cleanedLines)
-            } else {
-                cleanedLines
-            }
+            // 【已临时禁用】演唱者识别功能
+            // TODO: 暂时不过滤元数据，所以也不进行 Agent 识别
+            // val annotatedLines = if (processMetadata) {
+            //     AgentRecognizer.recognizeAgents(cleanedLines)
+            // } else {
+            //     cleanedLines
+            // }
+            val annotatedLines = cleanedLines  // 临时禁用：不进行演唱者识别
 
             // 构建 TTMLLyrics 对象
             val sortedLines = annotatedLines.sortedBy { it.startTime }
             val duration = sortedLines.lastOrNull()?.endTime ?: 0L
             Timber.d("[UnifiedLyricsParser] Final sorted summary: total=${sortedLines.size}, ${summarizeBgLines(sortedLines)}")
             
-            // 如果开启了元数据处理，解析歌曲结构
-            val songStructures = if (processMetadata) {
-                SongStructureParser.parseStructure(sortedLines)
-            } else {
-                emptyList()
-            }
+            // 解析歌曲结构
+            val songStructures = SongStructureParser.parseStructure(sortedLines)
 
             TTMLLyrics(
                 metadata = TTMLMetadata(

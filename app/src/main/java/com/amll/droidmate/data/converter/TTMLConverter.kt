@@ -19,7 +19,23 @@ import org.json.JSONObject
 object TTMLConverter {
 
     /**
+     * 转义 XML 特殊字符
+     * ⭐ 修复关键：防止 TTML 中的特殊字符导致 Rust 解析器 panic
+     * 注意：& 必须先转义，否则会导致双重转义
+     */
+    private fun escapeXml(text: String): String {
+        return text
+            .replace("&", "&amp;")   // 必须第一个转义
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
+    }
+
+    /**
      * 将歌词行列表转换为 TTML 字符串
+     * 
+     * ⭐ 修复关键：所有字符串值必须进行 XML 转义，防止解析失败
      */
     fun toTTMLString(
         lyrics: TTMLLyrics,
@@ -68,17 +84,17 @@ object TTMLConverter {
                     if (formatted) sb.append("\n")
                 }
                 
-                sb.append("""${indent}${indent}${indent}<amll:meta key="title" value="$title" />""")
+                sb.append("""${indent}${indent}${indent}<amll:meta key="title" value="${escapeXml(title)}" />""")
                 if (formatted) sb.append("\n")
-                sb.append("""${indent}${indent}${indent}<amll:meta key="artist" value="$artist" />""")
+                sb.append("""${indent}${indent}${indent}<amll:meta key="artist" value="${escapeXml(artist)}" />""")
                 if (formatted) sb.append("\n")
                 album?.let {
-                    sb.append("""${indent}${indent}${indent}<amll:meta key="album" value="$album" />""")
+                    sb.append("""${indent}${indent}${indent}<amll:meta key="album" value="${escapeXml(album)}" />""")
                     if (formatted) sb.append("\n")
                 }
-                sb.append("""${indent}${indent}${indent}<amll:meta key="language" value="$language" />""")
+                sb.append("""${indent}${indent}${indent}<amll:meta key="language" value="${escapeXml(language)}" />""")
                 if (formatted) sb.append("\n")
-                sb.append("""${indent}${indent}${indent}<amll:meta key="source" value="$source" />""")
+                sb.append("""${indent}${indent}${indent}<amll:meta key="source" value="${escapeXml(source)}" />""")
                 if (formatted) sb.append("\n")
             }
             
@@ -101,7 +117,7 @@ object TTMLConverter {
                 val endTimeAttr = TimestampUtils.fromMillis(structure.endTime)
                         
                 // 添加带 itunes:songPart 属性的 div 标签，songPart 比 song-part 更常用
-                sb.append("""${indent}${indent}<div itunes:songPart="${structure.label}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
+                sb.append("""${indent}${indent}<div itunes:songPart="${escapeXml(structure.label)}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
                         
                 // 添加该结构包含的歌词行
                 while (lineIndex < lyrics.lines.size) {
@@ -187,6 +203,9 @@ object TTMLConverter {
                 val spanText = word.word
                     .replace("\r", "")
                     .replace("\n", "")
+                
+                // ⭐ 修复关键：对歌词内容进行 XML 转义，防止特殊字符导致解析失败
+                val escapedText = escapeXml(spanText)
 
                 if (spanText.isEmpty()) {
                     // 保留空白词节点的最小分隔语义，避免词间被完全粘连。
@@ -196,25 +215,25 @@ object TTMLConverter {
                     return@inner
                 }
 
-                sb.append("""$spanIndent<span begin="$wordBegin" end="$wordEnd">${escapeXML(spanText)}</span>""")
+                sb.append("""$spanIndent<span begin="$wordBegin" end="$wordEnd">${escapeXml(spanText)}</span>""")
 
                 if (formatted) sb.append("\n")
             }
         } else {
             // 整行输出
-            sb.append("""$spanIndent<span begin="$begin" end="$end">${escapeXML(line.text)}</span>""")
+            sb.append("""$spanIndent<span begin="$begin" end="$end">${escapeXml(line.text)}</span>""")
             if (formatted) sb.append("\n")
         }
 
         if (line.isBG) {
             // BG 行的翻译与音译应作为 x-bg 的子节点，避免二次解析时被当作主歌词翻译。
             line.translation?.let {
-                sb.append("""$spanIndent<span ttm:role="x-translation" xml:lang="zh-CN">${escapeXML(it)}</span>""")
+                sb.append("""$spanIndent<span ttm:role="x-translation" xml:lang="zh-CN">${escapeXml(it)}</span>""")
                 if (formatted) sb.append("\n")
             }
 
             line.transliteration?.let {
-                sb.append("""$spanIndent<span ttm:role="x-roman" xml:lang="ja-Latn">${escapeXML(it)}</span>""")
+                sb.append("""$spanIndent<span ttm:role="x-roman" xml:lang="ja-Latn">${escapeXml(it)}</span>""")
                 if (formatted) sb.append("\n")
             }
 
@@ -223,13 +242,13 @@ object TTMLConverter {
         } else {
             // Translation if available
             line.translation?.let {
-                sb.append("""$lineContentIndent<span ttm:role="x-translation" xml:lang="zh-CN">${escapeXML(it)}</span>""")
+                sb.append("""$lineContentIndent<span ttm:role="x-translation" xml:lang="zh-CN">${escapeXml(it)}</span>""")
                 if (formatted) sb.append("\n")
             }
 
             // Transliteration if available
             line.transliteration?.let {
-                sb.append("""$lineContentIndent<span ttm:role="x-roman" xml:lang="ja-Latn">${escapeXML(it)}</span>""")
+                sb.append("""$lineContentIndent<span ttm:role="x-roman" xml:lang="ja-Latn">${escapeXml(it)}</span>""")
                 if (formatted) sb.append("\n")
             }
         }
@@ -304,25 +323,14 @@ object TTMLConverter {
     }
 
     /**
-     * 转义 XML 特殊字符
-     */
-    private fun escapeXML(text: String): String {
-        return text
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("'", "&apos;")
-    }
-
-    /**
      * 从多种格式解析歌词到 TTML（使用 Unilyric 规则）
-     * 支持: LRC, Enhanced LRC, QRC, KRC, YRC
+     * 支持：LRC, Enhanced LRC, QRC, KRC, YRC
      * 
      * @param content 歌词内容
      * @param title 歌曲标题（可选）
      * @param artist 艺术家（可选）
      * @param album 专辑（可选）
+     * @param processMetadata 是否处理元数据（默认禁用，防止强行处理导致翻译/音译错位）
      * @return TTMLLyrics 对象，如果解析失败则返回 null
      */
     fun fromLyrics(
@@ -330,7 +338,7 @@ object TTMLConverter {
         title: String = "Unknown",
         artist: String = "Unknown",
         album: String? = null,
-        processMetadata: Boolean = true
+        processMetadata: Boolean = false
     ): TTMLLyrics? {
         return try {
             com.amll.droidmate.data.parser.UnifiedLyricsParser.parse(

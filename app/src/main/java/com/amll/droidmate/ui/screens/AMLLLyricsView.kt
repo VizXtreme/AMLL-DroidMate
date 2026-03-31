@@ -529,11 +529,17 @@ fun AMLLLyricsView(
                     // 通过 WebSocket 发送歌词更新（V2 协议）
                     if (isWebSocketConnected) {
                         try {
-                            // V2 协议格式：SetLyric 使用 Ttml 格式
-                            // {"update":"SetLyric","value":{"format":"Ttml","data":"..."}}
-                            val lyricMessage = """{"update":"SetLyric","value":{"format":"Ttml","data":$lyricsJson}}"""
-                            webSocketClient.send(lyricMessage)
-                            Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 已通过 WebSocket 发送歌词")
+                            // ⭐ 关键修复：使用原始 TTML 字符串而不是结构化 JSON
+                            // V2 协议格式：{"type":"state","value":{"update":"setLyric","format":"ttml","data":"<TTML 原始内容>"}}
+                            // 注意：data 字段应该是原始 TTML 字符串，不是 Base64 编码，也不是给 WebView 的结构化 JSON
+                            val ttmlContent = lyrics.rawTtml
+                            if (!ttmlContent.isNullOrBlank()) {
+                                val lyricMessage = com.amll.droidmate.websocket.WsProtocolV2Helper.createTTMLLyricUpdate(ttmlContent)
+                                webSocketClient.send(lyricMessage)
+                                Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 已通过 WebSocket 发送歌词 (TTML format, size=${ttmlContent.length} chars)")
+                            } else {
+                                Timber.w("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] ⚠️ rawTtml is null/empty, skipping WebSocket send")
+                            }
                         } catch (e: Exception) {
                             Timber.e("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 通过 WebSocket 发送歌词失败", e)
                         }

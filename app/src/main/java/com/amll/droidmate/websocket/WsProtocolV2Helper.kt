@@ -176,6 +176,8 @@ object WsProtocolV2Helper {
     
     /**
      * 快速创建 TTML 歌词更新消息
+     * 
+     * ⭐ 修复关键：TTML 字符串包含 XML 特殊字符，需要确保 JSON 编码正确
      */
     fun createTTMLLyricUpdate(ttmlContent: String): String {
         // 注意：根据 Rust 服务端 v2.rs 的定义，Ttml 变体的 data 字段应该是原始 TTML 字符串

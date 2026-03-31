@@ -69,7 +69,8 @@ object KrcParser {
             if (trimmed.isEmpty()) continue
             
             // 使用统一的元数据检测函数
-            if (MetadataStripper.isMetadataLine(trimmed)) continue
+            // TEMPORARILY DISABLED: MetadataStripper.isMetadataLine(trimmed)
+            // if (MetadataStripper.isMetadataLine(trimmed)) continue
             
             try {
                 parseSingleLine(trimmed)?.let { parsedLine ->
