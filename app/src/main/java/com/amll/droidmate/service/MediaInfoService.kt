@@ -186,7 +186,7 @@ class MediaInfoService(private val context: Context) {
         if (isBasicInfoChanged) return true
         
         // ✅ 关键修复：添加播放时间检查，但只在变化超过阈值时才更新（避免过于频繁）
-        // 每 500ms 更新一次进度，与 UPDATE_INTERVAL_MS 保持一致
+        // 每 更新一次进度，与 UPDATE_INTERVAL_MS 保持一致
         val positionChanged = kotlin.math.abs((old?.currentPosition ?: 0L) - new.currentPosition)
         val isProgressSignificant = positionChanged >= PROGRESS_UPDATE_THRESHOLD_MS
         
@@ -425,7 +425,7 @@ class MediaInfoService(private val context: Context) {
     }
     
     companion object {
-        private const val UPDATE_INTERVAL_MS = 500L  // 每 500ms 更新一次
-        private const val PROGRESS_UPDATE_THRESHOLD_MS = 400L  // 播放时间变化超过 400ms 才更新（略小于更新间隔）
+        private const val UPDATE_INTERVAL_MS = 20L  // 每 20ms 更新一次
+        private const val PROGRESS_UPDATE_THRESHOLD_MS = 20L  // 播放时间变化超过 20ms 才更新
     }
 }
