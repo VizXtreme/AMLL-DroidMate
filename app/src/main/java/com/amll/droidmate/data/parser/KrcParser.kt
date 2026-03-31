@@ -59,7 +59,7 @@ object KrcParser {
             if (trimmed.startsWith("[offset:", ignoreCase = true)) {
                 val num = trimmed.removePrefix("[offset:").removeSuffix("]").trim()
                 globalOffsetMs = num.toLongOrNull() ?: 0L
-                Timber.i("KRC global offset metadata: $globalOffsetMs ms")
+                Timber.i("[KrcParser] KRC global offset metadata: $globalOffsetMs ms")
                 break
             }
         }
@@ -68,8 +68,9 @@ object KrcParser {
             val trimmed = lineStr.trim()
             if (trimmed.isEmpty()) continue
             
-            // 跳过元数据行
-            if (isMetadataLine(trimmed)) continue
+            // 使用统一的元数据检测函数
+            // TEMPORARILY DISABLED: MetadataStripper.isMetadataLine(trimmed)
+            // if (MetadataStripper.isMetadataLine(trimmed)) continue
             
             try {
                 parseSingleLine(trimmed)?.let { parsedLine ->
@@ -101,7 +102,7 @@ object KrcParser {
                     auxLineIndex += 1
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Failed to parse KRC line $index: $trimmed")
+                Timber.e("[KrcParser] Failed to parse KRC line $index: $trimmed", e)
             }
         }
         
@@ -147,7 +148,7 @@ object KrcParser {
                 romanizations = romanizations
             )
         } catch (e: Exception) {
-            Timber.w(e, "Failed to parse KRC [language] auxiliary data")
+            Timber.w("[KrcParser] Failed to parse KRC [language] auxiliary data", e)
             KrcAuxiliaryData()
         }
     }
@@ -243,8 +244,11 @@ object KrcParser {
     
     /**
      * 检查是否是元数据行
+     * @deprecated 使用 MetadataStripper.isMetadataLine() 代替
      */
+    @Deprecated("Use MetadataStripper.isMetadataLine()", ReplaceWith("MetadataStripper.isMetadataLine(line)"))
     private fun isMetadataLine(line: String): Boolean {
+        // 保留旧实现以确保向后兼容
         return line.startsWith("[language:") ||
                line.startsWith("[id:") ||
                line.startsWith("[hash:") ||

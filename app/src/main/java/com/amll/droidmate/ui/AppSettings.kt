@@ -52,6 +52,9 @@ object AppSettings {
     private const val KEY_AMLL_ANIMATION_HIDE_PASSED_LINES = "amll_animation_hide_passed_lines"
     private const val KEY_AMLL_ANIMATION_WORD_FADE_WIDTH = "amll_animation_word_fade_width"
     private const val KEY_AMLL_ANIMATION_FPS = "amll_animation_fps"
+    private const val KEY_WEBSOCKET_PROTOCOL_ADDRESS = "websocket_protocol_address"
+    private const val KEY_WEBSOCKET_PROTOCOL_ENABLED = "websocket_protocol_enabled"
+    private const val KEY_WEBVIEW_ENABLED = "webview_enabled"
 
     private const val DEFAULT_AMLL_ANIMATION_ENABLE_SPRING = true
     private const val DEFAULT_AMLL_ANIMATION_ENABLE_SCALE = true
@@ -59,6 +62,9 @@ object AppSettings {
     private const val DEFAULT_AMLL_ANIMATION_HIDE_PASSED_LINES = false
     private const val DEFAULT_AMLL_ANIMATION_WORD_FADE_WIDTH = 0.5f
     private const val DEFAULT_AMLL_ANIMATION_FPS = 60
+    private const val DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS = "ws://localhost:11444"
+    private const val DEFAULT_WEBSOCKET_PROTOCOL_ENABLED = false
+    private const val DEFAULT_WEBVIEW_ENABLED = true
 
     // helper to avoid repeating getSharedPreferences
     private fun prefs(context: Context) =
@@ -412,6 +418,33 @@ object AppSettings {
 
     fun setAmllAnimationFps(context: Context, value: Int) {
         prefs(context).putLong(KEY_AMLL_ANIMATION_FPS, value.toLong())
+    }
+
+    // === WebSocket 传递设置 ===
+    fun getWebSocketProtocolAddress(context: Context): String {
+        return prefs(context).getString(KEY_WEBSOCKET_PROTOCOL_ADDRESS, DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS)
+            ?: DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS
+    }
+
+    fun setWebSocketProtocolAddress(context: Context, address: String) {
+        prefs(context).putString(KEY_WEBSOCKET_PROTOCOL_ADDRESS, address)
+    }
+
+    fun isWebSocketProtocolEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_WEBSOCKET_PROTOCOL_ENABLED, DEFAULT_WEBSOCKET_PROTOCOL_ENABLED)
+    }
+
+    fun setWebSocketProtocolEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_WEBSOCKET_PROTOCOL_ENABLED, enabled)
+    }
+
+    // === WebView 全局开关 ===
+    fun isWebViewEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_WEBVIEW_ENABLED, DEFAULT_WEBVIEW_ENABLED)
+    }
+
+    fun setWebViewEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_WEBVIEW_ENABLED, enabled)
     }
 
     // === 歌词时间轴偏移设置（基于歌曲 + 输出设备 + 音乐源） ===

@@ -3,16 +3,39 @@ package com.amll.droidmate.data.converter
 import com.amll.droidmate.domain.model.LyricLine
 import com.amll.droidmate.domain.model.TTMLLyrics
 import com.amll.droidmate.domain.model.TTMLMetadata
+import com.amll.droidmate.domain.model.SongStructure
+import com.amll.droidmate.data.parser.TimestampUtils
 import timber.log.Timber
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * TTML 转换器 - 将歌词转换为 TTML 格式
+ * 
+ * 注意：本转换器的所有方法均通过反射调用，因此需要保留 @Suppress("unused")
+ * 这些方法在运行时被动态调用，用于歌词格式的导入/导出功能
  */
 @Suppress("unused")
 object TTMLConverter {
 
     /**
+     * 转义 XML 特殊字符
+     * ⭐ 修复关键：防止 TTML 中的特殊字符导致 Rust 解析器 panic
+     * 注意：& 必须先转义，否则会导致双重转义
+     */
+    private fun escapeXml(text: String): String {
+        return text
+            .replace("&", "&amp;")   // 必须第一个转义
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
+    }
+
+    /**
      * 将歌词行列表转换为 TTML 字符串
+     * 
+     * ⭐ 修复关键：所有字符串值必须进行 XML 转义，防止解析失败
      */
     fun toTTMLString(
         lyrics: TTMLLyrics,
@@ -37,123 +60,200 @@ object TTMLConverter {
         
         // Head
         sb.append("${indent}<head>$lineBreak")
-        sb.append("""${indent}${indent}<metadata>""")
-        if (formatted) sb.append("\n")
         
-        // Metadata
-        with(lyrics.metadata) {
-            sb.append("""${indent}${indent}${indent}<amll:meta key="title" value="$title" />""")
+        // ✅ 如果有原始 XML metadata，直接使用它（保留所有未使用的 XML 信息）
+        val rawXmlMetadata = lyrics.metadata.rawXmlMetadata
+        if (!rawXmlMetadata.isNullOrBlank()) {
+            Timber.d("[TTMLConverter] Using preserved raw XML metadata for serialization")
+            sb.append("${indent}${indent}$rawXmlMetadata$lineBreak")
+        } else {
+            // 否则，重新构建 metadata（向后兼容）
+            sb.append("${indent}${indent}<metadata>")
             if (formatted) sb.append("\n")
-            sb.append("""${indent}${indent}${indent}<amll:meta key="artist" value="$artist" />""")
-            if (formatted) sb.append("\n")
-            album?.let {
-                sb.append("""${indent}${indent}${indent}<amll:meta key="album" value="$album" />""")
+            
+            // Metadata
+            with(lyrics.metadata) {
+                // ✅ 添加主唱 agent 定义（必须放在其他 meta 之前，让 Rust 解析器正确识别）
+                sb.append("""${indent}${indent}${indent}<ttm:agent type="person" xml:id="v1" />""")
+                if (formatted) sb.append("\n")
+                
+                // 检查是否有对唱歌词，如果有则添加 v2 agent 定义
+                val hasDuet = lyrics.lines.any { it.isDuet }
+                if (hasDuet) {
+                    sb.append("""${indent}${indent}${indent}<ttm:agent type="other" xml:id="v2" />""")
+                    if (formatted) sb.append("\n")
+                }
+                
+                sb.append("""${indent}${indent}${indent}<amll:meta key="title" value="${escapeXml(title)}" />""")
+                if (formatted) sb.append("\n")
+                sb.append("""${indent}${indent}${indent}<amll:meta key="artist" value="${escapeXml(artist)}" />""")
+                if (formatted) sb.append("\n")
+                album?.let {
+                    sb.append("""${indent}${indent}${indent}<amll:meta key="album" value="${escapeXml(album)}" />""")
+                    if (formatted) sb.append("\n")
+                }
+                sb.append("""${indent}${indent}${indent}<amll:meta key="language" value="${escapeXml(language)}" />""")
+                if (formatted) sb.append("\n")
+                sb.append("""${indent}${indent}${indent}<amll:meta key="source" value="${escapeXml(source)}" />""")
                 if (formatted) sb.append("\n")
             }
-            sb.append("""${indent}${indent}${indent}<amll:meta key="language" value="$language" />""")
-            if (formatted) sb.append("\n")
-            sb.append("""${indent}${indent}${indent}<amll:meta key="source" value="$source" />""")
-            if (formatted) sb.append("\n")
+            
+            sb.append("""${indent}${indent}</metadata>$lineBreak""")
         }
         
-        sb.append("""${indent}${indent}</metadata>$lineBreak""")
         sb.append("""${indent}</head>$lineBreak""")
         
         // Body
-        val duration = formatTime(lyrics.lines.lastOrNull()?.endTime ?: 0L)
+        val duration = TimestampUtils.fromMillis(lyrics.lines.lastOrNull()?.endTime ?: 0L)
         sb.append("""${indent}<body dur="$duration">$lineBreak""")
-        
-        // Lyrics lines
-        lyrics.lines.forEachIndexed outer@{ lineIndex, line ->
-            val begin = formatTime(line.startTime)
-            val end = formatTime(line.endTime)
-            val lineNum = "L${lineIndex + 1}"
-            val agentAttr = line.agent?.let { " ttm:agent=\"$it\"" } ?: ""
-            
-            sb.append("""${indent}${indent}<p begin="$begin" end="$end" itunes:key="$lineNum"$agentAttr>""")
-            if (formatted) sb.append("\n")
-
-            val lineContentIndent = "${indent}${indent}${indent}"
-            val lineWrapPrefix = if (line.isBG) "<span ttm:role=\"x-bg\">" else ""
-            val lineWrapSuffix = if (line.isBG) "</span>" else ""
-
-            if (line.isBG) {
-                sb.append("""$lineContentIndent$lineWrapPrefix""")
-                if (formatted) sb.append("\n")
+                
+        // ✅ 如果有歌曲结构信息，为每个结构创建独立的 <div> 标签
+        val structures = lyrics.metadata.songStructures
+        if (!structures.isNullOrEmpty()) {
+            // 按歌曲结构分组歌词行
+            var lineIndex = 0
+            structures.forEachIndexed { structIndex, structure ->
+                val startTimeAttr = TimestampUtils.fromMillis(structure.startTime)
+                val endTimeAttr = TimestampUtils.fromMillis(structure.endTime)
+                        
+                // ✅ 直接使用 type.displayName（现在是英文）写入 itunes:songPart 属性
+                sb.append("""${indent}${indent}<div itunes:songPart="${escapeXml(structure.type.displayName)}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
+                        
+                // 添加该结构包含的歌词行
+                while (lineIndex < lyrics.lines.size) {
+                    val line = lyrics.lines[lineIndex]
+                    // 如果当前行的开始时间超过结构结束时间，跳出
+                    if (line.startTime > structure.endTime && structIndex < structures.size - 1) break
+                            
+                    appendLyricLine(sb, line, lineIndex, indent, formatted)
+                    lineIndex++
+                }
+                        
+                sb.append("""${indent}${indent}</div>$lineBreak""")
             }
-
-            val spanIndent = if (line.isBG) {
-                "${indent}${indent}${indent}${indent}"
-            } else {
-                lineContentIndent
+                    
+            // 处理剩余的歌词行（没有结构信息的部分）
+            if (lineIndex < lyrics.lines.size) {
+                sb.append("""${indent}${indent}<div>$lineBreak""")
+                for (i in lineIndex until lyrics.lines.size) {
+                    appendLyricLine(sb, lyrics.lines[i], i, indent, formatted)
+                }
+                sb.append("""${indent}${indent}</div>$lineBreak""")
             }
-            
-            // Main lyrics - 如果有 words 数组则逐词输出，否则整行输出
-            if (line.words.isNotEmpty()) {
-                // 警示后人：<p>/<span> 内空格是可见歌词语义，不能对词文本做 trim。
-                // 这里最多仅清理换行控制字符，避免导出后把 "a b" 变成 "ab"。
-                line.words.forEachIndexed inner@{ wordIndex, word ->
-                    val wordBegin = formatTime(word.startTime)
-                    val wordEnd = formatTime(word.endTime)
-
-                    val spanText = word.word
-                        .replace("\r", "")
-                        .replace("\n", "")
-
-                    if (spanText.isEmpty()) {
-                        // 保留空白词节点的最小分隔语义，避免词间被完全粘连。
-                        if (!formatted && wordIndex < line.words.lastIndex) {
-                            sb.append(" ")
-                        }
-                        return@inner
-                    }
-
-                    sb.append("""$spanIndent<span begin="$wordBegin" end="$wordEnd">${escapeXML(spanText)}</span>""")
-
-                    if (formatted) sb.append("\n")
-                }
-            } else {
-                // 整行输出
-                sb.append("""$spanIndent<span begin="$begin" end="$end">${escapeXML(line.text)}</span>""")
-                if (formatted) sb.append("\n")
+        } else {
+            // 没有结构信息，使用单个 div 包含所有歌词
+            sb.append("""${indent}${indent}<div>$lineBreak""")
+            lyrics.lines.forEachIndexed { index, line ->
+                appendLyricLine(sb, line, index, indent, formatted)
             }
-
-            if (line.isBG) {
-                // BG 行的翻译与音译应作为 x-bg 的子节点，避免二次解析时被当作主歌词翻译。
-                line.translation?.let {
-                    sb.append("""$spanIndent<span ttm:role="x-translation" xml:lang="zh-CN">${escapeXML(it)}</span>""")
-                    if (formatted) sb.append("\n")
-                }
-
-                line.transliteration?.let {
-                    sb.append("""$spanIndent<span ttm:role="x-roman" xml:lang="ja-Latn">${escapeXML(it)}</span>""")
-                    if (formatted) sb.append("\n")
-                }
-
-                sb.append("""$lineContentIndent$lineWrapSuffix""")
-                if (formatted) sb.append("\n")
-            } else {
-                // Translation if available
-                line.translation?.let {
-                    sb.append("""$lineContentIndent<span ttm:role="x-translation" xml:lang="zh-CN">${escapeXML(it)}</span>""")
-                    if (formatted) sb.append("\n")
-                }
-
-                // Transliteration if available
-                line.transliteration?.let {
-                    sb.append("""$lineContentIndent<span ttm:role="x-roman" xml:lang="ja-Latn">${escapeXML(it)}</span>""")
-                    if (formatted) sb.append("\n")
-                }
-            }
-            
-            sb.append("""${indent}${indent}</p>""")
-            if (formatted) sb.append("\n")
+            sb.append("""${indent}${indent}</div>$lineBreak""")
         }
         
+        // 关闭 body 和 tt 标签
         sb.append("""${indent}</body>$lineBreak""")
         sb.append("</tt>")
         
         return sb.toString()
+    }
+    
+    /**
+     * 辅助方法：追加歌词行到 StringBuilder
+     */
+    private fun appendLyricLine(
+        sb: StringBuilder,
+        line: LyricLine,
+        lineIndex: Int,
+        indent: String,
+        formatted: Boolean
+    ) {
+        val end = TimestampUtils.fromMillis(line.endTime)
+        val lineNum = "L${lineIndex + 1}"
+                
+        // ✅ 优先使用 agent 字段，如果没有则根据 isDuet 推断
+        val agentValue = line.agent ?: if (line.isDuet) "v2" else "v1"
+        val agentAttr = if (agentValue.isNotEmpty()) " ttm:agent=\"$agentValue\"" else ""
+                
+        sb.append("""${indent}${indent}${indent}<p begin="$begin" end="$end" itunes:key="$lineNum"$agentAttr>""")
+        if (formatted) sb.append("\n")
+
+        val lineContentIndent = "${indent}${indent}${indent}"
+        val lineWrapPrefix = if (line.isBG) "<span ttm:role=\"x-bg\">" else ""
+        val lineWrapSuffix = if (line.isBG) "</span>" else ""
+
+        if (line.isBG) {
+            sb.append("""$lineContentIndent$lineWrapPrefix""")
+            if (formatted) sb.append("\n")
+        }
+
+        val spanIndent = if (line.isBG) {
+            "${indent}${indent}${indent}${indent}"
+        } else {
+            lineContentIndent
+        }
+            
+        // Main lyrics - 如果有 words 数组则逐词输出，否则整行输出
+        if (line.words.isNotEmpty()) {
+            // 警示后人：<p>/<span> 内空格是可见歌词语义，不能对词文本做 trim。
+            // 这里最多仅清理换行控制字符，避免导出后把 "a b" 变成 "ab"。
+            line.words.forEachIndexed inner@{ wordIndex, word ->
+                val wordBegin = TimestampUtils.fromMillis(word.startTime)
+                val wordEnd = TimestampUtils.fromMillis(word.endTime)
+
+                val spanText = word.word
+                    .replace("\r", "")
+                    .replace("\n", "")
+                
+                // ⭐ 修复关键：对歌词内容进行 XML 转义，防止特殊字符导致解析失败
+                val escapedText = escapeXml(spanText)
+
+                if (spanText.isEmpty()) {
+                    // 保留空白词节点的最小分隔语义，避免词间被完全粘连。
+                    if (!formatted && wordIndex < line.words.lastIndex) {
+                        sb.append(" ")
+                    }
+                    return@inner
+                }
+
+                sb.append("""$spanIndent<span begin="$wordBegin" end="$wordEnd">${escapeXml(spanText)}</span>""")
+
+                if (formatted) sb.append("\n")
+            }
+        } else {
+            // 整行输出
+            sb.append("""$spanIndent<span begin="$begin" end="$end">${escapeXml(line.text)}</span>""")
+            if (formatted) sb.append("\n")
+        }
+
+        if (line.isBG) {
+            // BG 行的翻译与音译应作为 x-bg 的子节点，避免二次解析时被当作主歌词翻译。
+            line.translation?.let {
+                sb.append("""$spanIndent<span ttm:role="x-translation" xml:lang="zh-CN">${escapeXml(it)}</span>""")
+                if (formatted) sb.append("\n")
+            }
+
+            line.transliteration?.let {
+                sb.append("""$spanIndent<span ttm:role="x-roman" xml:lang="ja-Latn">${escapeXml(it)}</span>""")
+                if (formatted) sb.append("\n")
+            }
+
+            sb.append("""$lineContentIndent$lineWrapSuffix""")
+            if (formatted) sb.append("\n")
+        } else {
+            // Translation if available
+            line.translation?.let {
+                sb.append("""$lineContentIndent<span ttm:role="x-translation" xml:lang="zh-CN">${escapeXml(it)}</span>""")
+                if (formatted) sb.append("\n")
+            }
+
+            // Transliteration if available
+            line.transliteration?.let {
+                sb.append("""$lineContentIndent<span ttm:role="x-roman" xml:lang="ja-Latn">${escapeXml(it)}</span>""")
+                if (formatted) sb.append("\n")
+            }
+        }
+        
+        sb.append("""${indent}${indent}</p>""")
+        if (formatted) sb.append("\n")
     }
 
     /**
@@ -180,26 +280,32 @@ object TTMLConverter {
 
     /**
      * 格式化时间为 TTML 格式
-     * 格式: mm:ss.msms
+     * 格式：mm:ss.msms
+     * @deprecated 使用 TimestampUtils.fromMillis() 代替
      */
+    @Deprecated("Use TimestampUtils.fromMillis()", ReplaceWith("TimestampUtils.fromMillis(millis, TimestampUtils.Format.MM_SS_MS)"))
     fun formatTime(millis: Long): String {
+        // 保留旧实现以确保向后兼容
         val totalSeconds = millis / 1000
         val minutes = totalSeconds / 60
         val seconds = totalSeconds % 60
         val ms = millis % 1000
-        
+            
         return String.format("%02d:%02d.%03d", minutes, seconds, ms)
     }
 
     /**
      * 将时间字符串转换为毫秒
-     * 支持: mm:ss.mmm 或 mm:ss
+     * 支持：mm:ss.mmm 或 mm:ss
+     * @deprecated 使用 TimestampUtils.toMillis() 代替
      */
+    @Deprecated("Use TimestampUtils.toMillis()", ReplaceWith("TimestampUtils.toMillis(timeStr)"))
     fun timeToMillis(timeStr: String): Long {
+        // 保留旧实现以确保向后兼容
         return try {
             val parts = timeStr.split(":")
             if (parts.size != 2) return 0L
-
+    
             val minutes = parts[0].toLongOrNull() ?: return 0L
             val secParts = parts[1].split(".")
             val seconds = secParts[0].toLongOrNull() ?: return 0L
@@ -208,7 +314,7 @@ object TTMLConverter {
             } else {
                 0L
             }
-
+    
             (minutes * 60 + seconds) * 1000 + millis
         } catch (_: Exception) {
             0L
@@ -216,25 +322,14 @@ object TTMLConverter {
     }
 
     /**
-     * 转义 XML 特殊字符
-     */
-    private fun escapeXML(text: String): String {
-        return text
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("'", "&apos;")
-    }
-
-    /**
      * 从多种格式解析歌词到 TTML（使用 Unilyric 规则）
-     * 支持: LRC, Enhanced LRC, QRC, KRC, YRC
+     * 支持：LRC, Enhanced LRC, QRC, KRC, YRC
      * 
      * @param content 歌词内容
      * @param title 歌曲标题（可选）
      * @param artist 艺术家（可选）
      * @param album 专辑（可选）
+     * @param processMetadata 是否处理元数据（默认禁用，防止强行处理导致翻译/音译错位）
      * @return TTMLLyrics 对象，如果解析失败则返回 null
      */
     fun fromLyrics(
@@ -242,7 +337,7 @@ object TTMLConverter {
         title: String = "Unknown",
         artist: String = "Unknown",
         album: String? = null,
-        processMetadata: Boolean = true
+        processMetadata: Boolean = false
     ): TTMLLyrics? {
         return try {
             com.amll.droidmate.data.parser.UnifiedLyricsParser.parse(
@@ -253,7 +348,7 @@ object TTMLConverter {
                 processMetadata = processMetadata
             )
         } catch (e: Exception) {
-            Timber.e(e, "Error parsing lyrics using Unilyric rules")
+            Timber.e("[TTMLConverter] Error parsing lyrics using Unilyric rules", e)
             null
         }
     }

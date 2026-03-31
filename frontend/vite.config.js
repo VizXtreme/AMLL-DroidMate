@@ -4,22 +4,28 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+
   base: './',
   define: {
     global: 'globalThis',
-    'process.env.NODE_ENV': JSON.stringify('production'),
+    'process.env.NODE_ENV': JSON.stringify('development'),
   },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: false,
+    sourcemap: true,
     cssCodeSplit: false,
+    minify: false,
     lib: {
-      entry: resolve(__dirname, 'src/main.jsx'),
+      entry: resolve(__dirname, 'src/main.tsx'),
       name: 'AMLLBundle',
       formats: ['iife'],
       fileName: () => 'amll.bundle.js',
     },
+  },
+  resolve: {
+    // 强制去重，确保运行时只有一个 React / React DOM 副本
+    dedupe: ['react', 'react-dom', 'jotai'],
   },
   server: {
     port: 5173,

@@ -51,7 +51,9 @@ data class LyricLine(
 @Serializable
 data class TTMLLyrics(
     val metadata: TTMLMetadata,
-    val lines: List<LyricLine>
+    val lines: List<LyricLine>,
+    // 保留原始 TTML 字符串，用于 WebSocket 发送时直接使用，避免重新序列化
+    val rawTtml: String? = null
 )
 
 /**
@@ -64,8 +66,41 @@ data class TTMLMetadata(
     val album: String? = null,
     val language: String = "ja",
     val duration: Long = 0L,
-    val source: String = "DroidMate"
+    val source: String = "DroidMate",
+    val songStructures: List<SongStructure>? = null, // 从 TTML 元数据中解析的歌曲结构
+    // 保留原始 TTML 的完整 metadata 元素内容（用于未来扩展和保留未使用的 XML 信息）
+    val rawXmlMetadata: String? = null
 )
+
+/**
+ * 歌曲结构类型
+ */
+enum class SongStructureType(val displayName: String) {
+    VERSE("Verse"),
+    CHORUS("Chorus"),
+    BRIDGE("Bridge"),
+    PRE_CHORUS("Pre-Chorus"),
+    INTRO("Intro"),
+    INTERLUDE("Interlude"),
+    OUTRO("Outro"),
+    SOLO("Solo"),
+    BREAK("Break"),
+    UNKNOWN("Unknown")
+}
+
+/**
+ * 歌曲结构段落
+ */
+@Serializable
+data class SongStructure(
+    val label: String,
+    val startTime: Long,
+    val endTime: Long,
+    val type: SongStructureType = SongStructureType.UNKNOWN
+) {
+    val duration: Long
+        get() = endTime - startTime
+}
 
 /**
  * 支持的功能（用于 UI 提示）

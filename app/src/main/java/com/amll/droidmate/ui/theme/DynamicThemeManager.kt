@@ -25,9 +25,9 @@ object DynamicThemeManager {
         if (_dynamicColorScheme.value != scheme) {
             _dynamicColorScheme.value = scheme
             if (scheme != null) {
-                Timber.i("Dynamic color scheme updated globally")
+                Timber.i("[DynamicThemeManager] Dynamic color scheme updated globally")
             } else {
-                Timber.i("Dynamic color scheme cleared, using default theme")
+                Timber.i("[DynamicThemeManager] Dynamic color scheme cleared, using default theme")
             }
         }
     }

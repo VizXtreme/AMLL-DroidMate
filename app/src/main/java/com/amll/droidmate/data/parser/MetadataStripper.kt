@@ -165,6 +165,68 @@ object MetadataStripper {
     )
 
     private const val METADATA_SCAN_LIMIT = 12
+    
+    /**
+     * LRC 格式的元数据行前缀列表
+     */
+    private val LRC_METADATA_PREFIXES = listOf(
+        "[ti:",
+        "[ar:",
+        "[al:",
+        "[by:",
+        "[offset:",
+        "[length:"
+    )
+
+    /**
+     * 检查是否是元数据行
+     * 
+     * 统一的元数据行检测逻辑，支持：
+     * 1. LRC 格式的标准元数据（[ti:], [ar:], [al:] 等）
+     * 2. 包含制作人员信息的行（作词、作曲、编曲等）
+     * 3. 版权声明和警告信息
+     * 4. 公司名称行
+     * 
+     * @param line 待检查的行
+     * @return 如果是元数据行返回 true，否则返回 false
+     */
+    fun isMetadataLine(line: String): Boolean {
+        val trimmed = line.trim()
+        if (trimmed.isEmpty()) return false
+        
+        // 1. 检查 LRC 格式的标准元数据
+        if (LRC_METADATA_PREFIXES.any { trimmed.startsWith(it, ignoreCase = true) }) {
+            return true
+        }
+        
+        // 2. 检查是否匹配预定义的关键词
+        val lowerLine = trimmed.lowercase()
+        if (DEFAULT_KEYWORDS.any { keyword -> 
+                lowerLine.contains(keyword.lowercase()) || 
+                lowerLine.startsWith("${keyword.lowercase()}:") ||
+                lowerLine.startsWith("${keyword.lowercase()}：")
+            }) {
+            return true
+        }
+        
+        // 3. 检查是否匹配正则模式
+        for (pattern in DEFAULT_REGEX_PATTERNS) {
+            try {
+                if (Regex(pattern, RegexOption.IGNORE_CASE).containsMatchIn(trimmed)) {
+                    return true
+                }
+            } catch (e: Exception) {
+                // 忽略编译失败的正则
+            }
+        }
+        
+        // 4. 检查是否包含版权相关术语
+        if (lineContainsCopyrightTerms(trimmed)) {
+            return true
+        }
+        
+        return false
+    }
 
     fun stripMetadataLines(lines: List<LyricLine>): List<LyricLine> {
         if (lines.isEmpty()) return lines

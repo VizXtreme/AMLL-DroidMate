@@ -38,7 +38,7 @@ object EnhancedLrcParser {
             if (trimmed.startsWith("[offset:", ignoreCase = true)) {
                 val num = trimmed.removePrefix("[offset:").removeSuffix("]").trim()
                 offsetMs = num.toLongOrNull() ?: 0L
-                Timber.i("Enhanced LRC global offset metadata: $offsetMs ms")
+                Timber.i("[EnhancedLrcParser] Enhanced LRC global offset metadata: $offsetMs ms")
                 break
             }
         }
@@ -48,12 +48,13 @@ object EnhancedLrcParser {
             if (trimmed.isEmpty()) continue
             
             // 跳过元数据行
-            if (isMetadataLine(trimmed)) continue
+            // TEMPORARILY DISABLED: MetadataStripper.isMetadataLine(trimmed)
+            // if (MetadataStripper.isMetadataLine(trimmed)) continue
             
             try {
                 parseSingleLine(trimmed, contentLines, index)?.let { lines.add(it) }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to parse Enhanced LRC line $index: $trimmed")
+            } catch (e: Exception) {    
+                Timber.e("[EnhancedLrcParser] Failed to parse Enhanced LRC line $index: $trimmed", e)
             }
         }
         
@@ -85,10 +86,8 @@ object EnhancedLrcParser {
     ): LyricLine? {
         // 匹配行时间戳
         val lineMatch = LINE_TIMESTAMP_REGEX.find(line) ?: return null
-        val lineStartMs = parseTimeToMillis(
-            lineMatch.groupValues[1],
-            lineMatch.groupValues[2],
-            lineMatch.groupValues[3]
+        val lineStartMs = TimestampUtils.toMillis(
+            "${lineMatch.groupValues[1]}:${lineMatch.groupValues[2]}:${lineMatch.groupValues[3]}"
         )
         
         // 提取行时间戳后的内容
@@ -119,10 +118,8 @@ object EnhancedLrcParser {
         var fullText = ""
         
         for (match in WORD_TIMESTAMP_REGEX.findAll(content)) {
-            val wordStartMs = parseTimeToMillis(
-                match.groupValues[1],
-                match.groupValues[2],
-                match.groupValues[3]
+            val wordStartMs = TimestampUtils.toMillis(
+                "${match.groupValues[1]}:${match.groupValues[2]}:${match.groupValues[3]}"
             )
             val text = match.groupValues[4]
             
@@ -206,10 +203,8 @@ object EnhancedLrcParser {
             
             val match = LINE_TIMESTAMP_REGEX.find(nextLine)
             if (match != null) {
-                return parseTimeToMillis(
-                    match.groupValues[1],
-                    match.groupValues[2],
-                    match.groupValues[3]
+                return TimestampUtils.toMillis(
+                    "${match.groupValues[1]}:${match.groupValues[2]}:${match.groupValues[3]}"
                 )
             }
         }
@@ -218,18 +213,20 @@ object EnhancedLrcParser {
     
     /**
      * 将时间字符串转换为毫秒
+     * @deprecated 使用 TimestampUtils.toMillis() 代替
      */
+    @Deprecated("Use TimestampUtils.toMillis instead")
     private fun parseTimeToMillis(minutes: String, seconds: String, millisStr: String): Long {
+        // 保留旧实现以确保向后兼容，新代码应该直接使用 TimestampUtils
         val min = minutes.toLongOrNull() ?: 0L
         val sec = seconds.toLongOrNull() ?: 0L
         val millis = if (millisStr.isEmpty()) {
             0L
         } else {
-            // 处理不同长度的毫秒部分
             when (millisStr.length) {
-                1 -> millisStr.toLongOrNull()?.times(100) ?: 0L  // .5 -> 500ms
-                2 -> millisStr.toLongOrNull()?.times(10) ?: 0L   // .50 -> 500ms
-                3 -> millisStr.toLongOrNull() ?: 0L              // .500 -> 500ms
+                1 -> millisStr.toLongOrNull()?.times(100) ?: 0L
+                2 -> millisStr.toLongOrNull()?.times(10) ?: 0L
+                3 -> millisStr.toLongOrNull() ?: 0L
                 else -> 0L
             }
         }
@@ -239,8 +236,11 @@ object EnhancedLrcParser {
     
     /**
      * 检查是否是元数据行
+     * @deprecated 使用 MetadataStripper.isMetadataLine() 代替
      */
+    @Deprecated("Use MetadataStripper.isMetadataLine()", ReplaceWith("MetadataStripper.isMetadataLine(line)"))
     private fun isMetadataLine(line: String): Boolean {
+        // 保留旧实现以确保向后兼容
         return line.startsWith("[ti:") ||
                line.startsWith("[ar:") ||
                line.startsWith("[al:") ||

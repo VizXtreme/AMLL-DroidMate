@@ -3,6 +3,7 @@ package com.amll.droidmate.data.parser
 import com.amll.droidmate.domain.model.LyricLine
 import com.amll.droidmate.domain.model.TTMLLyrics
 import com.amll.droidmate.domain.model.TTMLMetadata
+import com.amll.droidmate.domain.model.SongStructure
 import timber.log.Timber
 
 /**
@@ -25,12 +26,7 @@ object UnifiedLyricsParser {
         return "bg=${bgLines.size}, bgWithTrans=$withTranslation, bgWithRoman=$withRoman, sampleBg='${sampleText.take(40)}', sampleTrans='${sampleTranslation.take(40)}'"
     }
 
-    private fun callerTrace(): String {
-        return Throwable().stackTrace
-            .drop(2)
-            .take(5)
-            .joinToString(" <- ") { "${it.className}.${it.methodName}:${it.lineNumber}" }
-    }
+    // 移除 callerTrace() 函数，因为它是调试专用且不符合日志规范
     
     /**
      * 解析歌词内容为 TTMLLyrics 对象
@@ -49,7 +45,7 @@ object UnifiedLyricsParser {
         processMetadata: Boolean = true
     ): TTMLLyrics? {
         if (content.isBlank()) {
-            Timber.w("Empty lyrics content")
+            Timber.w("[UnifiedLyricsParser] Empty lyrics content")
             return null
         }
 
@@ -58,37 +54,36 @@ object UnifiedLyricsParser {
         // stripping a leading BOM before further processing.
         val normalizedContent = content.trim().trimStart('\uFEFF')
         if (normalizedContent != content) {
-            Timber.d("Normalized lyrics content by stripping leading BOM/whitespace")
+            Timber.d("[UnifiedLyricsParser] Normalized lyrics content by stripping leading BOM/whitespace")
         }
 
-        Timber.d("Lyrics content preview (first 300 chars): ${normalizedContent.take(300)}")
-        Timber.d("[BG-LYRICS-DEBUG] UnifiedLyricsParser.parse caller trace: ${callerTrace()}")
+        Timber.d("[UnifiedLyricsParser] Lyrics content preview (first 300 chars): ${normalizedContent.take(300)}")
         
         return try {
             // 检测格式（使用归一化内容来避免 BOM 等前缀影响检测）
             val format = LyricsFormat.detect(normalizedContent)
-            Timber.i("Detected lyrics format: $format")
+            Timber.d("[UnifiedLyricsParser] Detected lyrics format: $format")
             
             // 使用相应的解析器解析
             val lines = when (format) {
                 LyricsFormat.QRC -> {
                     val parsed = QrcParser.parse(normalizedContent)
                     val firstLineWords = parsed.firstOrNull()?.words?.size ?: 0
-                    Timber.d("QRC parsed ${parsed.size} lines, first line word count=$firstLineWords")
+                    Timber.d("[UnifiedLyricsParser] QRC parsed ${parsed.size} lines, first line word count=$firstLineWords")
                     parsed
                 }
                 LyricsFormat.KRC -> {
                     val parsed = KrcParser.parse(normalizedContent)
-                    Timber.d("KRC parsed ${parsed.size} lines, first line words: ${parsed.firstOrNull()?.words?.size ?: 0}")
+                    Timber.d("[UnifiedLyricsParser] KRC parsed ${parsed.size} lines, first line words: ${parsed.firstOrNull()?.words?.size ?: 0}")
                     parsed
                 }
                 LyricsFormat.YRC -> {
                     val parsed = YrcParser.parse(normalizedContent)
-                    Timber.d("YRC parsed ${parsed.size} lines")
+                    Timber.d("[UnifiedLyricsParser] YRC parsed ${parsed.size} lines")
                     if (parsed.isEmpty()) {
-                        Timber.w("YRC parsing returned no lines, falling back to LRC parser")
+                        Timber.i("[UnifiedLyricsParser] YRC parsing returned no lines, falling back to LRC parser")
                         val lrcFallback = LrcParser.parse(normalizedContent)
-                        Timber.d("LRC fallback parsed ${lrcFallback.size} lines")
+                        Timber.d("[UnifiedLyricsParser] LRC fallback parsed ${lrcFallback.size} lines")
                         lrcFallback
                     } else {
                         parsed
@@ -96,53 +91,100 @@ object UnifiedLyricsParser {
                 }
                 LyricsFormat.ENHANCED_LRC -> {
                     val parsed = EnhancedLrcParser.parse(normalizedContent)
-                    Timber.d("Enhanced LRC parsed ${parsed.size} lines")
+                    Timber.d("[UnifiedLyricsParser] Enhanced LRC parsed ${parsed.size} lines")
                     parsed
                 }
                 LyricsFormat.LRC -> {
                     val parsed = LrcParser.parse(normalizedContent)
-                    Timber.d("LRC parsed ${parsed.size} lines")
+                    Timber.d("[UnifiedLyricsParser] LRC parsed ${parsed.size} lines")
                     parsed
                 }
                 LyricsFormat.TTML -> {
                     // TTML 格式使用专用解析器
-                    Timber.i("Parsing TTML format")
-                    Timber.d("[BG-LYRICS-DEBUG] Unified TTML input has x-bg=${normalizedContent.contains("ttm:role=\"x-bg\"")}, x-translation=${normalizedContent.contains("ttm:role=\"x-translation\"")}, length=${normalizedContent.length}")
-                    val parsed = TTMLParser.parse(normalizedContent)
-                    Timber.d("[BG-LYRICS-DEBUG] Unified TTML parsed summary: ${summarizeBgLines(parsed)}")
-                    parsed
+                    Timber.d("[UnifiedLyricsParser] Parsing TTML format")
+                    
+                    // 诊断输入内容是否包含歌曲结构标签
+                    val hasItunesSongPart = normalizedContent.contains("itunes:songPart") || normalizedContent.contains("itunes:song-part")
+                    val hasItunesLabel = normalizedContent.contains("itunes:label")
+                    val hasAmllMeta = normalizedContent.contains("amll:meta")
+                    val hasBodyDiv = normalizedContent.contains("<body") && normalizedContent.contains("<div")
+                    
+                    Timber.d("[SongStructure] TTML input diagnosis: hasItunesSongPart=$hasItunesSongPart, hasItunesLabel=$hasItunesLabel, hasAmllMeta=$hasAmllMeta, hasBodyDiv=$hasBodyDiv")
+                    Timber.d("[UnifiedLyricsParser] TTML input contains x-bg=${normalizedContent.contains("ttm:role=\"x-bg\"")}, x-translation=${normalizedContent.contains("ttm:role=\"x-translation\"")}, length=${normalizedContent.length}")
+                    
+                    val ttmlLyrics = TTMLParser.parse(normalizedContent)
+                    
+                    // 诊断解析结果
+                    val songStructures = ttmlLyrics.metadata.songStructures
+                    if (!songStructures.isNullOrEmpty()) {
+                        Timber.d("[SongStructure] Parsed ${songStructures.size} structures from TTML metadata")
+                        songStructures.forEachIndexed { index, structure ->
+                            Timber.d("[SongStructure] [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms")
+                        }
+                    } else {
+                        Timber.i("[SongStructure] No song structures found in TTML metadata")
+                        Timber.d("[SongStructure] Input preview: ${normalizedContent.take(500)}...")
+                    }
+                    
+                    Timber.d("[UnifiedLyricsParser] TTML parsed summary: ${summarizeBgLines(ttmlLyrics.lines)}")
+                    
+                    // TTML 格式的歌曲结构已经在 TTMLParser 中解析完成，直接返回完整的 TTMLLyrics 对象
+                    // 不需要再走下面的统一处理流程
+                    return if (processMetadata) {
+                        // 如果开启元数据处理，检查是否有歌曲结构
+                        val structures = ttmlLyrics.metadata.songStructures
+                        if (!structures.isNullOrEmpty()) {
+                            Timber.d("[SongStructure] Parsed ${structures.size} structures from TTML metadata")
+                        } else {
+                            Timber.i("[SongStructure] No structures found with processMetadata=true, fallback will be triggered")
+                        }
+                        // 直接使用 TTMLParser 返回的完整对象（包含元数据和歌曲结构）
+                        ttmlLyrics
+                    } else {
+                        // 如果关闭元数据处理，返回不带结构的对象
+                        ttmlLyrics.copy(
+                            metadata = ttmlLyrics.metadata.copy(songStructures = null)
+                        )
+                    }
                 }
                 LyricsFormat.PLAIN_TEXT -> {
                     // 纯文本格式转换为简单行
                     val parsed = parsePlainText(normalizedContent)
-                    Timber.d("Plain text parsed ${parsed.size} lines")
+                    Timber.d("[UnifiedLyricsParser] Plain text parsed ${parsed.size} lines")
                     parsed
                 }
             }
             
             if (lines.isEmpty()) {
-                Timber.e("No lyrics lines parsed")
+                Timber.e("[UnifiedLyricsParser] No lyrics lines parsed")
                 return null
             }
             
-            // 抛弃可能前/后端的元数据行（例如：词：..., 作曲：...）
-            val cleanedLines = if (processMetadata) {
-                MetadataStripper.stripMetadataLines(lines)
-            } else {
-                lines
-            }
+            // 【已临时禁用】元数据过滤功能
+            // TODO: 暂时不过滤元数据行，保留所有歌词行（包括"词：...", "作曲：..."等）
+            // val cleanedLines = if (processMetadata) {
+            //     MetadataStripper.stripMetadataLines(lines)
+            // } else {
+            //     lines
+            // }
+            val cleanedLines = lines  // 临时禁用：直接使用原始行，不过滤元数据
 
-            // 识别演唱者标记（A: XX），用于填充 agent/isDuet 信息
-            val annotatedLines = if (processMetadata) {
-                AgentRecognizer.recognizeAgents(cleanedLines)
-            } else {
-                cleanedLines
-            }
+            // 【已临时禁用】演唱者识别功能
+            // TODO: 暂时不过滤元数据，所以也不进行 Agent 识别
+            // val annotatedLines = if (processMetadata) {
+            //     AgentRecognizer.recognizeAgents(cleanedLines)
+            // } else {
+            //     cleanedLines
+            // }
+            val annotatedLines = cleanedLines  // 临时禁用：不进行演唱者识别
 
             // 构建 TTMLLyrics 对象
             val sortedLines = annotatedLines.sortedBy { it.startTime }
             val duration = sortedLines.lastOrNull()?.endTime ?: 0L
-            Timber.d("[BG-LYRICS-DEBUG] Unified final sorted summary: total=${sortedLines.size}, ${summarizeBgLines(sortedLines)}")
+            Timber.d("[UnifiedLyricsParser] Final sorted summary: total=${sortedLines.size}, ${summarizeBgLines(sortedLines)}")
+            
+            // 解析歌曲结构
+            val songStructures = SongStructureParser.parseStructure(sortedLines)
 
             TTMLLyrics(
                 metadata = TTMLMetadata(
@@ -151,12 +193,13 @@ object UnifiedLyricsParser {
                     album = album,
                     language = detectLanguage(content),
                     duration = duration,
-                    source = "DroidMate (${format.displayName})"
+                    source = "DroidMate (${format.displayName})",
+                    songStructures = songStructures
                 ),
                 lines = sortedLines
             )
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse lyrics")
+            Timber.e("[UnifiedLyricsParser] Failed to parse lyrics", e)
             null
         }
     }
@@ -216,7 +259,7 @@ object UnifiedLyricsParser {
             LyricsFormat.ENHANCED_LRC -> EnhancedLrcParser.parse(content)
             LyricsFormat.LRC -> LrcParser.parse(content)
             LyricsFormat.PLAIN_TEXT -> parsePlainText(content)
-            LyricsFormat.TTML -> TTMLParser.parse(content)
+            LyricsFormat.TTML -> TTMLParser.parse(content).lines
         }
     }
 }

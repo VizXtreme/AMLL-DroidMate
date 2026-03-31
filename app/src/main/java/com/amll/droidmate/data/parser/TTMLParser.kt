@@ -2,11 +2,18 @@ package com.amll.droidmate.data.parser
 
 import com.amll.droidmate.domain.model.LyricLine
 import com.amll.droidmate.domain.model.LyricWord
+import com.amll.droidmate.domain.model.SongStructure
+import com.amll.droidmate.domain.model.SongStructureType
+import com.amll.droidmate.domain.model.TTMLLyrics
+import com.amll.droidmate.domain.model.TTMLMetadata
 import timber.log.Timber
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
 
 /**
  * TTML 格式解析器
@@ -16,15 +23,21 @@ object TTMLParser {
     
     private val factory = DocumentBuilderFactory.newInstance()
     
-    fun parse(content: String): List<LyricLine> {
-        if (content.isBlank()) return emptyList()
+    /**
+     * 解析 TTML 内容，返回完整的 TTMLLyrics 对象（包含元数据和歌曲结构）
+     */
+    fun parse(content: String): TTMLLyrics {
+        if (content.isBlank()) return TTMLLyrics(
+            metadata = TTMLMetadata(title = "Unknown", artist = "Unknown"),
+            lines = emptyList()
+        )
 
         val builder = factory.newDocumentBuilder()
 
         // attempt a normal parse first; if it fails we may be dealing with
         // malformed metadata tags (common in Apple-supplied TTML) and we'll
         // retry after sanitizing the input.
-        fun tryParse(input: String): List<LyricLine> {
+        fun tryParse(input: String): TTMLLyrics {
             val doc = builder.parse(input.byteInputStream())
             return parseTTMLDocument(doc)
         }
@@ -32,15 +45,26 @@ object TTMLParser {
         return try {
             tryParse(content)
         } catch (e: Exception) {
-            Timber.w(e, "Initial TTML parse failed, trying sanitization")
+            Timber.i("[TTMLParser] Initial TTML parse failed, trying sanitization", e)
             val sanitized = sanitizeTTMLContent(content)
             return try {
                 tryParse(sanitized)
             } catch (e2: Exception) {
-                Timber.e(e2, "Failed to parse TTML content after sanitization")
-                emptyList()
+                Timber.e("[TTMLParser] Failed to parse ttml content after sanitization", e2)
+                TTMLLyrics(
+                    metadata = TTMLMetadata(title = "Unknown", artist = "Unknown"),
+                    lines = emptyList()
+                )
             }
         }
+    }
+    
+    /**
+     * 旧版兼容方法，仅返回歌词行（不推荐在新代码中使用）
+     */
+    @Deprecated("Use parse(content): TTMLLyrics instead")
+    fun parseLegacy(content: String): List<LyricLine> {
+        return parse(content).lines
     }
     
     private data class ParsedParagraph(
@@ -58,49 +82,60 @@ object TTMLParser {
         var bgTransliteration: String? = null
     )
 
-    private fun parseTTMLDocument(doc: Document): List<LyricLine> {
+    private fun parseTTMLDocument(doc: Document): TTMLLyrics {
         val parsedParagraphs = mutableListOf<ParsedParagraph>()
+        
+        // 解析 TTML 元数据中的歌曲结构信息
+        Timber.d("[SongStructure] Starting TTML document parsing")
+        val songStructures = parseSongStructuresFromMetadata(doc)
+        Timber.d("[SongStructure] TTML metadata parsing complete: ${songStructures.size} structures found")
 
         try {
-            val body = doc.getElementsByTagName("body").item(0) as? Element ?: return emptyList()
+            val body = doc.getElementsByTagName("body").item(0) as? Element ?: return TTMLLyrics(
+                metadata = TTMLMetadata(title = "Unknown", artist = "Unknown"),
+                lines = emptyList()
+            )
             val paragraphs = body.getElementsByTagName("p")
             for (i in 0 until paragraphs.length) {
                 val pElement = paragraphs.item(i) as? Element ?: continue
                 val rawAgent = pElement.getAttribute("ttm:agent").ifBlank { pElement.getAttribute("agent") }
                 if (i < 5 || i >= paragraphs.length - 2) {
-                    Timber.d("[AGENT-DEBUG-RAW] Para $i: raw ttm:agent='$rawAgent'")
+                    Timber.d("[AgentDebug-RAW] Para $i: raw ttm:agent='$rawAgent'")
                 }
                 parseParagraph(pElement)?.let { parsedParagraphs.add(it) }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse TTML document structure")
-            return emptyList()
+            Timber.e("[TTMLParser] Failed to parse TTML document structure", e)
+            return TTMLLyrics(
+                metadata = TTMLMetadata(title = "Unknown", artist = "Unknown"),
+                lines = emptyList()
+            )
         }
 
         val normalizedAgents = parsedParagraphs.map { normalizeAgent(it.agent) }
         val uniqueAgents = normalizedAgents.filterNotNull().distinct()
         
-        Timber.i("[AGENT] Total lines: ${parsedParagraphs.size}, unique agents: ${uniqueAgents.size}, agents: $uniqueAgents")
+        Timber.i("[AgentAnalyzer] Total lines: ${parsedParagraphs.size}, unique agents: ${uniqueAgents.size}, agents: $uniqueAgents")
         
         val duetFlags = when {
             uniqueAgents.size <= 1 -> {
-                Timber.d("[AGENT-DEBUG] Mode: single or no agent (all isDuet=false)")
+                Timber.d("[AgentAnalyzer] Mode: single or no agent (all isDuet=false)")
                 List(parsedParagraphs.size) { false }
             }
             uniqueAgents.size == 2 -> {
                 val leftAgent = pickLeftAgentForTwo(uniqueAgents[0], uniqueAgents[1])
-                Timber.d("[AGENT-DEBUG] Mode: exactly 2 agents. leftAgent=$leftAgent, rightAgent=${uniqueAgents.firstOrNull { it != leftAgent }}")
+                Timber.d("[AgentAnalyzer] Mode: exactly 2 agents. leftAgent=$leftAgent, rightAgent=${uniqueAgents.firstOrNull { it != leftAgent }}")
                 normalizedAgents.mapIndexed { idx, agent ->
                     val isDuet = agent != null && agent != leftAgent
-                    if (idx < 5) Timber.d("[AGENT-DEBUG] Line $idx: agent=$agent -> isDuet=$isDuet")
+                    if (idx < 5) Timber.d("[AgentAnalyzer] Line $idx: agent=$agent -> isDuet=$isDuet")
                     isDuet
                 }
             }
             else -> {
-                Timber.d("[AGENT-DEBUG] Mode: >2 agents, alternating mode")
+                Timber.d("[AgentAnalyzer] Mode: >2 agents, alternating mode")
                 val flags = buildAlternatingDuetFlags(normalizedAgents)
                 flags.mapIndexed { idx, isDuet ->
-                    if (idx < 10) Timber.d("[AGENT-DEBUG] Line $idx: agent=${normalizedAgents[idx]} -> isDuet=$isDuet")
+                    if (idx < 10) Timber.d("[AgentAnalyzer] Line $idx: agent=${normalizedAgents[idx]} -> isDuet=$isDuet")
                     isDuet
                 }
             }
@@ -113,8 +148,69 @@ object TTMLParser {
             parsed.bgLine?.let { lines.add(it.copy(isBG = true, isDuet = isDuet)) }
         }
 
-        Timber.d("[AGENT-DEBUG] Parse complete: ${lines.size} total output lines")
-        return lines
+        Timber.d("[TTMLParser] Parse complete: ${lines.size} total output lines")
+        
+        // 解析 TTML 元数据信息
+        val metadata = try {
+            Timber.d("[TTMLParser] Parsing TTML metadata")
+            val head = doc.getElementsByTagName("head").item(0) as? Element
+            val metadataElement = head?.getElementsByTagName("metadata")?.item(0) as? Element
+            
+            var title: String? = null
+            var artist: String? = null
+            var album: String? = null
+            var language = "ja"
+            var rawXmlMetadata: String? = null
+            
+            if (metadataElement != null) {
+                // ✅ 保存原始 metadata 元素的完整 XML，用于未来扩展和保留未使用的信息
+                rawXmlMetadata = elementToXml(metadataElement)
+                Timber.d("[TTMLParser] Saved raw XML metadata (${rawXmlMetadata.length} chars) for future extensibility")
+                
+                // 尝试从 amll:meta 标签中读取元数据
+                val metaElements = metadataElement.getElementsByTagName("amll:meta")
+                for (i in 0 until metaElements.length) {
+                    val meta = metaElements.item(i) as? Element ?: continue
+                    val key = meta.getAttribute("key")
+                    val value = meta.getAttribute("value")
+                    
+                    when (key) {
+                        "title" -> title = value
+                        "artist" -> artist = value
+                        "album" -> album = value
+                        "language" -> language = value
+                    }
+                }
+                
+                // 如果没有找到，尝试从 itunes 命名空间读取
+                if (title == null) {
+                    title = metadataElement.getAttribute("itunes:title").takeIf { it.isNotEmpty() }
+                }
+                if (artist == null) {
+                    artist = metadataElement.getAttribute("itunes:artist").takeIf { it.isNotEmpty() }
+                }
+                if (album == null) {
+                    album = metadataElement.getAttribute("itunes:album").takeIf { it.isNotEmpty() }
+                }
+            }
+            
+            TTMLMetadata(
+                title = title ?: "Unknown",
+                artist = artist ?: "Unknown",
+                album = album,
+                language = language,
+                rawXmlMetadata = rawXmlMetadata
+            )
+        } catch (e: Exception) {
+            Timber.w("[TTMLParser] Failed to parse metadata", e)
+            TTMLMetadata(title = "Unknown", artist = "Unknown")
+        }
+        
+        Timber.d("[SongStructure] Creating TTMLLyrics with ${songStructures.size} structures")
+        return TTMLLyrics(
+            metadata = metadata.copy(songStructures = songStructures.ifEmpty { null }),
+            lines = lines
+        )
     }
 
     private fun parseParagraph(pElement: Element): ParsedParagraph? {
@@ -191,7 +287,7 @@ object TTMLParser {
                 ParsedParagraph(mainLine = mainLine, bgLine = bgLine, agent = agent)
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse paragraph")
+            Timber.w("[TTMLParser] Failed to parse paragraph", e)
             null
         }
     }
@@ -513,8 +609,159 @@ object TTMLParser {
     }
     
     /**
+     * 解析 TTML 元数据中的歌曲结构信息
+     * 只支持一种标准格式：<body> 中 <div> 标签上的 itunes:song-part/songPart 属性
+     */
+    private fun parseSongStructuresFromMetadata(doc: Document): List<SongStructure> {
+        val structures = mutableListOf<SongStructure>()
+                    
+        try {
+            Timber.d("[SongStructure] 🔍 Starting metadata structure parsing (only from <div> itunes:songPart attributes)")
+            
+            // 唯一合法的方式：从 <body> 中的 <div> 标签解析 itunes:song-part/songPart 属性
+            Timber.d("[SongStructure] 📁 Parsing structures from <div> elements in <body>")
+            parseSongStructuresFromBodyElements(doc, structures)
+            
+            if (structures.isEmpty()) {
+                Timber.i("[SongStructure] ⚠️ No songPart attributes found on <div> elements")
+            } else {
+                Timber.d("[SongStructure] ✅ Found ${structures.size} structures from <div> itunes:songPart attributes")
+            }
+            
+            Timber.d("[SongStructure] 📊 Metadata parsing complete: total ${structures.size} structures")
+                    
+        } catch (e: Exception) {
+            Timber.e("[SongStructure] ❌ Error parsing metadata", e)
+        }
+                
+        return structures
+    }
+        
+
+        
+    /**
+     * 从 <body> 中的 <div> 标签解析歌曲结构（唯一合法方式）
+     * 优先查找 itunes:songPart 属性，兼容 itunes:song-part 属性
+     */
+    private fun parseSongStructuresFromBodyElements(doc: Document, structures: MutableList<SongStructure>) {
+        val body = doc.getElementsByTagName("body").item(0) as? Element ?: run {
+            Timber.d("[SongStructure] ⚠️ No <body> element found")
+            return
+        }
+            
+        // 优先查找带有 itunes:songPart 或 itunes:song-part 属性的 div 元素
+        val divs = body.getElementsByTagName("div")
+        
+        Timber.d("[SongStructure] 🔍 Checking $divs divs for songPart attributes")
+            
+        var index = 0
+        var foundCount = 0
+            
+        // 只处理 div 元素
+        for (i in 0 until divs.length) {
+            val div = divs.item(i) as? Element ?: continue
+            val songPartAttr = readSongPartAttribute(div)
+            if (songPartAttr != null) {
+                foundCount++
+                Timber.d("[SongStructure] 🎵 Found songPart attribute on div[$i]: $songPartAttr")
+                parseSongStructureFromAttribute(div, songPartAttr, index++, structures)
+            }
+        }
+        
+        if (foundCount == 0) {
+            Timber.d("[SongStructure] ⚠️ No songPart attributes found on <div> elements")
+        } else {
+            Timber.d("[SongStructure] ✅ Found $foundCount <div> elements with songPart attributes")
+        }
+    }
+        
+    /**
+     * 读取元素的 itunes:songPart 或 itunes:song-part 属性值
+     * 优先使用 itunes:songPart（iTunes 官方标准），兼容 itunes:song-part
+     */
+    private fun readSongPartAttribute(element: Element): String? {
+        // 优先尝试驼峰式 itunes:songPart（iTunes 官方标准）
+        val camelCase = element.getAttribute("itunes:songPart").takeIf { it.isNotEmpty() }
+        if (camelCase != null) return camelCase
+            
+        // 兼容连字符式 itunes:song-part
+        val kebabCase = element.getAttribute("itunes:song-part").takeIf { it.isNotEmpty() }
+        if (kebabCase != null) return kebabCase
+            
+        return null
+    }
+        
+    /**
+     * 从元素属性解析歌曲结构
+     */
+    private fun parseSongStructureFromAttribute(
+        element: Element,
+        label: String,
+        index: Int,
+        structures: MutableList<SongStructure>
+    ) {
+        // 尝试从 begin/end 属性获取时间
+        val beginStr = element.getAttribute("begin").takeIf { it.isNotEmpty() }
+        val endStr = element.getAttribute("end").takeIf { it.isNotEmpty() }
+        
+        Timber.d("[SongStructure] Parsing structure from attribute: index=$index, label='$label', hasBegin=${beginStr != null}, hasEnd=${endStr != null}")
+            
+        if (beginStr != null && endStr != null) {
+            val startTime = timeStrToMillis(beginStr)
+            val endTime = timeStrToMillis(endStr)
+                
+            if (endTime > startTime) {
+                val type = mapStructureType(label)
+                val structure = SongStructure(
+                    label = label,
+                    startTime = startTime,
+                    endTime = endTime,
+                    type = type
+                )
+                structures.add(structure)
+                    
+                Timber.d("[SongStructure] ✅ Parsed from attribute: $label ($type) ${formatTime(startTime)} - ${formatTime(endTime)}")
+            } else {
+                Timber.w("[SongStructure] ⚠️ Invalid time range for structure: begin=$startTime, end=$endTime")
+            }
+        } else {
+            Timber.d("[SongStructure] Skipping structure without begin/end attributes")
+        }
+    }
+    
+    /**
+     * 将结构标签映射到 SongStructureType
+     */
+    private fun mapStructureType(label: String): SongStructureType {
+        val lowerLabel = label.lowercase()
+        return when {
+            lowerLabel.contains("verse") -> SongStructureType.VERSE
+            lowerLabel.contains("chorus") -> SongStructureType.CHORUS
+            lowerLabel.contains("bridge") -> SongStructureType.BRIDGE
+            lowerLabel.contains("pre-chorus") || lowerLabel.contains("prechorus") -> SongStructureType.PRE_CHORUS
+            lowerLabel.contains("intro") -> SongStructureType.INTRO
+            lowerLabel.contains("interlude") -> SongStructureType.INTERLUDE
+            lowerLabel.contains("outro") -> SongStructureType.OUTRO
+            lowerLabel.contains("solo") -> SongStructureType.SOLO
+            lowerLabel.contains("break") -> SongStructureType.BREAK
+            else -> SongStructureType.UNKNOWN
+        }
+    }
+
+        
+    /**
+     * 格式化时间为 mm:ss 格式（用于日志）
+     */
+    private fun formatTime(millis: Long): String {
+        val totalSeconds = millis / 1000
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return String.format("%d:%02d", minutes, seconds)
+    }
+        
+    /**
      * 将 TTML 时间格式转换为毫秒
-     * 格式: mm:ss.mmm (例: 00:12.345)
+     * 格式：mm:ss.mmm (例：00:12.345)
      */
     private fun timeStrToMillis(timeStr: String): Long {
         return try {
@@ -552,9 +799,32 @@ object TTMLParser {
 
             (hours * 3600 + minutes * 60 + seconds) * 1000 + millis
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse time string: $timeStr")
+            Timber.e("[TTMLParser] Failed to parse time string: $timeStr", e)
             0L
         }
+    }
+
+    /**
+     * 将 XML Element 转换为字符串（保留所有属性和子元素）
+     */
+    private fun elementToXml(element: Element): String {
+        val transformerFactory = TransformerFactory.newInstance()
+        val transformer = transformerFactory.newTransformer()
+        
+        // 配置输出格式
+        val output = java.io.StringWriter()
+        val result = StreamResult(output)
+        
+        // 设置缩进和编码
+        transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "no")
+        transformer.setOutputProperty(javax.xml.transform.OutputKeys.ENCODING, "UTF-8")
+        transformer.setOutputProperty(javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION, "yes")
+        
+        // 执行转换
+        val source = DOMSource(element.ownerDocument)
+        transformer.transform(source, result)
+        
+        return output.toString()
     }
 
     /**

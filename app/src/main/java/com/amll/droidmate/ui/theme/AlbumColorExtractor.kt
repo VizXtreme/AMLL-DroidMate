@@ -32,7 +32,7 @@ object AlbumColorExtractor {
         isDarkTheme: Boolean
     ): DynamicColorScheme? = withContext(Dispatchers.IO) {
         if (albumArtUri.isNullOrBlank()) {
-            Timber.e("Album art URI is null or blank")
+            Timber.e("[AlbumColorExtractor] Album art URI is null or blank")
             return@withContext null
         }
 
@@ -44,7 +44,7 @@ object AlbumColorExtractor {
 
             return@withContext createDynamicColorScheme(palette, isDarkTheme)
         } catch (e: Exception) {
-            Timber.e(e, "Failed to extract colors from album art: $albumArtUri")
+            Timber.e("[AlbumColorExtractor] Failed to extract colors from album art: $albumArtUri", e)
             return@withContext null
         }
     }
@@ -64,7 +64,7 @@ object AlbumColorExtractor {
                     context.contentResolver.openInputStream(uri)
                 }
                 else -> {
-                    Timber.w("Unsupported URI scheme: $uriString")
+                    Timber.w("[AlbumColorExtractor] Unsupported URI scheme: $uriString")
                     return null
                 }
             }
@@ -77,7 +77,7 @@ object AlbumColorExtractor {
                 BitmapFactory.decodeStream(stream, null, options)
             }
         } catch (e: Exception) {
-            Timber.w(e, "Failed to load bitmap from URI: $uriString")
+            Timber.w("[AlbumColorExtractor] Failed to load bitmap from URI: $uriString", e)
             return null
         }
     }

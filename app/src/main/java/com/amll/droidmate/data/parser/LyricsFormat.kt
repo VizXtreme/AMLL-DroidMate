@@ -30,6 +30,9 @@ enum class LyricsFormat(val extension: String, val displayName: String) {
         @Suppress("unused")
         /**
          * 根据文件扩展名或内容特征检测格式
+         * 
+         * 注意：此方法被标记为 @Suppress("unused") 是因为它通过反射调用
+         * 在运行时的歌词格式自动检测功能中使用
          */
         fun detect(content: String): LyricsFormat {
             // Some lyrics sources may include a leading BOM (U+FEFF) which breaks regex-based format detection.

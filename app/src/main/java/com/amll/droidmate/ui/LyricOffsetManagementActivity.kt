@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -43,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -57,36 +59,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.amll.droidmate.service.MediaInfoService
-import com.amll.droidmate.ui.theme.DroidMateTheme
-import com.amll.droidmate.ui.theme.DynamicThemeManager
+import com.amll.droidmate.ui.base.BaseComposeActivity
 import kotlinx.coroutines.launch
 
-class LyricOffsetManagementActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        // 适配状态栏透明度
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            window.decorView.systemUiVisibility = 
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE or 
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-                View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-        }
-
-        setContent {
-            val isDarkTheme = isSystemInDarkTheme()
-            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
-
-            DroidMateTheme(
-                darkTheme = isDarkTheme,
-                dynamicColorScheme = dynamicColorScheme
-            ) {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    LyricOffsetManagementPage(onBack = { finish() })
-                }
-            }
-        }
+class LyricOffsetManagementActivity : BaseComposeActivity() {
+    @Composable
+    override fun renderContent() {
+        LyricOffsetManagementPage(onBack = { finish() })
     }
 }
 
@@ -174,9 +153,12 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                         }
                     },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background
+                    ),
                     actions = {
-                        TextButton(onClick = { showClearDialog = true }) {
-                            Text("删除所有")
+                        IconButton(onClick = { showClearDialog = true }) {
+                            Icon(Icons.Default.DeleteSweep, contentDescription = "删除所有")
                         }
                     },
                     modifier = Modifier.statusBarsPadding()
@@ -292,7 +274,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
             AlertDialog(
                 onDismissRequest = { showDialog = false; editingEntry = null },
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                title = { Text("添加 / 编辑偏移") },
+                title = { Text("编辑偏移") },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(

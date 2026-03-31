@@ -41,6 +41,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -142,10 +143,15 @@ private fun SettingsPage(
             title = { Text("设置") },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    @Suppress("DEPRECATION")
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "返回"
+                    )
                 }
-            }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background
+            )
         )
 
         Column(
@@ -240,53 +246,7 @@ private fun SettingsPage(
                 }
             }
 
-            Text(
-                text = "歌词时间轴偏移",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("歌曲偏移 + 设备偏移")
-                    Button(onClick = {
-                        context.startActivity(Intent(context, LyricOffsetSettingsActivity::class.java))
-                    }, modifier = Modifier.fillMaxWidth()) {
-                        Text("歌词时间轴偏移设置")
-                    }
-                }
-            }
-
-            Text(
-                text = "动画设置（实验性）",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Button(
-                onClick = {
-                    context.startActivity(Intent(context, AnimationSettingsActivity::class.java))
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("打开动画设置")
-            }
-
-            Text(
-                text = "字体设置",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Button(
-                onClick = {
-                    context.startActivity(Intent(context, FontSettingsActivity::class.java))
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("打开字体设置")
-            }
-            Text(                text = "辅助功能",
+            Text(text = "辅助功能",
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -332,9 +292,9 @@ private fun SettingsPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("处理元数据（实验性）", color = MaterialTheme.colorScheme.onSurface)
+                        Text("处理元数据（实验性）（当前版本请勿开启）", color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            text = "尝试自动移除歌词中的词/曲/编曲等元数据行，可能会误删。",
+                            text = "尝试自动移除歌词中的\"词:\", \"曲:\", \"编曲:\"等行，可能会误删。\n由于当前的处理实现会破坏结构，请勿开启。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -362,9 +322,9 @@ private fun SettingsPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("角色识别（实验性）", color = MaterialTheme.colorScheme.onSurface)
+                        Text("角色识别（实验性）（当前版本请勿开启）", color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            text = "尝试识别当前句角色，可能存在误报。",
+                            text = "尝试识别当前句由哪位歌手演唱并设置对唱歌词，可能存在错误。\n由于当前的处理实现会破坏结构，请勿开启。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -381,6 +341,79 @@ private fun SettingsPage(
             }
 
             Text(
+                text = "WebSocket 传递",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Text(
+                text = "通过兼容的外部 AMLL 来显示歌词动画。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, WsProtocolSettingsActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("打开 WebSocket 传递设置")
+            }
+
+
+            Text(
+                text = "歌词时间轴偏移",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Text(
+                text = "歌曲偏移 + 设备偏移",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, LyricOffsetSettingsActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("歌词时间轴偏移设置")
+            }
+            
+
+            Text(
+                text = "动画设置（⚠此版本暂不可用）",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, AnimationSettingsActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("打开动画设置")
+            }
+
+            Text(
+                text = "字体设置（⚠此版本暂不可用）",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, FontSettingsActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("打开字体设置")
+            }
+
+            
+
+            
+
+            Text(
                 text = "版本更新",
                 style = MaterialTheme.typography.titleMedium
             )
@@ -393,7 +426,7 @@ private fun SettingsPage(
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text("当前版本: ${getCurrentVersionName(context)}")
+                    Text("当前版本: ${getCurrentVersionName(context)}", color = MaterialTheme.colorScheme.onSurface)
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -495,6 +528,20 @@ private fun SettingsPage(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("转至“读取、回复和控制通知”")
+            }
+
+            Text(
+                text = "开发者工具",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, LogDisplayActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("查看日志")
             }
 
             Text(

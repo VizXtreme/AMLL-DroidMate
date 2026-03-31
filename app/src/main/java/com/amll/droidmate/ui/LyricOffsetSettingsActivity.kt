@@ -6,8 +6,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,11 +22,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.outlined.Numbers
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,6 +42,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -48,32 +55,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.amll.droidmate.service.MediaInfoService
-import com.amll.droidmate.ui.theme.DroidMateTheme
-import com.amll.droidmate.ui.theme.DynamicThemeManager
+import com.amll.droidmate.ui.base.BaseComposeActivity
 import com.amll.droidmate.util.AudioDeviceHelper
 
-class LyricOffsetSettingsActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        setContent {
-            val isDarkTheme = isSystemInDarkTheme()
-            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
-
-            DroidMateTheme(
-                darkTheme = isDarkTheme,
-                dynamicColorScheme = dynamicColorScheme
-            ) {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    LyricOffsetSettingsPage(onBack = { finish() })
-                }
-            }
-        }
+class LyricOffsetSettingsActivity : BaseComposeActivity() {
+    @Composable
+    override fun renderContent() {
+        LyricOffsetSettingsPage(onBack = { finish() })
     }
 }
 
@@ -142,11 +135,14 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                 }
             },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background
+            ),
             actions = {
                 IconButton(onClick = {
                     context.startActivity(Intent(context, LyricOffsetManagementActivity::class.java))
                 }) {
-                    Icon(Icons.Default.Storage, contentDescription = "管理")
+                    Icon(Icons.AutoMirrored.Filled.FormatListBulleted, contentDescription = "管理")
                 }
             }
         )
@@ -177,35 +173,19 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodySmall
                         )
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = {
+                        CapsuleOffsetControl(
+                            offsetValue = songOffsetText,
+                            onOffsetChange = { songOffsetText = it },
+                            onDecrease = {
                                 val value = (songOffsetText.toLongOrNull() ?: 0L) - 100L
                                 songOffsetText = value.toString()
-                            }) {
-                                Icon(Icons.Default.Remove, contentDescription = "减 100ms")
-                            }
-
-                            OutlinedTextField(
-                                value = songOffsetText,
-                                onValueChange = { songOffsetText = it },
-                                singleLine = true,
-                                modifier = Modifier.width(120.dp),
-                                label = { Text("ms") }
-                            )
-
-                            IconButton(onClick = {
+                            },
+                            onIncrease = {
                                 val value = (songOffsetText.toLongOrNull() ?: 0L) + 100L
                                 songOffsetText = value.toString()
-                            }) {
-                                Icon(Icons.Default.Add, contentDescription = "加 100ms")
-                            }
-
-                            Spacer(modifier = Modifier.weight(1f))
-
-                            Button(onClick = { saveSongOffset() }) {
-                                Text("保存")
-                            }
-                        }
+                            },
+                            onSave = { saveSongOffset() }
+                        )
 
                         songOffsetError?.takeIf { it.isNotBlank() }?.let {
                             Text(text = it, color = MaterialTheme.colorScheme.error)
@@ -223,35 +203,19 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodySmall
                         )
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = {
+                        CapsuleOffsetControl(
+                            offsetValue = deviceOffsetText,
+                            onOffsetChange = { deviceOffsetText = it },
+                            onDecrease = {
                                 val value = (deviceOffsetText.toLongOrNull() ?: 0L) - 100L
                                 deviceOffsetText = value.toString()
-                            }) {
-                                Icon(Icons.Default.Remove, contentDescription = "减 100ms")
-                            }
-
-                            OutlinedTextField(
-                                value = deviceOffsetText,
-                                onValueChange = { deviceOffsetText = it },
-                                singleLine = true,
-                                modifier = Modifier.width(120.dp),
-                                label = { Text("ms") }
-                            )
-
-                            IconButton(onClick = {
+                            },
+                            onIncrease = {
                                 val value = (deviceOffsetText.toLongOrNull() ?: 0L) + 100L
                                 deviceOffsetText = value.toString()
-                            }) {
-                                Icon(Icons.Default.Add, contentDescription = "加 100ms")
-                            }
-
-                            Spacer(modifier = Modifier.weight(1f))
-
-                            Button(onClick = { saveDeviceOffset() }) {
-                                Text("保存")
-                            }
-                        }
+                            },
+                            onSave = { saveDeviceOffset() }
+                        )
 
                         deviceOffsetError?.takeIf { it.isNotBlank() }?.let {
                             Text(text = it, color = MaterialTheme.colorScheme.error)
@@ -266,3 +230,93 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
         }
     }
 }
+
+@Composable
+private fun CapsuleOffsetControl(
+    offsetValue: String,
+    onOffsetChange: (String) -> Unit,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
+    onSave: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(50)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left arrow button
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                IconButton(
+                    onClick = onDecrease,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "减少 100ms",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Center input field
+            OutlinedTextField(
+                value = offsetValue,
+                onValueChange = onOffsetChange,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier
+                    .weight(2f)
+                    .padding(horizontal = 4.dp),
+                placeholder = { Text("0") },
+                shape = RoundedCornerShape(25),
+                textStyle = androidx.compose.ui.text.TextStyle(
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            )
+
+            // Right arrow button (flipped left arrow)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                IconButton(
+                    onClick = onIncrease,
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                ) {
+                    Icon(
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = -1f // Flip horizontally
+                        },
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "增加 100ms",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+
+    // Save button below the capsule
+    Button(
+        onClick = onSave,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+    ) {
+        Text("保存")
+    }
+}
+
+

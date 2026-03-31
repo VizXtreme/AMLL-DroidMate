@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 
 // suppress icon deprecation where used
 import androidx.compose.material3.AlertDialog
@@ -36,6 +37,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,39 +49,19 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.amll.droidmate.data.repository.LyricsCacheRepository
 import com.amll.droidmate.domain.model.CachedLyricEntry
-import com.amll.droidmate.ui.theme.DroidMateTheme
-import com.amll.droidmate.ui.theme.DynamicThemeManager
+import com.amll.droidmate.ui.base.BaseComposeActivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class LyricsCacheActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
+class LyricsCacheActivity : BaseComposeActivity() {
+    @Composable
+    override fun renderContent() {
         val repository = LyricsCacheRepository(applicationContext)
-
-        setContent {
-            val isDarkTheme = isSystemInDarkTheme()
-            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
-            
-            DroidMateTheme(
-                darkTheme = isDarkTheme,
-                dynamicColorScheme = dynamicColorScheme
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    LyricsCachePage(
-                        repository = repository,
-                        onBack = { finish() }
-                    )
-                }
-            }
-        }
+        LyricsCachePage(
+            repository = repository,
+            onBack = { finish() }
+        )
     }
 }
 
@@ -108,13 +90,18 @@ private fun LyricsCachePage(
             title = { Text("管理缓存歌词") },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    @Suppress("DEPRECATION")
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "返回"
+                    )
                 }
             },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background
+            ),
             actions = {
-                TextButton(onClick = { showClearDialog = true }) {
-                    Text("删除所有")
+                IconButton(onClick = { showClearDialog = true }) {
+                    Icon(Icons.Default.DeleteSweep, contentDescription = "删除所有")
                 }
             }
         )

@@ -13,7 +13,6 @@ object LrcParser {
 
     private val lrcLineRegex = Regex("""^((?:\[\d{2,}:\d{2}[.:]\d{2,3}])+)(.*)$""")
     private val tsExtractRegex = Regex("""\[(\d{2,}):(\d{2})[.:](\d{2,3})]""")
-    private const val DEFAULT_LAST_LINE_DURATION_MS = 10_000L
 
     fun parse(content: String): List<LyricLine> {
         val entries = mutableListOf<TempLrcEntry>()
@@ -32,7 +31,7 @@ object LrcParser {
                 val minutes = ts.groupValues[1].toLongOrNull() ?: continue
                 val seconds = ts.groupValues[2].toLongOrNull() ?: continue
                 if (seconds >= 60) {
-                    Timber.e("Invalid LRC seconds on line ${index + 1}: $line")
+                    Timber.e("[LrcParser] Invalid LRC seconds on line ${index + 1}: $line")
                     continue
                 }
                 val fraction = ts.groupValues[3]
@@ -59,7 +58,7 @@ object LrcParser {
 
             val group = sorted.subList(i, groupEndIndex)
             val endMsOriginal = sorted.getOrNull(groupEndIndex)?.timestampMs?.coerceAtLeast(startMsOriginal)
-                ?: (startMsOriginal + DEFAULT_LAST_LINE_DURATION_MS)
+                ?: (startMsOriginal + DEFAULT_LAST_LRC_LINE_DURATION_MS)
             val endMs = endMsOriginal + offsetMs
 
             val meaningful = group.filter { it.text.isNotEmpty() }

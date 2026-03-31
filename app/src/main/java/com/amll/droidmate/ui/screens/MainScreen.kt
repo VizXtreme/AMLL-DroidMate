@@ -71,6 +71,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.amll.droidmate.R
 import com.amll.droidmate.domain.model.LyricLine
+import com.amll.droidmate.domain.model.SongStructure
 import com.amll.droidmate.ui.theme.AlbumColorExtractor
 import com.amll.droidmate.domain.model.NowPlayingMusic
 import com.amll.droidmate.domain.model.TTMLLyrics
@@ -78,6 +79,9 @@ import com.amll.droidmate.ui.AppSettings
 import com.amll.droidmate.ui.CardClickAction
 import com.amll.droidmate.ui.CustomLyricsActivity
 import com.amll.droidmate.ui.viewmodel.MainViewModel
+import com.amll.droidmate.ui.theme.DroidMateTheme
+import com.amll.droidmate.ui.theme.SuccessGreen
+import com.amll.droidmate.ui.theme.WarningAmber
 import com.amll.droidmate.update.GitHubUpdateChecker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -136,6 +140,7 @@ fun MainScreen() {
     val lyrics by viewModel.lyrics.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val songStructures by viewModel.songStructures.collectAsState()
     val currentTime = nowPlaying?.currentPosition ?: 0L
     // Apply user-configured lyric timing offsets when updating the lyric view
     val lyricTime = viewModel.getLyricTimeWithDeviceOffset(nowPlaying)
@@ -151,6 +156,16 @@ fun MainScreen() {
                 rippleColor.value = colors?.primary ?: initialPrimary
             } catch (_: Exception) {
                 rippleColor.value = initialPrimary
+            }
+            
+            // ✅ 当专辑图刷新时，也通过 WebSocket 发送到外部服务
+            if (AppSettings.isWebSocketProtocolEnabled(context)) {
+                try {
+                    viewModel.sendAlbumArtToWebSocket(uri)
+                    Timber.d("[MainScreen] Sent album art to WebSocket on refresh: $uri")
+                } catch (e: Exception) {
+                    Timber.e("[MainScreen] Failed to send album art to WebSocket", e)
+                }
             }
         } else {
             rippleColor.value = initialPrimary
@@ -172,6 +187,9 @@ fun MainScreen() {
     var autoUpdateDialogMessage by remember { mutableStateOf("") }
     var autoUpdateDialogUrl by remember { mutableStateOf<String?>(null) }
     var spinnerVisible by remember { mutableStateOf(false) }
+    
+    // 在 Composable 上下文中创建协程作用域，供回调函数使用
+    val scope = rememberCoroutineScope()
 
     AdaptiveStatusBarStyle(useDarkIcons = !isLyricsFullscreen && MaterialTheme.colorScheme.background.luminance() > 0.5f)
 
@@ -189,6 +207,47 @@ fun MainScreen() {
                     source = data?.getStringExtra(CustomLyricsActivity.EXTRA_SOURCE) ?: "manual"
                 )
             }
+        }
+    }
+    
+    // WebSocket 连接状态 - 使用统一的状态监听器
+    val webSocketClient = remember { com.amll.droidmate.websocket.AMLLWebSocketClient.getInstance() }
+    val isWebSocketConnected by produceState(initialValue = webSocketClient.isConnected) {
+        value = webSocketClient.isConnected
+        
+        // 使用工厂函数创建简单的状态监听器
+        val listener = webSocketClient.createStateListener(
+            onStateChanged = { connected ->
+                value = connected
+            }
+        )
+        
+        webSocketClient.addListener(listener)
+    }
+    var websocketUrl by remember { mutableStateOf(AppSettings.getWebSocketProtocolAddress(context)) }
+    val isWebViewEnabled = AppSettings.isWebViewEnabled(context)
+    
+    // 监听上次 WebView 启用状态，用于检测变化并自动刷新
+    var lastWebViewEnabled by remember { mutableStateOf(isWebViewEnabled) }
+    
+    // 当 WebView 启用状态改变时自动刷新
+    LaunchedEffect(isWebViewEnabled) {
+        if (lastWebViewEnabled != isWebViewEnabled) {
+            Timber.d("[UI] WebView 启用状态改变：$lastWebViewEnabled -> $isWebViewEnabled")
+            lastWebViewEnabled = isWebViewEnabled
+            // 状态改变时自动刷新歌词和 WebView
+            viewModel.fetchLyrics()
+            webViewReloadKey++
+            Timber.d("[UI] 自动刷新完成，webViewReloadKey=$webViewReloadKey")
+        }
+    }
+    
+    // 首次进入 App 时自动连接 WebSocket
+    LaunchedEffect(Unit) {
+        if (AppSettings.isWebSocketProtocolEnabled(context)) {
+            val wsAddress = AppSettings.getWebSocketProtocolAddress(context)
+            Timber.d("[MainScreen] 首次启动，尝试连接 WebSocket: $wsAddress")
+            webSocketClient.connect(wsAddress)
         }
     }
 
@@ -287,7 +346,49 @@ fun MainScreen() {
                                 DropdownMenuItem(
                                     leadingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) },
                                     text = { Text("刷新") },
-                                    onClick = { viewModel.fetchLyrics(); webViewReloadKey++; showMenu = false }
+                                    onClick = { 
+                                        // 在协程中执行刷新操作，以支持 suspend 函数调用
+                                        scope.launch {
+                                            // 1. 数据层刷新：重新匹配和获取歌词
+                                            viewModel.fetchLyrics()
+                                            
+                                            // 2. 连接层刷新：强制重连 WebSocket（如果已启用）
+                                            viewModel.refreshWebSocketConnection()
+                                            
+                                            // 3. UI 组件刷新：
+                                            //    - 递增 key 以强制重组并重新加载歌词 WebView 组件
+                                            webViewReloadKey++
+                                            
+                                            //    - 触发专辑图及其提取的动态主题色的重新计算与应用
+                                            //      通过改变 key 触发 LaunchedEffect 重新执行 AlbumColorExtractor
+                                            val currentUri = nowPlaying?.albumArtUri
+                                            if (!currentUri.isNullOrBlank()) {
+                                                try {
+                                                    val colors = AlbumColorExtractor.extractColorsFromAlbumArt(context, currentUri, isDarkTheme)
+                                                    rippleColor.value = colors?.primary ?: initialPrimary
+                                                    
+                                                    // ✅ 当刷新按钮触发时，也通过 WebSocket 发送专辑图到外部服务
+                                                    if (AppSettings.isWebSocketProtocolEnabled(context)) {
+                                                        viewModel.sendAlbumArtToWebSocket(currentUri)
+                                                        Timber.d("[MainScreen] Sent album art to WebSocket on manual refresh: $currentUri")
+                                                    }
+                                                } catch (_: Exception) {
+                                                    rippleColor.value = initialPrimary
+                                                }
+                                            } else {
+                                                rippleColor.value = initialPrimary
+                                            }
+                                            
+                                            //    - 刷新歌词结构条的显示（fetchLyrics 会自动触发，但这里显式调用确保及时更新）
+                                            viewModel.refreshSongStructures()
+                                            
+                                            // 4. 状态重置：关闭菜单
+                                            showMenu = false
+                                            
+                                            // 提供视觉反馈（可选）
+                                            Timber.d("[UI] 刷新按钮被点击：webViewReloadKey=$webViewReloadKey")
+                                        }
+                                    }
                                 )
                                 DropdownMenuItem(
                                     leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) },
@@ -307,6 +408,67 @@ fun MainScreen() {
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
+            
+            // WebSocket 状态指示器
+            if (AppSettings.isWebSocketProtocolEnabled(context) && !isLyricsFullscreen) {
+                val statusCardBg = if (isWebSocketConnected) {
+                    SuccessGreen.copy(alpha = 0.2f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                }
+                
+                val connectedDotColor = SuccessGreen
+                val disconnectedDotColor = MaterialTheme.colorScheme.onSurfaceVariant
+                val connectedTextColor = SuccessGreen
+                val disconnectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = statusCardBg)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 状态圆点
+                            Box(
+                                modifier = Modifier.size(8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val dotColor = if (isWebSocketConnected) connectedDotColor else disconnectedDotColor
+                                androidx.compose.foundation.Canvas(modifier = Modifier.matchParentSize()) {
+                                    drawCircle(color = dotColor)
+                                }
+                            }
+                            
+                            Text(
+                                text = if (isWebSocketConnected) {
+                                    "WebSocket 已连接"
+                                } else {
+                                    "WebSocket 未连接"
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (isWebSocketConnected) connectedTextColor else disconnectedTextColor
+                            )
+                        }
+                        
+                        IconButton(onClick = { 
+                            context.startActivity(Intent(context, com.amll.droidmate.ui.WsProtocolSettingsActivity::class.java))
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "WebSocket 设置",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
 
             if (showOpenAppDialog) {
                 val sourceAppName = getAppNameFromPackage(context, nowPlaying?.packageName) ?: "播放源应用"
@@ -314,6 +476,7 @@ fun MainScreen() {
                     onDismissRequest = { showOpenAppDialog = false },
                     title = { Text("打开 $sourceAppName？") },
                     text = { Text("您可进入设置调整点击卡片的默认行为。") },
+                    containerColor = MaterialTheme.colorScheme.background,
                     confirmButton = {
                         TextButton(onClick = {
                             openSourceApp(context, nowPlaying?.packageName)
@@ -363,7 +526,7 @@ fun MainScreen() {
                 Card(
                     modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp, vertical = 8.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    colors = CardDefaults.cardColors(containerColor = Color.Black)
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         LyricsVisualLayer(
@@ -373,20 +536,65 @@ fun MainScreen() {
                             webViewReloadKey = webViewReloadKey,
                             onLineSeek = { viewModel.seekTo(it) },
                             // 改进：无歌词显示文案时禁止进入全屏
-                            onFullscreenTap = { if (currentLyrics != null) isLyricsFullscreen = true },
+                            onFullscreenTap = { if (currentLyrics != null && isWebViewEnabled) isLyricsFullscreen = true },
                             amllDebugSource = "embedded",
                             modifier = Modifier.fillMaxSize()
                         )
-
+                        
+                        // WebView 已关闭提示 - 浮在歌词组件上方
+                        if (!isWebViewEnabled) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Card(
+                                    modifier = Modifier.padding(32.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f)
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.VisibilityOff,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(48.dp)
+                                        )
+                                        
+                                        Text(
+                                            text = "歌词组件已关闭",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        
+                                        IconButton(onClick = { 
+                                            context.startActivity(Intent(context, com.amll.droidmate.ui.WsProtocolSettingsActivity::class.java))
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Settings,
+                                                contentDescription = "去设置",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
                         // 占位提示：恢复消失的文案
-                        if (currentLyrics == null && !spinnerVisible) {
+                        if (currentLyrics == null && !spinnerVisible && isWebViewEnabled) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 Text(
                                     text = "选择歌词来显示 AMLL",
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 16.sp,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.background(Color.Black.copy(0.35f), RoundedCornerShape(8.dp)).padding(12.dp)
+                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
@@ -421,6 +629,19 @@ fun MainScreen() {
                 }
             } else {
                 Spacer(Modifier.fillMaxWidth().weight(1f))
+            }
+
+            // 歌曲结构显示条（仅在有歌词且非全屏时显示）
+            AnimatedVisibility(visible = !isLyricsFullscreen && songStructures.isNotEmpty()) {
+                SongStructureBar(
+                    structures = songStructures,
+                    currentTime = currentTime,
+                    onSeekTo = { time ->
+                        viewModel.seekTo(time)
+                        Timber.d("[SongStructure] 点击跳转至：${time}ms")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             AnimatedVisibility(visible = !isLyricsFullscreen) {
@@ -619,6 +840,11 @@ private fun LyricsVisualLayer(
                 AMLLLyricsView(
                     lyrics = lyrics,
                     currentTime = currentTime,
+                    musicId = nowPlaying?.packageName ?: "",
+                    musicName = nowPlaying?.title ?: "Unknown",
+                    albumName = nowPlaying?.album ?: "",
+                    artistName = nowPlaying?.artist ?: "Unknown",
+                    duration = nowPlaying?.duration ?: 0L,
                     albumArtUri = nowPlaying?.albumArtUri,
                     renderMode = AMLLRenderMode.DOM,
                     debugSource = amllDebugSource,
@@ -784,9 +1010,25 @@ fun NowPlayingCard(
 @Composable
 fun PermissionStatusCard(notificationAccessGranted: Boolean, onOpenNotificationAccessSettings: () -> Unit, modifier: Modifier = Modifier) {
     Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f))) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("需要通知访问权限才能正常使用此应用。", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-            TextButton(onClick = onOpenNotificationAccessSettings) { Text("去授权") }
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                "需要通知访问权限才能正常使用此应用。",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Text(
+                "请在系统设置中开启通知访问权限，或前往应用内设置页面配置。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+            )
+            Row(
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                TextButton(onClick = onOpenNotificationAccessSettings) { 
+                    Text("去授权") 
+                }
+            }
         }
     }
 }

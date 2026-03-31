@@ -1,6 +1,14 @@
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import org.gradle.api.tasks.TaskAction
+import javax.inject.Inject
+import org.gradle.process.ExecOperations
+import java.io.File
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.provider.Provider
 
 plugins {
     id("com.android.application")
@@ -8,8 +16,77 @@ plugins {
     kotlin("plugin.compose")
 }
 
-val buildTimestamp = SimpleDateFormat("yyyyMMddHHmmss", Locale.US)
-    .format(Date())
+// Custom task type for building frontend
+abstract class BuildFrontendTask @Inject constructor(
+    private val execOperations: ExecOperations
+) : DefaultTask() {
+    
+    // Declare frontend source directory as input for incremental builds
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val frontendSrcDir: DirectoryProperty
+    
+    // Declare output directory for up-to-date checks
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+    
+    // Internal property to store root project directory
+    @get:Internal
+    abstract val rootProjectDir: DirectoryProperty
+    
+    init {
+        group = "frontend"
+        description = "Build frontend assets using pnpm"
+    }
+    
+    @TaskAction
+    fun buildFrontend() {
+        // Get the root project directory from the internal property
+        val rootDir = rootProjectDir.get().asFile
+        val frontendDir = File(rootDir, "frontend")
+        val scriptsDir = File(rootDir, "scripts")
+        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+        
+        if (!frontendDir.exists()) {
+            logger.warn("Frontend directory not found, skipping build")
+            return
+        }
+        
+        logger.info("Building frontend in ${frontendDir.absolutePath}")
+        
+        val command = if (isWindows) {
+            listOf("powershell", "-ExecutionPolicy", "Bypass", "-File", 
+                File(scriptsDir, "build-android.ps1").absolutePath)
+        } else {
+            listOf("pnpm", "run", "build:android")
+        }
+        
+        execOperations.exec {
+            workingDir(frontendDir)
+            commandLine(command)
+        }
+    }
+}
+
+// Register and configure the task
+val buildFrontendProvider = tasks.register("buildFrontend", BuildFrontendTask::class.java) {
+    // Only set frontend source directory as input - this is what we want to watch for changes
+    frontendSrcDir.set(File(rootProject.projectDir, "frontend/src"))
+    // Set output directory for up-to-date checks
+    outputDir.set(File(rootProject.projectDir, "app/src/main/assets/amll"))
+    // Set root project directory for task execution
+    rootProjectDir.set(rootProject.layout.projectDirectory)
+}
+
+// Build frontend before preBuild task
+tasks.named("preBuild") {
+    dependsOn(buildFrontendProvider)
+}
+
+// Use Provider API for lazy evaluation - ensures fresh timestamp on each build
+val buildTimestampProvider: Provider<String> = providers.provider {
+    SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(Date())
+}
 
 android {
     namespace = "com.amll.droidmate"
@@ -20,7 +97,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "Alpha $buildTimestamp" // 版本号
+        versionName = "Alpha ${buildTimestampProvider.get()}" // 版本号
         vectorDrawables.useSupportLibrary = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -45,7 +122,8 @@ android {
     }
 
     lint {
-        disable += listOf("FullBackupContent", "NetworkSecurityConfig")
+        // 仅禁用 FullBackupContent，重新启用 NetworkSecurityConfig 以检查网络安全问题
+        disable += listOf("FullBackupContent")
     }
 }
 
@@ -54,7 +132,7 @@ androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
             (output as? com.android.build.api.variant.impl.VariantOutputImpl)?.outputFileName?.set(
-                "AMLL-DroidMate-Alpha-$buildTimestamp.apk" //版本号
+                "AMLL-DroidMate-Alpha-${buildTimestampProvider.get()}.apk" //版本号
             )
         }
     }

@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,32 +48,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import com.amll.droidmate.ui.theme.DroidMateTheme
+import com.amll.droidmate.ui.base.BaseComposeActivity
 import com.amll.droidmate.ui.theme.DynamicThemeManager
 import java.io.File
 import java.io.IOException
 
-class FontSettingsActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        setContent {
-            val isDarkTheme = isSystemInDarkTheme()
-            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
-            
-            DroidMateTheme(
-                darkTheme = isDarkTheme,
-                dynamicColorScheme = dynamicColorScheme
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    FontSettingsPage(onBack = { finish() })
-                }
-            }
-        }
+class FontSettingsActivity : BaseComposeActivity() {
+    @Composable
+    override fun renderContent() {
+        FontSettingsPage(onBack = { finish() })
     }
 }
 
@@ -151,10 +135,15 @@ private fun FontSettingsPage(onBack: () -> Unit) {
             title = { Text("字体设置") },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    @Suppress("DEPRECATION")
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "返回"
+                    )
                 }
-            }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background
+            )
         )
 
         Column(
@@ -187,7 +176,7 @@ private fun FontSettingsPage(onBack: () -> Unit) {
                     Text("保存font-family设置")
                 }
 
-                Button(
+                OutlinedButton(
                     onClick = {
                         importFontLauncher.launch(arrayOf("font/*"))
                     }

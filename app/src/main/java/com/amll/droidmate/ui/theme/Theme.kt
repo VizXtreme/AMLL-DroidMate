@@ -7,12 +7,18 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
+// 成功和警告颜色定义
+val SuccessGreen = Color(0xFF10B981)
+val WarningAmber = Color(0xFFD97706)
+
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF6366F1),
+    primary = Color(0xFF818CF8),
     secondary = Color(0xFF8B5CF6),
     tertiary = Color(0xFFF97316),
     background = Color(0xFF1F2937),
     surface = Color(0xFF111827),
+    surfaceVariant = Color(0xFF334155),
+    onSurfaceVariant = Color(0xFFE2E8F0),
     error = Color(0xFFEF4444),
 )
 
@@ -22,6 +28,8 @@ private val LightColors = lightColorScheme(
     tertiary = Color(0xFFF97316),
     background = Color(0xFFFAFAFA),
     surface = Color(0xFFFFFFFF),
+    surfaceVariant = Color(0xFFE2E8F0),
+    onSurfaceVariant = Color(0xFF334155),
     error = Color(0xFFEF4444),
 )
 
