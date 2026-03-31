@@ -70,7 +70,7 @@ object AppSettings {
     private fun prefs(context: Context) =
         PreferenceHelper(context, PREFS_NAME)
 
-    private const val DEFAULT_AMLL_FONT_FAMILY = "\"SF Pro Display\", \"PingFang SC\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    private const val DEFAULT_AMLL_FONT_FAMILY = "-apple-system, BlinkMacSystemFont, \"SF Pro Display\", Inter, \"PingFang SC\", system-ui, sans-serif"
 
     data class AmllFontFile(
         val id: String,
