@@ -396,7 +396,7 @@ private fun SettingsPage(
             }
 
             Text(
-                text = "字体设置（⚠此版本暂不可用）",
+                text = "字体设置",
                 style = MaterialTheme.typography.titleMedium
             )
 

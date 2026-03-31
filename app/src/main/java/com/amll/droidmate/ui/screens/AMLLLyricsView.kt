@@ -653,10 +653,8 @@ private data class FontWebEntry(
 )
 
 private fun buildRuntimeFontFamilyName(baseFamilyName: String, fontId: String): String {
-    val base = baseFamilyName
-        .replace(Regex("[^A-Za-z0-9_-]"), "_")
-        .ifBlank { "AMLL_FONT" }
-    return "${base}_$fontId"
+    // 直接使用原始字体名称，以便与 CSS 中的 font-family 匹配
+    return baseFamilyName
 }
 
 private fun parsePreferredFontOrder(configuredFontFamily: String): List<String> {

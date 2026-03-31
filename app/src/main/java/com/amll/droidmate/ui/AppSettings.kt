@@ -303,11 +303,9 @@ object AppSettings {
     }
 
     private fun buildFontFamilyName(displayName: String, absolutePath: String): String {
-        val base = displayName
+        return displayName
             .substringBeforeLast('.')
             .ifBlank { absolutePath.substringAfterLast('/').substringAfterLast('\\').substringBeforeLast('.') }
-        val safe = base.replace(Regex("[^A-Za-z0-9_-]"), "_")
-        return "AMLL_$safe"
     }
 
     fun isAutoUpdateCheckEnabled(context: Context): Boolean {
