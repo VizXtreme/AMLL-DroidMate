@@ -166,6 +166,7 @@ object TTMLConverter {
         indent: String,
         formatted: Boolean
     ) {
+        val begin = TimestampUtils.fromMillis(line.startTime)
         val end = TimestampUtils.fromMillis(line.endTime)
         val lineNum = "L${lineIndex + 1}"
                 
