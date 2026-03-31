@@ -76,16 +76,16 @@ data class TTMLMetadata(
  * 歌曲结构类型
  */
 enum class SongStructureType(val displayName: String) {
-    VERSE("主歌"),
-    CHORUS("副歌"),
-    BRIDGE("桥段"),
-    PRE_CHORUS("预副歌"),
-    INTRO("前奏"),
-    INTERLUDE("间奏"),
-    OUTRO("尾奏"),
-    SOLO("独奏"),
-    BREAK("停顿"),
-    UNKNOWN("未知")
+    VERSE("Verse"),
+    CHORUS("Chorus"),
+    BRIDGE("Bridge"),
+    PRE_CHORUS("Pre-Chorus"),
+    INTRO("Intro"),
+    INTERLUDE("Interlude"),
+    OUTRO("Outro"),
+    SOLO("Solo"),
+    BREAK("Break"),
+    UNKNOWN("Unknown")
 }
 
 /**

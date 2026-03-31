@@ -116,8 +116,8 @@ object TTMLConverter {
                 val startTimeAttr = TimestampUtils.fromMillis(structure.startTime)
                 val endTimeAttr = TimestampUtils.fromMillis(structure.endTime)
                         
-                // 添加带 itunes:songPart 属性的 div 标签，songPart 比 song-part 更常用
-                sb.append("""${indent}${indent}<div itunes:songPart="${escapeXml(structure.label)}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
+                // ✅ 直接使用 type.displayName（现在是英文）写入 itunes:songPart 属性
+                sb.append("""${indent}${indent}<div itunes:songPart="${escapeXml(structure.type.displayName)}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
                         
                 // 添加该结构包含的歌词行
                 while (lineIndex < lyrics.lines.size) {
@@ -166,7 +166,6 @@ object TTMLConverter {
         indent: String,
         formatted: Boolean
     ) {
-        val begin = TimestampUtils.fromMillis(line.startTime)
         val end = TimestampUtils.fromMillis(line.endTime)
         val lineNum = "L${lineIndex + 1}"
                 
