@@ -237,6 +237,8 @@ fun AMLLLyricsView(
     // 上一次配置值的缓存（用于去重，避免重复调用 JavaScript）
     var lastModeValue by remember { mutableStateOf<String?>(null) }
     var lastBackgroundProfileValue by remember { mutableStateOf<String?>(null) }
+    var lastLyricSizePreset by remember { mutableStateOf<String?>(null) }
+    var lastEnableAdvanceDynamicTime by remember { mutableStateOf<Boolean?>(null) }
     
     // 上一次的歌词数据引用（用于检测歌词是否变化）
     var lastLyrics by remember { mutableStateOf<TTMLLyrics?>(null) }
@@ -637,6 +639,91 @@ fun AMLLLyricsView(
                 view.evaluateJavascript("window.configureLyricMotion && window.configureLyricMotion($motionConfig);", null)
                 lastMotionConfigValue = motionConfig
             }
+
+            // ==================== 歌词样式配置 ====================
+            // 歌词播放器实现（DOM / DOM Lite / Canvas）
+            val lyricPlayerImpl = AppSettings.getAmllLyricPlayerImplementation(view.context)
+            val renderModeValue = when (lyricPlayerImpl) {
+                "dom" -> "dom"
+                "dom-slim" -> "dom-lite"
+                "canvas" -> "canvas"
+                else -> "dom"
+            }
+            if (lastModeValue != renderModeValue) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setLyricPlayerImplementation($renderModeValue)")
+                view.evaluateJavascript("window.setLyricPlayerImplementation && window.setLyricPlayerImplementation('$renderModeValue');", null)
+                lastModeValue = renderModeValue
+            }
+
+            // 歌词字体大小预设
+            val lyricSizePreset = AppSettings.getAmllLyricSizePreset(view.context)
+            if (lastLyricSizePreset != lyricSizePreset) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setLyricSizePreset($lyricSizePreset)")
+                view.evaluateJavascript("window.setLyricSizePreset && window.setLyricSizePreset('$lyricSizePreset');", null)
+                lastLyricSizePreset = lyricSizePreset
+            }
+
+            // 翻译歌词开关
+            val enableTranslationLine = AppSettings.isAmllTranslationLineEnabled(view.context)
+            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableTranslationLine($enableTranslationLine)")
+            view.evaluateJavascript("window.setEnableTranslationLine && window.setEnableTranslationLine($enableTranslationLine);", null)
+
+            // 音译歌词开关
+            val enableRomanLine = AppSettings.isAmllRomanLineEnabled(view.context)
+            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableRomanLine($enableRomanLine)")
+            view.evaluateJavascript("window.setEnableRomanLine && window.setEnableRomanLine($enableRomanLine);", null)
+
+            // 交换音译和翻译位置
+            val enableSwapTransRoman = AppSettings.isAmllSwapTransRomanLineEnabled(view.context)
+            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableSwapTransRomanLine($enableSwapTransRoman)")
+            view.evaluateJavascript("window.setEnableSwapTransRomanLine && window.setEnableSwapTransRomanLine($enableSwapTransRoman);", null)
+
+            // 提前歌词行时序
+            val enableAdvanceDynamicTime = AppSettings.isAmllAdvanceDynamicLyricTimeEnabled(view.context)
+            if (lastEnableAdvanceDynamicTime != enableAdvanceDynamicTime) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setAdvanceLyricDynamicLyricTime($enableAdvanceDynamicTime)")
+                view.evaluateJavascript("window.setAdvanceLyricDynamicLyricTime && window.setAdvanceLyricDynamicLyricTime($enableAdvanceDynamicTime);", null)
+                lastEnableAdvanceDynamicTime = enableAdvanceDynamicTime
+            }
+            
+            // 字体字重 - 通过 CSS 应用
+            val fontWeight = AppSettings.getAmllFontWeight(view.context)
+            if (fontWeight > 0) {
+              Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyFontWeight($fontWeight)")
+              view.evaluateJavascript(
+                "document.documentElement.style.setProperty('--amll-font-weight', '$fontWeight');",
+                null
+              )
+            }
+            
+            // 字符间距 - 通过 CSS 应用
+            val letterSpacing = AppSettings.getAmllLetterSpacing(view.context)
+            if (!letterSpacing.isNullOrBlank()) {
+              val escapedLetterSpacing = escapeJsString(letterSpacing)
+              Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyLetterSpacing('$escapedLetterSpacing')")
+              view.evaluateJavascript(
+                "document.documentElement.style.setProperty('--amll-letter-spacing', '$escapedLetterSpacing');",
+                null
+              )
+            }
+
+            // ==================== 歌词背景配置 ====================
+            val backgroundRenderer = AppSettings.getAmllBackgroundRenderer(view.context)
+            val cssBackgroundProperty = AppSettings.getAmllCssBackgroundProperty(view.context)
+            val backgroundFps = AppSettings.getAmllBackgroundFps(view.context)
+            val backgroundRenderScale = AppSettings.getAmllBackgroundRenderScale(view.context)
+            val enableBackgroundStaticMode = AppSettings.isAmllBackgroundStaticModeEnabled(view.context)
+
+            // 根据渲染器类型构建背景配置
+            val backgroundConfig = when (backgroundRenderer) {
+                "css-bg" -> """{"renderer":"css-bg","cssProperty":"$cssBackgroundProperty"}"""
+                "pixi" -> """{"renderer":"pixi","fps":$backgroundFps,"renderScale":$backgroundRenderScale,"staticMode":$enableBackgroundStaticMode}"""
+                "mesh" -> """{"renderer":"mesh","fps":$backgroundFps,"renderScale":$backgroundRenderScale,"staticMode":$enableBackgroundStaticMode}"""
+                else -> """{"renderer":"mesh","fps":$backgroundFps,"renderScale":$backgroundRenderScale,"staticMode":$enableBackgroundStaticMode}"""
+            }
+
+            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureLyricBackground(config=$backgroundConfig)")
+            view.evaluateJavascript("window.configureLyricBackground && window.configureLyricBackground($backgroundConfig);", null)
 
             // ==================== 歌词数据更新 ====================
             // 只在 lyrics 对象引用改变时才重新构建 JSON（避免每秒都构建）

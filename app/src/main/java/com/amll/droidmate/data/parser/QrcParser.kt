@@ -93,7 +93,7 @@ object QrcParser {
     
         // 移除行级时间戳，剩下的就是歌词内容
         val lineContent = qrcLineTimestampRegex.replace(line, "")
-        val words = mutableListOf<LyricWord>
+        val words = mutableListOf<LyricWord>()
     
         // 逐个匹配逐字令牌
         for (capture in lyricTokenRegex.findAll(lineContent)) {

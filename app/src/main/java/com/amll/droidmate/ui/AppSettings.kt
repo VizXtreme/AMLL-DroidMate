@@ -96,6 +96,24 @@ object AppSettings {
     private const val KEY_AMLL_ANIMATION_HIDE_PASSED_LINES = "amll_animation_hide_passed_lines"  // 隐藏已唱过的歌词行
     private const val KEY_AMLL_ANIMATION_WORD_FADE_WIDTH = "amll_animation_word_fade_width"  // 逐字渐变宽度
     private const val KEY_AMLL_ANIMATION_FPS = "amll_animation_fps"  // 动画帧率
+    
+    // 歌词样式相关设置
+    private const val KEY_AMLL_LYRIC_PLAYER_IMPLEMENTATION = "amll_lyric_player_implementation"  // 歌词播放器实现
+    private const val KEY_AMLL_LYRIC_SIZE_PRESET = "amll_lyric_size_preset"  // 歌词字体大小预设
+    private const val KEY_AMLL_ENABLE_TRANSLATION_LINE = "amll_enable_translation_line"  // 显示翻译歌词
+    private const val KEY_AMLL_ENABLE_ROMAN_LINE = "amll_enable_roman_line"  // 显示音译歌词
+    private const val KEY_AMLL_ENABLE_SWAP_TRANS_ROMAN_LINE = "amll_enable_swap_trans_roman_line"  // 交换音译和翻译
+    private const val KEY_AMLL_ADVANCE_DYNAMIC_LYRIC_TIME = "amll_advance_dynamic_lyric_time"  // 提前歌词行时序
+    private const val KEY_AMLL_FONT_WEIGHT = "amll_font_weight"  // 字体字重
+    private const val KEY_AMLL_LETTER_SPACING = "amll_letter_spacing"  // 字符间距
+    
+    // 歌词背景相关设置
+    private const val KEY_AMLL_BACKGROUND_RENDERER = "amll_background_renderer"  // 背景渲染器类型
+    private const val KEY_AMLL_CSS_BACKGROUND_PROPERTY = "amll_css_background_property"  // CSS 背景属性
+    private const val KEY_AMLL_BACKGROUND_FPS = "amll_background_fps"  // 背景帧率
+    private const val KEY_AMLL_BACKGROUND_RENDER_SCALE = "amll_background_render_scale"  // 背景渲染倍率
+    private const val KEY_AMLL_BACKGROUND_STATIC_MODE = "amll_background_static_mode"  // 背景静态模式
+    
     private const val KEY_WEBSOCKET_PROTOCOL_ADDRESS = "websocket_protocol_address"  // WebSocket 地址
     private const val KEY_WEBSOCKET_PROTOCOL_ENABLED = "websocket_protocol_enabled"  // WebSocket 开关
     private const val KEY_WEBVIEW_ENABLED = "webview_enabled"  // WebView 开关
@@ -107,6 +125,24 @@ object AppSettings {
     private const val DEFAULT_AMLL_ANIMATION_HIDE_PASSED_LINES = false  // 默认不隐藏已唱过的行
     private const val DEFAULT_AMLL_ANIMATION_WORD_FADE_WIDTH = 0.5f     // 默认渐变宽度 0.5
     private const val DEFAULT_AMLL_ANIMATION_FPS = 60  // 默认 60 FPS
+    
+    // 歌词样式默认值
+    private const val DEFAULT_AMLL_LYRIC_PLAYER_IMPLEMENTATION = "dom"  // 默认 DOM 实现
+    private const val DEFAULT_AMLL_LYRIC_SIZE_PRESET = "medium"  // 默认中等字体大小
+    private const val DEFAULT_AMLL_ENABLE_TRANSLATION_LINE = true  // 默认显示翻译歌词
+    private const val DEFAULT_AMLL_ENABLE_ROMAN_LINE = true  // 默认显示音译歌词
+    private const val DEFAULT_AMLL_ENABLE_SWAP_TRANS_ROMAN_LINE = false  // 默认不交换
+    private const val DEFAULT_AMLL_ADVANCE_DYNAMIC_LYRIC_TIME = false  // 默认不提前
+    private const val DEFAULT_AMLL_FONT_WEIGHT = 0  // 默认系统控制字重
+    private const val DEFAULT_AMLL_LETTER_SPACING = ""  // 默认字符间距
+    
+    // 歌词背景默认值
+    private const val DEFAULT_AMLL_BACKGROUND_RENDERER = "mesh"  // 默认网格渐变渲染器
+    private const val DEFAULT_AMLL_CSS_BACKGROUND_PROPERTY = "#111111"  // 默认黑色背景
+    private const val DEFAULT_AMLL_BACKGROUND_FPS = 60  // 默认 60 FPS
+    private const val DEFAULT_AMLL_BACKGROUND_RENDER_SCALE = 1.0f  // 默认 1 倍渲染
+    private const val DEFAULT_AMLL_BACKGROUND_STATIC_MODE = false  // 默认不禁用动态效果
+    
     private const val DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS = "ws://localhost:11444"  // 默认本地地址
     private const val DEFAULT_WEBSOCKET_PROTOCOL_ENABLED = false  // 默认关闭
     private const val DEFAULT_WEBVIEW_ENABLED = true  // 默认启用 WebView
@@ -480,6 +516,209 @@ object AppSettings {
 
     fun setAmllAnimationFps(context: Context, value: Int) {
         prefs(context).putLong(KEY_AMLL_ANIMATION_FPS, value.toLong())
+    }
+
+    // === 歌词样式设置 ===
+    
+    /**
+     * 获取歌词播放器实现类型
+     * @return "dom", "dom-slim", 或 "canvas"
+     */
+    fun getAmllLyricPlayerImplementation(context: Context): String {
+        return prefs(context).getString(KEY_AMLL_LYRIC_PLAYER_IMPLEMENTATION, DEFAULT_AMLL_LYRIC_PLAYER_IMPLEMENTATION)
+            ?: DEFAULT_AMLL_LYRIC_PLAYER_IMPLEMENTATION
+    }
+
+    /**
+     * 设置歌词播放器实现类型
+     */
+    fun setAmllLyricPlayerImplementation(context: Context, implementation: String) {
+        prefs(context).putString(KEY_AMLL_LYRIC_PLAYER_IMPLEMENTATION, implementation)
+    }
+
+    /**
+     * 获取歌词字体大小预设
+     * @return "tiny", "extra-small", "small", "medium", "large", "extra-large", "huge"
+     */
+    fun getAmllLyricSizePreset(context: Context): String {
+        return prefs(context).getString(KEY_AMLL_LYRIC_SIZE_PRESET, DEFAULT_AMLL_LYRIC_SIZE_PRESET)
+            ?: DEFAULT_AMLL_LYRIC_SIZE_PRESET
+    }
+
+    /**
+     * 设置歌词字体大小预设
+     */
+    fun setAmllLyricSizePreset(context: Context, preset: String) {
+        prefs(context).putString(KEY_AMLL_LYRIC_SIZE_PRESET, preset)
+    }
+
+    /**
+     * 是否启用翻译歌词显示
+     */
+    fun isAmllTranslationLineEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_AMLL_ENABLE_TRANSLATION_LINE, DEFAULT_AMLL_ENABLE_TRANSLATION_LINE)
+    }
+
+    /**
+     * 设置是否启用翻译歌词显示
+     */
+    fun setAmllTranslationLineEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_AMLL_ENABLE_TRANSLATION_LINE, enabled)
+    }
+
+    /**
+     * 是否启用音译歌词显示
+     */
+    fun isAmllRomanLineEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_AMLL_ENABLE_ROMAN_LINE, DEFAULT_AMLL_ENABLE_ROMAN_LINE)
+    }
+
+    /**
+     * 设置是否启用音译歌词显示
+     */
+    fun setAmllRomanLineEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_AMLL_ENABLE_ROMAN_LINE, enabled)
+    }
+
+    /**
+     * 是否启用音译和翻译歌词交换位置
+     */
+    fun isAmllSwapTransRomanLineEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_AMLL_ENABLE_SWAP_TRANS_ROMAN_LINE, DEFAULT_AMLL_ENABLE_SWAP_TRANS_ROMAN_LINE)
+    }
+
+    /**
+     * 设置是否启用音译和翻译歌词交换位置
+     */
+    fun setAmllSwapTransRomanLineEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_AMLL_ENABLE_SWAP_TRANS_ROMAN_LINE, enabled)
+    }
+
+    /**
+     * 是否启用提前歌词行时序（更接近 Apple Music 效果）
+     */
+    fun isAmllAdvanceDynamicLyricTimeEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_AMLL_ADVANCE_DYNAMIC_LYRIC_TIME, DEFAULT_AMLL_ADVANCE_DYNAMIC_LYRIC_TIME)
+    }
+
+    /**
+     * 设置是否启用提前歌词行时序
+     */
+    fun setAmllAdvanceDynamicLyricTimeEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_AMLL_ADVANCE_DYNAMIC_LYRIC_TIME, enabled)
+    }
+
+    // === 歌词字体高级设置 ===
+    
+    /**
+     * 获取字体字重（等同于 CSS font-weight）
+     * @return 字重值，范围 0-1000，0 表示系统控制
+     */
+    fun getAmllFontWeight(context: Context): Int {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getInt(KEY_AMLL_FONT_WEIGHT, DEFAULT_AMLL_FONT_WEIGHT)
+    }
+
+    /**
+     * 设置字体字重
+     * @param weight 字重值，范围 0-1000
+     */
+    fun setAmllFontWeight(context: Context, weight: Int) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putInt(KEY_AMLL_FONT_WEIGHT, weight.coerceIn(0, 1000)).apply()
+    }
+
+    /**
+     * 获取字符间距（等同于 CSS letter-spacing）
+     * @return 字符间距值，可以是任何 CSS 单位（如 "2px", "0.1em"）
+     */
+    fun getAmllLetterSpacing(context: Context): String {
+        return prefs(context).getString(KEY_AMLL_LETTER_SPACING, DEFAULT_AMLL_LETTER_SPACING)
+            ?: DEFAULT_AMLL_LETTER_SPACING
+    }
+
+    /**
+     * 设置字符间距
+     * @param spacing 字符间距值，支持 CSS 单位
+     */
+    fun setAmllLetterSpacing(context: Context, spacing: String) {
+        prefs(context).putString(KEY_AMLL_LETTER_SPACING, spacing)
+    }
+
+    // === 歌词背景设置 ===
+    
+    /**
+     * 获取歌词背景渲染器类型
+     * @return "mesh" (网格渐变), "pixi" (PixiJS), 或 "css-bg" (CSS 背景)
+     */
+    fun getAmllBackgroundRenderer(context: Context): String {
+        return prefs(context).getString(KEY_AMLL_BACKGROUND_RENDERER, DEFAULT_AMLL_BACKGROUND_RENDERER)
+            ?: DEFAULT_AMLL_BACKGROUND_RENDERER
+    }
+
+    /**
+     * 设置歌词背景渲染器类型
+     */
+    fun setAmllBackgroundRenderer(context: Context, renderer: String) {
+        prefs(context).putString(KEY_AMLL_BACKGROUND_RENDERER, renderer)
+    }
+
+    /**
+     * 获取 CSS 背景属性值（当使用 css-bg 渲染器时）
+     */
+    fun getAmllCssBackgroundProperty(context: Context): String {
+        return prefs(context).getString(KEY_AMLL_CSS_BACKGROUND_PROPERTY, DEFAULT_AMLL_CSS_BACKGROUND_PROPERTY)
+            ?: DEFAULT_AMLL_CSS_BACKGROUND_PROPERTY
+    }
+
+    /**
+     * 设置 CSS 背景属性值
+     */
+    fun setAmllCssBackgroundProperty(context: Context, property: String) {
+        prefs(context).putString(KEY_AMLL_CSS_BACKGROUND_PROPERTY, property)
+    }
+
+    /**
+     * 获取歌词背景最高帧率
+     */
+    fun getAmllBackgroundFps(context: Context): Int {
+        return prefs(context).getLong(KEY_AMLL_BACKGROUND_FPS, DEFAULT_AMLL_BACKGROUND_FPS.toLong()).toInt()
+    }
+
+    /**
+     * 设置歌词背景最高帧率
+     */
+    fun setAmllBackgroundFps(context: Context, value: Int) {
+        prefs(context).putLong(KEY_AMLL_BACKGROUND_FPS, value.toLong())
+    }
+
+    /**
+     * 获取歌词背景渲染倍率
+     */
+    fun getAmllBackgroundRenderScale(context: Context): Float {
+        return prefs(context).getString(KEY_AMLL_BACKGROUND_RENDER_SCALE, DEFAULT_AMLL_BACKGROUND_RENDER_SCALE.toString())
+            ?.toFloatOrNull() ?: DEFAULT_AMLL_BACKGROUND_RENDER_SCALE
+    }
+
+    /**
+     * 设置歌词背景渲染倍率
+     */
+    fun setAmllBackgroundRenderScale(context: Context, value: Float) {
+        prefs(context).putString(KEY_AMLL_BACKGROUND_RENDER_SCALE, value.toString())
+    }
+
+    /**
+     * 是否启用背景静态模式（禁用动态效果以节省性能）
+     */
+    fun isAmllBackgroundStaticModeEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_AMLL_BACKGROUND_STATIC_MODE, DEFAULT_AMLL_BACKGROUND_STATIC_MODE)
+    }
+
+    /**
+     * 设置是否启用背景静态模式
+     */
+    fun setAmllBackgroundStaticModeEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_AMLL_BACKGROUND_STATIC_MODE, enabled)
     }
 
     // === WebSocket 传递设置 ===

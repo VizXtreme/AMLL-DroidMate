@@ -51637,6 +51637,7 @@ void main(void)
   let lastAlbumArt = "";
   let albumArtRetryCount = 0;
   const MAX_ALBUM_ART_RETRIES = 3;
+  let pendingLyricOptions = {};
   function applyAMLLPatch() {
     logToAndroid("Applying AMLL patch for generateFadeGradient", "info");
     const style = document.createElement("style");
@@ -51857,6 +51858,33 @@ void main(void)
       };
       window.configureLyricMotion = function(options) {
         logToAndroid(`configureLyricMotion: ${JSON.stringify(options)}`, "debug");
+        if (playerRef.current?.lyricPlayer) {
+          const lp = playerRef.current.lyricPlayer;
+          if (options.enableSpring !== void 0) {
+            logToAndroid(`  - enableSpring: ${options.enableSpring}`, "debug");
+            if (options.enableSpring) {
+              lp.setLinePosYSpringParams?.({ mass: 0.9, damping: 15, stiffness: 90 });
+            } else {
+              lp.setLinePosYSpringParams?.({ mass: 1, damping: 30, stiffness: 50 });
+            }
+          }
+          if (options.enableScale !== void 0) {
+            logToAndroid(`  - enableScale: ${options.enableScale}`, "debug");
+            if (options.enableScale) {
+              lp.setLineScaleSpringParams?.({ mass: 2, damping: 25, stiffness: 100 });
+            } else {
+              lp.setLineScaleSpringParams?.({ mass: 1, damping: 30, stiffness: 50 });
+            }
+          }
+          if (options.hidePassedLines !== void 0) {
+            logToAndroid(`  - hidePassedLines: ${options.hidePassedLines}`, "debug");
+          }
+          if (options.wordFadeWidth !== void 0) {
+            logToAndroid(`  - wordFadeWidth: ${options.wordFadeWidth}`, "debug");
+            lp.setWordFadeWidth?.(options.wordFadeWidth);
+          }
+        }
+        pendingLyricOptions = { ...pendingLyricOptions, ...options };
       };
       window.configureBackgroundEffect = function(options) {
         logToAndroid(`configureBackgroundEffect: ${JSON.stringify(options)}`, "debug");
@@ -51872,6 +51900,31 @@ void main(void)
       };
       window.setRenderMode = function(mode) {
         logToAndroid(`setRenderMode: ${mode}`, "debug");
+      };
+      window.setLyricPlayerImplementation = function(implementation2) {
+        logToAndroid(`setLyricPlayerImplementation: ${implementation2}`, "debug");
+      };
+      window.setLyricSizePreset = function(preset) {
+        logToAndroid(`setLyricSizePreset: ${preset}`, "debug");
+        if (playerRef.current?.lyricPlayer) {
+          document.documentElement.style.setProperty("--amll-lp-font-size-preset", preset);
+        }
+      };
+      window.setEnableTranslationLine = function(enabled) {
+        logToAndroid(`setEnableTranslationLine: ${enabled}`, "debug");
+        document.documentElement.style.setProperty("--amll-show-translation", enabled ? "1" : "0");
+      };
+      window.setEnableRomanLine = function(enabled) {
+        logToAndroid(`setEnableRomanLine: ${enabled}`, "debug");
+        document.documentElement.style.setProperty("--amll-show-roman", enabled ? "1" : "0");
+      };
+      window.setEnableSwapTransRomanLine = function(enabled) {
+        logToAndroid(`setEnableSwapTransRomanLine: ${enabled}`, "debug");
+        document.documentElement.style.setProperty("--amll-swap-trans-roman", enabled ? "1" : "0");
+      };
+      window.setAdvanceLyricDynamicLyricTime = function(enabled) {
+        logToAndroid(`setAdvanceLyricDynamicLyricTime: ${enabled}`, "debug");
+        pendingLyricOptions = { ...pendingLyricOptions, advanceDynamicTime: enabled };
       };
       return () => {
         delete window.__setLyricLines;

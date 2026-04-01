@@ -67,6 +67,9 @@ let lastAlbumArt = ''
 let albumArtRetryCount = 0
 const MAX_ALBUM_ART_RETRIES = 3
 
+// 配置暂存变量（用于存储来自 Android 的动态配置）
+let pendingLyricOptions: any = {}
+
 // Global state for Android bridge
 interface AMLLGlobal {
   player: any
@@ -112,6 +115,12 @@ declare global {
     configureLyricMotion?: (options: any) => void
     configureBackgroundEffect?: (options: any) => void
     setRenderMode?: (mode: string) => void
+    setLyricPlayerImplementation?: (implementation: string) => void
+    setLyricSizePreset?: (preset: string) => void
+    setEnableTranslationLine?: (enabled: boolean) => void
+    setEnableRomanLine?: (enabled: boolean) => void
+    setEnableSwapTransRomanLine?: (enabled: boolean) => void
+    setAdvanceLyricDynamicLyricTime?: (enabled: boolean) => void
     Android?: {
       log?: (message: string, level: string) => void
       isPlaying?: () => boolean
@@ -388,7 +397,51 @@ function App() {
 
     window.configureLyricMotion = function (options: any) {
       logToAndroid(`configureLyricMotion: ${JSON.stringify(options)}`, 'debug')
-      // AMLL Core handles motion configuration internally
+      
+      // 实际应用到 LyricPlayer 实例
+      if (playerRef.current?.lyricPlayer) {
+        const lp = playerRef.current.lyricPlayer
+        
+        // 弹簧动画
+        if (options.enableSpring !== undefined) {
+          logToAndroid(`  - enableSpring: ${options.enableSpring}`, 'debug')
+          // AMLL Core 使用 linePosYSpringParams 控制弹簧效果
+          if (options.enableSpring) {
+            lp.setLinePosYSpringParams?.({ mass: 0.9, damping: 15, stiffness: 90 })
+          } else {
+            lp.setLinePosYSpringParams?.({ mass: 1.0, damping: 30, stiffness: 50 }) // 更"硬"的参数
+          }
+        }
+        
+        // 缩放动画
+        if (options.enableScale !== undefined) {
+          logToAndroid(`  - enableScale: ${options.enableScale}`, 'debug')
+          // AMLL Core 使用 lineScaleSpringParams 控制缩放
+          if (options.enableScale) {
+            lp.setLineScaleSpringParams?.({ mass: 2, damping: 25, stiffness: 100 })
+          } else {
+            lp.setLineScaleSpringParams?.({ mass: 1.0, damping: 30, stiffness: 50 }) // 禁用缩放
+          }
+        }
+        
+        // 模糊效果 - AMLL Core 通过 enableBlur prop 控制
+        // 这个需要通过 React prop 更新，在下面的 configureLyricOptions 中处理
+        
+        // 隐藏已过歌词
+        if (options.hidePassedLines !== undefined) {
+          logToAndroid(`  - hidePassedLines: ${options.hidePassedLines}`, 'debug')
+          // 这需要更新 LyricPlayer 的配置
+        }
+        
+        // 逐字渐变宽度
+        if (options.wordFadeWidth !== undefined) {
+          logToAndroid(`  - wordFadeWidth: ${options.wordFadeWidth}`, 'debug')
+          lp.setWordFadeWidth?.(options.wordFadeWidth)
+        }
+      }
+      
+      // 存储配置以便后续应用
+      pendingLyricOptions = { ...pendingLyricOptions, ...options }
     }
 
     window.configureBackgroundEffect = function (options: any) {
@@ -408,6 +461,59 @@ function App() {
       logToAndroid(`setRenderMode: ${mode}`, 'debug')
       // Render mode is handled by AMLL Core
     }
+    
+    // 歌词播放器实现设置（DOM / DOM-Lite / Canvas）
+    window.setLyricPlayerImplementation = function (implementation: string) {
+      logToAndroid(`setLyricPlayerImplementation: ${implementation}`, 'debug')
+      // 这个设置主要通过 AMLL Core 的 renderMode prop 控制
+      // 在 Android 端通过 setRenderMode 已经处理
+    }
+    
+    // 歌词字体大小预设
+    window.setLyricSizePreset = function (preset: string) {
+      logToAndroid(`setLyricSizePreset: ${preset}`, 'debug')
+      // 通过 CSS 变量应用到 LyricPlayer
+      if (playerRef.current?.lyricPlayer) {
+        document.documentElement.style.setProperty('--amll-lp-font-size-preset', preset)
+      }
+    }
+    
+    // 翻译歌词开关
+    window.setEnableTranslationLine = function (enabled: boolean) {
+      logToAndroid(`setEnableTranslationLine: ${enabled}`, 'debug')
+      // 通过 CSS 变量控制显示/隐藏
+      document.documentElement.style.setProperty('--amll-show-translation', enabled ? '1' : '0')
+    }
+    
+    // 音译歌词开关
+    window.setEnableRomanLine = function (enabled: boolean) {
+      logToAndroid(`setEnableRomanLine: ${enabled}`, 'debug')
+      // 通过 CSS 变量控制显示/隐藏
+      document.documentElement.style.setProperty('--amll-show-roman', enabled ? '1' : '0')
+    }
+    
+    // 交换音译和翻译位置
+    window.setEnableSwapTransRomanLine = function (enabled: boolean) {
+      logToAndroid(`setEnableSwapTransRomanLine: ${enabled}`, 'debug')
+      // 通过 CSS 变量控制顺序
+      document.documentElement.style.setProperty('--amll-swap-trans-roman', enabled ? '1' : '0')
+    }
+    
+    // 提前歌词行时序（更接近 Apple Music 效果）
+    window.setAdvanceLyricDynamicLyricTime = function (enabled: boolean) {
+      logToAndroid(`setAdvanceLyricDynamicLyricTime: ${enabled}`, 'debug')
+      // 这个需要通过 LyricPlayer 的配置调整
+      pendingLyricOptions = { ...pendingLyricOptions, advanceDynamicTime: enabled }
+    }
+    
+    // 注意：以下设置已通过 CSS 变量在 Android 端直接应用
+    // - 字体字重：--amll-font-weight
+    // - 字符间距：--amll-letter-spacing
+    // - 歌词字体大小预设：--amll-lp-font-size-preset
+    // - 翻译歌词显示：--amll-show-translation
+    // - 音译歌词显示：--amll-show-roman
+    // - 交换音译翻译：--amll-swap-trans-roman
+    // 这些 CSS 变量会在 LyricPlayer 组件中通过 style prop 使用
 
     return () => {
       delete (window as any).__setLyricLines

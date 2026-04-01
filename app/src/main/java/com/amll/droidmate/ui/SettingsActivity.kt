@@ -422,9 +422,10 @@ private fun SettingsPage(
                 style = MaterialTheme.typography.titleMedium
             )
 
+            // 字体设置已整合到动画设置页面
             Button(
                 onClick = {
-                    context.startActivity(Intent(context, FontSettingsActivity::class.java))
+                    context.startActivity(Intent(context, AnimationSettingsActivity::class.java))
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
