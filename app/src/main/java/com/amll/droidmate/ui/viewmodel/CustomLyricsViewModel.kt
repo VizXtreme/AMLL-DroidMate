@@ -33,7 +33,7 @@ import timber.log.Timber
  * @param matchType 匹配类型描述
  * @param displayName 显示名称（格式化后的完整标题）
  * @param metadataMatch 是否通过元数据（歌名/歌手）搜索得到的结果
- * @param features 特性集合（对唱/背景/重叠/翻译/音译/逐字）
+ * @param features 特性集合（对唱/背景/重叠/翻译/音译/逐字/结构标记）
  * @param seq 单调递增序列号（用于区分到达顺序，打破平局）
  */
 data class CustomLyricsCandidate(
@@ -49,7 +49,7 @@ data class CustomLyricsCandidate(
      */
     val metadataMatch: Boolean = false,
     /**
-     * 特性集合，e.g. 对唱/背景/重叠/翻译/音译/逐字
+     * 特性集合，e.g. 对唱/背景/重叠/翻译/音译/逐字/结构标记
      * UI 需要在候选列表中显示这些功能。
      */
     val features: Set<com.amll.droidmate.domain.model.LyricsFeature> = emptySet(),

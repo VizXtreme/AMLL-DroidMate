@@ -290,11 +290,11 @@ fun SongStructureChip(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
     
-    // 间奏/前奏/尾奏只显示音符符号，不显示文字和时间
-    val isInterludeType = structure.type in listOf(
+    // 纯音乐类型（只显示音符符号，不显示文字和时间）
+    val isInstrumentalType = structure.type in listOf(
         SongStructureType.INTERLUDE,
-        SongStructureType.INTRO,
-        SongStructureType.OUTRO
+        SongStructureType.INTRO_INST,
+        SongStructureType.OUTRO_INST
     )
     
     Surface(
@@ -309,8 +309,8 @@ fun SongStructureChip(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center // 垂直居中
         ) {
-            // 间奏/前奏/尾奏只显示音符符号，其他显示结构标签
-            if (isInterludeType) {
+            // 纯音乐类型只显示音符符号，其他显示结构标签和时间
+            if (isInstrumentalType) {
                 Icon(
                     imageVector = Icons.Default.MusicNote,
                     contentDescription = structure.type.displayName,
@@ -327,7 +327,7 @@ fun SongStructureChip(
                     textAlign = TextAlign.Center
                 )
                 
-                // 副文本：时间范围（仅非间奏/前奏/尾奏显示）
+                // 副文本：时间范围（仅非纯音乐类型显示）
                 Text(
                     text = "${formatTime(structure.startTime)} - ${formatTime(structure.endTime)}",
                     style = MaterialTheme.typography.labelSmall,

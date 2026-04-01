@@ -84,6 +84,7 @@ object SongStructureParser {
      * 1. 检测歌词行之间的时间间隔
      * 2. 间隔 >= 4 秒的标记为间奏/前奏/尾奏
      * 3. 将间隔前后的歌词标记为独立段落
+     * 4. 区分纯音乐 (inst) 和有歌词 (para) 的前奏/尾奏
      */
     private fun inferStructureFromLyrics(lines: List<LyricLine>, songDuration: Long = 0L): List<SongStructure> {
         if (lines.isEmpty()) {
@@ -166,6 +167,9 @@ object SongStructureParser {
      * 
      * 检测规则：
      * - 所有间隔（包括前奏、间奏、尾奏）都需要 >= 4 秒才显示
+     * - 区分纯音乐 (inst) 和有歌词 (para) 的前奏/尾奏：
+     *   - intro_inst/outro_inst: 前后都没有歌词（纯音乐间隔）
+     *   - intro_para/outro_para: 前后有歌词（有歌词的引子/尾声）
      */
     private fun detectInterludes(lyricLines: List<LyricLine>, songDuration: Long = 0L): List<SongStructure> {
         val interludes = mutableListOf<SongStructure>()
@@ -177,14 +181,16 @@ object SongStructureParser {
         // 检测前奏：从歌曲开始到第一句歌词
         val firstLine = lyricLines.first()
         if (firstLine.startTime >= INTERLUDE_THRESHOLD_MS) {
+            // 判断是前奏还是引子：第一段歌词之前有时间间隔
+            // 由于这是第一段歌词之前的间隔，后面肯定有歌词，所以是 intro_inst（纯音乐前奏）
             val intro = SongStructure(
-                label = SongStructureType.INTRO.displayName,
+                label = SongStructureType.INTRO_INST.displayName,
                 startTime = 0L,
                 endTime = firstLine.startTime,
-                type = SongStructureType.INTRO
+                type = SongStructureType.INTRO_INST
             )
             interludes.add(intro)
-            Timber.d("[SongStructure] 检测到前奏：${formatTime(0)} - ${formatTime(firstLine.startTime)} (时长：${firstLine.startTime}ms)")
+            Timber.d("[SongStructure] 检测到前奏 (intro_inst): ${formatTime(0)} - ${formatTime(firstLine.startTime)} (时长：${firstLine.startTime}ms)")
         }
         
         // 检测歌词之间的间奏
@@ -196,8 +202,12 @@ object SongStructureParser {
             // 所有间隔都需要 >= 4 秒才显示
             if (gap >= INTERLUDE_THRESHOLD_MS) {
                 val type = when {
-                    i == 0 -> SongStructureType.INTRO  // 不会到这里，保留以防逻辑变化
-                    i == lyricLines.size - 2 -> SongStructureType.OUTRO
+                    i == 0 -> SongStructureType.INTRO_INST  // 不会到这里，保留以防逻辑变化
+                    i == lyricLines.size - 2 -> {
+                        // 倒数第二段和最后一段之间的间隔，需要判断是 outro_inst 还是 outro_para
+                        // 因为后面还有最后一段歌词，所以是 outro_inst（纯音乐尾奏）
+                        SongStructureType.OUTRO_INST
+                    }
                     else -> SongStructureType.INTERLUDE
                 }
                 
@@ -220,14 +230,15 @@ object SongStructureParser {
             val outroDuration = songDuration - lastLine.endTime
             
             if (outroDuration >= INTERLUDE_THRESHOLD_MS) {
+                // 最后一段歌词之后到歌曲结束，没有后续歌词，所以是 outro_inst（纯音乐尾奏）
                 val outro = SongStructure(
-                    label = SongStructureType.OUTRO.displayName,
+                    label = SongStructureType.OUTRO_INST.displayName,
                     startTime = lastLine.endTime,
                     endTime = songDuration,
-                    type = SongStructureType.OUTRO
+                    type = SongStructureType.OUTRO_INST
                 )
                 interludes.add(outro)
-                Timber.d("[SongStructure] 检测到尾奏：${formatTime(lastLine.endTime)} - ${formatTime(songDuration)} (时长：${outroDuration}ms)")
+                Timber.d("[SongStructure] 检测到尾奏 (outro_inst): ${formatTime(lastLine.endTime)} - ${formatTime(songDuration)} (时长：${outroDuration}ms)")
             }
         }
         

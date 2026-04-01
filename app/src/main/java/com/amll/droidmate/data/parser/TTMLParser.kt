@@ -765,9 +765,13 @@ object TTMLParser {
             lowerLabel.contains("chorus") -> SongStructureType.CHORUS
             lowerLabel.contains("bridge") -> SongStructureType.BRIDGE
             lowerLabel.contains("pre-chorus") || lowerLabel.contains("prechorus") -> SongStructureType.PRE_CHORUS
-            lowerLabel.contains("intro") -> SongStructureType.INTRO
+            lowerLabel.contains("intro_para") -> SongStructureType.INTRO_PARA
+            lowerLabel.contains("intro_inst") -> SongStructureType.INTRO_INST
+            lowerLabel.contains("intro") -> SongStructureType.INTRO_PARA  // 默认将 intro 视为引子
+            lowerLabel.contains("outro_para") -> SongStructureType.OUTRO_PARA
+            lowerLabel.contains("outro_inst") -> SongStructureType.OUTRO_INST
+            lowerLabel.contains("outro") -> SongStructureType.OUTRO_PARA  // 默认将 outro 视为尾声
             lowerLabel.contains("interlude") -> SongStructureType.INTERLUDE
-            lowerLabel.contains("outro") -> SongStructureType.OUTRO
             lowerLabel.contains("solo") -> SongStructureType.SOLO
             lowerLabel.contains("break") -> SongStructureType.BREAK
             else -> SongStructureType.UNKNOWN

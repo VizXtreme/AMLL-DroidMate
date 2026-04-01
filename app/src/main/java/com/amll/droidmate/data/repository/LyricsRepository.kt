@@ -300,7 +300,10 @@ open class LyricsRepository(
                             artist = artist ?: "Unknown",
                             processMetadata = processMetadata
                         )
-                        return fallbackLyrics
+                        // Mark as fallback since this is converted from LRC, not original TTML
+                        return fallbackLyrics?.copy(
+                            metadata = fallbackLyrics.metadata.copy(isFallback = true)
+                        )
                     }
                 }
                 return null
@@ -682,8 +685,10 @@ open class LyricsRepository(
             )
             val result = mainLyrics.copy(lines = mergedLines)
             
-            Timber.i("[LyricsRepository] Successfully fetched Netease lyrics for: $songId")
-            return result
+            // Mark as fallback: Netease provides LRC/YRC, converted to TTML
+            return result.copy(
+                metadata = result.metadata.copy(isFallback = true)
+            )
             
         } catch (e: Exception) {
             Timber.e("[LyricsRepository] Error fetching Netease lyrics", e)
@@ -1114,7 +1119,10 @@ open class LyricsRepository(
             )
             
             Timber.i("[Kugou] Successfully fetched and decrypted Kugou lyrics for: $idOrHash")
-            return ttml
+            // Mark as fallback: Kugou provides KRC, converted to TTML
+            return ttml?.copy(
+                metadata = ttml.metadata.copy(isFallback = true)
+            )
             
         } catch (e: Exception) {
             Timber.e("[Kugou] Error fetching Kugou lyrics", e)
@@ -2283,11 +2291,48 @@ open class LyricsRepository(
         // Only mark overlap as a feature for sources where it is expected to be
         // meaningful (e.g. AMLL TTML DB results or a raw TTML file). Other sources
         // may produce overlapping timings during conversion and should not be
-        // treated as a true “overlap” feature.
+        // treated as a true "overlap" feature.
         val sourceLower = lyrics.metadata.source.lowercase()
         val shouldMarkOverlap = sourceLower.contains("amll") || sourceLower.contains("ttml")
         if (shouldMarkOverlap && lines.zipWithNext().any { it.second.startTime < it.first.endTime }) {
             features.add(LyricsFeature.OVERLAP)
+        }
+        // Check for 结构标记 information (verse, chorus, etc.)
+        // This feature is only available when TTML contains valid songPart metadata
+        // Exclude fallback results with generic labels like "段落 1", "段落 2"
+        // Also exclude pure instrumental sections (Intro, Interlude, Outro, etc.)
+        val songStructures = lyrics.metadata.songStructures
+        if (!songStructures.isNullOrEmpty()) {
+            // Check if structures have meaningful vocal section labels
+            val hasRealVocalStructureLabels = songStructures.any { structure ->
+                val label = structure.label.trim()
+                val type = structure.type
+                
+                // Exclude generic fallback labels like "段落 1", "段落 2"
+                if (label.matches(Regex("^段落\\s*\\d+$"))) {
+                    return@any false
+                }
+                
+                // Exclude pure instrumental sections (no vocals)
+                // Only count sections that typically contain lyrics
+                when (type) {
+                    SongStructureType.INTRO_INST,
+                    SongStructureType.INTERLUDE,
+                    SongStructureType.OUTRO_INST,
+                    SongStructureType.SOLO -> {
+                        // These are instrumental sections, skip them
+                        return@any false
+                    }
+                    else -> {
+                        // Verse, Chorus, Bridge, Pre-Chorus, Break, Unknown with custom label, etc.
+                        // These typically contain vocals
+                        return@any true
+                    }
+                }
+            }
+            if (hasRealVocalStructureLabels) {
+                features.add(LyricsFeature.STRUCTURE)
+            }
         }
         return features
     }

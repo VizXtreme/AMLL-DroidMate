@@ -88,7 +88,9 @@ data class TTMLMetadata(
     val source: String = "DroidMate",       // 来源标识
     val songStructures: List<SongStructure>? = null,  // 歌曲结构段落（主歌、副歌等）
     // 保留原始 TTML 的完整 metadata 元素内容（用于未来扩展和保留未使用的 XML 信息）
-    val rawXmlMetadata: String? = null      // 原始 XML 元数据（可选）
+    val rawXmlMetadata: String? = null,     // 原始 XML 元数据（可选）
+    // 标记是否为 fallback 结果（true 表示是从其他格式转换而来，非原始 TTML）
+    val isFallback: Boolean = false         // 是否为 fallback 结果
 )
 
 /**
@@ -102,9 +104,11 @@ enum class SongStructureType(val displayName: String) {
     CHORUS("Chorus"),       // 副歌
     BRIDGE("Bridge"),       // 桥段（连接段落）
     PRE_CHORUS("Pre-Chorus"), // 预副歌
-    INTRO("Intro"),         // 前奏
+    INTRO_INST("Intro"),     // 前奏（纯音乐）
+    INTRO_PARA("Intro"),     // 引子（有歌词）
     INTERLUDE("Interlude"), // 间奏
-    OUTRO("Outro"),         // 尾奏
+    OUTRO_INST("Outro"),     // 尾奏（纯音乐）
+    OUTRO_PARA("Outro"),     // 尾声（有歌词）
     SOLO("Solo"),           // 独奏/独唱
     BREAK("Break"),         // 停顿/休止
     UNKNOWN("Unknown")      // 未知类型
@@ -139,7 +143,8 @@ enum class LyricsFeature(val displayName: String) {
     OVERLAP("重叠"),        // 重叠歌词（同时显示多行）
     TRANSLATION("翻译"),    // 多语言翻译
     TRANSLITERATION("音译"), // 发音标注（假名、拼音等）
-    WORDS("逐字")          // 逐字高亮
+    WORDS("逐字"),          // 逐字高亮
+    STRUCTURE("结构标记")   // 歌词结构标记（主歌、副歌等段落结构，仅在解析 TTML 格式并检测到有效的 songPart 元数据时启用）
 }
 
 /**
