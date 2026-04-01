@@ -2,28 +2,37 @@ package com.amll.droidmate.data.parser
 
 /**
  * 歌词格式枚举
- * 参考: https://github.com/apoint123/Unilyric/tree/main/lyrics_helper_rs
+ * 
+ * 定义了系统支持的所有歌词格式类型。
+ * 每种格式都有其特定的文件扩展名和显示名称。
+ * 
+ * 格式检测逻辑：
+ * 1. 首先检查特殊标记（如 XML 标签、特定元数据）
+ * 2. 然后检查时间戳格式特征
+ * 3. 最后降级到纯文本
+ * 
+ * 参考：https://github.com/apoint123/Unilyric/tree/main/lyrics_helper_rs
  */
 enum class LyricsFormat(val extension: String, val displayName: String) {
-    /** 标准 LRC 格式 */
+    /** 标准 LRC 格式 - 最常见的歌词格式，只精确到行 */
     LRC("lrc", "LRC"),
-    
-    /** 增强型 LRC 格式（支持逐字时间戳） */
+        
+    /** 增强型 LRC 格式（支持逐字时间戳） - 在传统 LRC 基础上添加了每个字的精确时间 */
     ENHANCED_LRC("lrc", "Enhanced LRC"),
-    
-    /** QQ音乐 QRC 格式（逐字时间戳） */
+        
+    /** QQ 音乐 QRC 格式（逐字时间戳） - QQ 音乐专有格式，使用加密编码 */
     QRC("qrc", "QRC"),
-    
-    /** 酷狗音乐 KRC 格式（逐字时间戳） */
+        
+    /** 酷狗音乐 KRC 格式（逐字时间戳） - 酷狗音乐专有格式，包含丰富的元数据 */
     KRC("krc", "KRC"),
-    
-    /** 网易云音乐 YRC 格式（逐字时间戳） */
+        
+    /** 网易云音乐 YRC 格式（逐字时间戳） - 网易云音乐专有格式 */
     YRC("yrc", "YRC"),
-    
-    /** Apple Music 式 TTML 格式 */
+        
+    /** Apple Music 式 TTML 格式 - 基于 XML 的标准字幕格式，支持复杂样式 */
     TTML("ttml", "TTML"),
-    
-    /** 纯文本格式 */
+        
+    /** 纯文本格式 - 没有时间戳的普通文本 */
     PLAIN_TEXT("txt", "Plain Text");
 
     companion object {
@@ -31,15 +40,23 @@ enum class LyricsFormat(val extension: String, val displayName: String) {
         /**
          * 根据文件扩展名或内容特征检测格式
          * 
+         * 这个方法能够智能识别各种歌词格式，即使文件扩展名不正确或缺失。
+         * 它通过分析内容的特征（如特定的标签、时间戳格式等）来判断格式类型。
+         * 
          * 注意：此方法被标记为 @Suppress("unused") 是因为它通过反射调用
          * 在运行时的歌词格式自动检测功能中使用
+         * 
+         * @param content 歌词文件的完整内容
+         * @return 检测到的歌词格式类型
          */
         fun detect(content: String): LyricsFormat {
+            // 预处理：移除 BOM（字节顺序标记）和首尾空格
             // Some lyrics sources may include a leading BOM (U+FEFF) which breaks regex-based format detection.
             // Normalize by trimming whitespace and stripping a leading BOM so format detection works consistently.
             val trimmed = content.trim().trimStart('\uFEFF')
 
-            // QQ Music QRC XML (encoded as XML with <QrcInfos>/<LyricInfo> tags)
+            // ========== QQ Music QRC XML 格式检测 ==========
+            // QQ 音乐 QRC XML (encoded as XML with <QrcInfos>/<LyricInfo> tags)
             // This is a specially formatted QRC output (not TTML) and should be treated as QRC.
             if (trimmed.contains("<QrcInfos", ignoreCase = true) ||
                 trimmed.contains("<LyricInfo", ignoreCase = true) ||
@@ -48,21 +65,25 @@ enum class LyricsFormat(val extension: String, val displayName: String) {
                 return QRC
             }
 
-            // TTML
+            // ========== TTML 格式检测 ==========
+            // TTML 是基于 XML 的字幕格式，通常以 <?xml 或 <tt 开头
             if (trimmed.startsWith("<?xml") || trimmed.startsWith("<tt")) {
                 return TTML
             }
 
+            // ========== 网易云 YRC 格式检测 ==========
             // YRC: 元数据 JSON 行或 [start,duration] + (start,duration,0)
+            // 特征：以 {"t": 开头的 JSON 行，或者同时包含 [毫秒，毫秒] 和 (毫秒，毫秒，0) 格式
             if (trimmed.lines().any { it.trim().startsWith("{\"t\":") } ||
                 (Regex("""^\[\d+,\d+]""", RegexOption.MULTILINE).containsMatchIn(trimmed) &&
                     Regex("""\(\d+,\d+,0\)""").containsMatchIn(trimmed))) {
                 return YRC
             }
             
+            // ========== 酷狗 KRC 格式检测 ==========
             // KRC: 两种识别方式。放在 QRC 检测之前，以避免被类似模式误判。
             // 1. 带 metadata: [language:], [id:], [hash:] 等，也包括常见的 [kana:] 行
-            // 2. 不带 metadata 但有特征: [毫秒,毫秒]<毫秒,毫秒,0>（酷狗解密后的格式）
+            // 2. 不带 metadata 但有特征：[毫秒，毫秒]<毫秒，毫秒，0>（酷狗解密后的格式）
             if (trimmed.lines().any { 
                 it.startsWith("[language:") || 
                 it.startsWith("[id:") ||
@@ -74,32 +95,44 @@ enum class LyricsFormat(val extension: String, val displayName: String) {
                 return KRC
             }
             
+            // ========== QQ 音乐 QRC 格式检测 ==========
             // QRC: 标准 [lineTs] + (start,duration)
             // 现在要求二者出现在同一行，避免从 [kana:] 等元数据中误判
+            // 例如：[12345](678,90) 表示第 12345 毫秒开始，持续 678 毫秒，90 是某种标记
             if (Regex("""^\[\d+,\d+].*\(\d+,\d+\)""", RegexOption.MULTILINE).containsMatchIn(trimmed)) {
                 return QRC
             }
             
+            // ========== 增强型 LRC 格式检测 ==========
             // Enhanced LRC - 逐字时间戳 <mm:ss.ms>word
+            // 特征：每个字前面都有时间戳，例如 <00:12.34>你<00:12.56>好
             if (Regex("""<\d{2}:\d{2}\.\d{2,3}>""").containsMatchIn(trimmed)) {
                 return ENHANCED_LRC
             }
             
-            // 标准 LRC
+            // ========== 标准 LRC 格式检测 ==========
+            // 标准 LRC - 只有行级时间戳 [mm:ss.ms]
             if (Regex("""\[\d{1,2}:\d{1,2}(?:[.:]\d{1,3})?]""").containsMatchIn(trimmed)) {
                 return LRC
             }
             
-            // 默认纯文本
+            // ========== 默认情况 ==========
+            // 如果以上都不是，则认为是纯文本格式
             return PLAIN_TEXT
         }
         
         /**
          * 从文件扩展名获取格式
+         * 
+         * 这是一个简单的映射函数，直接将扩展名转换为对应的格式类型。
+         * 但不推荐单独使用，因为文件扩展名可能不准确。
+         * 
+         * @param ext 文件扩展名（可以带点或不带点，例如 ".lrc" 或 "lrc"）
+         * @return 对应的歌词格式，如果扩展名不支持则返回 null
          */
         fun fromExtension(ext: String): LyricsFormat? {
-            val normalized = ext.lowercase().trimStart('.')
-            return entries.find { it.extension == normalized }
+            val normalized = ext.lowercase().trimStart('.')  // 统一转成小写并去掉前导点
+            return entries.find { it.extension == normalized }  // 查找匹配的格式
         }
     }
 }

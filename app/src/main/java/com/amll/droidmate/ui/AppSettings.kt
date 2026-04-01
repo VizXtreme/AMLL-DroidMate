@@ -5,73 +5,137 @@ import org.json.JSONArray
 import org.json.JSONObject
 import com.amll.droidmate.util.PreferenceHelper
 
+/**
+ * 卡片点击行为枚举
+ * 
+ * 定义用户点击音乐卡片时的响应方式。
+ * 
+ * **选项说明**：
+ * - DIRECT_OPEN：直接打开歌词界面（快速操作）
+ * - ASK：弹出对话框询问用户（默认，防止误触）
+ * - NONE：不执行任何操作（禁用点击）
+ */
 enum class CardClickAction(val value: String) {
-    DIRECT_OPEN("direct_open"),
-    ASK("ask"),
-    NONE("none");
+    DIRECT_OPEN("direct_open"),  // 直接打开
+    ASK("ask"),                   // 询问用户
+    NONE("none");                 // 无操作
 
     companion object {
+        /**
+         * 从字符串值转换为枚举
+         * @param value 存储的字符串值
+         * @return 对应的枚举项，无效时返回 ASK（默认）
+         */
         fun fromValue(value: String?): CardClickAction {
             return entries.firstOrNull { it.value == value } ?: ASK
         }
     }
 }
 
+/**
+ * 更新渠道枚举
+ * 
+ * 定义应用接收更新的版本通道。
+ * 
+ * **通道说明**：
+ * - STABLE：稳定版（推荐普通用户使用）
+ * - PREVIEW：预览版（适合喜欢新功能的测试用户）
+ */
 enum class UpdateChannel(val value: String) {
-    STABLE("stable"),
-    PREVIEW("preview");
+    STABLE("stable"),     // 稳定版
+    PREVIEW("preview");   // 预览版
 
     companion object {
+        /**
+         * 从字符串值转换为枚举
+         * @param value 存储的字符串值
+         * @return 对应的枚举项，无效时返回 STABLE（默认）
+         */
         fun fromValue(value: String?): UpdateChannel {
             return entries.firstOrNull { it.value == value } ?: STABLE
         }
     }
 }
 
+/**
+ * 应用全局设置管理
+ * 
+ * 这个对象封装了所有用户可配置的应用设置，包括：
+ * - 卡片点击行为
+ * - 歌词通知开关
+ * - 字体配置
+ * - 自动更新策略
+ * - WebSocket 协议配置
+ * - 动画效果设置
+ * 
+ * 所有设置都通过 SharedPreferences 持久化存储，
+ * 支持在运行时动态读取和修改。
+ */
 object AppSettings {
-    private const val PREFS_NAME = "droidmate_settings"
-    private const val KEY_CARD_CLICK_ACTION = "card_click_action"
-    private const val KEY_LYRIC_NOTIFICATION_ENABLED = "lyric_notification_enabled"
-    private const val KEY_AMLL_FONT_FAMILY = "amll_font_family"
-    private const val KEY_AMLL_FONT_FILE_PATH = "amll_font_file_path"
-    private const val KEY_AMLL_FONT_FILE_NAME = "amll_font_file_name"
-    private const val KEY_AMLL_FONT_FILES = "amll_font_files"
-    private const val KEY_AMLL_ACTIVE_FONT_ID = "amll_active_font_id"
-    private const val KEY_AMLL_ENABLED_FONT_IDS = "amll_enabled_font_ids"
-    private const val KEY_AUTO_UPDATE_CHECK_ENABLED = "auto_update_check_enabled"
-    private const val KEY_UPDATE_CHANNEL = "update_channel"
-    private const val KEY_LAST_UPDATE_CHECK_AT = "last_update_check_at"
-    private const val KEY_SKIP_PREVIOUS_REWINDS = "skip_previous_rewinds"
-    private const val KEY_PROCESS_METADATA_ENABLED = "process_metadata_enabled"
-    private const val KEY_AGENT_RECOGNIZER_ENABLED = "agent_recognizer_enabled"
+    // 键名常量定义（避免硬编码字符串）
+    private const val PREFS_NAME = "droidmate_settings"  // SharedPreferences 名称
+    private const val KEY_CARD_CLICK_ACTION = "card_click_action"  // 卡片点击行为
+    private const val KEY_LYRIC_NOTIFICATION_ENABLED = "lyric_notification_enabled"  // 歌词通知开关
+    private const val KEY_AMLL_FONT_FAMILY = "amll_font_family"  // AMLL 字体族
+    private const val KEY_AMLL_FONT_FILE_PATH = "amll_font_file_path"  // 字体文件路径
+    private const val KEY_AMLL_FONT_FILE_NAME = "amll_font_file_name"  // 字体文件名
+    private const val KEY_AMLL_FONT_FILES = "amll_font_files"  // 已安装的字体列表
+    private const val KEY_AMLL_ACTIVE_FONT_ID = "amll_active_font_id"  // 当前激活的字体 ID
+    private const val KEY_AMLL_ENABLED_FONT_IDS = "amll_enabled_font_ids"  // 启用的字体 ID 列表
+    private const val KEY_AUTO_UPDATE_CHECK_ENABLED = "auto_update_check_enabled"  // 自动检查更新
+    private const val KEY_UPDATE_CHANNEL = "update_channel"  // 更新渠道（稳定版/预览版）
+    private const val KEY_LAST_UPDATE_CHECK_AT = "last_update_check_at"  // 上次检查更新的时间戳
+    private const val KEY_SKIP_PREVIOUS_REWINDS = "skip_previous_rewinds"  // 跳过上一首回退
+    private const val KEY_PROCESS_METADATA_ENABLED = "process_metadata_enabled"  // 处理元数据开关
+    private const val KEY_AGENT_RECOGNIZER_ENABLED = "agent_recognizer_enabled"  // Agent 识别器开关
 
-    // animation settings (controls lyrics motion/animation behavior)
-    private const val KEY_AMLL_ANIMATION_ENABLE_SPRING = "amll_animation_enable_spring"
-    private const val KEY_AMLL_ANIMATION_ENABLE_SCALE = "amll_animation_enable_scale"
-    private const val KEY_AMLL_ANIMATION_ENABLE_BLUR = "amll_animation_enable_blur"
-    private const val KEY_AMLL_ANIMATION_HIDE_PASSED_LINES = "amll_animation_hide_passed_lines"
-    private const val KEY_AMLL_ANIMATION_WORD_FADE_WIDTH = "amll_animation_word_fade_width"
-    private const val KEY_AMLL_ANIMATION_FPS = "amll_animation_fps"
-    private const val KEY_WEBSOCKET_PROTOCOL_ADDRESS = "websocket_protocol_address"
-    private const val KEY_WEBSOCKET_PROTOCOL_ENABLED = "websocket_protocol_enabled"
-    private const val KEY_WEBVIEW_ENABLED = "webview_enabled"
+    // 动画相关设置（控制歌词运动和动画效果）
+    private const val KEY_AMLL_ANIMATION_ENABLE_SPRING = "amll_animation_enable_spring"  // 启用弹簧动画
+    private const val KEY_AMLL_ANIMATION_ENABLE_SCALE = "amll_animation_enable_scale"  // 启用缩放效果
+    private const val KEY_AMLL_ANIMATION_ENABLE_BLUR = "amll_animation_enable_blur"  // 启用模糊效果
+    private const val KEY_AMLL_ANIMATION_HIDE_PASSED_LINES = "amll_animation_hide_passed_lines"  // 隐藏已唱过的歌词行
+    private const val KEY_AMLL_ANIMATION_WORD_FADE_WIDTH = "amll_animation_word_fade_width"  // 逐字渐变宽度
+    private const val KEY_AMLL_ANIMATION_FPS = "amll_animation_fps"  // 动画帧率
+    private const val KEY_WEBSOCKET_PROTOCOL_ADDRESS = "websocket_protocol_address"  // WebSocket 地址
+    private const val KEY_WEBSOCKET_PROTOCOL_ENABLED = "websocket_protocol_enabled"  // WebSocket 开关
+    private const val KEY_WEBVIEW_ENABLED = "webview_enabled"  // WebView 开关
 
-    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SPRING = true
-    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SCALE = true
-    private const val DEFAULT_AMLL_ANIMATION_ENABLE_BLUR = true
-    private const val DEFAULT_AMLL_ANIMATION_HIDE_PASSED_LINES = false
-    private const val DEFAULT_AMLL_ANIMATION_WORD_FADE_WIDTH = 0.5f
-    private const val DEFAULT_AMLL_ANIMATION_FPS = 60
-    private const val DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS = "ws://localhost:11444"
-    private const val DEFAULT_WEBSOCKET_PROTOCOL_ENABLED = false
-    private const val DEFAULT_WEBVIEW_ENABLED = true
+    // 默认值常量（当用户未设置时使用）
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SPRING = true  // 默认启用弹簧动画
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SCALE = true   // 默认启用缩放
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_BLUR = true    // 默认启用模糊
+    private const val DEFAULT_AMLL_ANIMATION_HIDE_PASSED_LINES = false  // 默认不隐藏已唱过的行
+    private const val DEFAULT_AMLL_ANIMATION_WORD_FADE_WIDTH = 0.5f     // 默认渐变宽度 0.5
+    private const val DEFAULT_AMLL_ANIMATION_FPS = 60  // 默认 60 FPS
+    private const val DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS = "ws://localhost:11444"  // 默认本地地址
+    private const val DEFAULT_WEBSOCKET_PROTOCOL_ENABLED = false  // 默认关闭
+    private const val DEFAULT_WEBVIEW_ENABLED = true  // 默认启用 WebView
 
-    // helper to avoid repeating getSharedPreferences
+    // 辅助函数：获取 SharedPreferences 实例（避免重复代码）
     private fun prefs(context: Context) =
         PreferenceHelper(context, PREFS_NAME)
 
+    // 系统字体默认值（跨平台兼容字体栈）
     private const val DEFAULT_AMLL_FONT_FAMILY = "-apple-system, BlinkMacSystemFont, \"SF Pro Display\", Inter, \"PingFang SC\", system-ui, sans-serif"
 
+    /**
+     * AMLL 自定义字体文件
+     * 
+     * 用于存储用户安装的第三方字体信息。
+     * 每个字体包含唯一 ID、显示名称、完整路径和字体族名称。
+     * 
+     * **用途说明**：
+     * - id: 唯一标识符（UUID），用于在配置中引用
+     * - displayName: 用户可见的字体名称（如 "思源黑体"）
+     * - absolutePath: 字体文件的绝对路径（用于加载字体）
+     * - fontFamilyName: 字体族名称（CSS font-family 使用）
+     * 
+     * @param id 唯一标识符（UUID）
+     * @param displayName 用户可见的字体名称
+     * @param absolutePath 字体文件的绝对路径
+     * @param fontFamilyName 字体族名称
+     * @param fontFamilyName CSS font-family 使用的名称
+     */
     data class AmllFontFile(
         val id: String,
         val displayName: String,

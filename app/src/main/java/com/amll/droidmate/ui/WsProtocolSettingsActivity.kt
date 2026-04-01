@@ -64,9 +64,31 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
+/**
+ * WebSocket 协议设置界面
+ * 
+ * 这个 Activity 允许用户配置 WebSocket 连接参数，用于将播放状态同步到外部服务。
+ * 主要功能包括：
+ * - WebSocket 地址配置（默认：ws://localhost:11444）
+ * - WebSocket 启用/禁用开关
+ * - 电池优化豁免授权（保证后台运行）
+ * - 连接状态检测（实时显示是否已连接）
+ * - 发送测试消息（验证连接是否正常）
+ * 
+ * **使用场景**：
+ * 配合 AMLL（Apple Music-like Lyrics）服务使用，
+ * 将当前播放的歌曲信息、歌词、播放进度实时同步到 Web 端，
+ * 在电脑浏览器或其他设备上显示同步歌词。
+ * 
+ * **注意事项**：
+ * - 需要授予电池优化豁免，否则后台可能被杀死
+ * - 地址格式必须是 ws:// 或 wss:// 开头
+ * - 本地服务通常使用 ws://localhost:端口号
+ */
 class WsProtocolSettingsActivity : BaseComposeActivity() {
     @Composable
     override fun renderContent() {
+        // 渲染 WebSocket 协议设置页面
         WsProtocolSettingsPage(onBack = { finish() })
     }
 }

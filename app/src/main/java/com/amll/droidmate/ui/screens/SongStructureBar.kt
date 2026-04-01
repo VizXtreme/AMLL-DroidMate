@@ -40,10 +40,27 @@ import kotlinx.coroutines.launch
 /**
  * 歌曲结构显示条
  * 
- * @param structures 歌曲结构列表
- * @param currentTime 当前播放时间（毫秒）
- * @param onSeekTo 跳转到指定时间的回调
- * @param modifier 修饰符
+ * 这个 Composable 组件负责在界面上显示歌曲的结构段落，并提供点击跳转功能。
+ * 它会自动适应不同屏幕尺寸，支持滚动和自适应布局。
+ * 
+ * **功能特点**：
+ * - 可视化显示歌曲的各个段落（前奏、主歌、副歌、间奏、尾奏等）
+ * - 高亮当前播放的段落
+ * - 点击段落可跳转到对应位置
+ * - 自动滚动保持当前段落在视野内
+ * - 自适应布局：空间充足时平均分配，空间不足时横向滚动
+ * 
+ * **布局算法**：
+ * 1. 测量每个段落标签的自然宽度
+ * 2. 计算可用容器宽度
+ * 3. 如果总宽度小于容器宽度，则平均分配以填满容器
+ * 4. 如果总宽度大于容器宽度，则启用横向滚动
+ * 5. 自动滚动使当前播放段落在视野中心
+ * 
+ * @param structures 歌曲结构列表（包含类型、时间范围、标签等信息）
+ * @param currentTime 当前播放时间（毫秒），用于高亮当前段落
+ * @param onSeekTo 用户点击段落时的跳转回调（传入目标时间）
+ * @param modifier Compose 修饰符（用于调整大小、背景等）
  */
 @Composable
 fun SongStructureBar(
@@ -52,27 +69,34 @@ fun SongStructureBar(
     onSeekTo: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // 如果没有歌曲结构信息，直接返回不显示任何内容
     if (structures.isEmpty()) {
         return
     }
     
+    // LazyRow 的状态管理：用于控制横向滚动
     val listState = rememberLazyListState()
+    // CoroutineScope：用于在需要时启动协程执行滚动动画
     val coroutineScope = rememberCoroutineScope()
+    // Density：用于在 DP 和 PX 之间转换
     val density = LocalDensity.current
     
-    // 常量：定义布局参数
-    val horizontalPaddingDp = 16.dp // 左右各 16dp，总共 32dp
-    val chipSpacingDp = 8.dp // chips 之间的间距
+    // ==================== 布局常量定义 ====================
+    val horizontalPaddingDp = 16.dp // 左右各 16dp，总共 32dp 的内边距
+    val chipSpacingDp = 8.dp // chips（段落标签）之间的间距
+    // 将 DP 转换为像素（布局计算需要使用像素）
     val horizontalPaddingPx = with(density) { horizontalPaddingDp.roundToPx() }
     val chipSpacingPx = with(density) { chipSpacingDp.roundToPx() }
     
-    // 存储 LazyRow 容器的宽度（像素）
+    // ==================== 容器宽度测量 ====================
+    // 存储 LazyRow 容器的实际宽度（像素）
     var containerWidthPx by remember { mutableIntStateOf(0) }
-    // 计算实际可用于 chips 的宽度（减去 padding）
+    // 计算实际可用于 chips 的宽度（减去左右 padding）
     val availableWidthPx = maxOf(0, containerWidthPx - 2 * horizontalPaddingPx)
     
+    // ==================== Chip 自然宽度管理 ====================
     // 存储每个 chip 的自然宽度（像素），使用不可变 Map 避免状态变更问题
-    // 使用 structures 作为 key，当 structures 变化时自动重置测量状态
+    // Key: 段落索引，Value: 自然宽度（像素）
     var chipNaturalWidthsPx by remember { mutableStateOf<Map<Int, Int>>(emptyMap()) }
     
     // 添加一个 key 用于追踪 structures 的变化，确保切歌时重置测量状态
@@ -81,6 +105,7 @@ fun SongStructureBar(
         structures.hashCode() xor structures.size
     }
     
+    // ==================== 宽度计算 ====================
     // 计算所有 chips 的总自然宽度
     val totalNaturalWidthPx = chipNaturalWidthsPx.values.sum()
     // 计算所有间距的总宽度（n 个 chips 有 n-1 个间距）
@@ -92,7 +117,11 @@ fun SongStructureBar(
     // chips 实际占用的总宽度 = 自然宽度 + 间距
     val totalContentWidthPx = totalNaturalWidthPx + totalSpacingWidthPx
     
-    // 判断是否需要扩展宽度
+    // 判断是否需要扩展宽度：
+    // 1. 总内容宽度小于可用宽度
+    // 2. 可用宽度大于 0（容器已测量完成）
+    // 3. 所有 chips 都已完成测量
+    // 4. structures 不为空
     val shouldExpand = totalContentWidthPx < availableWidthPx && 
                        availableWidthPx > 0 && 
                        chipNaturalWidthsPx.size == structures.size &&

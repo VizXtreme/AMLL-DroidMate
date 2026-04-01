@@ -56,24 +56,49 @@ import com.amll.droidmate.ui.base.BaseComposeActivity
 import com.amll.droidmate.ui.viewmodel.CustomLyricsCandidate
 import com.amll.droidmate.ui.viewmodel.CustomLyricsViewModel
 
+/**
+ * 自定义歌词选择界面
+ * 
+ * 这个 Activity 允许用户手动选择或导入歌词。
+ * 主要功能包括：
+ * - 显示从多个平台搜索到的歌词候选列表
+ * - 支持用户手动粘贴歌词文本
+ * - 显示歌词来源和匹配置信度
+ * - 支持歌词特性标签（逐字、翻译、音译等）
+ * 
+ * **使用场景**：
+ * 当自动匹配的歌词不准确时，用户可以通过此界面：
+ * 1. 从不同平台（QQ、网易云、酷狗）选择更准确的歌词
+ * 2. 手动复制粘贴歌词文本
+ * 3. 查看歌词的详细信息（来源、置信度、特性）
+ * 
+ * **数据传递**：
+ * - 输入：歌曲标题、艺术家、播放来源
+ * - 输出：选中的歌词文本、来源信息
+ */
 class CustomLyricsActivity : BaseComposeActivity() {
     @Composable
     override fun renderContent() {
+        // 从 Intent 获取参数
         val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
         val artist = intent.getStringExtra(EXTRA_ARTIST).orEmpty()
         val playbackSource = intent.getStringExtra(EXTRA_PLAYBACK_SOURCE)
         
+        // 获取 ViewModel（管理歌词搜索和候选列表）
         val viewModel: CustomLyricsViewModel = viewModel()
+        // 更新当前播放来源（用于优先级排序）
         LaunchedEffect(playbackSource) {
             viewModel.updateCurrentSource(playbackSource)
         }
         val appliedSource by viewModel.appliedLyricsSource.collectAsState()
         
+        // 渲染自定义歌词页面
         CustomLyricsPage(
             title = title,
             artist = artist,
             onBack = { finish() },
             onApply = { lyricsText ->
+                // 构建返回结果
                 val result = Intent().apply {
                     putExtra(EXTRA_TITLE, title)
                     putExtra(EXTRA_ARTIST, artist)
@@ -86,12 +111,13 @@ class CustomLyricsActivity : BaseComposeActivity() {
         )
     }
     
+    // Intent 参数常量定义
     companion object {
-        const val EXTRA_TITLE = "extra_title"
-        const val EXTRA_ARTIST = "extra_artist"
-        const val EXTRA_LYRICS_TEXT = "extra_lyrics_text"
-        const val EXTRA_SOURCE = "extra_lyrics_source"
-        const val EXTRA_PLAYBACK_SOURCE = "extra_playback_source"
+        const val EXTRA_TITLE = "extra_title"           // 歌曲标题
+        const val EXTRA_ARTIST = "extra_artist"         // 艺术家名称
+        const val EXTRA_LYRICS_TEXT = "extra_lyrics_text"  // 歌词文本
+        const val EXTRA_SOURCE = "extra_lyrics_source"     // 歌词来源
+        const val EXTRA_PLAYBACK_SOURCE = "extra_playback_source"  // 播放来源
     }
 }
 

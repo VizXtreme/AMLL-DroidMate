@@ -19,6 +19,23 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 
+/**
+ * 自定义歌词候选数据结构
+ * 
+ * 表示从不同平台搜索到的歌词候选结果，
+ * 用于在自定义歌词界面中展示给用户选择。
+ * 
+ * @param provider 歌词来源平台（如 "qq"、"netease"、"kugou"）
+ * @param songId 平台歌曲 ID
+ * @param title 歌曲标题
+ * @param artist 艺术家名称
+ * @param confidence 匹配置信度（0.0-1.0，越高越匹配）
+ * @param matchType 匹配类型描述
+ * @param displayName 显示名称（格式化后的完整标题）
+ * @param metadataMatch 是否通过元数据（歌名/歌手）搜索得到的结果
+ * @param features 特性集合（对唱/背景/重叠/翻译/音译/逐字）
+ * @param seq 单调递增序列号（用于区分到达顺序，打破平局）
+ */
 data class CustomLyricsCandidate(
     val provider: String,
     val songId: String,
@@ -32,7 +49,7 @@ data class CustomLyricsCandidate(
      */
     val metadataMatch: Boolean = false,
     /**
-     * 特性集合, e.g. 对唱/背景/重叠/翻译/音译/逐字
+     * 特性集合，e.g. 对唱/背景/重叠/翻译/音译/逐字
      * UI 需要在候选列表中显示这些功能。
      */
     val features: Set<com.amll.droidmate.domain.model.LyricsFeature> = emptySet(),
@@ -43,38 +60,71 @@ data class CustomLyricsCandidate(
     val seq: Long = 0L
 )
 
+/**
+ * 自定义歌词视图模型
+ * 
+ * 这个类负责管理自定义歌词功能的 UI 状态和业务逻辑，包括：
+ * - 搜索和显示歌词候选列表
+ * - 用户选择歌词来源
+ * - 缓存管理
+ * - 多平台歌词源优先级排序
+ * - 分页加载歌词结果
+ * 
+ * **支持的歌词源（按优先级）**：
+ * 1. cache（本地缓存）- 最高优先级，快速响应
+ * 2. amll（AMLL 服务）- Apple Music 歌词
+ * 3. kugou（酷狗音乐）- 中文歌词丰富
+ * 4. netease/ncm（网易云音乐）- 独立音乐人多
+ * 5. qq/qqmusic（QQ 音乐）- 版权库大
+ * 
+ * **设计思想**：
+ * - 使用 Flow 实现响应式数据流
+ * - 协程处理异步搜索和分页
+ * - Mutex 保证并发安全
+ * - 智能排序和去重
+ */
 class CustomLyricsViewModel @JvmOverloads constructor(
     application: Application,
     private val lyricsRepository: LyricsRepository = ServiceLocator.provideLyricsRepository(application.applicationContext),
     private val lyricsCacheRepository: LyricsCacheRepository = ServiceLocator.provideLyricsCacheRepository(application.applicationContext)
 ) : AndroidViewModel(application) {
 
+    // ==================== 状态管理 ====================
     // 当前歌曲唯一标识（title + artist）
+    // 用于区分不同歌曲的歌词搜索结果
     private var currentSongKey: String? = null
     // remember most recent search terms for pagination
     private var lastSearchTitle: String = ""
     private var lastSearchArtist: String = ""
+    // 分页偏移量（每个平台独立记录）
     private val offsets = mutableMapOf<String, Int>()
 
+    // ==================== 平台优先级配置 ====================
+    // 平台优先级映射（数值越小优先级越高）
     private val providerPriority = mapOf(
-        "cache" to -1,   // 本地缓存最高优先级
-        "amll" to 0,
-        "kugou" to 1,
-        "netease" to 2,
-        "ncm" to 2,
-        "qq" to 3,
-        "qqmusic" to 3
+        "cache" to -1,   // 本地缓存最高优先级（速度快，无需网络）
+        "amll" to 0,     // AMLL 服务（Apple Music 歌词）
+        "kugou" to 1,    // 酷狗音乐（中文歌词丰富）
+        "netease" to 2,  // 网易云音乐（独立音乐人多）
+        "ncm" to 2,      // 网易云别名
+        "qq" to 3,       // QQ 音乐（版权库大）
+        "qqmusic" to 3   // QQ 音乐别名
     )
 
     // HTTP client from ServiceLocator (can be overridden in tests)
     private val httpClient = ServiceLocator.provideHttpClient(application.applicationContext)
 
-    // 当前正在播放的来源名称
+    // 当前正在播放的来源名称（用于打破平局）
+    // 当多个歌词候选的置信度和特性完全相同时，优先显示当前播放源的歌词
     private var currentSourceName: String? = null
 
     /**
-     * 外部可以调用以更新当前播放源的名字（如播放器应用名）。
-     * 当候选置信度和特性完全相等时，这个字符串用于打破平局。
+     * 更新当前播放源的名字（如播放器应用名）
+     * 
+     * 当多个歌词候选的置信度和特性完全相同时，
+     * 会使用这个信息来决定优先显示哪个来源的歌词。
+     * 
+     * @param name 播放源名称（例如 "QQ 音乐"、"网易云音乐"）
      */
     fun updateCurrentSource(name: String?) {
         currentSourceName = name

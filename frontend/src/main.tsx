@@ -1,3 +1,16 @@
+/**
+ * AMLL React 前端主入口
+ * 
+ * 这个文件是嵌入到 Android 应用中的 Web 歌词界面的入口点。
+ * 它使用 React 和 @applemusic-like-lyrics 库来渲染华丽的歌词效果。
+ * 
+ * 主要功能：
+ * - 与 Android 原生代码通过 WebView 桥接通信
+ * - 接收音乐信息和歌词数据
+ * - 渲染逐字高亮的歌词
+ * - 支持背景视觉效果（音频可视化）
+ * - 处理用户交互（点击、滑动等）
+ */
 import React, { useEffect, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import { LyricPlayer, BackgroundRender } from '@applemusic-like-lyrics/react'
@@ -13,8 +26,10 @@ import {
   lowFreqVolumeAtom,
 } from '@applemusic-like-lyrics/react-full'
 
-// Minimal Android-specific adaptations
+// Android 特定的适配配置
+// 使用透明背景以便与 Android 原生 UI 融合
 const PLAYER_BACKGROUND = 'transparent'
+// 默认专辑封面占位图（SVG Base64）
 const demoAlbumArt = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJyZ2JhKDAsMCwwLDAuMSkiLz48L3N2Zz4='
 
 interface WordEntry {
@@ -59,8 +74,17 @@ interface AMLLGlobal {
   state: any
 }
 
-// 🔧 下游覆盖：修正 generateFadeGradient width 验证问题
-// 修正 AMLL 加载后立即应用补丁
+/**
+ * 应用 AMLL 库的补丁
+ * 
+ * 由于 AMLL 库在某些情况下存在 mask-image 相关的问题，
+ * 这个函数会在页面加载后立即应用 CSS 补丁，确保渐变效果正常显示。
+ * 
+ * 主要修复：
+ * - 为 CSS 变量设置安全默认值
+ * - 防止 width 验证问题
+ * - 确保蒙版效果正常工作
+ */
 function applyAMLLPatch() {
   logToAndroid('Applying AMLL patch for generateFadeGradient', 'info')
   

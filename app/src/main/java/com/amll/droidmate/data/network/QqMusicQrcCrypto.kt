@@ -8,20 +8,47 @@ import java.util.zip.Inflater
 import java.util.zip.InflaterInputStream
 
 /**
- * QQ Music QRC decryptor aligned with Unilyric's non-standard DES implementation.
+ * QQ 音乐 QRC 歌词解密器
+ * 
+ * 这个解密器实现了 QQ 音乐专有的 QRC 歌词加密算法。
+ * QQ 音乐的加密流程非常复杂，包含多层编码和解密：
+ * 
+ * 加密流程（反向即为解密）：
+ * 1. 原始歌词文本
+ * 2. 可能使用 GBK/GB18030 编码（中文歌词）
+ * 3. Zlib 压缩
+ * 4. 3DES 加密（非标准实现）
+ * 5. Hex 编码（十六进制字符串）
+ * 
+ * 这个工具与 Unilyric 的非标准 DES 实现对齐，确保兼容性。
  */
 object QqMusicQrcCrypto {
-    private const val ROUNDS = 16
-    private const val SUB_KEY_SIZE = 6
-    private const val DES_BLOCK_SIZE = 8
+    // DES 加密参数（与非标准实现对齐）
+    private const val ROUNDS = 16          // 加密轮数
+    private const val SUB_KEY_SIZE = 6     // 子密钥大小
+    private const val DES_BLOCK_SIZE = 8   // DES 块大小（8 字节）
 
-    private val codec = QqMusicCodec()
+    private val codec = QqMusicCodec()     // QQ 音乐专用的编解码器
 
+    /**
+     * 解密 QQ 音乐的 QRC 歌词
+     * 
+     * 这是获取 QQ 音乐逐字歌词的核心方法。解密过程非常复杂，需要处理多种情况：
+     * 
+     * 主要流程：
+     * 1. 优先尝试使用 Rust 原生解码器（性能更好，更可靠）
+     * 2. 如果失败则回退到 Kotlin 实现
+     * 3. Hex 解码 → 3DES 解密 → Zlib 解压 → UTF-8/GBK 解码
+     * 4. 特殊处理：Base64 二次解码、BOM 头移除、字符集回退
+     * 
+     * @param encryptedText Hex 编码的加密歌词字符串
+     * @return 解密后的歌词文本
+     */
     fun decryptQrcHex(encryptedText: String): String {
         Timber.d("[QqMusicQrcCrypto] Starting Hex+3DES+Zlib decryption, input length: ${encryptedText.length}")
         Timber.d("[QqMusicQrcCrypto] Input preview (first 200 chars): ${encryptedText.take(200)}")
 
-        // Prefer the native Rust decoder when available, as it matches the upstream Unilyric logic.
+        // 优先使用 Rust 原生解码器（与上游 Unilyric 逻辑一致，性能更好）
         runCatching {
             QqMusicQrcNative.decryptQrcHex(encryptedText)
         }.getOrNull()?.let { nativeResult ->
@@ -33,13 +60,15 @@ object QqMusicQrcCrypto {
 
         Timber.i("[QqMusicQrcCrypto] Native Rust decoder returned empty or failed; falling back to Kotlin implementation")
 
-        val encryptedBytes = decodeHex(encryptedText)
+        val encryptedBytes = decodeHex(encryptedText)  // Hex 字符串转字节数组
         Timber.d("[QqMusicQrcCrypto] After Hex decode: ${encryptedBytes.size} bytes")
         
+        // 确保数据长度是 DES 块大小的倍数（8 字节）
         require(encryptedBytes.size % DES_BLOCK_SIZE == 0) {
             "Encrypted data length must be a multiple of $DES_BLOCK_SIZE"
         }
 
+        // 逐块进行 3DES 解密
         val decrypted = ByteArray(encryptedBytes.size)
         var offset = 0
         while (offset < encryptedBytes.size) {
@@ -49,8 +78,8 @@ object QqMusicQrcCrypto {
 
         Timber.d("[QqMusicQrcCrypto] After 3DES decrypt: ${decrypted.size} bytes, first 32 bytes: ${decrypted.take(32).joinToString(",") { "%02X".format(it) }}")
 
-        // Some QQ payloads are not compressed but are instead base64 / plain text after 3DES.
-        // If the decrypted output looks like printable ASCII, attempt to decode it as base64 first.
+        // 特殊情况处理：某些 QQ 歌词在 3DES 解密后不是 zlib 压缩数据，而是 Base64 或纯文本
+        // 如果解密后的内容看起来像可打印字符，尝试 Base64 解码
         if (looksLikeMostlyPrintable(decrypted)) {
             val candidate = String(decrypted, Charsets.UTF_8).trim()
             Timber.d("[QqMusicQrcCrypto] Decrypted output looks like text (len=${candidate.length}), preview=${candidate.take(200)}")
@@ -60,7 +89,7 @@ object QqMusicQrcCrypto {
                     val decoded = android.util.Base64.decode(candidate, android.util.Base64.DEFAULT)
                     val decodedText = String(decoded, Charsets.UTF_8)
                     Timber.d("[QqMusicQrcCrypto] Interpreted decrypted output as Base64; decoded text preview=${decodedText.take(200)}")
-                    return decodedText
+                    return decodedText  // Base64 解码成功，直接返回
                 } catch (e: Exception) {
                     Timber.w("[QqMusicQrcCrypto] Base64 decode of decrypted content failed", e)
                 }

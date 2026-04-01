@@ -62,11 +62,32 @@ import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+/**
+ * 应用主设置界面
+ * 
+ * 这个 Activity 提供了应用的所有主要设置选项，包括：
+ * - 歌词通知设置（启用/禁用、打开系统通知设置）
+ * - 卡片点击行为配置（直接打开/询问/禁用）
+ * - 自动更新检查（启用/禁用、更新渠道）
+ * - 跳过上一首回退功能
+ * - 元数据处理开关
+ * - Agent 识别器开关
+ * - 权限管理（通知监听权限）
+ * 
+ * **设计理念**：
+ * - 分组展示：相关设置放在同一卡片中
+ * - 即时生效：修改后立即应用到 AppSettings
+ * - 状态同步：UI 状态与持久化存储保持一致
+ * - 权限引导：未授权时显示说明对话框
+ */
 class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 启用边缘到边缘显示
         enableEdgeToEdge()
+        // 设置系统栏不遮挡内容
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        
         setContent {
             val isDarkTheme = isSystemInDarkTheme()
             val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
@@ -82,6 +103,7 @@ class SettingsActivity : ComponentActivity() {
                     SettingsPage(
                         onBack = { finish() },
                         onOpenNotificationSettings = {
+                            // 打开系统通知监听设置页面
                             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                         }
                     )

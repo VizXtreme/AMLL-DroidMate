@@ -37,42 +37,72 @@ import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * 对齐原AMLL项目的两种DOM渲染策略:
- * DOM: 使用AMLL Core的LyricPlayer
- * DOM_LITE: 使用轻量DOM渲染(阉割版)
+ * AMLL 歌词视图渲染模式
+ * 
+ * 这个枚举定义了两种不同的 DOM 渲染策略，源自原 AMLL 项目：
+ * 
+ * **DOM** - 标准 DOM 渲染：
+ * - 使用 AMLL Core 的完整 LyricPlayer 组件
+ * - 支持所有视觉效果和动画
+ * - 性能开销较大，但效果最佳
+ * 
+ * **DOM_LITE** - 轻量级 DOM 渲染：
+ * - 使用简化版的 DOM 渲染（阉割版）
+ * - 移除了部分复杂的视觉效果
+ * - 性能更好，适合低端设备或省电模式
  */
 enum class AMLLRenderMode {
-    DOM,
-    DOM_LITE
+    DOM,         // 标准 DOM 渲染
+    DOM_LITE     // 轻量级 DOM 渲染
 }
 
+// AMLL 日志标签：用于 WebView 相关的日志输出
 private const val AMLL_LOG_TAG = "AMLL"
+// AMLL 视图实例计数器：用于调试和内存管理
 private val AMLL_VIEW_INSTANCE_COUNTER = AtomicInteger(0)
 
 @Composable
 fun AMLLLyricsView(
+    // 歌词数据（TTML 格式，包含完整的歌曲结构和时间信息）
     lyrics: TTMLLyrics?,
+    // 当前播放进度（毫秒），用于同步歌词高亮
     currentTime: Long,
+    // 歌曲唯一标识符（用于去重和状态追踪）
     musicId: String = "",
+    // 歌曲名称（显示在界面上）
     musicName: String = "Unknown",
+    // 专辑名称（用于元数据显示）
     albumName: String = "",
+    // 艺术家名称（显示在界面上）
     artistName: String = "Unknown",
+    // 歌曲总时长（毫秒）
     duration: Long = 0L,
+    // 专辑封面图片 URI（可以是 file://、content://或 data URL）
     albumArtUri: String? = null,
+    // 渲染模式：DOM（完整效果）或 DOM_LITE（轻量版）
     renderMode: AMLLRenderMode = AMLLRenderMode.DOM,
+    // 调试来源标签（用于日志输出，区分不同的实例）
     debugSource: String = "unknown",
+    // 歌词点击事件回调（用户点击歌词区域时触发）
     onLyricsClick: (() -> Unit)? = null,
+    // 歌词行跳转回调（用户点击某行歌词时跳转到指定时间）
     onLineSeek: ((Long) -> Unit)? = null,
+    // 是否正在播放（用于同步播放/暂停状态）
     isPlaying: Boolean = true,
+    // Compose 修饰符（用于调整大小、背景等样式）
     modifier: Modifier = Modifier
 ) {
+    // 获取 Android Context（用于访问应用设置和资源）
     val context = androidx.compose.ui.platform.LocalContext.current
+    // 检查 WebView 是否启用（用户可以在设置中禁用）
     val webViewEnabled = AppSettings.isWebViewEnabled(context)
     
-    // WebSocket 客户端和状态
+    // ==================== WebSocket 客户端和状态管理 ====================
+    // 获取全局唯一的 WebSocket 客户端单例
     val webSocketClient = remember { 
         com.amll.droidmate.websocket.AMLLWebSocketClient.getInstance() 
     }
+    // WebSocket 连接状态（用于 UI 显示和逻辑判断）
     var isWebSocketConnected by remember { mutableStateOf(false) }
     
     // 初始化 WebSocket 监听器（无论 WebView 是否启用都执行）
@@ -191,52 +221,83 @@ fun AMLLLyricsView(
         return
     }
     
+    // ==================== 内部状态变量定义 ====================
+    // 视图实例 ID（用于调试日志，区分多个 AMLLLyricsView 实例）
     val instanceId = remember { AMLL_VIEW_INSTANCE_COUNTER.incrementAndGet() }
+    
+    // 使用 rememberUpdatedState 确保回调函数始终是最新的
+    // 这样可以避免因为闭包捕获旧值而导致的 stale closure 问题
     val onLyricsClickState = rememberUpdatedState(onLyricsClick)
     val onLineSeekState = rememberUpdatedState(onLineSeek)
     val isPlayingState = rememberUpdatedState(isPlaying)
+    
+    // 页面就绪状态（WebView 加载完成后设为 true）
     var isPageReady by remember { mutableStateOf(false) }
+    
+    // 上一次配置值的缓存（用于去重，避免重复调用 JavaScript）
     var lastModeValue by remember { mutableStateOf<String?>(null) }
     var lastBackgroundProfileValue by remember { mutableStateOf<String?>(null) }
+    
+    // 上一次的歌词数据引用（用于检测歌词是否变化）
     var lastLyrics by remember { mutableStateOf<TTMLLyrics?>(null) }
+    // 上一次生成的歌词 JSON 字符串（用于页面刷新后重新注入）
     var lastLyricsPayload by remember { mutableStateOf<String?>(null) }
+    
+    // 上一次设置的专辑封面 URI（用于去重）
     var lastAlbumArtUri by remember { mutableStateOf<String?>(null) }
+    
+    // 字体配置相关状态
     var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
     var lastMotionConfigValue by remember { mutableStateOf<String?>(null) }
     
-    // 记录上次发送的状态，用于去重
+    // ==================== WebSocket 发送状态记录 ====================
+    // 记录上一次发送的状态，用于去重（避免频繁发送相同数据）
     var lastSentMusicId by remember { mutableStateOf<String?>(null) }
     var lastSentMusicName by remember { mutableStateOf<String?>(null) }
     var lastSentAlbumName by remember { mutableStateOf<String?>(null) }
     var lastSentArtistName by remember { mutableStateOf<String?>(null) }
     var lastSentIsPlaying by remember { mutableStateOf<Boolean?>(null) }
     
-    // 发送播放状态到 WebSocket 服务器（V2 JSON 协议）
-    // 仅在歌曲信息或播放状态变化时发送，播放进度惯性除外
+    /**
+     * 发送播放状态到 WebSocket 服务器（V2 JSON 协议）
+     * 
+     * **优化策略**：
+     * - 仅在歌曲信息或播放状态变化时发送
+     * - 播放进度惯性除外（不频繁发送进度更新）
+     * - 使用 V2 JSON 协议而非二进制协议
+     * 
+     * @param currentTime 当前播放时间（毫秒）
+     * @param isPlaying 是否正在播放
+     */
     fun sendPlaybackStatusToWebSocket(currentTime: Long, isPlaying: Boolean) {
+        // WebSocket 未连接时直接返回，避免无效操作
         if (!isWebSocketConnected) {
             Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] WebSocket 未连接，跳过发送")
             return
         }
             
-        // 检查是否有状态变化
+        // ==================== 状态变化检测 ====================
+        // 检查歌曲基本信息是否变化（ID、名称、专辑、艺术家）
         val musicInfoChanged = musicId != lastSentMusicId ||
                                musicName != lastSentMusicName ||
                                albumName != lastSentAlbumName ||
                                artistName != lastSentArtistName
         
+        // 检查播放状态是否变化（播放/暂停）
         val playingStateChanged = isPlaying != lastSentIsPlaying
         
-        // 只有状态变化时才发送
+        // ==================== 去重逻辑 ====================
+        // 只有状态变化时才发送，避免频繁网络请求
         if (!musicInfoChanged && !playingStateChanged) {
             // 状态无变化，不发送（播放进度惯性除外）
             return
         }
             
-        // V2 协议：使用 JSON 格式发送状态更新
+        // ==================== V2 JSON 协议消息发送 ====================
         try {
-            // 如果歌曲信息变化，发送新的歌曲信息
+            // Step 1: 如果歌曲信息变化，发送新的歌曲信息
             if (musicInfoChanged) {
+                // 使用 WsProtocolV2Helper 创建 SetMusicUpdate 消息
                 val message = com.amll.droidmate.websocket.WsProtocolV2Helper.createSetMusicUpdate(
                     musicId = musicId,
                     musicName = musicName,
@@ -247,15 +308,16 @@ fun AMLLLyricsView(
                 Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 发送歌曲信息 (V2 JSON): $musicName")
                 webSocketClient.send(message)
                 
-                // 更新记录的状态
+                // 更新记录的状态，避免下次重复发送
                 lastSentMusicId = musicId
                 lastSentMusicName = musicName
                 lastSentAlbumName = albumName
                 lastSentArtistName = artistName
             }
             
-            // 如果播放状态变化，发送播放/暂停状态
+            // Step 2: 如果播放状态变化，发送播放/暂停状态
             if (playingStateChanged) {
+                // 根据播放状态选择对应的消息类型
                 val stateMessage = if (isPlaying) {
                     com.amll.droidmate.websocket.WsProtocolV2Helper.createResumedUpdate()
                 } else {
@@ -269,7 +331,8 @@ fun AMLLLyricsView(
                 lastSentIsPlaying = isPlaying
             }
             
-            // 注意：不发送播放进度更新（currentTime），避免频繁网络请求
+            // ⭐ 注意：不发送播放进度更新（currentTime），避免频繁网络请求
+            // 只在用户主动跳转或歌曲切换时才更新进度
         } catch (e: Exception) {
             Timber.e("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 发送 V2 消息失败", e)
         }
@@ -288,17 +351,31 @@ fun AMLLLyricsView(
     
 
     
+    /**
+     * 注入 WebSocket 桥接代码到 WebView
+     * 
+     * 这段 JavaScript 代码会在 WebView 中创建一个全局对象 `AndroidWebSocketBridge`，
+     * 允许前端页面通过 JavascriptInterface 发送消息到 Android 端。
+     * 
+     * **工作原理**：
+     * 1. 检查是否已存在桥接对象（避免重复注入）
+     * 2. 创建 send() 方法，将消息通过 JSON.stringify 序列化
+     * 3. 调用 window.Android.sendWebSocketMessage() 发送到 Android
+     */
     fun injectWebSocketBridge(view: WebView) {
         Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 注入 WebSocket 桥接代码")
         
-        // 注入 JavaScript 代码，让前端可以发送消息到 Android WebSocket 客户端
+        // 使用 evaluateJavascript 注入 JavaScript 代码
         view.evaluateJavascript(
             """
             (function() {
+                // 检查是否已存在桥接对象（避免重复注入）
                 if (!window.AndroidWebSocketBridge) {
+                    // 创建全局桥接对象
                     window.AndroidWebSocketBridge = {
                         send: function(message) {
                             // 通过 JavascriptInterface 发送到 Android
+                            // window.Android 是在 addJavascriptInterface 时注册的对象
                             if (window.Android && window.Android.sendWebSocketMessage) {
                                 window.Android.sendWebSocketMessage(JSON.stringify(message));
                             }
@@ -308,7 +385,7 @@ fun AMLLLyricsView(
                 }
             })();
             """.trimIndent(),
-            null
+            null  // 不需要回调结果
         )
     }
     
@@ -320,19 +397,32 @@ fun AMLLLyricsView(
         }
     }
 
+    // ==================== WebView 组件定义 ====================
+    // 使用 AndroidView 将原生 WebView 嵌入到 Compose 界面中
     AndroidView(
-        modifier = modifier,
+        modifier = modifier,  // 应用传入的修饰符
         factory = { context ->
+            // WebView 工厂函数：创建并配置 WebView 实例
             Timber.i("[AMLLLyrics] [$debugSource#$instanceId] Creating AMLL WebView, onLineSeek=${onLineSeekState.value != null}")
+            
+            // 启用 WebView 调试功能（可在 Chrome DevTools 中调试）
             WebView.setWebContentsDebuggingEnabled(true)
+            
             WebView(context).apply {
-                // 设置 WebView 的 LayoutParams 为 MATCH_PARENT
+                // 设置 WebView 的 LayoutParams 为 MATCH_PARENT（填满父容器）
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
 
+                // ==================== WebViewClient 配置 ====================
+                // 监听 WebView 页面加载事件
                 webViewClient = object : WebViewClient() {
+                    /**
+                     * 页面开始加载时回调
+                     * - 重置所有就绪状态
+                     * - 清空上一次配置的缓存
+                     */
                     override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                         isPageReady = false
                         lastModeValue = null
@@ -344,6 +434,12 @@ fun AMLLLyricsView(
                         Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView page started: $url")
                     }
 
+                    /**
+                     * 页面加载完成时回调
+                     * - 标记页面就绪
+                     * - 重新应用歌词和配置
+                     * - 注入 WebSocket 桥接代码
+                     */
                     override fun onPageFinished(view: WebView, url: String) {
                         isPageReady = true
                         // Force one re-sync after page finishes to avoid losing early bridge calls.
@@ -371,9 +467,12 @@ fun AMLLLyricsView(
                         Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView page finished: $url")
                     }
                 }
+                // ==================== WebChromeClient 配置 ====================
+                // 处理 JavaScript 控制台日志，将其转发到 Timber
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
                         val logMessage = "[AMLLLyrics] [WebView] [$debugSource#$instanceId] JS Console(@${consoleMessage.sourceId()}:${consoleMessage.lineNumber()}): ${consoleMessage.message()}"
+                        // 根据日志级别分别处理
                         when (consoleMessage.messageLevel()) {
                             ConsoleMessage.MessageLevel.DEBUG -> Timber.d(logMessage)
                             ConsoleMessage.MessageLevel.LOG -> Timber.i(logMessage)
@@ -384,14 +483,14 @@ fun AMLLLyricsView(
                         return super.onConsoleMessage(consoleMessage)
                     }
                 }
-                // WebView 安全配置
+                // ==================== WebView 安全配置 ====================
                 // 已弃用的 WebView 配置，但为了保持兼容性暂时保留
                 @Suppress("DEPRECATION")
                 settings.apply {
-                    javaScriptEnabled = true
-                    domStorageEnabled = true
-                    allowFileAccess = true
-                    allowContentAccess = true
+                    javaScriptEnabled = true       // 启用 JavaScript
+                    domStorageEnabled = true       // 启用 DOM 存储（localStorage 等）
+                    allowFileAccess = true         // 允许访问文件
+                    allowContentAccess = true      // 允许访问内容提供者
                     // 仅允许从本地文件 URI 读取资源（用于专辑封面）
                     // 禁用跨文件访问以提升安全性
                     allowFileAccessFromFileURLs = false
@@ -413,8 +512,11 @@ fun AMLLLyricsView(
 
                 // keep a reference to the WebView so we can send immediate commands back to
                 // the javascript bridge when the user initiates a seek via clicking a lyric.
+                // 保存 WebView 引用，以便用户点击歌词时能立即发送命令到 JavaScript
                 val webViewRef = this
 
+                // ==================== JavaScript 接口注册 ====================
+                // 注册 AMLLInterface 对象为 window.Android，供前端调用
                 addJavascriptInterface(
                     AMLLInterface(
                         debugSource,
@@ -424,8 +526,10 @@ fun AMLLLyricsView(
                         onSeekRequested = { seekTime ->
                             // schedule a UI-thread action so that the webview can immediately
                             // acknowledge the seek and prevent the "lyrics running around" effect.
+                            // 在 UI 线程上执行跳转，防止歌词乱跑
                             webViewRef.post {
                                 // tell the JS player we are seeking so it can suspend auto-scroll
+                                // 告诉 JS 播放器正在跳转，暂停自动滚动
                                 webViewRef.evaluateJavascript(
                                     "window.callPlayer && window.callPlayer('setIsSeeking', true);",
                                     null
@@ -434,6 +538,7 @@ fun AMLLLyricsView(
                                 // update the webview time to the target position right away. this
                                 // reduces the window where the old time would cause the view to
                                 // scroll back to the previous line before the new position arrives
+                                // 立即更新 WebView 时间到新位置，减少旧时间导致的回滚
                                 webViewRef.evaluateJavascript(
                                     "window.updateTime && window.updateTime($seekTime);",
                                     null
@@ -442,17 +547,22 @@ fun AMLLLyricsView(
                         },
                         isPlayingProvider = { isPlayingState.value }
                     ),
-                    "Android"
+                    "Android"  // 在前端通过 window.Android 访问
                 )
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] JavascriptInterface added as Android")
 
+                // ==================== 点击事件监听 ====================
+                // 设置 WebView 点击监听器（用于处理整个歌词区域的点击）
                 setOnClickListener {
                     Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView onClick listener fired")
                     onLyricsClickState.value?.invoke()
                 }
 
+                // ==================== 加载本地 HTML 资源 ====================
+                // 从 assets 目录加载 AMLL 前端页面
                 loadUrl("file:///android_asset/amll/index.html")
 
+                // 在消息队列中发布延迟任务，获取 WebView 的实际尺寸
                 post {
                     Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView size after layout: width=$width, height=$height, measuredWidth=$measuredWidth, measuredHeight=$measuredHeight")
                 }
@@ -460,7 +570,10 @@ fun AMLLLyricsView(
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView initialized with URL: file:///android_asset/amll/index.html")
             }
         },
+        // ==================== WebView 更新逻辑 ====================
+        // update 回调：当 Compose 状态变化时触发，用于同步最新状态到 WebView
         update = { view ->
+            // 如果页面还未就绪，跳过本次更新
             if (!isPageReady) {
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge skipped: page not ready")
                 return@AndroidView
@@ -468,6 +581,7 @@ fun AMLLLyricsView(
 
             Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Update callback - WebView actual size: width=${view.width}, height=${view.height}, measuredWidth=${view.measuredWidth}, measuredHeight=${view.measuredHeight}")
 
+            // ==================== 更新时间同步 ====================
             // 立即更新时间，减少歌词行激活延迟
             Timber.d("[AMLLLyrics] [WebView] [$debugSource#$instanceId] Bridge call: updateTime($currentTime)")
             view.evaluateJavascript("window.updateTime && window.updateTime($currentTime);", null)
@@ -475,6 +589,8 @@ fun AMLLLyricsView(
             // 同时通过 WebSocket 发送到外部服务
             sendPlaybackStatusToWebSocket(currentTime, isPlayingState.value)
 
+            // ==================== 渲染模式配置 ====================
+            // 根据 renderMode 设置渲染模式（dom 或 dom-lite）
             val modeValue = if (renderMode == AMLLRenderMode.DOM) "dom" else "dom-lite"
             if (lastModeValue != modeValue) {
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setRenderMode($modeValue)")
@@ -482,12 +598,19 @@ fun AMLLLyricsView(
                 lastModeValue = modeValue
             }
 
+            // ==================== 动画 FPS 限制 ====================
+            // 根据用户设置和渲染模式计算实际使用的 FPS
             val configuredFps = AppSettings.getAmllAnimationFps(view.context).coerceIn(15, 60)
+            // DOM_LITE 模式下最大 45 FPS，标准 DOM 模式可达 60 FPS
             val fpsValue = if (renderMode == AMLLRenderMode.DOM_LITE) configuredFps.coerceAtMost(45) else configuredFps
 
+            // ==================== 背景效果配置 ====================
+            // 根据渲染模式构建不同的背景效果配置
             val backgroundProfile = if (renderMode == AMLLRenderMode.DOM) {
+                // 标准 DOM 模式：高质量渲染
                 """{"renderer":"pixi","fps":$fpsValue,"flowSpeed":2.35,"renderScale":0.9,"staticMode":false,"lowFreqVolume":1.0}"""
             } else {
+                // DOM_LITE 模式：性能优化版
                 """{"renderer":"pixi","fps":$fpsValue,"flowSpeed":1.4,"renderScale":0.65,"staticMode":false,"lowFreqVolume":1.0}"""
             }
             if (lastBackgroundProfileValue != backgroundProfile) {
@@ -499,6 +622,8 @@ fun AMLLLyricsView(
                 lastBackgroundProfileValue = backgroundProfile
             }
 
+            // ==================== 歌词动画运动配置 ====================
+            // 构建歌词动画的运动配置文件（弹簧、缩放、模糊等效果）
             val motionConfig = """{
                 "enableSpring":${AppSettings.isAmllAnimationSpringEnabled(view.context)},
                 "enableScale":${AppSettings.isAmllAnimationScaleEnabled(view.context)},
@@ -513,10 +638,12 @@ fun AMLLLyricsView(
                 lastMotionConfigValue = motionConfig
             }
 
+            // ==================== 歌词数据更新 ====================
             // 只在 lyrics 对象引用改变时才重新构建 JSON（避免每秒都构建）
             if (lyrics !== lastLyrics) {
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Lyrics changed: ${lyrics?.lines?.size ?: 0} lines")
                 if (lyrics != null && lyrics.lines.isNotEmpty()) {
+                    // 构建歌词 JSON 数据结构
                     val lyricsJson = buildLyricsJson(lyrics)
                     Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: updateLyrics(lines=${lyrics.lines.size})")
                     // 添加详细日志，显示前几行歌词内容
@@ -556,6 +683,7 @@ fun AMLLLyricsView(
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Lyrics reference unchanged")
             }
 
+            // ==================== 专辑封面更新 ====================
             // 专辑图更新：添加数据验证和去重
             if (lastAlbumArtUri != albumArtUri) {
                 // 验证专辑图 URI 是否有效
@@ -583,7 +711,10 @@ fun AMLLLyricsView(
                 }
             }
 
+            // ==================== 字体配置应用 ====================
+            // 获取用户配置的字体家族名称
             val configuredFontFamily = AppSettings.getAmllFontFamily(view.context)
+            // 获取已安装的字体文件列表
             val fontFiles = AppSettings.getAmllFontFiles(view.context)
                 .filter { it.absolutePath.isNotBlank() }
                 .mapNotNull { item ->
@@ -597,8 +728,11 @@ fun AMLLLyricsView(
                     )
                 }
 
+            // 获取启用的字体 ID 列表
             val enabledIds = AppSettings.getEnabledAmllFontFileIds(view.context)
+            // 解析用户偏好的字体顺序
             val preferredOrder = parsePreferredFontOrder(configuredFontFamily)
+            // 根据偏好排序启用的字体
             val enabledFamilies = fontFiles
                 .filter { enabledIds.contains(it.id) }
                 .sortedWith(
@@ -609,6 +743,7 @@ fun AMLLLyricsView(
                 .map { it.familyName }
                 .distinct()
 
+            // 构建最终使用的字体家族栈
             val effectiveFamily = if (enabledFamilies.isNotEmpty()) {
                 val enabledStack = enabledFamilies.joinToString(", ") { "\"$it\"" }
                 "$enabledStack, $configuredFontFamily"
@@ -616,6 +751,7 @@ fun AMLLLyricsView(
                 configuredFontFamily
             }
 
+            // 构建字体配置签名（用于检测变化）
             val fontSignature = buildString {
                 append(effectiveFamily)
                 append("|")
@@ -624,6 +760,7 @@ fun AMLLLyricsView(
                 append(enabledFamilies.joinToString(","))
             }
 
+            // 如果字体配置发生变化，应用新的字体设置
             if (lastFontConfigSignature != fontSignature) {
                 val script = buildApplyFontScript(effectiveFamily, fontFiles)
                 Timber.d(
@@ -633,14 +770,16 @@ fun AMLLLyricsView(
                 lastFontConfigSignature = fontSignature
             }
         },
+        // ==================== WebView 销毁回调 ====================
+        // 当组件被销毁时，销毁 WebView 以避免内存泄漏
         onRelease = { view ->
             // 当组件被销毁时，销毁 WebView 以避免内存泄漏
             Timber.i("[AMLLLyrics] [$debugSource] Destroying AMLL WebView")
-            view.stopLoading()
-            view.clearHistory()
-            view.clearCache(true)
-            view.removeJavascriptInterface("Android")
-            view.destroy()
+            view.stopLoading()      // 停止加载
+            view.clearHistory()     // 清除历史记录
+            view.clearCache(true)   // 清除缓存
+            view.removeJavascriptInterface("Android")  // 移除 JS 接口
+            view.destroy()          // 销毁 WebView
         }
     )
 }
@@ -793,6 +932,25 @@ private fun buildLyricsJson(lyrics: TTMLLyrics): String {
     return """{"metadata":{"title":"$title","artist":"$artist"},"lines":[$linesJson]}"""
 }
 
+/**
+ * AMLL JavaScript 接口类
+ * 
+ * 这个类通过 JavascriptInterface 暴露给 WebView 中的 JavaScript 调用，
+ * 实现了前端页面与 Android 原生代码之间的双向通信。
+ * 
+ * **主要功能**：
+ * 1. 日志转发：将前端日志转发到 Timber
+ * 2. 歌词点击处理：响应用户点击歌词行的操作
+ * 3. 播放状态查询：提供当前播放状态给前端
+ * 4. WebSocket 消息桥接：将前端消息转发到 WebSocket 服务器
+ * 
+ * @param debugSource 调试来源标签
+ * @param instanceId 实例 ID（用于区分多个视图）
+ * @param onLineSeek 歌词行跳转回调
+ * @param webSocketClient WebSocket 客户端引用（可选）
+ * @param onSeekRequested 跳转请求回调
+ * @param isPlayingProvider 播放状态提供者函数
+ */
 class AMLLInterface(
     private val debugSource: String,
     private val instanceId: Int,
@@ -801,9 +959,18 @@ class AMLLInterface(
     private val onSeekRequested: ((Long) -> Unit)? = null,
     private val isPlayingProvider: () -> Boolean = { true }
 ) {
+    /**
+     * 日志输出接口（供 JavaScript 调用）
+     * 
+     * @JavascriptInterface 注解使得这个方法可以被 WebView 中的 JavaScript 直接调用。
+     * 
+     * @param message 日志消息内容
+     * @param level 日志级别（debug/info/warn/error），默认为 "debug"
+     */
     @JavascriptInterface
     fun log(message: String, level: String = "debug") {
         val levelUpper = level.uppercase()
+        // 根据日志级别分别转发到 Timber
         when (levelUpper) {
             "DEBUG" -> Timber.d("[AMLLLyrics] [WebView] JS: $message")
             "INFO" -> Timber.i("[AMLLLyrics] [WebView] JS: $message")
@@ -813,18 +980,47 @@ class AMLLInterface(
         }
     }
 
+    /**
+     * 歌词行点击处理接口（供 JavaScript 调用）
+     * 
+     * 当用户点击歌词中的某一行时，JavaScript 会调用这个方法。
+     * 
+     * @param lineIndex 被点击的歌词行索引
+     * @param startTime 该歌词行的开始时间（毫秒）
+     */
     @JavascriptInterface
     fun onLineClick(lineIndex: Int, startTime: Long) {
         Timber.i("[AMLLLyrics] [$debugSource#$instanceId] User clicked lyric line: index=$lineIndex, startTime=$startTime, callbackPresent=${onLineSeek != null}")
+        // 触发跳转请求
         onSeekRequested?.invoke(startTime)
+        // 同时调用外部回调
         onLineSeek?.invoke(startTime)
     }
 
+    /**
+     * 查询播放状态接口（供 JavaScript 调用）
+     * 
+     * JavaScript 可以通过 window.Android.isPlaying() 查询当前是否正在播放。
+     * 
+     * @return 当前播放状态（true=播放中，false=已暂停）
+     */
     @JavascriptInterface
     fun isPlaying(): Boolean {
         return isPlayingProvider()
     }
     
+    /**
+     * WebSocket 消息发送接口（供 JavaScript 调用）
+     * 
+     * 当 WebSocket 桥接对象需要发送消息到外部 AMLL 服务时调用此方法。
+     * 
+     * **支持的消息类型**：
+     * - ping/pong：心跳检测
+     * - seek：跳转请求
+     * - 其他自定义消息
+     * 
+     * @param message JSON 格式的消息字符串
+     */
     @JavascriptInterface
     fun sendWebSocketMessage(message: String) {
         // 通过 WebSocket 发送到外部 AMLL 服务
@@ -837,7 +1033,7 @@ class AMLLInterface(
             
             when (type) {
                 "ping" -> {
-                    // 响应 ping 消息
+                    // 响应 ping 消息（心跳检测）
                     webSocketClient?.send("{\"type\":\"pong\"}")
                     Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 已响应 ping 消息")
                 }
@@ -860,32 +1056,55 @@ class AMLLInterface(
 
 /**
  * 将 file:// URI 转换为 base64 data URL，以便 WebView 能够加载本地图片
+ * 
+ * **为什么需要转换？**
+ * - WebView 的 Fetch API 不支持 file:// 协议
+ * - data URL 可以直接在 HTML 中使用，无需额外请求
+ * - Base64 编码确保二进制数据可以安全传输
+ * 
+ * **支持的 URI 类型**：
+ * - file:// 开头的本地文件路径
+ * - content:// 开头的内容提供者 URI
+ * - 其他类型直接返回（可能是 data URL）
+ * 
+ * @param context Android Context
+ * @param uriString 要转换的 URI 字符串
+ * @return 转换后的 data URL（格式：data:image/jpeg;base64,...），失败返回 null
  */
 private fun convertFileUriToDataUrl(context: Context, uriString: String?): String? {
+    // URI 为空时直接返回 null
     if (uriString.isNullOrBlank()) {
         return null
     }
     
     return try {
+        // 根据 URI 类型选择不同的输入流获取方式
         val inputStream = when {
             uriString.startsWith("file://") -> {
+                // file:// URI：直接从文件系统读取
                 val path = uriString.removePrefix("file://")
                 File(path).inputStream()
             }
             uriString.startsWith("content://") -> {
+                // content:// URI：通过 ContentResolver 读取
                 val uri = android.net.Uri.parse(uriString)
                 context.contentResolver.openInputStream(uri)
             }
             else -> {
+                // 其他类型（可能是 data URL）直接返回原始字符串
                 Timber.w("[AMLLLyrics] [WebView] Unsupported URI scheme: $uriString")
                 return uriString // 直接返回原始字符串（可能是 data URL）
             }
         }
-        
+        // 使用 use 自动关闭输入流，避免资源泄漏
         inputStream?.use { stream ->
+            // 读取所有字节
             val bytes = stream.readBytes()
+            // 获取 MIME 类型（默认为 image/jpeg）
             val mimeType = getMimeType(uriString) ?: "image/jpeg"
+            // Base64 编码（NO_WRAP 选项不添加换行符）
             val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+            // 构建 data URL：data:image/jpeg;base64,<base64 数据>
             "data:$mimeType;base64,$base64"
         }
     } catch (e: Exception) {
@@ -896,6 +1115,13 @@ private fun convertFileUriToDataUrl(context: Context, uriString: String?): Strin
 
 /**
  * 根据文件扩展名获取 MIME 类型
+ * 
+ * **用途**：
+ * - 用于 data URL 的 MIME 类型标识
+ * - 帮助浏览器正确识别和渲染图片格式
+ * 
+ * @param uriString 文件 URI 或路径
+ * @return MIME 类型字符串，未知类型返回 null
  */
 private fun getMimeType(uriString: String): String? {
     return when {
@@ -909,13 +1135,23 @@ private fun getMimeType(uriString: String): String? {
 
 /**
  * 清除 WebView 的所有缓存数据
+ * 
+ * **清除的内容**：
+ * 1. 内存缓存（HTTP 缓存、图片缓存等）
+ * 2. DOM 存储（localStorage、sessionStorage）
+ * 
+ * **为什么需要清除？**
+ * - 确保每次加载最新的 HTML 和 JS 文件
+ * - 避免旧版本代码导致的兼容性问题
+ * - 清理可能的脏数据
  */
 private fun WebView.clearAllCache() {
     try {
-        // 清除内存缓存
+        // 清除内存缓存（包括 HTTP 缓存、图片缓存等）
         clearCache(true)
         
-        // 清除 DOM 存储
+        // 清除 DOM 存储（localStorage、sessionStorage 等）
+        // 先禁用再启用，强制重置 DOM 存储
         settings.domStorageEnabled = false
         settings.domStorageEnabled = true
         

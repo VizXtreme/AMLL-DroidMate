@@ -6,6 +6,17 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
+/**
+ * 歌词缓存仓库
+ * 
+ * 负责管理本地歌词缓存，包括：
+ * - 存储获取到的歌词（避免重复网络请求）
+ * - 搜索缓存的歌词
+ * - 根据歌曲信息查询缓存
+ * 
+ * 使用 SharedPreferences 持久化存储，
+ * 支持添加、查询、更新、删除操作。
+ */
 class LyricsCacheRepository(context: Context) {
     private val prefs = com.amll.droidmate.util.PreferenceHelper(context, PREFS_NAME)
     private val json = Json {
@@ -13,10 +24,23 @@ class LyricsCacheRepository(context: Context) {
         encodeDefaults = true
     }
 
+    /**
+     * 获取所有缓存的歌词条目
+     * 
+     * @return 按更新时间降序排列的列表（最新的在前）
+     */
     fun getAll(): List<CachedLyricEntry> {
         return readAll().sortedByDescending { it.updatedAt }
     }
 
+    /**
+     * 搜索缓存的歌词
+     * 
+     * 支持模糊匹配歌名、艺术家或来源
+     * 
+     * @param query 搜索关键词
+     * @return 匹配的歌词列表，如果查询为空则返回全部
+     */
     fun search(query: String): List<CachedLyricEntry> {
         val q = query.trim().lowercase()
         if (q.isBlank()) return getAll()
@@ -28,6 +52,16 @@ class LyricsCacheRepository(context: Context) {
         }
     }
 
+    /**
+     * 根据歌曲信息查询缓存
+     * 
+     * 会归一化处理歌名和艺术家（忽略大小写和空格差异），
+     * 返回最新更新的匹配条目。
+     * 
+     * @param title 歌曲标题
+     * @param artist 艺术家名称
+     * @return 匹配的缓存条目，如果没有则返回 null
+     */
     fun findBySong(title: String, artist: String): CachedLyricEntry? {
         val titleKey = normalize(title)
         val artistKey = normalize(artist)
@@ -36,6 +70,17 @@ class LyricsCacheRepository(context: Context) {
             .maxByOrNull { it.updatedAt }
     }
 
+    /**
+     * 插入或更新歌词缓存
+     * 
+     * 这个函数确保每首歌（相同标题 + 艺术家）只保留一个缓存条目。
+     * 如果发现多个来源的重复条目，会全部替换为新的条目。
+     * 
+     * @param title 歌曲标题
+     * @param artist 艺术家
+     * @param source 来源平台（qq、netease 等）
+     * @param ttmlContent TTML 格式的歌词内容
+     */
     fun upsert(
         title: String,
         artist: String,

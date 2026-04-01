@@ -7,20 +7,38 @@ import timber.log.Timber
 
 /**
  * AMLL WebSocket V2 协议消息工具类
+ * 
+ * V2 协议是 JSON 混合协议，相比 V1 二进制协议有以下优势：
+ * 1. 易于调试：JSON 格式可以直接阅读
+ * 2. 更好的扩展性：添加新字段不影响旧版本
+ * 3. 类型安全：使用 Kotlin 序列化自动验证数据结构
+ * 
+ * 消息结构采用扁平化设计，所有字段都在同一层级，避免嵌套过深。
+ * 支持的消息类型：
+ * - initialize: 初始化连接
+ * - ping/pong: 心跳检测
+ * - command: 控制命令（播放/暂停/跳转等）
+ * - state: 状态更新（音乐信息、进度、歌词等）
  */
 object WsProtocolV2Helper {
     
+    // JSON 配置：优化序列化的行为
     private val json = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = false  // 不编码默认值（null 字段）
+        ignoreUnknownKeys = true       // 忽略未知字段，保证向后兼容
+        encodeDefaults = false         // 不编码默认值，减少数据量
         // ⭐ 修复关键：允许编码特殊字符，确保 TTML 中的 XML 能正确传输
-        explicitNulls = false  // 不编码 null 值
+        explicitNulls = false          // 不编码 null 值，进一步减少数据量
     }
     
     // ==================== V2 协议消息类型 ====================
+    // 这些是 V2 协议中使用的数据模型
     
     /**
      * 顶层消息结构 - 使用扁平化设计
+     * 
+     * 所有 V2 消息都遵循这个统一格式：
+     * - type: 消息类型标识符
+     * - value: 具体的载荷数据（可选）
      */
     @Serializable
     data class MessageV2(
@@ -30,33 +48,37 @@ object WsProtocolV2Helper {
     
     @Serializable
     data class ValuePayload(
-        val update: String? = null,      // "setMusic", "progress", "paused", "resumed", "setLyric", "setCover"
-        val command: String? = null,     // "pause", "resume", etc.
+        val update: String? = null,      // 状态更新类型："setMusic", "progress", "paused" 等
+        val command: String? = null,     // 控制命令："pause", "resume", "forward" 等
         // MusicInfo 字段（扁平化，直接放在 value 层级）
-        val musicId: String? = null,
-        val musicName: String? = null,
-        val albumId: String? = null,
-        val albumName: String? = null,
-        val artists: List<Artist>? = null,
-        val duration: Long? = null,
+        val musicId: String? = null,     // 音乐 ID
+        val musicName: String? = null,   // 歌曲名称
+        val albumId: String? = null,     // 专辑 ID
+        val albumName: String? = null,   // 专辑名称
+        val artists: List<Artist>? = null,  // 艺术家列表
+        val duration: Long? = null,      // 歌曲时长（毫秒）
         // 其他字段
-        val progress: Long? = null,
-        val volume: Double? = null,
+        val progress: Long? = null,      // 当前播放进度（毫秒）
+        val volume: Double? = null,      // 音量（0.0-1.0）
         // 模式相关字段（用于 modeChanged）
-        val repeat: String? = null,      // "off", "all", "one"
-        val shuffle: Boolean? = null,    // true/false
+        val repeat: String? = null,      // 循环模式："off", "all", "one"
+        val shuffle: Boolean? = null,    // 随机播放：true/false
         // 专辑封面相关字段（用于 setCover）
-        val source: String? = null,  // "uri" 或 "data"
-        val url: String? = null,     // URI 模式的 URL
-        val image: ImageData? = null,  // Data 模式的嵌套图片对象
-        // 歌词相关字段（用于 setLyric）- ⭐ 修复：与 format/data 在同一层级
-        val lines: List<LyricLine>? = null,  // Structured 模式
-        val format: String? = null,          // "ttml" 或 null
+        val source: String? = null,      // 来源类型："uri" 或 "data"
+        val url: String? = null,         // URI 模式的 URL
+        val image: ImageData? = null,    // Data 模式的嵌套图片对象
+        // 歌词相关字段（用于 setLyric）
+        val lines: List<LyricLine>? = null,  // Structured 模式：逐行歌词
+        val format: String? = null,          // 歌词格式："ttml" 或 null
         val data: String? = null             // TTML 字符串（当 format="ttml" 时）
     )
     
     /**
      * 专辑图片数据（嵌套结构，用于 AlbumCover::Data）
+     * 
+     * 当专辑封面以 Base64 数据形式传输时使用这个结构。
+     * @param mimeType 图片 MIME 类型（如 "image/jpeg"）
+     * @param data Base64 编码的图片数据
      */
     @Serializable
     data class ImageData(

@@ -9,10 +9,22 @@ import timber.log.Timber
 /**
  * 统一歌词解析器
  * 
- * 根据内容自动检测格式并使用相应的解析器
- * 支持多种格式：LRC, Enhanced LRC, QRC, KRC, YRC
+ * 这是歌词解析的总入口，负责根据输入内容自动检测格式并调用相应的解析器。
+ * 支持多种歌词格式的智能识别和解析：
+ * - LRC：标准滚动歌词格式
+ * - Enhanced LRC：增强型 LRC（包含翻译、音译）
+ * - QRC：QQ 音乐逐字歌词格式
+ * - KRC：酷狗音乐逐字歌词格式
+ * - YRC：网易云音乐逐字歌词格式
+ * - TTML：Apple Music 标准字幕格式
  * 
- * 参考: https://github.com/apoint123/Unilyric/tree/main/lyrics_helper_rs
+ * 工作流程：
+ * 1. 归一化输入内容（移除 BOM、空白字符）
+ * 2. 使用正则表达式检测歌词格式
+ * 3. 调用对应的专业解析器
+ * 4. 整合结果为统一的 TTMLLyrics 对象
+ * 
+ * 参考：https://github.com/apoint123/Unilyric/tree/main/lyrics_helper_rs
  */
 object UnifiedLyricsParser {
 
@@ -31,11 +43,19 @@ object UnifiedLyricsParser {
     /**
      * 解析歌词内容为 TTMLLyrics 对象
      * 
-     * @param content 歌词内容
-     * @param title 歌曲标题（可选）
-     * @param artist 艺术家（可选）
-     * @param album 专辑（可选）
-     * @return TTMLLyrics 对象，如果解析失败则返回 null
+     * 这是歌词解析的主入口方法。它会自动：
+     * 1. 验证输入内容是否有效
+     * 2. 归一化处理（移除 BOM 和首尾空白）
+     * 3. 检测歌词格式
+     * 4. 调用相应的专业解析器
+     * 5. 整合为包含元数据的完整 TTMLLyrics 对象
+     * 
+     * @param content 歌词原始内容
+     * @param title 歌曲标题（用于元数据）
+     * @param artist 艺术家名称（用于元数据）
+     * @param album 专辑名称（用于元数据，可选）
+     * @param processMetadata 是否处理元数据（默认 true）
+     * @return 解析后的 TTMLLyrics 对象，失败返回 null
      */
     fun parse(
         content: String,

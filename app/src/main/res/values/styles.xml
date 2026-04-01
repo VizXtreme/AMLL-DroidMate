@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ 样式资源文件
+  ~ 
+  ~ 定义应用中使用的主题和样式。
+  ~ 
+  ~ **当前主题**：
+  ~ - Theme.DroidMate: 基于 Material Design 3 的自定义主题
+  ~ - 支持日夜模式自动切换（DayNight）
+  ~ - 无ActionBar 设计（使用 Compose TopAppBar）
+  ~ 
+  ~ **Material Design 3 特性**：
+  ~ - 动态配色（从壁纸提取颜色）
+  ~ - 更新的组件样式
+  ~ - 更好的无障碍支持
+  -->
 <resources>
+    <!-- DroidMate 应用主题 -->
+    <!-- 继承自 Material3 日夜主题，不带 ActionBar（使用 Compose 实现） -->
     <style name="Theme.DroidMate" parent="Theme.Material3.DayNight.NoActionBar" />
 </resources>

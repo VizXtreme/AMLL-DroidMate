@@ -24,24 +24,35 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
- * WebSocket 前台服务 - 保持 WebSocket 连接在后台活跃
+ * WebSocket 前台服务 - 保持 WebSocket 连接在后台持续运行
  * 
- * 该服务将 WebSocket 客户端和媒体信息监听器绑定到前台服务中，
- * 防止系统因应用进入后台而杀死连接。
+ * Android 系统会在应用进入后台一段时间后杀死其进程以节省电量。
+ * 这个前台服务通过显示一个持久通知，告诉系统"这个应用正在执行重要任务"，
+ * 从而防止系统杀死 WebSocket 连接。
+ * 
+ * 主要功能：
+ * 1. 启动并维护 WebSocket 连接
+ * 2. 监听媒体播放状态变化
+ * 3. 实时同步播放状态到 AMLL 服务
+ * 4. 提供用户可交互的通知（停止服务按钮）
  */
 class WebSocketForegroundService : Service() {
     
     companion object {
-        const val NOTIFICATION_ID = 20042
-        const val CHANNEL_ID = "websocket_foreground_channel"
-        const val ACTION_STOP_SERVICE = "com.amll.droidmate.action.STOP_WEBSOCKET_SERVICE"
+        const val NOTIFICATION_ID = 20042          // 通知 ID（唯一标识）
+        const val CHANNEL_ID = "websocket_foreground_channel"  // 通知渠道 ID
+        const val ACTION_STOP_SERVICE = "com.amll.droidmate.action.STOP_WEBSOCKET_SERVICE"  // 停止服务的 Action
         
-        private var isRunning = false
+        private var isRunning = false  // 服务运行状态标记
         
         /**
          * 启动前台服务
+         * 
+         * 这是一个静态方法，用于从任何地方启动 WebSocket 服务。
+         * 会检查服务是否已在运行，避免重复启动。
+         * 
          * @param context 上下文
-         * @param serverUrl WebSocket 服务器地址
+         * @param serverUrl WebSocket 服务器地址（如 ws://localhost:8080）
          */
         fun start(context: Context, serverUrl: String) {
             if (isRunning) {
@@ -51,9 +62,10 @@ class WebSocketForegroundService : Service() {
             
             Timber.i("[WebSocketService] Starting WebSocketForegroundService")
             val intent = Intent(context, WebSocketForegroundService::class.java).apply {
-                putExtra("server_url", serverUrl)
+                putExtra("server_url", serverUrl)  // 传递服务器地址给服务
             }
             
+            // Android O+ 必须使用 startForegroundService，旧版本使用 startService
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
             } else {
@@ -63,6 +75,10 @@ class WebSocketForegroundService : Service() {
         
         /**
          * 停止前台服务
+         * 
+         * 安全地停止服务并清理资源。
+         * 会先检查服务是否在运行，避免无效操作。
+         * 
          * @param context 上下文
          */
         fun stop(context: Context) {

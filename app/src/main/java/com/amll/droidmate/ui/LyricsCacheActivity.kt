@@ -54,10 +54,34 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * 歌词缓存管理界面
+ * 
+ * 这个 Activity 允许用户查看和管理已缓存的歌词。
+ * 主要功能包括：
+ * - 查看所有已缓存的歌词条目
+ * - 搜索特定歌曲的缓存
+ * - 删除单条缓存记录
+ * - 批量清空所有缓存
+ * - 查看缓存占用空间
+ * 
+ * **缓存策略**：
+ * - 自动缓存：每次成功加载歌词后自动保存
+ * - 智能匹配：通过歌曲 ID、标题、艺术家多重匹配
+ * - 持久化存储：缓存在 SQLite 数据库中
+ * - 过期清理：长期未使用的缓存可被清理
+ * 
+ * **使用场景**：
+ * - 离线环境下使用已缓存的歌词
+ * - 减少重复网络请求，节省流量
+ * - 加快歌词加载速度
+ */
 class LyricsCacheActivity : BaseComposeActivity() {
     @Composable
     override fun renderContent() {
+        // 获取歌词缓存仓库
         val repository = LyricsCacheRepository(applicationContext)
+        // 渲染歌词缓存管理页面
         LyricsCachePage(
             repository = repository,
             onBack = { finish() }

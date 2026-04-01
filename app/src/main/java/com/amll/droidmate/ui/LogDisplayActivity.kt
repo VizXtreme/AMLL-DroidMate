@@ -38,9 +38,34 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * 日志显示和管理界面
+ * 
+ * 这个 Activity 提供了一个完整的日志查看器，允许用户：
+ * - 实时查看应用运行日志
+ * - 按等级筛选日志（DEBUG、INFO、WARN、ERROR）
+ * - 搜索特定日志条目
+ * - 导出日志到文件
+ * - 清空所有日志
+ * - 暂停/恢复自动滚动
+ * - 控制日志记录开关
+ * 
+ * **功能特点**：
+ * - 实时更新：新日志自动追加到列表末尾
+ * - 自动滚动：默认滚动到最新日志（可暂停）
+ * - 语法高亮：不同等级使用不同颜色
+ * - 持久化：日志等级筛选设置会保存
+ * - SAF 支持：使用 Storage Access Framework 导出日志
+ * 
+ * **使用场景**：
+ * - 调试问题时查看详细日志
+ * - 向开发者反馈时导出日志
+ * - 监控应用运行状态
+ */
 class LogDisplayActivity : BaseComposeActivity() {
     @Composable
     override fun renderContent() {
+        // 渲染日志显示页面
         logDisplayPage(onBack = { finish() })
     }
 }

@@ -15,42 +15,93 @@ import java.io.File
 import java.io.InputStream
 
 /**
- * 从专辑封面图提取动态颜色的工具类
+ * 专辑封面颜色提取工具
+ * 
+ * 这个工具类负责从专辑封面图片中提取主要的颜色方案，
+ * 用于实现动态主题功能（"音乐变色龙"效果）。
+ * 
+ * **提取流程**：
+ * 1. 从 URI 加载专辑封面图片
+ * 2. 使用 Android Palette API 分析主要颜色
+ * 3. 提取多种颜色变体（主色、强调色、背景色等）
+ * 4. 根据深色/浅色模式调整颜色亮度
+ * 5. 返回完整的颜色方案供 UI 使用
+ * 
+ * **性能优化**：
+ * - 在 IO 线程执行，避免阻塞主线程
+ * - 及时回收 Bitmap 释放内存
+ * - 异常处理保证应用稳定性
+ * 
+ * **颜色提取策略**：
+ * - DominantSwatch：主导颜色（占比最大）
+ * - MutedSwatch：柔和颜色（低饱和度）
+ * - VibrantSwatch：鲜艳颜色（高饱和度）
+ * - LightMutedSwatch：浅柔和色
+ * - DarkVibrantSwatch：深鲜艳色
  */
 object AlbumColorExtractor {
 
     /**
-     * 从专辑封面URI提取动态颜色主题
-     * @param context Context
-     * @param albumArtUri 专辑封面URI（支持 file:// 和 content:// 协议）
-     * @param isDarkTheme 是否为深色模式
-     * @return DynamicColorScheme 包含extracted colors
+     * 从专辑封面提取动态颜色主题
+     * 
+     * 这是动态主题的核心方法。它会：
+     * 1. 验证 URI 是否有效
+     * 2. 在后台线程加载图片（避免卡顿）
+     * 3. 使用 Palette API 提取主要颜色
+     * 4. 生成适配深色/浅色模式的颜色方案
+     * 
+     * **返回值说明**：
+     * - 成功：返回 DynamicColorScheme 对象，包含完整的颜色方案
+     * - 失败：返回 null，使用默认主题
+     * 
+     * @param context Android 上下文
+     * @param albumArtUri 专辑封面 URI（支持 file:// 和 content:// 协议）
+     * @param isDarkTheme 是否为深色模式（影响颜色亮度调整）
+     * @return 提取的颜色方案，失败返回 null
      */
     suspend fun extractColorsFromAlbumArt(
         context: Context,
         albumArtUri: String?,
         isDarkTheme: Boolean
     ): DynamicColorScheme? = withContext(Dispatchers.IO) {
+        // URI 无效时直接返回 null
         if (albumArtUri.isNullOrBlank()) {
             Timber.e("[AlbumColorExtractor] Album art URI is null or blank")
-            return@withContext null
+            return@withContext null  // URI 无效，直接返回
         }
 
         try {
+            // Step 1: 加载图片并生成调色板
             val bitmap = loadBitmapFromUri(context, albumArtUri) ?: return@withContext null
+            // Palette 会分析图片的主要颜色，提取多个色板
             val palette = Palette.from(bitmap).generate()
             
+            // Step 2: 及时释放内存，避免 OOM
             bitmap.recycle()
 
+            // Step 3: 根据调色板和深色模式创建颜色方案
             return@withContext createDynamicColorScheme(palette, isDarkTheme)
         } catch (e: Exception) {
             Timber.e("[AlbumColorExtractor] Failed to extract colors from album art: $albumArtUri", e)
-            return@withContext null
+            return@withContext null  // 提取失败，返回 null
         }
     }
 
     /**
-     * 从URI加载Bitmap
+     * 从 URI 加载 Bitmap 图片
+     * 
+     * 支持多种 URI 格式：
+     * - file://：本地文件路径，直接读取文件系统
+     * - content://：ContentProvider 提供的流，需要权限
+     * 
+     * **注意事项**：
+     * - 不支持 http:// 或 https:// 网络图片
+     * - content:// URI 可能需要读取权限
+     * - 异常处理保证稳定性
+     * 
+     * @param context Android 上下文
+     * @param uriString 图片 URI 字符串
+     * @return 加载的 Bitmap，失败返回 null
      */
     private fun loadBitmapFromUri(context: Context, uriString: String): Bitmap? {
         try {

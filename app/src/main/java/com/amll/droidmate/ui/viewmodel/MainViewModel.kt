@@ -29,29 +29,48 @@ import timber.log.Timber
 import java.io.File
 
 /**
- * 主视图模型 - 管理应用的状态和逻辑
+ * 主视图模型 - 应用的核心状态管理器
+ * 
+ * 这是整个应用的大脑，负责协调和管理所有核心功能：
+ * 1. 媒体播放监听：获取当前播放的歌曲信息
+ * 2. 歌词管理：搜索、解析、缓存歌词
+ * 3. WebSocket 同步：实时同步播放状态到外部服务
+ * 4. 动态主题：根据专辑封面调整 UI 配色
+ * 5. 通知管理：显示歌词通知
+ * 6. 设备适配：为不同音频设备应用时间偏移
+ * 
+ * **架构设计**：
+ * - 使用 Flow 实现响应式数据流
+ * - 协程处理异步操作
+ * - ServiceLocator 集中管理依赖
+ * - 单一事实来源（Single Source of Truth）
  */
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     private val context: Context = application.applicationContext
 
-    // HTTP Client & 仓库（由 ServiceLocator 提供以便集中管理）
+    // ==================== HTTP Client & 仓库 ====================
+    // HTTP 客户端（由 ServiceLocator 提供以便集中管理）
     private val httpClient = ServiceLocator.provideHttpClient(context)
     // make this mutable so tests can inject a fake repository if needed
     @androidx.annotation.VisibleForTesting(otherwise = androidx.annotation.VisibleForTesting.PRIVATE)
     internal var lyricsRepository = ServiceLocator.provideLyricsRepository(context)
     private val lyricsCacheRepository = ServiceLocator.provideLyricsCacheRepository(context)
     
-    // 服务
+    // ==================== 服务 ====================
+    // 媒体信息监听服务（监听系统媒体播放状态）
     private val mediaInfoService = MediaInfoService(context)
     
+    // ==================== WebSocket 客户端 ====================
     // WebSocket 客户端（用于同步播放状态到外部服务）
     private val webSocketClient = AMLLWebSocketClient.getInstance()
     
-    // 用于跟踪上次发送的歌词，避免重复发送
+    // 用于跟踪上次发送的歌词，避免重复发送相同内容
     private var lastSentLyricsHash: Int = 0
     
+    // ==================== WebSocket 监听器 ====================
     // WebSocket 监听器（用于在连接时提供当前播放状态）
+    // 使用 lazy 延迟初始化，避免在构造函数外访问 this
     private val webSocketListener: AMLLWebSocketClient.Listener by lazy {
         object : AMLLWebSocketClient.Listener {
             override fun onConnected() {

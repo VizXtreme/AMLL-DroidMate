@@ -18,20 +18,31 @@ import timber.log.Timber
  */
 object EnhancedLrcParser {
     
-    // LRC 行时间戳正则: [mm:ss.ms] 或 [mm:ss]
+    // LRC 行时间戳正则：[mm:ss.ms] 或 [mm:ss]
+    // 匹配行级开始时间，这是每行歌词的基础时间戳
     private val LINE_TIMESTAMP_REGEX = Regex("""\[(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?]""")
-    
-    // 增强型 LRC 逐字时间戳正则: <mm:ss.ms>词
+        
+    // 增强型 LRC 逐字时间戳正则：<mm:ss.ms>词
+    // 匹配每个字的精确时间戳和对应的文本
     private val WORD_TIMESTAMP_REGEX = Regex("""<(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?>([^<]+)""")
     
     /**
      * 解析增强型 LRC 格式内容
+     * 
+     * 解析流程：
+     * 1. 提取全局偏移量（如果有 [offset:] 元数据）
+     * 2. 逐行解析，识别行时间戳和逐字时间戳
+     * 3. 如果有全局偏移量，应用到所有时间戳上
+     * 4. 按时间排序并返回
+     * 
+     * @param content 增强型 LRC 格式的完整歌词文本
+     * @return 解析后的 LyricLine 列表
      */
     fun parse(content: String): List<LyricLine> {
         val lines = mutableListOf<LyricLine>()
         val contentLines = content.lines()
         
-        // extract optional global offset
+        // 提取全局偏移量（offset 元数据用于整体调整歌词时间）
         var offsetMs = 0L
         for (lineStr in contentLines) {
             val trimmed = lineStr.trim()

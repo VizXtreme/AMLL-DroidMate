@@ -62,9 +62,27 @@ import com.amll.droidmate.service.MediaInfoService
 import com.amll.droidmate.ui.base.BaseComposeActivity
 import kotlinx.coroutines.launch
 
+/**
+ * 歌词时间偏移管理界面
+ * 
+ * 这个 Activity 允许用户查看和管理所有已保存的歌词时间偏移配置。
+ * 用户可以：
+ * - 查看不同歌曲/设备的偏移设置
+ * - 搜索特定的偏移记录
+ * - 手动添加新的偏移配置
+ * - 删除不需要的偏移记录
+ * - 批量清空所有偏移
+ * 
+ * **使用场景**：
+ * 当用户使用不同的音频设备（如蓝牙耳机、有线音箱）时，
+ * 由于硬件延迟不同，歌词可能会与音乐不同步。
+ * 通过这个界面，用户可以为每个设备单独配置偏移值，
+ * 应用会自动识别并应用正确的偏移。
+ */
 class LyricOffsetManagementActivity : BaseComposeActivity() {
     @Composable
     override fun renderContent() {
+        // 渲染歌词偏移管理页面
         LyricOffsetManagementPage(onBack = { finish() })
     }
 }

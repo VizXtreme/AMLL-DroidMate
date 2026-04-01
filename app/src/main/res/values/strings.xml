@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ 字符串资源文件
+  ~ 
+  ~ 存储应用中所有需要国际化的文本内容。
+  ~ 目前只包含基础的应用名称，后续可以添加更多字符串资源。
+  ~ 
+  ~ **命名规范**：
+  ~ - app_name: 应用完整名称
+  ~ - activity_name: Activity 显示的名称（可能简化）
+  ~ - 其他字符串使用 snake_case 命名
+  -->
 <resources>
+    <!-- 应用名称（显示在启动器和通知栏） -->
     <string name="app_name">AMLL DroidMate</string>
+    
+    <!-- Activity 名称（用于界面标题等） -->
     <string name="activity_name">DroidMate</string>
 </resources>

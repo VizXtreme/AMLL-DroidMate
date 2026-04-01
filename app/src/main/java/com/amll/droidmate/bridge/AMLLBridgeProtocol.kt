@@ -12,50 +12,67 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 /**
- * AMLL 桥接协议 - 受 Tauri WebSocket 协议启发的 Android 实现
+ * AMLL 桥接协议 - Android 与 WebView 通信的核心协议
+ * 
+ * 这个协议受到 Tauri WebSocket 协议的启发，专门为 Android WebView 设计。
+ * 它定义了 Android 原生代码与嵌入的 Web 前端之间的双向通信规则。
  * 
  * 设计思想：
- * 1. 结构化消息传递，避免散弹式代码
- * 2. 双向通信：Android ↔ WebView
+ * 1. 结构化消息传递：避免散弹式代码，统一消息格式
+ * 2. 双向通信：Android ↔ WebView（状态更新 + 命令请求）
  * 3. 类型安全：使用 Kotlin 序列化保证数据正确性
- * 4. 向后兼容：支持多种消息格式版本
+ * 4. 向后兼容：支持多种消息格式版本，方便未来扩展
+ * 
+ * 消息流向：
+ * - Android → WebView：StateUpdateMessage（状态更新，如播放进度）
+ * - WebView → Android：CommandMessage（命令请求，如暂停播放）
  */
 
 // ==================== 消息结构定义 ====================
+// 这些 sealed class 和 data class 定义了所有可能的消息类型
 
 /**
  * 顶层消息结构（类似 Tauri 的 MessageV2）
+ * 
+ * 这是一个密封类（sealed class），所有具体的消息类型都继承自它。
+ * 这样做的好处是编译器可以检查所有的消息类型，避免遗漏处理。
  */
 @Serializable
 sealed class BridgeMessage {
-    abstract val type: String
-    abstract val version: Int
+    abstract val type: String      // 消息类型标识符
+    abstract val version: Int      // 协议版本号
     
     companion object {
-        const val CURRENT_VERSION = 1
+        const val CURRENT_VERSION = 1  // 当前使用的协议版本
     }
 }
 
 /**
  * Android → WebView 的消息（状态更新）
+ * 
+ * 当 Android 端的播放状态发生变化时（如播放/暂停、进度更新），
+ * 会发送这种类型的消息给 WebView，让前端同步显示最新状态。
  */
 @Serializable
-@SerialName("stateUpdate")
+@SerialName("stateUpdate")  // JSON 中的类型标识
 data class StateUpdateMessage(
     override val type: String = "stateUpdate",
     override val version: Int = BridgeMessage.CURRENT_VERSION,
-    val payload: StatePayload
+    val payload: StatePayload  // 具体的状态数据
 ) : BridgeMessage()
 
 /**
  * WebView → Android 的消息（命令请求）
+ * 
+ * 当用户在 WebView 界面上进行操作（如点击歌词行、调整设置）时，
+ * WebView 会发送这种类型的消息给 Android，请求执行相应的操作。
  */
 @Serializable
-@SerialName("command")
+@SerialName("command")  // JSON 中的类型标识
 data class CommandMessage(
     override val type: String = "command",
     override val version: Int = BridgeMessage.CURRENT_VERSION,
-    val payload: CommandPayload
+    val payload: CommandPayload  // 具体的命令数据
 ) : BridgeMessage()
 
 // ==================== Payload 定义 ====================

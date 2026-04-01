@@ -63,9 +63,32 @@ import com.amll.droidmate.service.MediaInfoService
 import com.amll.droidmate.ui.base.BaseComposeActivity
 import com.amll.droidmate.util.AudioDeviceHelper
 
+/**
+ * 歌词时间偏移设置界面
+ * 
+ * 这个 Activity 允许用户为当前播放的歌曲和音频设备配置时间偏移。
+ * 用户可以：
+ * - 查看当前歌曲和设备的偏移值
+ * - 手动调整歌曲级别的偏移
+ * - 手动调整设备级别的偏移
+ * - 保存偏移到数据库
+ * - 管理所有已保存的偏移记录
+ * 
+ * **使用场景**：
+ * 当用户使用蓝牙耳机或外部音箱时，由于硬件延迟，
+ * 歌词可能会比音乐慢。通过这个界面，用户可以：
+ * 1. 微调当前歌曲的偏移（如 +50ms）
+ * 2. 为当前设备设置全局偏移（所有歌曲都应用）
+ * 3. 系统会自动叠加两种偏移值
+ * 
+ * **偏移计算**：
+ * 总偏移 = 歌曲偏移 + 设备偏移
+ * 例如：某首歌慢 50ms + 蓝牙设备慢 100ms = 总共 +150ms
+ */
 class LyricOffsetSettingsActivity : BaseComposeActivity() {
     @Composable
     override fun renderContent() {
+        // 渲染歌词偏移设置页面
         LyricOffsetSettingsPage(onBack = { finish() })
     }
 }

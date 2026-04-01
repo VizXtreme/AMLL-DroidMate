@@ -1,15 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ 应用图标前景层（自适应图标）
+  ~ 
+  ~ 这个矢量图定义了 DroidMate 应用图标的前景部分。
+  ~ 采用自适应图标设计，在不同设备上自动适配不同形状。
+  ~ 
+  ~ **设计元素**：
+  ~ - 白色圆形背景（#FFFFFF）
+  ~ - 两个深蓝色音符（#0E2A47），象征音乐和歌词
+  ~ - 音符采用简化的矩形设计，现代简洁
+  ~ 
+  ~ **尺寸规范**：
+  ~ - 视口大小：108dp x 108dp（Android 自适应图标标准）
+  ~ - 安全区域：中心 66dp（避免被裁剪）
+  -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- 白色圆形背景 -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M54,20c-18.8,0 -34,15.2 -34,34s15.2,34 34,34s34,-15.2 34,-34S72.8,20 54,20z" />
+    
+    <!-- 左侧音符（较短） -->
     <path
         android:fillColor="#0E2A47"
         android:pathData="M44,44h8v24h-8z" />
+    
+    <!-- 右侧音符（较长） -->
     <path
         android:fillColor="#0E2A47"
         android:pathData="M56,38h8v30h-8z" />

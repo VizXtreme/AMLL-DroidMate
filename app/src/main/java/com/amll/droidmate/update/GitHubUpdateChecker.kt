@@ -72,6 +72,21 @@ private data class GitHubReleaseDto(
     @SerialName("published_at") val publishedAt: String? = null
 )
 
+/**
+ * GitHub 版本更新检查器
+ * 
+ * 这个对象负责从 GitHub Releases API 检查应用是否有新版本可用。
+ * 支持两种更新渠道：
+ * - Stable（稳定版）：正式发布版本，格式如 "v1.2.3"
+ * - Preview（预览版）：Alpha 测试版本，格式如 "Alpha-20240101120000"
+ * 
+ * 更新检查逻辑：
+ * 1. 解析当前安装版本的版本号
+ * 2. 获取 GitHub 上的所有 Release
+ * 3. 根据用户选择的渠道筛选合适的版本
+ * 4. 比较版本号判断是否需要更新
+ * 5. 返回更新信息（新版本号、下载地址、更新说明等）
+ */
 object GitHubUpdateChecker {
 
     suspend fun check(context: Context, channel: UpdateChannel): UpdateCheckResult {

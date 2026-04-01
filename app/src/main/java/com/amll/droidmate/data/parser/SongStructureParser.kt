@@ -8,23 +8,40 @@ import timber.log.Timber
 
 /**
  * 歌曲结构解析器
- * 从 TTML 歌词中解析歌曲结构信息，或在只有单一段落时自动推断结构
+ * 
+ * 这个工具用于识别和标记歌曲的各个段落结构，例如：
+ * - 前奏 (Intro)
+ * - 主歌 (Verse)
+ * - 预副歌 (Pre-Chorus)
+ * - 副歌 (Chorus)
+ * - 间奏 (Interlude)
+ * - 桥段 (Bridge)
+ * - 尾奏 (Outro)
+ * 
+ * 工作原理：
+ * 1. 优先使用 TTML 元数据中提供的结构信息（最准确）
+ * 2. 如果没有元数据，则基于歌词时间间隔自动推断：
+ *    - 长时间空白 → 间奏/前奏/尾奏
+ *    - 第一段歌词 → 主歌
+ *    - 重复出现的相似段落 → 副歌
  */
 object SongStructureParser {
     
-    /**
-     * 间奏检测阈值（4 秒）
-     * 当歌词行之间的时间间隔大于等于此值时，认为是间奏/前奏/尾奏
-     */
+    // 间奏检测阈值（4 秒）
+    // 当歌词行之间的时间间隔大于等于此值时，认为是间奏/前奏/尾奏
     private const val INTERLUDE_THRESHOLD_MS = 4000L
     
     /**
      * 从 TTML 歌词解析歌曲结构
      * 
+     * 这是歌曲结构解析的主入口方法。它采用两级策略：
+     * 1. 优先使用 TTML 元数据中的结构信息（如果存在）
+     * 2. 如果没有元数据，则从歌词行自动推断结构
+     * 
      * @param lyricsLines 歌词行列表
      * @param metadataStructure 从 TTML 元数据中解析的结构信息（如果有）
      * @param songDuration 歌曲总时长（毫秒），用于检测尾奏
-     * @return 歌曲结构列表
+     * @return 歌曲结构列表（按时间顺序排列）
      */
     fun parseStructure(
         lyricsLines: List<LyricLine>,

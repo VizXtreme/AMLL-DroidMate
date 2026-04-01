@@ -7,18 +7,29 @@ import java.nio.ByteOrder
 /**
  * AMLL WebSocket V1 二进制协议工具类
  * 
- * V1 协议使用二进制格式，通过 u16 Magic Number 区分消息类型
+ * V1 协议使用紧凑的二进制格式进行通信，优点是效率高、带宽占用小。
+ * 通过 2 字节的 Magic Number（魔术数字）来区分不同的消息类型。
+ * 
  * 序列化规则：
- * - 所有数值类型使用小端字节序（Little Endian）
- * - 字符串使用 NullString（UTF-8 编码 + \0 结尾）
- * - 线性表使用 Vec<T>（u32 数量 + 元素列表）
+ * - 所有数值类型使用小端字节序（Little Endian）：低位字节在前
+ * - 字符串使用 NullString 格式：UTF-8 编码 + \0 结尾标记
+ * - 线性表（List）使用 Vec<T> 格式：u32 数量 + 元素列表
+ * 
+ * 消息类型包括：
+ * - 心跳消息：Ping/Pong（保持连接活跃）
+ * - 音乐信息：设置歌曲、专辑、艺术家信息
+ * - 播放控制：播放/暂停/跳转/音量调节
+ * - 歌词数据：发送歌词行和逐词信息
  */
 object WsProtocolV1Helper {
     
     // ==================== 数据结构定义 ====================
+    // 这些是 V1 协议中使用的数据模型
     
     /**
      * 艺术家信息
+     * @param id 艺术家唯一标识
+     * @param name 艺术家名称
      */
     data class Artist(
         val id: String,
@@ -26,7 +37,12 @@ object WsProtocolV1Helper {
     )
     
     /**
-     * 歌词单词
+     * 歌词单词（逐字信息）
+     * 
+     * 用于实现逐字高亮效果，每个单词包含精确的开始和结束时间。
+     * @param startTime 开始时间（毫秒）
+     * @param endTime 结束时间（毫秒）
+     * @param word 歌词文本
      */
     data class LyricWord(
         val startTime: Long,
@@ -36,7 +52,20 @@ object WsProtocolV1Helper {
     
     /**
      * 歌词行
-     * @param flag 属性标记位：bit0=isBG, bit1=isDuet
+     * 
+     * 代表一行完整的歌词，包含：
+     * - 整行的时间范围
+     * - 逐词时间信息（用于逐字高亮）
+     * - 翻译和音译
+     * - 特殊标记（背景音、合唱）
+     * 
+     * @param startTime 行开始时间（毫秒）
+     * @param endTime 行结束时间（毫秒）
+     * @param words 逐词列表
+     * @param translatedLyric 翻译歌词
+     * @param romanLyric 音译歌词
+     * @param isBG 是否背景音声
+     * @param isDuet 是否合唱
      */
     data class LyricLine(
         val startTime: Long,
@@ -48,19 +77,33 @@ object WsProtocolV1Helper {
         val isDuet: Boolean = false
     ) {
         /**
-         * 计算 flag 字段值
-         * bit0: isBG, bit1: isDuet
+         * 计算属性标记位
+         * 
+         * 使用位运算将两个布尔值压缩到一个字节中：
+         * - bit0 (0b00000001): isBG 标记
+         * - bit1 (0b00000010): isDuet 标记
+         * 
+         * 例如：isBG=true, isDuet=false → flag = 0b00000001 = 1
+         * 
+         * @return 压缩后的标记字节
          */
         fun getFlag(): Byte {
             var flag: Byte = 0
-            if (isBG) flag = flag.toInt().or(0b01).toByte()
-            if (isDuet) flag = flag.toInt().or(0b10).toByte()
+            if (isBG) flag = flag.toInt().or(0b01).toByte()   // 设置第 0 位
+            if (isDuet) flag = flag.toInt().or(0b10).toByte() // 设置第 1 位
             return flag
         }
         
         companion object {
             /**
              * 从 flag 值解析 isBG 和 isDuet
+             * 
+             * 使用位掩码操作提取特定位的值：
+             * - flag and 0b00000001 → 提取第 0 位（isBG）
+             * - flag and 0b00000010 → 提取第 1 位（isDuet）
+             * 
+             * @param flag 标记字节
+             * @return Pair(isBG, isDuet)
              */
             fun fromFlag(flag: Byte): Pair<Boolean, Boolean> {
                 val isBG = (flag.toInt() and 0b01) != 0

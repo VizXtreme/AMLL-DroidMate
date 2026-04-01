@@ -13,7 +13,13 @@ import java.util.concurrent.ConcurrentLinkedDeque
 /**
  * 日志管理工具类
  * 
- * 提供全局日志捕获、查看和导出功能
+ * 这个对象提供了全局的日志捕获、查看和导出功能。
+ * 主要特性包括：
+ * - 统一的日志格式和时间戳
+ * - 内存缓存最近 3000 条日志
+ * - 支持按等级过滤日志
+ * - 可暂停/恢复日志记录
+ * - 导出日志到文件
  * 
  * ## 日志等级使用说明：
  * - [Timber.wtf] 致命错误，会导致 Activity 崩溃
@@ -27,21 +33,28 @@ import java.util.concurrent.ConcurrentLinkedDeque
  */
 object LogHelper {
     
-    private const val MAX_LOG_ENTRIES = 3000 // 最多保留 3000 条日志
-    private const val PREFS_NAME = "droidmate_log_settings"
-    private const val KEY_LOGGING_PAUSED = "logging_paused"
-    private const val KEY_MIN_LOG_LEVEL = "min_log_level"
+    // 配置常量
+    private const val MAX_LOG_ENTRIES = 3000  // 最多保留 3000 条日志，避免内存溢出
+    private const val PREFS_NAME = "droidmate_log_settings"  // SharedPreferences 名称
+    private const val KEY_LOGGING_PAUSED = "logging_paused"  // 暂停状态键
+    private const val KEY_MIN_LOG_LEVEL = "min_log_level"  // 最小日志等级键
     
-    private val logEntries = ConcurrentLinkedDeque<LogEntry>()
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
-    private var nextId = 0L // 自增 ID 生成器
+    // 内部状态
+    private val logEntries = ConcurrentLinkedDeque<LogEntry>()  // 线程安全的日志队列
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())  // 时间格式化
+    private var nextId = 0L  // 自增 ID 生成器，为每条日志分配唯一编号
     
     // 持久化设置
-    private var prefs: PreferenceHelper? = null
-    private var saveJob: Job? = null
+    private var prefs: PreferenceHelper? = null  // SharedPreferences 封装
+    private var saveJob: Job? = null  // 异步保存任务
     
     /**
      * 初始化 LogHelper，必须在应用启动时调用
+     * 
+     * 这个方法会创建 SharedPreferences 实例，
+     * 用于持久化用户的日志设置（如暂停状态、最小日志等级）。
+     * 
+     * @param context Android 上下文
      */
     fun init(context: Context) {
         if (prefs == null) {
@@ -51,6 +64,10 @@ object LogHelper {
     
     /**
      * 获取日志记录是否暂停
+     * 
+     * 当用户打开日志显示界面时，可以暂停日志记录以避免内存占用过高。
+     * 
+     * @return true 表示已暂停，false 表示正常记录
      */
     fun isLoggingPaused(): Boolean {
         return prefs?.getBoolean(KEY_LOGGING_PAUSED, false) ?: false

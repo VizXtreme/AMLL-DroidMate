@@ -35,7 +35,19 @@ import timber.log.Timber
 
 /**
  * 歌词仓库 - 从多个来源获取和管理歌词
- * 基于 Unilyric 的多源搜索逻辑实现
+ * 
+ * 这是应用的核心业务逻辑层，负责：
+ * 1. 从各大音乐平台搜索和获取歌词（QQ、网易云、酷狗等）
+ * 2. 解析各种格式的歌词文件（LRC、QRC、KRC、TTML 等）
+ * 3. 智能匹配歌曲和歌词（基于标题、艺术家相似度）
+ * 4. 缓存管理（避免重复网络请求）
+ * 5. 并发请求优化（同时向多个源发起请求，取最快的结果）
+ * 
+ * 基于 Unilyric 的多源搜索逻辑实现，支持：
+ * - 并行异步请求
+ * - 智能重试机制
+ * - 缓存优先策略
+ * - 中文简繁转换
  */
 @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
 open class LyricsRepository(

@@ -16,15 +16,41 @@ import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 
 /**
- * TTML 格式解析器
- * 从 TTML XML 格式中提取歌词行和词级时间戳
+ * TTML (Timed Text Markup Language) 格式解析器
+ * 
+ * TTML 是一种基于 XML 的字幕格式标准，广泛用于视频字幕和歌词。
+ * 这个解析器负责从 TTML XML 文档中提取：
+ * - 歌词行信息（文本、时间戳）
+ * - 逐词时间信息（用于逐字高亮）
+ * - 翻译和音译
+ * - 歌曲结构信息（前奏、主歌、副歌等）
+ * - 元数据（标题、艺术家等）
+ * 
+ * 特殊处理：
+ * - 自动修复格式错误的 TTML（Apple 的 TTML 经常有不规范的标签）
+ * - 支持内联样式和块级样式
+ * - 保留原始结构信息供后续处理
  */
 object TTMLParser {
     
+    // XML 解析工厂（线程安全，可复用）
     private val factory = DocumentBuilderFactory.newInstance()
     
     /**
-     * 解析 TTML 内容，返回完整的 TTMLLyrics 对象（包含元数据和歌曲结构）
+     * 解析 TTML 内容，返回完整的 TTMLLyrics 对象
+     * 
+     * 这是 TTML 解析的主入口方法。它会：
+     * 1. 解析 XML 文档结构
+     * 2. 提取元数据（标题、艺术家等）
+     * 3. 提取所有歌词行及其时间信息
+     * 4. 识别歌曲结构段落（前奏、主歌、副歌等）
+     * 
+     * 容错机制：
+     * - 如果正常解析失败，会尝试清理格式后重试
+     * - 完全失败时返回空列表，不会崩溃
+     * 
+     * @param content TTML XML 字符串
+     * @return 包含元数据和歌词行的完整对象
      */
     fun parse(content: String): TTMLLyrics {
         if (content.isBlank()) return TTMLLyrics(

@@ -40,9 +40,27 @@ import com.amll.droidmate.ui.base.BaseComposeActivity
 import com.amll.droidmate.ui.theme.DynamicThemeManager
 import com.amll.droidmate.ui.theme.SuccessGreen
 
+/**
+ * 动画效果设置界面
+ * 
+ * 这个 Activity 允许用户自定义 AMLL 歌词渲染的动画效果。
+ * 用户可以调整以下参数：
+ * - 弹簧动画（Spring）：启用/禁用弹性效果
+ * - 缩放动画（Scale）：启用/禁用歌词缩放
+ * - 模糊效果（Blur）：启用/禁用运动模糊
+ * - 隐藏已唱行：是否隐藏已播放的歌词行
+ * - 逐字渐变宽度：控制逐字歌词的淡入淡出范围
+ * - 动画帧率（FPS）：限制最高帧率以节省电量
+ * 
+ * **性能提示**：
+ * - 低端设备建议关闭部分特效（如模糊、弹簧）
+ * - 省电模式下可以降低 FPS 到 30-45
+ * - DOM_LITE 模式会自动限制某些效果
+ */
 class AnimationSettingsActivity : BaseComposeActivity() {
     @Composable
     override fun renderContent() {
+        // 渲染动画设置页面
         AnimationSettingsPage(onBack = { finish() })
     }
 }

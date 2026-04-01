@@ -27,11 +27,22 @@ import com.amll.droidmate.domain.model.TTMLLyrics
 /**
  * AMLL WebSocket 客户端（单例模式）
  * 
- * 在 Android 端作为 WebSocket 客户端连接到外部 AMLL 服务
- * 实现双向通信：发送播放状态，接收控制命令
+ * 这是应用与外部 AMLL (Apple Music Like Lyrics) 服务通信的核心组件。
+ * 通过 WebSocket 实现双向实时通信：
+ * - 发送：当前播放状态（歌曲信息、进度、歌词等）
+ * - 接收：控制命令（播放、暂停、跳转等）
+ * 
+ * 设计特点：
+ * 1. 单例模式：确保整个应用中只有一个 WebSocket 连接
+ * 2. 协程支持：使用 Kotlin 协程处理异步操作
+ * 3. 多监听器：支持多个模块同时监听 WebSocket 事件
  * 
  * 使用方式：
+ * ```kotlin
  * val client = AMLLWebSocketClient.getInstance()
+ * client.addListener(myListener)
+ * client.connect(host, port)
+ * ```
  */
 class AMLLWebSocketClient private constructor(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -42,7 +53,14 @@ class AMLLWebSocketClient private constructor(
         private var instance: AMLLWebSocketClient? = null
         
         /**
-         * 获取单例实例
+         * 获取单例实例（线程安全的延迟初始化）
+         * 
+         * 使用双重检查锁定模式确保：
+         * 1. 只在第一次调用时创建实例
+         * 2. 多线程环境下安全
+         * 3. 后续调用直接返回实例，无锁开销
+         * 
+         * @return 全局唯一的 AMLLWebSocketClient 实例
          */
         fun getInstance(): AMLLWebSocketClient {
             return instance ?: synchronized(this) {
@@ -52,6 +70,9 @@ class AMLLWebSocketClient private constructor(
         
         /**
          * 重置单例（用于测试或重新初始化）
+         * 
+         * 调用此方法会销毁现有连接并清空实例，
+         * 下次调用 getInstance() 时会创建新的实例
          */
         fun resetInstance() {
             instance?.destroy()
@@ -59,14 +80,27 @@ class AMLLWebSocketClient private constructor(
         }
     }
     
+    /**
+     * WebSocket 事件监听器接口
+     * 
+     * 定义了 WebSocket 事件的回调方法，包括：
+     * - 连接成功/断开
+     * - 消息接收
+     * - 错误处理
+     * - 状态同步（获取当前播放状态）
+     */
     interface Listener {
-        fun onConnected()
-        fun onDisconnected()
-        fun onMessageReceived(message: String)
-        fun onError(error: Throwable)
+        fun onConnected()  // WebSocket 连接成功时调用
+        fun onDisconnected()  // WebSocket 断开时调用
+        fun onMessageReceived(message: String)  // 收到消息时调用
+        fun onError(error: Throwable)  // 发生错误时调用
         
         /**
          * 当 WebSocket 连接成功时，返回当前播放状态用于同步
+         * 
+         * 这个方法允许服务端在连接建立后立即获取客户端的当前播放状态，
+         * 实现状态同步。如果没有正在播放的内容，返回 null。
+         * 
          * @return 包含歌曲信息、进度、状态的 PlayState 对象，如果无播放内容则返回 null
          */
         fun getCurrentPlayState(): PlayState? = null
@@ -74,16 +108,19 @@ class AMLLWebSocketClient private constructor(
     
     /**
      * 播放状态数据类
+     * 
+     * 封装了当前播放音乐的完整信息，用于在 WebSocket 通信中传递状态。
+     * 这些数据会被发送到 AMLL 服务端，用于同步歌词显示。
      */
     data class PlayState(
-        val musicId: String,
-        val musicName: String,
-        val albumName: String,
-        val artistName: String,
-        val duration: Long,
-        val progress: Long,
-        val isPlaying: Boolean,
-        val ttmlLyric: String? = null
+        val musicId: String,        // 歌曲唯一标识符
+        val musicName: String,      // 歌曲名称
+        val albumName: String,      // 专辑名称
+        val artistName: String,     // 艺术家名称
+        val duration: Long,         // 歌曲总时长（毫秒）
+        val progress: Long,         // 当前播放进度（毫秒）
+        val isPlaying: Boolean,     // 是否正在播放
+        val ttmlLyric: String? = null  // TTML 格式的歌词（可选）
     )
     
     // 支持多个监听器

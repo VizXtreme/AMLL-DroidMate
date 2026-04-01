@@ -10,9 +10,12 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Simple wrapper around [SharedPreferences] to reduce boilerplate when
- * accessing named preferences.  Usage examples:
- *
+ * SharedPreferences 简单封装类
+ * 
+ * 这个类是对 Android SharedPreferences 的轻量级封装，目的是减少模板代码，
+ * 提供更简洁的 API 来访问和修改持久化设置。
+ * 
+ * 使用示例：
  * ```kotlin
  * val prefs = PreferenceHelper(context, "my_prefs")
  * prefs.putString("key", value)
@@ -20,10 +23,10 @@ import java.util.concurrent.ConcurrentHashMap
  * prefs.remove("key")
  * ```
  * 
- * Performance optimizations:
- * - Batch writes with debounce to reduce I/O operations
- * - Async write operations to avoid blocking main thread
- * - Memory cache for pending writes
+ * 性能优化：
+ * - 批量写入 + 防抖动：减少 I/O 操作次数
+ * - 异步写入：避免阻塞主线程
+ * - 内存缓存：pending writes 先缓存到内存
  */
 class PreferenceHelper(context: Context, name: String) {
     private val prefs: SharedPreferences =
@@ -48,16 +51,27 @@ class PreferenceHelper(context: Context, name: String) {
     }
     
     /**
-     * Asynchronous write with batching and debouncing
-     * Multiple calls within 100ms will be batched into a single I/O operation
+     * 异步字符串写入（带批量和防抖优化）
+     * 
+     * 这是推荐的写入方式。多个调用会在 100ms 内被批量合并成一次 I/O 操作，
+     * 大大减少了磁盘写入次数，提高了性能。
+     * 
+     * 工作原理：
+     * 1. 将值存入内存缓存（pendingWrites）
+     * 2. 取消之前的定时保存任务
+     * 3. 重新调度 100ms 后执行保存
+     * 4. 如果 100ms 内有新写入，重复步骤 2-3
+     * 
+     * @param key 设置的键
+     * @param value 要存储的值
      */
     fun putStringAsync(key: String, value: String?) {
         pendingWrites[key] = value
         
-        // Cancel previous scheduled save
+        // 取消之前的定时保存
         saveJob?.cancel()
         
-        // Schedule new save with 100ms debounce
+        // 调度新的保存任务，100ms 防抖延迟
         saveJob = CoroutineScope(dispatcher).launch {
             delay(100)
             flushPendingWrites()
@@ -72,7 +86,9 @@ class PreferenceHelper(context: Context, name: String) {
     }
     
     /**
-     * Asynchronous boolean write with batching
+     * 异步布尔值写入（带批量优化）
+     * 
+     * 与 putStringAsync 类似，但用于布尔类型
      */
     fun putBooleanAsync(key: String, value: Boolean) {
         pendingWrites[key] = value

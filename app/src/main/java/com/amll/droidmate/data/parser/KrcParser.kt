@@ -33,9 +33,10 @@ object KrcParser {
     // KRC 逐字时间戳正则: <偏移ms,持续ms,0>文本
     private val SYLLABLE_REGEX = Regex("""<(\d+),(\d+),\d+>([^<]+)""")
 
-    // KRC 内嵌翻译/音译标签: [language:BASE64_JSON]
+    // KRC 内嵌翻译/音译标签：[language:BASE64_JSON]
     private val LANGUAGE_TAG_REGEX = Regex("""\[language:([A-Za-z0-9+/=]+)]""")
-
+    
+    // JSON 解析器（忽略未知字段，保证兼容性）
     private val json = Json { ignoreUnknownKeys = true }
 
     private data class KrcAuxiliaryData(
@@ -45,6 +46,15 @@ object KrcParser {
     
     /**
      * 解析 KRC 格式内容
+     * 
+     * 解析流程：
+     * 1. 提取内嵌的辅助数据（翻译、音译）
+     * 2. 检测全局时间偏移（如果有）
+     * 3. 逐行解析歌词和时间戳
+     * 4. 将辅助数据匹配到对应的歌词行
+     * 
+     * @param content KRC 格式的原始文本
+     * @return 解析后的歌词行列表
      */
     fun parse(content: String): List<LyricLine> {
         val lines = mutableListOf<LyricLine>()

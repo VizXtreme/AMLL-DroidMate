@@ -53,9 +53,31 @@ import com.amll.droidmate.ui.theme.DynamicThemeManager
 import java.io.File
 import java.io.IOException
 
+/**
+ * 字体设置界面
+ * 
+ * 这个 Activity 允许用户管理 AMLL 歌词渲染使用的字体。
+ * 用户可以：
+ * - 导入自定义字体文件（.ttf/.otf）
+ * - 预览已安装的字体效果
+ * - 启用/禁用特定字体
+ * - 调整字体优先级顺序
+ * - 删除不需要的字体
+ * 
+ * **功能特点**：
+ * - 支持多字体同时启用，自动回退
+ * - 从系统字体选择器导入字体
+ * - 实时预览字体在歌词中的效果
+ * - 持久化存储字体配置
+ * 
+ * **支持的字体格式**：
+ * - TrueType Font (.ttf)
+ * - OpenType Font (.otf)
+ */
 class FontSettingsActivity : BaseComposeActivity() {
     @Composable
     override fun renderContent() {
+        // 渲染字体设置页面
         FontSettingsPage(onBack = { finish() })
     }
 }

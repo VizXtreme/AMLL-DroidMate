@@ -20,7 +20,12 @@ import androidx.compose.runtime.collectAsState
 /**
  * 基于 Compose 的 Activity 基类
  * 
- * 提供统一的初始化逻辑和主题设置，所有 Settings Activity 应继承此类
+ * 这个抽象类为所有使用 Jetpack Compose 的 Activity 提供了统一的初始化逻辑。
+ * 主要功能包括：
+ * - 边缘到边缘显示（现代化全面屏支持）
+ * - 系统栏自动适配（状态栏、导航栏不遮挡内容）
+ * - 动态主题切换（亮色/暗色模式 + 动态配色）
+ * - 统一的内容渲染接口
  * 
  * 用法：
  * ```kotlin
@@ -37,16 +42,18 @@ abstract class BaseComposeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // 启用边缘到边缘显示
+        // 启用边缘到边缘显示（现代 Android 的全面屏设计）
         enableEdgeToEdge()
         
-        // 设置系统栏不遮挡内容
+        // 设置系统栏（状态栏、导航栏）不遮挡内容
+        // false 表示系统栏会悬浮在应用内容之上，而不是挤压布局空间
         WindowCompat.setDecorFitsSystemWindows(window, false)
         
+        // 设置 Compose 内容视图
         setContent {
             val context = LocalContext.current
-            val isDarkTheme = isSystemInDarkTheme()
-            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
+            val isDarkTheme = isSystemInDarkTheme()  // 跟随系统深色模式
+            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()  // 监听动态配色变化
             
             DroidMateTheme(
                 darkTheme = isDarkTheme,
@@ -56,7 +63,7 @@ abstract class BaseComposeActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    renderContent()
+                    renderContent()  // 调用子类实现来渲染具体内容
                 }
             }
         }

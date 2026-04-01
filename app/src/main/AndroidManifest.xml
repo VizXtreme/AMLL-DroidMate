@@ -1,27 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Android 应用清单文件
+  ~ 
+  ~ 这个文件定义了应用的所有组件和权限，是应用的“户口本”。
+  ~ 
+  ~ **主要功能**：
+  ~ 1. 声明应用权限（网络、通知、前台服务等）
+  ~ 2. 注册所有 Activity、Service 等组件
+  ~ 3. 配置组件属性（导出、主题、启动模式等）
+  ~ 4. 定义 Intent 过滤器（如何被启动）
+  ~ 
+  ~ **重要说明**：
+  ~ - usesCleartextTraffic="true": 允许 HTTP 明文流量（用于本地 WebSocket）
+  ~ - dataExtractionRules: Android 12+ 数据提取规则
+  ~ - fullBackupContent: Android 6.0+ 自动备份规则
+  -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Android 11+ package visibility: allow resolving launchable apps for source-app name and jump -->
+    <!--
+      ~ Android 11+ (API 30) 包可见性配置
+      ~ 
+      ~ 为了隐私保护，Android 11+ 限制了应用查询其他安装应用的能力。
+      ~ 这个 queries 标签允许应用查询具有特定 Intent 的应用。
+      ~ 
+      ~ **使用场景**：
+      ~ - 获取当前播放音乐的来源应用名称
+      ~ - 跳转到源应用（如 QQ 音乐、网易云音乐）
+      ~ - 解析系统中可启动的应用
+      -->
     <queries>
+        <!-- 查询所有可启动的主 Activity（启动器应用） -->
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
 
-    <!-- 权限 -->
+    <!-- ==================== 网络权限 ==================== -->
+    <!-- 访问互联网：用于获取歌词、同步播放状态到 WebSocket -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 检查网络状态：判断是否联网，决定是否可以获取歌词 -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- ==================== 通知权限 ==================== -->
+    <!-- 发送通知：Android 13+ 需要显式请求通知权限 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
-    <!-- 前台服务权限 (Android 9.0+) -->
+    <!-- ==================== 前台服务权限 ==================== -->
+    <!-- 前台服务：保持后台服务持续运行（Android 9.0+） -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- 媒体播放类型：用于歌词通知栏显示 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- 数据同步类型：用于 WebSocket 后台同步 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     
-    <!-- 请求忽略电池优化权限 (Android 6.0+) -->
+    <!-- ==================== 电池优化权限 ==================== -->
+    <!-- 请求忽略电池优化：防止系统杀死后台服务（Android 6.0+） -->
+    <!-- 注意：这是敏感权限，需要用户手动授权 -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     
+    <!--
+      ~ Application 配置
+      ~ 
+      ~ **关键属性**：
+      ~ - allowBackup: 允许通过 ADB 备份应用数据
+      ~ - dataExtractionRules: Android 12+ 数据提取规则（引用 XML）
+      ~ - fullBackupContent: Android 6.0-11 自动备份规则（引用 XML）
+      ~ - icon/label: 应用图标和名称
+      ~ - theme: 应用默认主题
+      ~ - usesCleartextTraffic: 允许 HTTP 明文流量（⚠️ 仅限本地 WebSocket 使用）
+      -->
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -32,80 +79,121 @@
         android:theme="@style/Theme.DroidMate"
         android:usesCleartextTraffic="true">
 
+        <!--
+          ~ 主 Activity
+          ~ 
+          ~ **关键配置**：
+          ~ - exported="true": 可以被外部启动（桌面图标、Intent）
+          ~ - label: 使用 activity_name（可能与 app_name 不同）
+          ~ - intent-filter: 定义为主启动器和 Launcher 类别
+          -->
         <activity
             android:name="com.amll.droidmate.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.DroidMate"
             android:label="@string/activity_name">
             <intent-filter>
+                <!-- 主 Action：作为应用入口 -->
                 <action android:name="android.intent.action.MAIN" />
+                <!-- Launcher 类别：显示在桌面启动器中 -->
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- 歌词显示Activity -->
+        <!-- 歌词显示 Activity（占位符，尚未实现） -->
         <activity
             android:name="com.amll.droidmate.ui.LyricsActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
 
+        <!-- ==================== 设置类 Activity ==================== -->
+        <!-- 主设置界面：包含所有应用配置选项 -->
         <activity
             android:name="com.amll.droidmate.ui.SettingsActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
 
+        <!-- 歌词偏移设置：为当前歌曲和设备配置时间偏移 -->
         <activity
             android:name="com.amll.droidmate.ui.LyricOffsetSettingsActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
 
+        <!-- 歌词偏移管理：查看所有已保存的偏移记录 -->
         <activity
             android:name="com.amll.droidmate.ui.LyricOffsetManagementActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
 
+        <!-- 字体设置：管理自定义字体文件 -->
         <activity
             android:name="com.amll.droidmate.ui.FontSettingsActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
 
+        <!-- 动画设置：配置 AMLL 歌词渲染效果 -->
         <activity
             android:name="com.amll.droidmate.ui.AnimationSettingsActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
 
+        <!-- 自定义歌词选择：手动选择或导入歌词 -->
         <activity
             android:name="com.amll.droidmate.ui.CustomLyricsActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
 
+        <!-- 歌词缓存管理：查看和删除已缓存的歌词 -->
         <activity
             android:name="com.amll.droidmate.ui.LyricsCacheActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
 
+        <!-- WebSocket 协议设置：配置 WebSocket 连接参数 -->
         <activity
             android:name="com.amll.droidmate.ui.WsProtocolSettingsActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
 
+        <!-- 日志显示：实时查看应用运行日志 -->
         <activity
             android:name="com.amll.droidmate.ui.LogDisplayActivity"
             android:exported="false"
             android:theme="@style/Theme.DroidMate" />
 
-        <!-- 后台歌词监听服务 -->
+        <!--
+          ~ 媒体监听服务（通知监听权限）
+          ~ 
+          ~ **功能**：监听其他音乐应用的通知，获取播放状态
+          ~ **权限**：BIND_NOTIFICATION_LISTENER_SERVICE（敏感权限）
+          ~ **工作原理**：通过 Accessibility API 读取通知栏内容
+          ~ 
+          ~ ⚠️ 注意：这是系统级权限，需要用户手动在设置中授权
+          -->
         <service
             android:name="com.amll.droidmate.service.MediaListenerService"
             android:enabled="true"
             android:exported="false"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
+                <!-- 声明这是一个通知监听服务 -->
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
 
-        <!-- WebSocket 前台服务 - 保持连接活跃 -->
+        <!--
+          ~ WebSocket 前台服务
+          ~ 
+          ~ **功能**：保持与 AMLL Web 服务的 WebSocket 连接活跃
+          ~ **前台服务类型**：
+          ~ - mediaPlayback: 媒体播放（显示通知栏控制）
+          ~ - dataSync: 数据同步（后台同步播放状态）
+          ~ 
+          ~ **为什么需要前台服务？**：
+          ~ - 防止被系统杀死（尤其是低端设备）
+          ~ - 在通知栏显示连接状态
+          ~ - 允许长时间后台运行
+          -->
         <service
             android:name="com.amll.droidmate.service.WebSocketForegroundService"
             android:enabled="true"

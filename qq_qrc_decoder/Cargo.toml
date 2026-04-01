@@ -1,13 +1,32 @@
+# ==================== 包配置 ====================
+# QQ 音乐 QRC 解码器 - Rust 原生库
 [package]
-name = "qq_qrc_decoder"
-version = "0.1.0"
-edition = "2024"
+name = "qq_qrc_decoder"  # 包名称
+version = "0.1.0"         # 版本号
+edition = "2024"          # Rust 版本（使用最新的 2024 Edition）
 
+# ==================== 库配置 ====================
+# 定义编译产物类型：
+# - cdylib: C 动态库（生成 .so/.dll，供 Android/Java 调用）
+# - rlib: Rust 静态库（供其他 Rust 代码使用）
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+# ==================== 依赖项 ====================
 [dependencies]
+
+# AMLL 歌词解析核心库（本地路径引用）
+# 提供 QRC 解密的核心算法
 amll-lyric = { path = "../../AMLL/packages/lyric" }
+
+# 十六进制编解码库
+# 用于将 hex 字符串转换为二进制数据
 hex = "0.4"
+
+# JNI (Java Native Interface) 绑定
+# 允许 Rust 代码与 Java/Kotlin 代码交互
 jni = "0.21"
+
+# Zlib 压缩/解压缩库
+# 用于处理压缩的歌词数据
 flate2 = "1.0"

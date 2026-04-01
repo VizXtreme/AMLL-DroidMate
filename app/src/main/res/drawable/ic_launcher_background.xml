@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ 应用图标背景层（自适应图标）
+  ~ 
+  ~ Android 8.0 (API 26) 引入了自适应图标，支持圆形、圆角矩形等形状。
+  ~ 这个文件定义了 DroidMate 应用图标的背景部分。
+  ~ 
+  ~ **设计说明**：
+  ~ - 使用深蓝色 (#0E2A47) 作为背景色
+  ~ - 矩形形状，系统会自动裁剪为所需的图标形状
+  ~ - 与前景层的白色音符形成鲜明对比
+  -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <!-- 实心填充颜色：深蓝色背景 -->
     <solid android:color="#0E2A47" />
 </shape>

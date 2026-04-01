@@ -4,10 +4,18 @@ import com.amll.droidmate.domain.model.LyricLine
 import timber.log.Timber
 
 /**
- * Lyrics metadata stripper.
- *
- * This is adapted from Unilyric's metadata_stripper.rs.
- * It attempts to remove common metadata lines ("词：...", "作词：...", ".").
+ * 歌词元数据剥离器
+ * 
+ * 这个工具用于从歌词文件中识别和移除制作人员信息（元数据）。
+ * 在歌词文件中，经常会包含作词、作曲、编曲等制作人员信息，
+ * 这些信息不应该作为歌词显示出来。
+ * 
+ * 功能特点：
+ * 1. 支持中文和英文的制作人员标签（如"作词"、"Lyrics"等）
+ * 2. 智能识别多种格式的元数据行
+ * 3. 只移除纯元数据行，不影响歌词内容
+ * 
+ * 参考：Unilyric 的 metadata_stripper.rs
  */
 object MetadataStripper {
 

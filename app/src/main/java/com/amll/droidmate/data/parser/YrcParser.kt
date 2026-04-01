@@ -5,11 +5,38 @@ import com.amll.droidmate.domain.model.LyricWord
 import org.json.JSONObject
 import timber.log.Timber
 
+/**
+ * YRC 格式解析器（网易云音乐逐字歌词格式）
+ * 
+ * YRC 是网易云音乐的专有逐字歌词格式，特点包括：
+ * - JSON 元数据行：{"t": ...} 格式，包含歌手、专辑等信息
+ * - 行级时间戳：[起始时间，持续时间]（毫秒）
+ * - 逐字时间戳：(起始时间，持续时间，0) 紧跟在每个字后面
+ * 
+ * 示例：
+ * {"t":"歌手","c":[{"tx":"歌手:"},{"tx":"周杰伦"}]}
+ * [0,3500]在 (0,500,0) 世 (500,300,0) 界 (800,400,0) 的 (1200,300,0)
+ */
 object YrcParser {
 
+    // YRC 行级时间戳正则：[起始 ms，持续 ms]
     private val yrcLineTimestampRegex = Regex("""^\[(?<start>\d+),(?<duration>\d+)]""")
+    
+    // YRC 逐字时间戳正则：(起始 ms，持续 ms，0)
     private val yrcSyllableTimestampRegex = Regex("""\((?<start>\d+),(?<duration>\d+),(?<zero>0)\)""")
 
+    /**
+     * 解析 YRC 格式的歌词内容
+     * 
+     * 解析流程：
+     * 1. 逐行遍历输入内容
+     * 2. 识别并解析 JSON 元数据行（歌手、专辑等）
+     * 3. 对匹配时间戳的行解析为 LyricLine 对象
+     * 4. 提取逐字时间信息
+     * 
+     * @param content YRC 格式的原始文本
+     * @return 解析后的歌词行列表
+     */
     fun parse(content: String): List<LyricLine> {
         val lines = mutableListOf<LyricLine>()
         val metadata = mutableMapOf<String, MutableList<String>>()

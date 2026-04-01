@@ -12,6 +12,15 @@ import org.json.JSONObject
 /**
  * TTML 转换器 - 将歌词转换为 TTML 格式
  * 
+ * 这个对象提供了一系列方法，用于在内部歌词模型和 TTML (Timed Text Markup Language)
+ * 标准格式之间进行转换。TTML 是一种基于 XML 的字幕格式，广泛用于视频和音乐行业。
+ * 
+ * 主要功能：
+ * - 导出：将应用内部的歌词数据转换为标准 TTML 格式
+ * - 导入：解析外部 TTML 文件为内部数据结构
+ * - XML 转义：防止特殊字符破坏 XML 结构
+ * - 元数据保留：保持歌曲信息、结构标记等
+ * 
  * 注意：本转换器的所有方法均通过反射调用，因此需要保留 @Suppress("unused")
  * 这些方法在运行时被动态调用，用于歌词格式的导入/导出功能
  */
@@ -20,12 +29,22 @@ object TTMLConverter {
 
     /**
      * 转义 XML 特殊字符
-     * ⭐ 修复关键：防止 TTML 中的特殊字符导致 Rust 解析器 panic
-     * 注意：& 必须先转义，否则会导致双重转义
+     * 
+     * XML 中有 5 个特殊字符必须进行转义，否则会破坏文档结构：
+     * - & (和号) → &amp;  ⭐ 必须最先转义，否则会导致双重转义
+     * - < (小于号) → &lt;
+     * - > (大于号) → &gt;
+     * - " (双引号) → &quot;
+     * - ' (单引号) → &apos;
+     * 
+     * 例如歌词中的 "A&B" 如果不转义，会被 XML 解析器误认为是实体引用。
+     * 
+     * @param text 原始文本
+     * @return 转义后的安全文本
      */
     private fun escapeXml(text: String): String {
         return text
-            .replace("&", "&amp;")   // 必须第一个转义
+            .replace("&", "&amp;")   // 必须第一个转义，避免双重转义
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace("\"", "&quot;")
@@ -35,7 +54,19 @@ object TTMLConverter {
     /**
      * 将歌词行列表转换为 TTML 字符串
      * 
+     * 这是 TTML 导出的核心方法。它会将内部的歌词数据结构转换为标准的 TTML XML 格式。
+     * 
+     * 生成的 TTML 包含：
+     * - XML 声明和命名空间定义
+     * - 元数据区域（标题、艺术家等）
+     * - 歌词主体区域（包含时间戳的逐行歌词）
+     * - 可选的格式化（缩进和换行，便于阅读）
+     * 
      * ⭐ 修复关键：所有字符串值必须进行 XML 转义，防止解析失败
+     * 
+     * @param lyrics 要转换的歌词对象
+     * @param formatted 是否格式化输出（添加缩进和换行）
+     * @return TTML 格式的 XML 字符串
      */
     fun toTTMLString(
         lyrics: TTMLLyrics,
