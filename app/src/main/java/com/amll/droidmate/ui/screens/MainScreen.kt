@@ -59,6 +59,8 @@ import androidx.compose.material3.*
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.ripple
+import androidx.compose.material3.WavySlider
+import androidx.compose.material3.WavySliderDefaults
 import com.amll.droidmate.ui.screens.AMLLLyricsView
 import com.amll.droidmate.ui.screens.AMLLRenderMode
 import androidx.compose.runtime.*
@@ -181,7 +183,7 @@ fun MainScreen() {
                     viewModel.sendAlbumArtToWebSocket(uri)
                     Timber.d("[MainScreen] Sent album art to WebSocket on refresh: $uri")
                 } catch (e: Exception) {
-                    Timber.e("[MainScreen] Failed to send album art to WebSocket", e)
+                    Timber.e("[MainScreen] Failed to send album art to WebSocket: ${e.message}")
                 }
             }
         } else {
@@ -665,6 +667,7 @@ fun MainScreen() {
                 NowPlayingCard(
                     nowPlaying = nowPlaying,
                     context = context,
+                    songStructures = songStructures,  // 传递歌曲结构
                     onPlayPauseClick = { if (nowPlaying?.isPlaying == true) viewModel.pause() else viewModel.play() },
                     onSkipPreviousClick = { 
                         val currentPos = nowPlaying?.currentPosition ?: 0L
@@ -882,6 +885,7 @@ private fun LyricsVisualLayer(
 fun NowPlayingCard(
     nowPlaying: NowPlayingMusic?,
     context: Context,
+    songStructures: List<SongStructure> = emptyList(),  // 添加歌曲结构参数
     onPlayPauseClick: () -> Unit,
     onSkipPreviousClick: () -> Unit,
     onSkipNextClick: () -> Unit,
@@ -941,34 +945,35 @@ fun NowPlayingCard(
                 }
 
                 Column {
-                    // progress slider; thumb was previously very tall, so we shrink both
-                    // track and thumb size.
-                    Slider(
-                        value = sliderValue,
-                        onValueChange = {
-                            sliderValue = it
+                    // progress slider with wavy style
+                    WavySlider(
+                        value = sliderValue / nowPlaying.duration.toFloat().coerceAtLeast(1f),
+                        onValueChange = { normalizedValue ->
+                            sliderValue = normalizedValue * nowPlaying.duration.toFloat().coerceAtLeast(1f)
                             isSeeking = true
-                            onSeek(it.toLong())
+                            onSeek(sliderValue.toLong())
                         },
                         onValueChangeFinished = {
                             onSeek(sliderValue.toLong())
                             isSeeking = false
                         },
-                        valueRange = 0f..nowPlaying.duration.toFloat().coerceAtLeast(1f),
+                        customSteps = songStructures
+                            .map { it.startTime }  // 获取所有起始时间
+                            .filter { it > 0 && it < nowPlaying.duration }
+                            .map { (it.toFloat() / nowPlaying.duration.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f) }  // 归一化到 0-1
+                            .distinct(),  // 去重
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(16.dp),
-                        colors = SliderDefaults.colors(
+                        colors = WavySliderDefaults.colors(
                             thumbColor = sliderColor,
                             activeTrackColor = sliderColor,
-                            inactiveTrackColor = sliderColor.copy(alpha = 0.3f)
+                            inactiveTrackColor = sliderColor.copy(alpha = 0.3f),
+                            stepColor = sliderColor.copy(alpha = 0.7f)  // 设置标记点颜色
                         ),
-                        thumb = {
-                            SliderDefaults.Thumb(
-                                interactionSource = remember { MutableInteractionSource() },
-                                enabled = true
-                            )
-                        }
+                        amplitude = 1f,  // 使用默认振幅 1.0（最大波浪效果）
+                        wavelength = WavySliderDefaults.Wavelength,  // 16.dp，默认波长
+                        waveSpeed = if (nowPlaying.isPlaying) WavySliderDefaults.WaveSpeed else 0.dp  // 暂停时停止波浪动画
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(formatTime(sliderValue.toLong()), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
