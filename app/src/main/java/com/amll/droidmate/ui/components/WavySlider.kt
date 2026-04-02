@@ -81,6 +81,7 @@ fun WavySlider(
     amplitude: Float = 1f,
     wavelength: Dp = WavySliderDefaults.Wavelength,
     waveSpeed: Dp = WavySliderDefaults.WaveSpeed,
+    waveAmplitude: Dp = WavySliderDefaults.WaveAmplitude,
 ) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -227,7 +228,8 @@ fun WavySlider(
             enabled = enabled,
             amplitude = amplitude,
             wavelengthPx = wavelengthPx,
-            waveSpeedPx = waveSpeedPx
+            waveSpeedPx = waveSpeedPx,
+            waveAmplitudePx = with(density) { waveAmplitude.toPx() }
         )
     }
 }
@@ -239,12 +241,21 @@ private fun WavySliderDrawing(
     enabled: Boolean,
     amplitude: Float,
     wavelengthPx: Float,
-    waveSpeedPx: Float
+    waveSpeedPx: Float,
+    waveAmplitudePx: Float
 ) {
     val density = LocalDensity.current
     val trackHeightPx = with(density) { WavySliderDefaults.TrackHeight.toPx() }
-    // Use full thumb height for proper MD3 pill shape rendering
-    val thumbSizePx = with(density) { WavySliderDefaults.ThumbSize.height.toPx() }
+    // MD3 standard thumb: width=4dp, height=44dp (thin vertical handle)
+    val thumbWidthPx = with(density) { WavySliderDefaults.ThumbSize.width.toPx() }
+    val thumbHeightPx = with(density) { WavySliderDefaults.ThumbSize.height.toPx() }
+    
+    // MD3 standard: 6dp gap on each side of thumb
+    val thumbSideGapPx = with(density) { 6.dp.toPx() }
+    
+    // Calculate canvas height to accommodate both track and thumb
+    // Thumb needs enough vertical space to be fully visible
+    val canvasHeightDp = maxOf(WavySliderDefaults.TrackHeight * 2, WavySliderDefaults.ThumbSize.height)
     
     // Animate wave movement over time (only if waveSpeed > 0)
     val timeOffset = if (waveSpeedPx > 0) {
@@ -269,41 +280,50 @@ private fun WavySliderDrawing(
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
-            .height(WavySliderDefaults.TrackHeight * 2)
+            .height(canvasHeightDp)
     ) {
         val trackWidth = size.width
         val centerY = size.height / 2
         
         // Update state with actual track dimensions for gesture handling
-        // Available width excludes thumb's full width to prevent overflow
-        state.updateDimensions(trackWidth - thumbSizePx, trackHeightPx)
+        // Available width excludes thumb width and side gaps (6dp each side per MD3 spec)
+        state.updateDimensions(trackWidth - thumbWidthPx - thumbSideGapPx * 2, trackHeightPx)
         
         // Calculate thumb center position
-        // Thumb center moves from (thumbSizePx/2) to (trackWidth - thumbSizePx/2)
-        val availableWidth = trackWidth - thumbSizePx
-        val thumbCenterX = availableWidth * state.value + thumbSizePx / 2
+        // Thumb center moves from (thumbSideGapPx + thumbWidthPx/2) to (trackWidth - thumbSideGapPx - thumbWidthPx/2)
+        val availableWidth = trackWidth - thumbWidthPx - thumbSideGapPx * 2
+        val thumbCenterX = thumbSideGapPx + thumbWidthPx / 2 + availableWidth * state.value
         
-        // Draw inactive track
+        // Draw inactive track (starts from thumb center + gap)
         drawRoundRect(
             color = colors.inactiveTrackColor(enabled),
-            topLeft = Offset(thumbCenterX, centerY - trackHeightPx / 2),
-            size = Size(trackWidth - thumbCenterX, trackHeightPx),
+            topLeft = Offset(thumbCenterX + thumbSideGapPx, centerY - trackHeightPx / 2),
+            size = Size(trackWidth - thumbCenterX - thumbSideGapPx * 2, trackHeightPx),
             cornerRadius = CornerRadius(trackHeightPx / 2)
         )
-        
-        // Draw active track with wave
+        // Draw active track with wave (MD3 standard: 3dp amplitude, 40dp wavelength)
+        // Wave ends at thumb center - gap
         drawWavyTrack(
             color = colors.activeTrackColor(enabled),
             startX = 0f,
-            endX = thumbCenterX,
+            endX = thumbCenterX - thumbSideGapPx,
             centerY = centerY,
             trackHeight = trackHeightPx,
             amplitude = amplitude,
             wavelengthPx = wavelengthPx,
-            timeOffset = timeOffset
+            timeOffset = timeOffset,
+            waveAmplitudePx = waveAmplitudePx
         )
         
-        // Draw step markers
+        // Draw thumb (MD3 pill shape - horizontal rounded rectangle)
+        // MD3 standard: width=32dp, height=16dp (2:1 ratio)
+        // Use smaller corner radius for pill shape (height/2 for full round ends)
+        drawRoundRect(
+            color = colors.thumbColor(enabled),
+            topLeft = Offset(thumbCenterX - thumbWidthPx / 2, centerY - thumbHeightPx / 2),
+            size = androidx.compose.ui.geometry.Size(thumbWidthPx, thumbHeightPx),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(thumbHeightPx / 2, thumbHeightPx / 2)
+        )
         if (state.customSteps.isNotEmpty()) {
             drawStepMarkers(
                 stepColor = colors.stepColor(enabled),
@@ -314,17 +334,6 @@ private fun WavySliderDrawing(
                 customSteps = state.customSteps
             )
         }
-        
-        // Draw thumb (pill shape - vertical rounded rectangle)
-        // MD3 standard: width=12dp, height=40dp with full round corners
-        // Reference: Slider.kt uses ThumbSize.width for horizontal sizing
-        val thumbWidthPx = with(density) { WavySliderDefaults.ThumbSize.width.toPx() }
-        drawRoundRect(
-            color = colors.thumbColor(enabled),
-            topLeft = Offset(thumbCenterX - thumbWidthPx / 2, centerY - thumbSizePx / 2),
-            size = androidx.compose.ui.geometry.Size(thumbWidthPx, thumbSizePx),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(thumbSizePx / 2, thumbSizePx / 2)
-        )
     }
 }
 
@@ -336,12 +345,14 @@ private fun DrawScope.drawWavyTrack(
     trackHeight: Float,
     amplitude: Float,
     wavelengthPx: Float,
-    timeOffset: Float
+    timeOffset: Float,
+    waveAmplitudePx: Float
 ) {
     if (endX <= startX) return
     
     val path = Path()
-    val actualAmplitude = (trackHeight / 4) * amplitude.coerceIn(0f, 1f)
+    // Use MD3 standard amplitude (3dp) scaled by amplitude parameter
+    val actualAmplitude = waveAmplitudePx * amplitude.coerceIn(0f, 1f)
     
     path.moveTo(startX, centerY)
     
@@ -358,8 +369,7 @@ private fun DrawScope.drawWavyTrack(
         x += 2f
     }
     
-    path.lineTo(endX, centerY)
-    
+    // Draw the wave path with round cap for smooth ends
     drawPath(
         path = path,
         color = color,
@@ -368,6 +378,18 @@ private fun DrawScope.drawWavyTrack(
             cap = StrokeCap.Round
         )
     )
+    
+    // Draw a circle at the end point to create a smooth rounded end
+    if (endX > startX) {
+        val endWaveOffset = ((endX - startX) / wavelengthPx * 2 * PI + timeOffset).toFloat()
+        val endY = centerY + sin(endWaveOffset) * actualAmplitude
+        
+        drawCircle(
+            color = color,
+            radius = trackHeight / 2,
+            center = Offset(endX, endY)
+        )
+    }
 }
 
 private fun DrawScope.drawStepMarkers(

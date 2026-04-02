@@ -32,18 +32,27 @@ object WavySliderDefaults {
 
     /**
      * Default thumb size for the wavy slider.
+     * MD3 standard (XS size): width=4dp, height=44dp (thin vertical handle)
      */
-    val ThumbSize: DpSize = DpSize(20.dp, 20.dp)
+    val ThumbSize: DpSize = DpSize(4.dp, 44.dp)
 
     /**
      * Default track height for the wavy slider.
+     * MD3 standard (XS size): 16dp
      */
     val TrackHeight: Dp = 4.dp
 
     /**
      * Default wavelength for the wavy effect.
+     * MD3 standard: 40dp
      */
-    val Wavelength: Dp = 16.dp
+    val Wavelength: Dp = 40.dp
+
+    /**
+     * Default wave amplitude.
+     * MD3 standard: 3dp (half of track height for proper wave rendering)
+     */
+    val WaveAmplitude: Dp = 3.dp
 
     /**
      * Default wave speed (1 wavelength per second).
