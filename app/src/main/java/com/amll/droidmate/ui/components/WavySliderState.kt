@@ -148,18 +148,19 @@ class WavySliderState(
      * Binary snap logic: either fully snapped to step OR fully following finger.
      *
      * @param delta The drag delta in pixels
+     * @param availableWidth The available track width for thumb movement (excluding thumb width and side gaps)
      * @return The new value after applying delta
      */
-    internal fun drag(delta: Float): Float {
-        if (trackWidth <= 0) return value
+    internal fun drag(delta: Float, availableWidth: Float): Float {
+        if (availableWidth <= 0) return value
 
         val currentValue = value
-        // Convert current value to pixel position
-        val currentPixelValue = currentValue * trackWidth
+        // Convert current value to pixel position within available width
+        val currentPixelValue = currentValue * availableWidth
         // Apply delta and clamp to valid track range
-        val newPixelValue = (currentPixelValue + delta).coerceIn(0f, trackWidth)
+        val newPixelValue = (currentPixelValue + delta).coerceIn(0f, availableWidth)
         // Convert back to normalized value (0.0 to 1.0)
-        val newValue = newPixelValue / trackWidth
+        val newValue = newPixelValue / availableWidth
 
         // Update thumb scale: enlarge when near a step during drag
         val stepInfo = findNearestStepInAttractionRange(newValue)

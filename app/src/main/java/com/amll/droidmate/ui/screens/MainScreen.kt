@@ -935,9 +935,10 @@ fun NowPlayingCard(
                 // While the user is actively dragging the slider, we should not overwrite the
                 // thumb position from playback updates (which would make the thumb jump).
                 // At the same time we want to send seek updates to the playback source in real time.
-                var isSeeking by remember { mutableStateOf(false) }
-                var sliderValue by remember { mutableStateOf(nowPlaying.currentPosition.toFloat()) }
 
+                var isSeeking by remember { mutableStateOf(false) }
+                var draggedSliderValue by remember { mutableStateOf(nowPlaying.currentPosition.toFloat()) }
+                var sliderValue = if (isSeeking) draggedSliderValue else nowPlaying.currentPosition.toFloat()
                 LaunchedEffect(nowPlaying?.currentPosition) {
                     if (!isSeeking) {
                         sliderValue = nowPlaying?.currentPosition?.toFloat() ?: 0f
@@ -949,13 +950,11 @@ fun NowPlayingCard(
                     WavySlider(
                         value = sliderValue / nowPlaying.duration.toFloat().coerceAtLeast(1f),
                         onValueChange = { normalizedValue ->
-                            // Only update internal slider value during drag, don't seek yet
-                            sliderValue = normalizedValue * nowPlaying.duration.toFloat().coerceAtLeast(1f)
+                            draggedSliderValue = normalizedValue * nowPlaying.duration.toFloat().coerceAtLeast(1f)
                             isSeeking = true
                         },
                         onValueChangeFinished = {
-                            // Seek only when user releases the finger
-                            onSeek(sliderValue.toLong())
+                            onSeek(draggedSliderValue.toLong())
                             isSeeking = false
                         },
                         customSteps = songStructures
