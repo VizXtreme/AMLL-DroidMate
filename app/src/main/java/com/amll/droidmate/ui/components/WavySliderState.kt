@@ -154,27 +154,27 @@ class WavySliderState(
         if (trackWidth <= 0) return value
 
         val currentValue = value
-        val pixelValue = currentValue * trackWidth
-        val newPixelValue = (pixelValue + delta).coerceIn(0f, trackWidth)
-        val newFingerPosition = newPixelValue / trackWidth
-
-        // Always follow finger position (no resistance)
-        val coercedValue = newFingerPosition.fastCoerceIn(0f, 1f)
+        // Convert current value to pixel position
+        val currentPixelValue = currentValue * trackWidth
+        // Apply delta and clamp to valid track range
+        val newPixelValue = (currentPixelValue + delta).coerceIn(0f, trackWidth)
+        // Convert back to normalized value (0.0 to 1.0)
+        val newValue = newPixelValue / trackWidth
 
         // Update thumb scale: enlarge when near a step during drag
-        val stepInfo = findNearestStepInAttractionRange(coercedValue)
+        val stepInfo = findNearestStepInAttractionRange(newValue)
         thumbScale = if (stepInfo != null) {
             1.3f // Fixed scale when in attraction range
         } else {
             1f
         }
 
-        if (coercedValue != currentValue) {
-            value = coercedValue
-            onValueChange(coercedValue)
+        if (newValue != currentValue) {
+            value = newValue
+            onValueChange(newValue)
         }
 
-        return coercedValue
+        return newValue
     }
 
     /**
