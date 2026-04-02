@@ -404,7 +404,7 @@ private fun SettingsPage(
             
 
             Text(
-                text = "动画设置（⚠此版本暂不可用）",
+                text = "AMLL 歌词组件设置",
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -414,27 +414,8 @@ private fun SettingsPage(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("打开动画设置")
+                Text("打开 AMLL 歌词组件设置")
             }
-
-            Text(
-                text = "字体设置",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            // 字体设置已整合到动画设置页面
-            Button(
-                onClick = {
-                    context.startActivity(Intent(context, AnimationSettingsActivity::class.java))
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("打开字体设置")
-            }
-
-            
-
-            
 
             Text(
                 text = "版本更新",

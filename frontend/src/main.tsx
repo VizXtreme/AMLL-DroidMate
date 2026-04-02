@@ -70,6 +70,14 @@ const MAX_ALBUM_ART_RETRIES = 3
 // 配置暂存变量（用于存储来自 Android 的动态配置）
 let pendingLyricOptions: any = {}
 
+// 动画效果状态（通过 CSS 变量和 LyricPlayer props 控制）
+let enableSpringValue = true
+let enableScaleValue = true
+let enableBlurValue = true
+let hidePassedLinesValue = false
+let wordFadeWidthValue = 0.5
+let fpsValue = 60 // 默认 60 FPS
+
 // Global state for Android bridge
 interface AMLLGlobal {
   player: any
@@ -398,6 +406,27 @@ function App() {
     window.configureLyricMotion = function (options: any) {
       logToAndroid(`configureLyricMotion: ${JSON.stringify(options)}`, 'debug')
       
+      // 更新内部状态值
+      if (options.enableSpring !== undefined) {
+        enableSpringValue = options.enableSpring
+      }
+      if (options.enableScale !== undefined) {
+        enableScaleValue = options.enableScale
+      }
+      if (options.enableBlur !== undefined) {
+        enableBlurValue = options.enableBlur
+      }
+      if (options.hidePassedLines !== undefined) {
+        hidePassedLinesValue = options.hidePassedLines
+      }
+      if (options.wordFadeWidth !== undefined) {
+        wordFadeWidthValue = options.wordFadeWidth
+      }
+      if (options.fps !== undefined) {
+        fpsValue = options.fps
+        logToAndroid(`  - FPS updated to: ${fpsValue}`, 'info')
+      }
+      
       // 实际应用到 LyricPlayer 实例
       if (playerRef.current?.lyricPlayer) {
         const lp = playerRef.current.lyricPlayer
@@ -424,13 +453,16 @@ function App() {
           }
         }
         
-        // 模糊效果 - AMLL Core 通过 enableBlur prop 控制
-        // 这个需要通过 React prop 更新，在下面的 configureLyricOptions 中处理
+        // 模糊效果 - 通过 setEnableBlur 方法控制
+        if (options.enableBlur !== undefined) {
+          logToAndroid(`  - enableBlur: ${options.enableBlur}`, 'debug')
+          lp.setEnableBlur?.(options.enableBlur)
+        }
         
         // 隐藏已过歌词
         if (options.hidePassedLines !== undefined) {
           logToAndroid(`  - hidePassedLines: ${options.hidePassedLines}`, 'debug')
-          // 这需要更新 LyricPlayer 的配置
+          lp.setHidePassedLines?.(options.hidePassedLines)
         }
         
         // 逐字渐变宽度
@@ -502,8 +534,29 @@ function App() {
     // 提前歌词行时序（更接近 Apple Music 效果）
     window.setAdvanceLyricDynamicLyricTime = function (enabled: boolean) {
       logToAndroid(`setAdvanceLyricDynamicLyricTime: ${enabled}`, 'debug')
-      // 这个需要通过 LyricPlayer 的配置调整
+      // 通过 CSS 变量控制
+      document.documentElement.style.setProperty('--amll-advance-dynamic-time', enabled ? '1' : '0')
+      // 存储配置以便后续应用
       pendingLyricOptions = { ...pendingLyricOptions, advanceDynamicTime: enabled }
+    }
+    
+    // 歌词背景配置（新增）
+    window.configureLyricBackground = function (config: any) {
+      logToAndroid(`configureLyricBackground: ${JSON.stringify(config)}`, 'debug')
+      // 这个配置主要用于背景渲染器，但目前 BackgroundRender 已经通过 album prop 和 Jotai 状态管理
+      // 如果需要动态调整背景效果，可以在这里添加逻辑
+      if (config.renderer) {
+        logToAndroid(`  - Background renderer: ${config.renderer}`, 'debug')
+      }
+      if (config.fps !== undefined) {
+        logToAndroid(`  - Background FPS: ${config.fps}`, 'debug')
+      }
+      if (config.renderScale !== undefined) {
+        logToAndroid(`  - Background render scale: ${config.renderScale}`, 'debug')
+      }
+      if (config.staticMode !== undefined) {
+        logToAndroid(`  - Background static mode: ${config.staticMode}`, 'debug')
+      }
     }
     
     // 注意：以下设置已通过 CSS 变量在 Android 端直接应用
@@ -513,7 +566,8 @@ function App() {
     // - 翻译歌词显示：--amll-show-translation
     // - 音译歌词显示：--amll-show-roman
     // - 交换音译翻译：--amll-swap-trans-roman
-    // 这些 CSS 变量会在 LyricPlayer 组件中通过 style prop 使用
+    // - 提前歌词时序：--amll-advance-dynamic-time
+    // 这些 CSS 变量会被 AMLL Core 的 LyricPlayer 组件读取并使用
 
     return () => {
       delete (window as any).__setLyricLines
@@ -582,10 +636,11 @@ function App() {
         currentTime={currentTime}
         playing={musicIsPlaying}
         disabled={false}
-        enableSpring={true}
-        enableBlur={true}
-        enableScale={true}
-        wordFadeWidth={0.5}
+        enableSpring={enableSpringValue}
+        enableBlur={enableBlurValue}
+        enableScale={enableScaleValue}
+        hidePassedLines={hidePassedLinesValue}
+        wordFadeWidth={wordFadeWidthValue}
         alignAnchor="center"
         alignPosition={0.35}
         linePosYSpringParams={{ mass: 0.9, damping: 15, stiffness: 90 }}

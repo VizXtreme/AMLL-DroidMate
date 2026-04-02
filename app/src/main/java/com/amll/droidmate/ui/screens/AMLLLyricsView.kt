@@ -600,11 +600,9 @@ fun AMLLLyricsView(
                 lastModeValue = modeValue
             }
 
-            // ==================== 动画 FPS 限制 ====================
-            // 根据用户设置和渲染模式计算实际使用的 FPS
-            val configuredFps = AppSettings.getAmllAnimationFps(view.context).coerceIn(15, 60)
-            // DOM_LITE 模式下最大 45 FPS，标准 DOM 模式可达 60 FPS
-            val fpsValue = if (renderMode == AMLLRenderMode.DOM_LITE) configuredFps.coerceAtMost(45) else configuredFps
+            // ==================== 动画 FPS 设置 ====================
+            // 使用用户自定义的 FPS 值，不再根据渲染模式强制限制
+            val fpsValue = AppSettings.getAmllAnimationFps(view.context).coerceIn(15, 240)
 
             // ==================== 背景效果配置 ====================
             // 根据渲染模式构建不同的背景效果配置
@@ -631,7 +629,8 @@ fun AMLLLyricsView(
                 "enableScale":${AppSettings.isAmllAnimationScaleEnabled(view.context)},
                 "enableBlur":${AppSettings.isAmllAnimationBlurEnabled(view.context)},
                 "hidePassedLines":${AppSettings.isAmllAnimationHidePassedLinesEnabled(view.context)},
-                "wordFadeWidth":${AppSettings.getAmllAnimationWordFadeWidth(view.context)}
+                "wordFadeWidth":${AppSettings.getAmllAnimationWordFadeWidth(view.context)},
+                "fps":$fpsValue
             }""".trimIndent().replace("\n", "")
 
             if (lastMotionConfigValue != motionConfig) {

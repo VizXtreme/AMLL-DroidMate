@@ -17,11 +17,14 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,12 +51,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.amll.droidmate.ui.base.BaseComposeActivity
 import com.amll.droidmate.ui.theme.DynamicThemeManager
 import java.io.File
 import java.io.IOException
 import com.amll.droidmate.ui.theme.SuccessGreen
+import com.amll.droidmate.ui.theme.WarningAmber
+
+/**
+ * 有相当一部分设置未完工！这些设置已被注释。
+ */
+
+
+
 
 /**
  * 歌词播放器实现类型枚举
@@ -101,7 +115,8 @@ enum class BackgroundRenderer(val value: String, val displayName: String) {
  * **性能提示**：
  * - 低端设备建议关闭部分特效（如模糊、弹簧）
  * - 省电模式下可以降低 FPS 到 30-45
- * - DOM_LITE 模式会自动限制某些效果
+ * - 高刷新率设备可以设置为 90-120 FPS 获得更流畅体验
+ * - 最高支持 240 FPS，但会增加耗电量
  */
 class AnimationSettingsActivity : BaseComposeActivity() {
     @Composable
@@ -211,7 +226,7 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
 
     Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         TopAppBar(
-            title = { Text("动画设置") },
+            title = { Text("AMLL 歌词组件设置") },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(
@@ -232,6 +247,32 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "未完工的选项暂被隐去。",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+
             // ========== Card 1: 字体管理 ==========
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -272,65 +313,85 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
-                        OutlinedTextField(
-                            value = fontWeightInput,
-                            onValueChange = { value ->
-                                fontWeightInput = value
-                                value.toIntOrNull()?.let {
-                                    fontWeight = it.coerceIn(0, 1000)
-                                    AppSettings.setAmllFontWeight(context, fontWeight)
-                                }
-                            },
-                            placeholder = { Text("0-1000") },
-                            modifier = Modifier.fillMaxWidth(0.35f)
-                        )
+//                        OutlinedTextField(
+//                            value = fontWeightInput,
+//                            onValueChange = { value ->
+//                                fontWeightInput = value
+//                                value.toIntOrNull()?.let {
+//                                    fontWeight = it.coerceIn(0, 1000)
+//                                    AppSettings.setAmllFontWeight(context, fontWeight)
+//                                }
+//                            },
+//                            placeholder = { Text("0-1000") },
+//                            modifier = Modifier.fillMaxWidth(0.35f)
+//                        )
                     }
 
                     // 字符间距设置
-                    OutlinedTextField(
-                        value = letterSpacing,
-                        onValueChange = { letterSpacing = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("字符间距") },
-                        placeholder = { Text("默认：留空（2px, 0.1em 等 CSS 单位）") }
-                    )
+//                    OutlinedTextField(
+//                        value = letterSpacing,
+//                        onValueChange = { letterSpacing = it },
+//                        modifier = Modifier.fillMaxWidth(),
+//                        label = { Text("字符间距") },
+//                        placeholder = { Text("默认：留空（2px, 0.1em 等 CSS 单位）") }
+//                    )
                     Text(
                         text = "等同于 CSS 的 letter-spacing 属性，留空为默认",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
 
-                    // 字体预览
-                    OutlinedTextField(
-                        value = previewText,
-                        onValueChange = { previewText = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("字体预览文本") },
-                        placeholder = { Text("输入要预览的文字") }
-                    )
+//                    // 字体预览
+//                    OutlinedTextField(
+//                        value = previewText,
+//                        onValueChange = { previewText = it },
+//                        modifier = Modifier.fillMaxWidth(),
+//                        label = { Text("字体预览文本") },
+//                        placeholder = { Text("输入要预览的文字") }
+//                    )
                     
-                    // 实时预览区域
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = previewText,
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                            Text(
-                                text = previewText,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                            )
-                        }
-                    }
+//                    // 实时预览区域
+//                    Card(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+//                    ) {
+//                        Column(
+//                            modifier = Modifier.padding(16.dp),
+//                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+//                        ) {
+//                            Text(
+//                                text = previewText,
+//                                style = MaterialTheme.typography.headlineSmall,
+//                                color = MaterialTheme.colorScheme.onSurface,
+//                                fontFamily = if (amllFontFamily.isNotBlank()) {
+//                                    val fonts = amllFontFamily.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+//                                    if (fonts.isNotEmpty()) {
+//                                        android.graphics.Typeface.create(fonts.first(), android.graphics.Typeface.NORMAL)?.let {
+//                                            FontFamily(it)
+//                                        }
+//                                    } else null
+//                                } else null,
+//                                fontWeight = if (fontWeight > 0) FontWeight(fontWeight) else null,
+//                                letterSpacing = (letterSpacing.toFloatOrNull()?.coerceIn(-10f, 10f) ?: 0f).sp,
+//                                modifier = Modifier.padding(bottom = 8.dp)
+//                            )
+//                            Text(
+//                                text = previewText,
+//                                style = MaterialTheme.typography.bodySmall,
+//                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+//                                fontFamily = if (amllFontFamily.isNotBlank()) {
+//                                    val fonts = amllFontFamily.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+//                                    if (fonts.isNotEmpty()) {
+//                                        android.graphics.Typeface.create(fonts.first(), android.graphics.Typeface.NORMAL)?.let {
+//                                            FontFamily(it)
+//                                        }
+//                                    } else null
+//                                } else null,
+//                                fontWeight = if (fontWeight > 0) FontWeight(fontWeight) else null,
+//                                letterSpacing = (letterSpacing.toFloatOrNull()?.coerceIn(-10f, 10f) ?: 0f).sp
+//                            )
+//                        }
+//                    }
 
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
@@ -555,21 +616,21 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                     Column {
                         var fpsInput by remember { mutableStateOf(fps.toString()) }
                         Text(
-                            text = "帧率：${fps} FPS",
+                            text = "动画帧率：${fps} FPS",
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        OutlinedTextField(
-                            value = fpsInput,
-                            onValueChange = { value ->
-                                fpsInput = value
-                                value.toIntOrNull()?.let {
-                                    fps = it.coerceIn(15, 240)
-                                    AppSettings.setAmllAnimationFps(context, fps)
-                                }
-                            },
-                            placeholder = { Text("15-240") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+//                        OutlinedTextField(
+//                            value = fpsInput,
+//                            onValueChange = { value ->
+//                                fpsInput = value
+//                                value.toIntOrNull()?.let {
+//                                    fps = it.coerceIn(15, 240)
+//                                    AppSettings.setAmllAnimationFps(context, fps)
+//                                }
+//                            },
+//                            placeholder = { Text("15-240") },
+//                            modifier = Modifier.fillMaxWidth()
+//                        )
                         Text(
                             text = "调节动画帧率以节省电量，建议范围：15-240（默认：60）",
                             style = MaterialTheme.typography.bodySmall,
@@ -628,29 +689,29 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                         expanded = playerImplExpanded,
                         onExpandedChange = { playerImplExpanded = !playerImplExpanded }
                     ) {
-                        OutlinedTextField(
-                            value = LyricPlayerImplementation.entries.find { it.value == lyricPlayerImpl }?.displayName ?: "DOM",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("歌词播放器实现（默认：DOM）") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = playerImplExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = playerImplExpanded,
-                            onDismissRequest = { playerImplExpanded = false }
-                        ) {
-                            LyricPlayerImplementation.entries.forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option.displayName) },
-                                    onClick = {
-                                        lyricPlayerImpl = option.value
-                                        AppSettings.setAmllLyricPlayerImplementation(context, option.value)
-                                        playerImplExpanded = false
-                                    }
-                                )
-                            }
-                        }
+//                        OutlinedTextField(
+//                            value = LyricPlayerImplementation.entries.find { it.value == lyricPlayerImpl }?.displayName ?: "DOM",
+//                            onValueChange = {},
+//                            readOnly = true,
+//                            label = { Text("歌词播放器实现（默认：DOM）") },
+//                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = playerImplExpanded) },
+//                            modifier = Modifier.fillMaxWidth().menuAnchor()
+//                        )
+//                        ExposedDropdownMenu(
+//                            expanded = playerImplExpanded,
+//                            onDismissRequest = { playerImplExpanded = false }
+//                        ) {
+//                            LyricPlayerImplementation.entries.forEach { option ->
+//                                DropdownMenuItem(
+//                                    text = { Text(option.displayName) },
+//                                    onClick = {
+//                                        lyricPlayerImpl = option.value
+//                                        AppSettings.setAmllLyricPlayerImplementation(context, option.value)
+//                                        playerImplExpanded = false
+//                                    }
+//                                )
+//                            }
+//                        }
                     }
                     Text(
                         text = "目前有两个歌词播放实现：\n• DOM：使用 DOM 元素实现，效果最全但性能开销大\n• Canvas：使用 Canvas 实现，性能优异但部分细节效果不足",
@@ -663,29 +724,29 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                         expanded = sizePresetExpanded,
                         onExpandedChange = { sizePresetExpanded = !sizePresetExpanded }
                     ) {
-                        OutlinedTextField(
-                            value = LyricSizePreset.entries.find { it.value == lyricSizePreset }?.displayName ?: "中",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("歌词字体大小（默认：中）") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sizePresetExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = sizePresetExpanded,
-                            onDismissRequest = { sizePresetExpanded = false }
-                        ) {
-                            LyricSizePreset.entries.forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option.displayName) },
-                                    onClick = {
-                                        lyricSizePreset = option.value
-                                        AppSettings.setAmllLyricSizePreset(context, option.value)
-                                        sizePresetExpanded = false
-                                    }
-                                )
-                            }
-                        }
+//                        OutlinedTextField(
+//                            value = LyricSizePreset.entries.find { it.value == lyricSizePreset }?.displayName ?: "中",
+//                            onValueChange = {},
+//                            readOnly = true,
+//                            label = { Text("歌词字体大小（默认：中）") },
+//                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sizePresetExpanded) },
+//                            modifier = Modifier.fillMaxWidth().menuAnchor()
+//                        )
+//                        ExposedDropdownMenu(
+//                            expanded = sizePresetExpanded,
+//                            onDismissRequest = { sizePresetExpanded = false }
+//                        ) {
+//                            LyricSizePreset.entries.forEach { option ->
+//                                DropdownMenuItem(
+//                                    text = { Text(option.displayName) },
+//                                    onClick = {
+//                                        lyricSizePreset = option.value
+//                                        AppSettings.setAmllLyricSizePreset(context, option.value)
+//                                        sizePresetExpanded = false
+//                                    }
+//                                )
+//                            }
+//                        }
                     }
 
                     // 启用翻译歌词
@@ -702,14 +763,14 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
-                        Switch(
-                            checked = enableTranslationLine,
-                            onCheckedChange = { enabled ->
-                                enableTranslationLine = enabled
-                                AppSettings.setAmllTranslationLineEnabled(context, enabled)
-                            },
-                            colors = switchColors
-                        )
+//                        Switch(
+//                            checked = enableTranslationLine,
+//                            onCheckedChange = { enabled ->
+//                                enableTranslationLine = enabled
+//                                AppSettings.setAmllTranslationLineEnabled(context, enabled)
+//                            },
+//                            colors = switchColors
+//                        )
                     }
 
                     // 启用音译歌词
@@ -726,14 +787,14 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
-                        Switch(
-                            checked = enableRomanLine,
-                            onCheckedChange = { enabled ->
-                                enableRomanLine = enabled
-                                AppSettings.setAmllRomanLineEnabled(context, enabled)
-                            },
-                            colors = switchColors
-                        )
+//                        Switch(
+//                            checked = enableRomanLine,
+//                            onCheckedChange = { enabled ->
+//                                enableRomanLine = enabled
+//                                AppSettings.setAmllRomanLineEnabled(context, enabled)
+//                            },
+//                            colors = switchColors
+//                        )
                     }
 
                     // 交换音译和翻译位置
@@ -750,14 +811,14 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
-                        Switch(
-                            checked = enableSwapTransRoman,
-                            onCheckedChange = { enabled ->
-                                enableSwapTransRoman = enabled
-                                AppSettings.setAmllSwapTransRomanLineEnabled(context, enabled)
-                            },
-                            colors = switchColors
-                        )
+//                        Switch(
+//                            checked = enableSwapTransRoman,
+//                            onCheckedChange = { enabled ->
+//                                enableSwapTransRoman = enabled
+//                                AppSettings.setAmllSwapTransRomanLineEnabled(context, enabled)
+//                            },
+//                            colors = switchColors
+//                        )
                     }
 
                     // 提前歌词行时序
@@ -774,14 +835,14 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
-                        Switch(
-                            checked = enableAdvanceDynamicTime,
-                            onCheckedChange = { enabled ->
-                                enableAdvanceDynamicTime = enabled
-                                AppSettings.setAmllAdvanceDynamicLyricTimeEnabled(context, enabled)
-                            },
-                            colors = switchColors
-                        )
+//                        Switch(
+//                            checked = enableAdvanceDynamicTime,
+//                            onCheckedChange = { enabled ->
+//                                enableAdvanceDynamicTime = enabled
+//                                AppSettings.setAmllAdvanceDynamicLyricTimeEnabled(context, enabled)
+//                            },
+//                            colors = switchColors
+//                        )
                     }
                 }
             }
@@ -803,43 +864,43 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                         expanded = rendererExpanded,
                         onExpandedChange = { rendererExpanded = !rendererExpanded }
                     ) {
-                        OutlinedTextField(
-                            value = BackgroundRenderer.entries.find { it.value == backgroundRenderer }?.displayName ?: "网格渐变渲染器",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("背景渲染器（默认：网格渐变渲染器）") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = rendererExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = rendererExpanded,
-                            onDismissRequest = { rendererExpanded = false }
-                        ) {
-                            BackgroundRenderer.entries.forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option.displayName) },
-                                    onClick = {
-                                        backgroundRenderer = option.value
-                                        AppSettings.setAmllBackgroundRenderer(context, option.value)
-                                        rendererExpanded = false
-                                    }
-                                )
-                            }
-                        }
+//                        OutlinedTextField(
+//                            value = BackgroundRenderer.entries.find { it.value == backgroundRenderer }?.displayName ?: "网格渐变渲染器",
+//                            onValueChange = {},
+//                            readOnly = true,
+//                            label = { Text("背景渲染器（默认：网格渐变渲染器）") },
+//                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = rendererExpanded) },
+//                            modifier = Modifier.fillMaxWidth().menuAnchor()
+//                        )
+//                        ExposedDropdownMenu(
+//                            expanded = rendererExpanded,
+//                            onDismissRequest = { rendererExpanded = false }
+//                        ) {
+//                            BackgroundRenderer.entries.forEach { option ->
+//                                DropdownMenuItem(
+//                                    text = { Text(option.displayName) },
+//                                    onClick = {
+//                                        backgroundRenderer = option.value
+//                                        AppSettings.setAmllBackgroundRenderer(context, option.value)
+//                                        rendererExpanded = false
+//                                    }
+//                                )
+//                            }
+//                        }
                     }
 
                     // 条件渲染：CSS 背景模式
                     if (backgroundRenderer == "css-bg") {
-                        OutlinedTextField(
-                            value = cssBackgroundProperty,
-                            onValueChange = { value ->
-                                cssBackgroundProperty = value
-                                AppSettings.setAmllCssBackgroundProperty(context, value)
-                            },
-                            label = { Text("CSS 背景属性值") },
-                            placeholder = { Text("#111111") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+//                        OutlinedTextField(
+//                            value = cssBackgroundProperty,
+//                            onValueChange = { value ->
+//                                cssBackgroundProperty = value
+//                                AppSettings.setAmllCssBackgroundProperty(context, value)
+//                            },
+//                            label = { Text("CSS 背景属性值") },
+//                            placeholder = { Text("#111111") },
+//                            modifier = Modifier.fillMaxWidth()
+//                        )
                         Text(
                             text = "等同于 CSS 的 background 属性值，默认为 #111111。（默认：#111111）",
                             style = MaterialTheme.typography.bodySmall,
@@ -853,18 +914,18 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 text = "背景最高帧率：${backgroundFps} FPS",
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            OutlinedTextField(
-                                value = backgroundFpsInput,
-                                onValueChange = { value ->
-                                    backgroundFpsInput = value
-                                    value.toIntOrNull()?.let {
-                                        backgroundFps = it.coerceIn(1, 1000)
-                                        AppSettings.setAmllBackgroundFps(context, backgroundFps)
-                                    }
-                                },
-                                placeholder = { Text("1-1000") },
-                                modifier = Modifier.fillMaxWidth()
-                            )
+//                            OutlinedTextField(
+//                                value = backgroundFpsInput,
+//                                onValueChange = { value ->
+//                                    backgroundFpsInput = value
+//                                    value.toIntOrNull()?.let {
+//                                        backgroundFps = it.coerceIn(1, 1000)
+//                                        AppSettings.setAmllBackgroundFps(context, backgroundFps)
+//                                    }
+//                                },
+//                                placeholder = { Text("1-1000") },
+//                                modifier = Modifier.fillMaxWidth()
+//                            )
                             Text(
                                 text = "对性能影响较高，默认值为 60。（默认：60）",
                                 style = MaterialTheme.typography.bodySmall,
@@ -878,18 +939,18 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 text = "背景渲染倍率：${"%.2f".format(backgroundRenderScale)}",
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            OutlinedTextField(
-                                value = backgroundRenderScaleInput,
-                                onValueChange = { value ->
-                                    backgroundRenderScaleInput = value
-                                    value.toFloatOrNull()?.let {
-                                        backgroundRenderScale = it.coerceIn(0.01f, 10.0f)
-                                        AppSettings.setAmllBackgroundRenderScale(context, backgroundRenderScale)
-                                    }
-                                },
-                                placeholder = { Text("0.01-10.0") },
-                                modifier = Modifier.fillMaxWidth()
-                            )
+//                            OutlinedTextField(
+//                                value = backgroundRenderScaleInput,
+//                                onValueChange = { value ->
+//                                    backgroundRenderScaleInput = value
+//                                    value.toFloatOrNull()?.let {
+//                                        backgroundRenderScale = it.coerceIn(0.01f, 10.0f)
+//                                        AppSettings.setAmllBackgroundRenderScale(context, backgroundRenderScale)
+//                                    }
+//                                },
+//                                placeholder = { Text("0.01-10.0") },
+//                                modifier = Modifier.fillMaxWidth()
+//                            )
                             Text(
                                 text = "对性能影响较高，默认值为 1（每像素点渲染）。（默认：1.0）",
                                 style = MaterialTheme.typography.bodySmall,
@@ -910,14 +971,14 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                 )
                             }
-                            Switch(
-                                checked = enableBackgroundStaticMode,
-                                onCheckedChange = { enabled ->
-                                    enableBackgroundStaticMode = enabled
-                                    AppSettings.setAmllBackgroundStaticModeEnabled(context, enabled)
-                                },
-                                colors = switchColors
-                            )
+//                            Switch(
+//                                checked = enableBackgroundStaticMode,
+//                                onCheckedChange = { enabled ->
+//                                    enableBackgroundStaticMode = enabled
+//                                    AppSettings.setAmllBackgroundStaticModeEnabled(context, enabled)
+//                                },
+//                                colors = switchColors
+//                            )
                         }
                     }
                 }

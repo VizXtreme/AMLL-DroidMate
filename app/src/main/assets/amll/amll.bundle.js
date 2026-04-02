@@ -51638,6 +51638,12 @@ void main(void)
   let albumArtRetryCount = 0;
   const MAX_ALBUM_ART_RETRIES = 3;
   let pendingLyricOptions = {};
+  let enableSpringValue = true;
+  let enableScaleValue = true;
+  let enableBlurValue = true;
+  let hidePassedLinesValue = false;
+  let wordFadeWidthValue = 0.5;
+  let fpsValue = 60;
   function applyAMLLPatch() {
     logToAndroid("Applying AMLL patch for generateFadeGradient", "info");
     const style = document.createElement("style");
@@ -51858,6 +51864,25 @@ void main(void)
       };
       window.configureLyricMotion = function(options) {
         logToAndroid(`configureLyricMotion: ${JSON.stringify(options)}`, "debug");
+        if (options.enableSpring !== void 0) {
+          enableSpringValue = options.enableSpring;
+        }
+        if (options.enableScale !== void 0) {
+          enableScaleValue = options.enableScale;
+        }
+        if (options.enableBlur !== void 0) {
+          enableBlurValue = options.enableBlur;
+        }
+        if (options.hidePassedLines !== void 0) {
+          hidePassedLinesValue = options.hidePassedLines;
+        }
+        if (options.wordFadeWidth !== void 0) {
+          wordFadeWidthValue = options.wordFadeWidth;
+        }
+        if (options.fps !== void 0) {
+          fpsValue = options.fps;
+          logToAndroid(`  - FPS updated to: ${fpsValue}`, "info");
+        }
         if (playerRef.current?.lyricPlayer) {
           const lp = playerRef.current.lyricPlayer;
           if (options.enableSpring !== void 0) {
@@ -51876,8 +51901,13 @@ void main(void)
               lp.setLineScaleSpringParams?.({ mass: 1, damping: 30, stiffness: 50 });
             }
           }
+          if (options.enableBlur !== void 0) {
+            logToAndroid(`  - enableBlur: ${options.enableBlur}`, "debug");
+            lp.setEnableBlur?.(options.enableBlur);
+          }
           if (options.hidePassedLines !== void 0) {
             logToAndroid(`  - hidePassedLines: ${options.hidePassedLines}`, "debug");
+            lp.setHidePassedLines?.(options.hidePassedLines);
           }
           if (options.wordFadeWidth !== void 0) {
             logToAndroid(`  - wordFadeWidth: ${options.wordFadeWidth}`, "debug");
@@ -51924,7 +51954,23 @@ void main(void)
       };
       window.setAdvanceLyricDynamicLyricTime = function(enabled) {
         logToAndroid(`setAdvanceLyricDynamicLyricTime: ${enabled}`, "debug");
+        document.documentElement.style.setProperty("--amll-advance-dynamic-time", enabled ? "1" : "0");
         pendingLyricOptions = { ...pendingLyricOptions, advanceDynamicTime: enabled };
+      };
+      window.configureLyricBackground = function(config) {
+        logToAndroid(`configureLyricBackground: ${JSON.stringify(config)}`, "debug");
+        if (config.renderer) {
+          logToAndroid(`  - Background renderer: ${config.renderer}`, "debug");
+        }
+        if (config.fps !== void 0) {
+          logToAndroid(`  - Background FPS: ${config.fps}`, "debug");
+        }
+        if (config.renderScale !== void 0) {
+          logToAndroid(`  - Background render scale: ${config.renderScale}`, "debug");
+        }
+        if (config.staticMode !== void 0) {
+          logToAndroid(`  - Background static mode: ${config.staticMode}`, "debug");
+        }
       };
       return () => {
         delete window.__setLyricLines;
@@ -51986,10 +52032,11 @@ void main(void)
           currentTime,
           playing: musicIsPlaying,
           disabled: false,
-          enableSpring: true,
-          enableBlur: true,
-          enableScale: true,
-          wordFadeWidth: 0.5,
+          enableSpring: enableSpringValue,
+          enableBlur: enableBlurValue,
+          enableScale: enableScaleValue,
+          hidePassedLines: hidePassedLinesValue,
+          wordFadeWidth: wordFadeWidthValue,
           alignAnchor: "center",
           alignPosition: 0.35,
           linePosYSpringParams: { mass: 0.9, damping: 15, stiffness: 90 },
