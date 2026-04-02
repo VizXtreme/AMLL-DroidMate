@@ -70,6 +70,295 @@ data class HandshakeResponse(
     val message: String? = null
 )
 
+// ==================== 数据结构 ====================
+
+/**
+ * 艺术家信息
+ */
+@Serializable
+data class Artist(
+    val id: String = "",
+    val name: String
+)
+
+/**
+ * 歌词单词
+ */
+@Serializable
+data class LyricWord(
+    val startTime: Long,
+    val endTime: Long,
+    val word: String,
+    val romanWord: String = ""
+)
+
+/**
+ * 歌词行
+ */
+@Serializable
+data class LyricLine(
+    val startTime: Long,
+    val endTime: Long,
+    val words: List<LyricWord>,
+    val translatedLyric: String = "",
+    val romanLyric: String = "",
+    @SerialName("isBG")
+    val isBg: Boolean = false,
+    val isDuet: Boolean = false
+)
+
+/**
+ * 图片数据
+ */
+@Serializable
+data class ImageData(
+    val mimeType: String? = null,
+    val data: String // Base64 编码
+)
+
+// ==================== 状态负载定义 V2 ====================
+
+/**
+ * 状态负载 V2 - 支持多种状态更新类型
+ */
+@Serializable
+sealed class StatePayloadV2 {
+    abstract val type: String
+}
+
+/**
+ * 音乐信息 V2
+ */
+@Serializable
+@SerialName("setMusic")
+data class SetMusicInfoV2(
+    val musicId: String,
+    val musicName: String,
+    val albumId: String = "",
+    val albumName: String,
+    val artists: List<Artist>,
+    val duration: Long
+) : StatePayloadV2() {
+    override val type: String = "setMusic"
+    
+    // 向后兼容的构造函数
+    constructor(
+        musicId: String,
+        musicName: String,
+        albumName: String,
+        artistName: String,
+        duration: Long
+    ) : this(
+        musicId = musicId,
+        musicName = musicName,
+        albumName = albumName,
+        artists = listOf(Artist(name = artistName)),
+        duration = duration
+    )
+}
+
+/**
+ * 专辑封面 V2
+ */
+@Serializable
+sealed class AlbumCoverV2 : StatePayloadV2() {
+    override val type: String = "setCover"
+    
+    @SerialName("uri")
+    data class Uri(val url: String) : AlbumCoverV2()
+    
+    @SerialName("data")
+    data class Data(val imageData: ImageData) : AlbumCoverV2()
+}
+
+/**
+ * 歌词内容 V2 - 支持结构化 JSON 和 TTML 两种格式
+ */
+@Serializable
+sealed class LyricContentV2 : StatePayloadV2() {
+    override val type: String = "setLyric"
+    
+    /**
+     * 结构化歌词（JSON 格式）- 推荐使用的格式
+     */
+    @SerialName("structured")
+    data class Structured(val lines: List<LyricLine>) : LyricContentV2()
+    
+    /**
+     * TTML 格式（向后兼容）
+     */
+    @SerialName("ttml")
+    data class Ttml(val data: String) : LyricContentV2()
+}
+
+/**
+ * 进度更新 V2
+ */
+@Serializable
+@SerialName("progress")
+data class ProgressUpdateV2(
+    val progress: Long
+) : StatePayloadV2() {
+    override val type: String = "progress"
+}
+
+/**
+ * 音量更新 V2
+ */
+@Serializable
+@SerialName("volume")
+data class VolumeUpdateV2(
+    val volume: Float
+) : StatePayloadV2() {
+    override val type: String = "volume"
+}
+
+/**
+ * 暂停状态 V2
+ */
+@Serializable
+@SerialName("paused")
+data class PausedUpdateV2(
+    val timestamp: Long = System.currentTimeMillis()
+) : StatePayloadV2() {
+    override val type: String = "paused"
+}
+
+/**
+ * 恢复状态 V2
+ */
+@Serializable
+@SerialName("resumed")
+data class ResumedUpdateV2(
+    val timestamp: Long = System.currentTimeMillis()
+) : StatePayloadV2() {
+    override val type: String = "resumed"
+}
+
+/**
+ * 播放模式变更 V2
+ */
+@Serializable
+@SerialName("modeChanged")
+data class ModeChangedV2(
+    val repeat: RepeatMode,
+    val shuffle: Boolean
+) : StatePayloadV2() {
+    override val type: String = "modeChanged"
+}
+
+/**
+ * 音频数据 V2
+ */
+@Serializable
+@SerialName("audioData")
+data class AudioDataV2(
+    val data: String // Base64 编码
+) : StatePayloadV2() {
+    override val type: String = "audioData"
+}
+
+/**
+ * 重复模式
+ */
+@Serializable
+enum class RepeatMode {
+    @SerialName("off")
+    OFF,
+    
+    @SerialName("all")
+    ALL,
+    
+    @SerialName("one")
+    ONE
+}
+
+// ==================== 命令负载定义 V2 ====================
+
+/**
+ * 命令负载 V2 - 支持多种命令类型
+ */
+@Serializable
+sealed class CommandPayloadV2 {
+    abstract val command: String
+}
+
+/**
+ * 暂停命令 V2
+ */
+@Serializable
+@SerialName("pause")
+data class PauseCommandV2(
+    override val command: String = "pause"
+) : CommandPayloadV2()
+
+/**
+ * 恢复命令 V2
+ */
+@Serializable
+@SerialName("resume")
+data class ResumeCommandV2(
+    override val command: String = "resume"
+) : CommandPayloadV2()
+
+/**
+ * 前进歌曲命令 V2
+ */
+@Serializable
+@SerialName("forwardSong")
+data class ForwardSongCommandV2(
+    override val command: String = "forwardSong"
+) : CommandPayloadV2()
+
+/**
+ * 后退歌曲命令 V2
+ */
+@Serializable
+@SerialName("backwardSong")
+data class BackwardSongCommandV2(
+    override val command: String = "backwardSong"
+) : CommandPayloadV2()
+
+/**
+ * seek 播放进度命令 V2
+ */
+@Serializable
+@SerialName("seekPlayProgress")
+data class SeekCommandV2(
+    override val command: String = "seekPlayProgress",
+    val progress: Long
+) : CommandPayloadV2()
+
+/**
+ * 设置音量命令 V2
+ */
+@Serializable
+@SerialName("setVolume")
+data class SetVolumeCommandV2(
+    override val command: String = "setVolume",
+    val volume: Double
+) : CommandPayloadV2()
+
+/**
+ * 设置重复模式命令 V2
+ */
+@Serializable
+@SerialName("setRepeatMode")
+data class SetRepeatModeCommandV2(
+    override val command: String = "setRepeatMode",
+    val mode: RepeatMode
+) : CommandPayloadV2()
+
+/**
+ * 设置随机播放命令 V2
+ */
+@Serializable
+@SerialName("setShuffleMode")
+data class SetShuffleModeCommandV2(
+    override val command: String = "setShuffleMode",
+    val enabled: Boolean
+) : CommandPayloadV2()
+
 // ==================== 增强的消息结构 ====================
 
 /**
@@ -86,25 +375,25 @@ sealed class BridgeMessageV2 {
 }
 
 /**
- * 状态更新消息
+ * 状态更新消息 V2
  */
 @Serializable
 @SerialName("stateUpdate")
 data class StateUpdateMessageV2(
     override val type: String = "stateUpdate",
     override val version: Int = BridgeMessageV2.CURRENT_VERSION,
-    val payload: StatePayload
+    val payload: StatePayloadV2
 ) : BridgeMessageV2()
 
 /**
- * 命令消息
+ * 命令消息 V2
  */
 @Serializable
 @SerialName("command")
 data class CommandMessageV2(
     override val type: String = "command",
     override val version: Int = BridgeMessageV2.CURRENT_VERSION,
-    val payload: CommandPayload
+    val payload: CommandPayloadV2
 ) : BridgeMessageV2()
 
 // ==================== 协议检测器 ====================
@@ -181,7 +470,7 @@ class ProtocolDetector {
                 }
             }
         } catch (e: Exception) {
-            Timber.e("[Bridge] Protocol detection failed", e)
+            Timber.e(e, "[Bridge] Protocol detection failed")
             ProtocolDetectionResult.Failure("解析错误：${e.message}")
         }
     }
@@ -196,7 +485,7 @@ class ProtocolDetector {
 class AMLLBridgeManagerV2 {
     
     interface Listener {
-        fun onCommand(command: CommandPayload)
+        fun onCommand(command: CommandPayloadV2)
         fun onError(error: Throwable)
         fun onProtocolNegotiated(version: ProtocolVersion) // 新增：协议协商成功回调
     }
@@ -316,7 +605,7 @@ class AMLLBridgeManagerV2 {
             
             Timber.i("[Bridge] Handshake completed, protocol version: V2")
         } catch (e: Exception) {
-            Timber.e("[Bridge] Handshake processing failed", e)
+            Timber.e(e, "[Bridge] Handshake processing failed")
             listener?.onError(e)
         }
     }
@@ -333,14 +622,14 @@ class AMLLBridgeManagerV2 {
             // 检查是否是旧版命令
             val command = jsonObject["command"]?.jsonPrimitive?.content
             if (command != null) {
-                // 转换为新版 CommandPayload
+                // 转换为新版 CommandPayloadV2
                 val legacyCommand = when (command) {
                     "seekPlayProgress" -> {
                         val progress = jsonObject["progress"]?.jsonPrimitive?.long ?: 0L
-                        SeekCommand(progress = progress)
+                        SeekCommandV2(progress = progress)
                     }
-                    "pause" -> PauseCommand()
-                    "resume" -> ResumeCommand()
+                    "pause" -> PauseCommandV2()
+                    "resume" -> ResumeCommandV2()
                     else -> null
                 }
                 
@@ -363,7 +652,7 @@ class AMLLBridgeManagerV2 {
      * 发送状态更新
      * 如果握手未完成，加入队列
      */
-    fun sendStateUpdate(payload: StatePayload) {
+    fun sendStateUpdate(payload: StatePayloadV2) {
         val message = StateUpdateMessageV2(payload = payload)
         
         if (isHandshakeComplete || negotiatedVersion == ProtocolVersion.LEGACY) {
@@ -403,7 +692,7 @@ class AMLLBridgeManagerV2 {
         duration: Long
     ) {
         sendStateUpdate(
-            SetMusicInfo(
+            SetMusicInfoV2(
                 musicId = musicId,
                 musicName = musicName,
                 albumName = albumName,
@@ -413,24 +702,34 @@ class AMLLBridgeManagerV2 {
         )
     }
     
-    fun updateLyric(ttmlContent: String) {
-        sendStateUpdate(SetLyric(data = ttmlContent))
+    /**
+     * 更新歌词（结构化 JSON 格式）- 推荐使用
+     */
+    fun updateLyric(lines: List<LyricLine>) {
+        sendStateUpdate(LyricContentV2.Structured(lines = lines))
+    }
+    
+    /**
+     * 更新歌词（TTML 格式）- 向后兼容
+     */
+    fun updateLyricTtml(ttmlContent: String) {
+        sendStateUpdate(LyricContentV2.Ttml(data = ttmlContent))
     }
     
     fun updateProgress(progress: Long) {
-        sendStateUpdate(ProgressUpdate(progress = progress))
+        sendStateUpdate(ProgressUpdateV2(progress = progress))
     }
     
     fun pause() {
-        sendStateUpdate(PausedUpdate())
+        sendStateUpdate(PausedUpdateV2())
     }
     
     fun resume() {
-        sendStateUpdate(ResumedUpdate())
+        sendStateUpdate(ResumedUpdateV2())
     }
     
     fun updateVolume(volume: Float) {
-        sendStateUpdate(VolumeUpdate(volume = volume.coerceIn(0f, 1f)))
+        sendStateUpdate(VolumeUpdateV2(volume = volume.coerceIn(0f, 1f)))
     }
     
     /**
