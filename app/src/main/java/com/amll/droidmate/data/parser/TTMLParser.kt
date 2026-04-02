@@ -627,10 +627,17 @@ object TTMLParser {
 
     private fun cleanBackgroundText(text: String): String {
         // 背景歌词同样遵循可见空格语义：禁止 trim。
-        // 仅在文本本身严格被括号包裹时去掉一层括号，不改动其它空格。
-        if (text.length >= 2 && text.startsWith("(") && text.endsWith(")")) {
-            return text.substring(1, text.length - 1)
+        // 仅去除文本中第一个 "(" 和最后一个 ")"，不改动其它内容。
+        val firstParenIndex = text.indexOf('(')
+        val lastParenIndex = text.lastIndexOf(')')
+        
+        if (firstParenIndex != -1 && lastParenIndex != -1 && lastParenIndex > firstParenIndex) {
+            // 移除第一个 "(" 和最后一个 ")"
+            return text.substring(0, firstParenIndex) +
+                   text.substring(firstParenIndex + 1, lastParenIndex) +
+                   text.substring(lastParenIndex + 1)
         }
+        
         return text
     }
     
