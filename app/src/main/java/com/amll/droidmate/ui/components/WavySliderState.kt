@@ -26,6 +26,7 @@ class WavySliderState(
     customSteps: List<Float> = emptyList(),
     val onValueChange: (Float) -> Unit = {},
     val onValueChangeFinished: (() -> Unit)? = null,
+    attractionRadius: Float = 0.03f,
 ) {
     private var _value: Float by mutableFloatStateOf(initialValue.coerceIn(0f, 1f))
     
@@ -39,12 +40,18 @@ class WavySliderState(
         }
 
     /**
+     * Attraction radius for snap-to-step behavior.
+     * When the finger is within this distance of a step, the thumb will snap to it.
+     */
+    internal val attractionRadius: Float = attractionRadius
+
+    /**
      * List of normalized custom step positions (0.0 to 1.0).
      */
     val customSteps: SnapshotStateList<Float> = mutableStateListOf<Float>().apply {
         addAll(customSteps.map { it.coerceIn(0f, 1f) }.sorted())
     }
-
+    
     /**
      * Updates the callbacks.
      */
@@ -54,14 +61,7 @@ class WavySliderState(
     ) {
         // Callbacks are updated via rememberWavySliderState
     }
-
-
-
-    /**
-     * Snap threshold for soft snap-to-step behavior (normalized distance).
-     */
-    internal val snapThreshold: Float = WavySliderDefaults.SNAP_THRESHOLD
-
+    
     /**
      * Internal width of the track in pixels.
      */
@@ -111,16 +111,16 @@ class WavySliderState(
         }
 
     /**
-     * Snaps the given value to the nearest step if within the snap threshold.
+     * Finds the nearest step within the attraction radius.
      *
-     * @param value The value to snap
-     * @return The snapped value, or the original value if not within threshold
+     * @param value The current position to check
+     * @return Pair of (nearestStep, distance) if within attraction radius, null otherwise
      */
-    internal fun snapToNearestStep(value: Float): Float {
-        if (customSteps.isEmpty()) return value
+    internal fun findNearestStepInAttractionRange(value: Float): Pair<Float, Float>? {
+        if (customSteps.isEmpty()) return null
 
-        var nearestStep = value
-        var minDistance = snapThreshold
+        var nearestStep: Float = value
+        var minDistance = attractionRadius
 
         for (step in customSteps) {
             val distance = kotlin.math.abs(value - step)
@@ -130,17 +130,22 @@ class WavySliderState(
             }
         }
 
-        // Apply soft snap - lerp between current and nearest based on distance
-        return if (minDistance < snapThreshold) {
-            val snapFactor = 1f - (minDistance / snapThreshold)
-            value + (nearestStep - value) * snapFactor
+        return if (minDistance < attractionRadius) {
+            Pair(nearestStep, minDistance)
         } else {
-            value
+            null
         }
     }
 
     /**
+     * Current thumb scale factor for visual feedback when near a step.
+     */
+    internal var thumbScale: Float by mutableFloatStateOf(1f)
+        private set
+
+    /**
      * Updates the value with drag delta.
+     * Binary snap logic: either fully snapped to step OR fully following finger.
      *
      * @param delta The drag delta in pixels
      * @return The new value after applying delta
@@ -151,11 +156,18 @@ class WavySliderState(
         val currentValue = value
         val pixelValue = currentValue * trackWidth
         val newPixelValue = (pixelValue + delta).coerceIn(0f, trackWidth)
-        val newValue = newPixelValue / trackWidth
+        val newFingerPosition = newPixelValue / trackWidth
 
-        // Apply soft snap to nearest step
-        val snappedValue = snapToNearestStep(newValue)
-        val coercedValue = snappedValue.fastCoerceIn(0f, 1f)
+        // Always follow finger position (no resistance)
+        val coercedValue = newFingerPosition.fastCoerceIn(0f, 1f)
+
+        // Update thumb scale: enlarge when near a step during drag
+        val stepInfo = findNearestStepInAttractionRange(coercedValue)
+        thumbScale = if (stepInfo != null) {
+            1.3f // Fixed scale when in attraction range
+        } else {
+            1f
+        }
 
         if (coercedValue != currentValue) {
             value = coercedValue
@@ -175,8 +187,11 @@ class WavySliderState(
         if (trackWidth <= 0) return value
 
         val newValue = (pixelX / trackWidth).fastCoerceIn(0f, 1f)
-        val snappedValue = snapToNearestStep(newValue)
-        val coercedValue = snappedValue.fastCoerceIn(0f, 1f)
+        
+        // Check if initial touch is within attraction range of any step
+        val stepInfo = findNearestStepInAttractionRange(newValue)
+        val finalValue = stepInfo?.first ?: newValue
+        val coercedValue = finalValue.fastCoerceIn(0f, 1f)
 
         if (coercedValue != value) {
             value = coercedValue
@@ -190,24 +205,19 @@ class WavySliderState(
      * Called when drag gesture ends.
      */
     internal fun onDragStopped() {
-        // Snap to nearest step on drag end
+        // Hard snap to nearest step on drag end for precise positioning
         if (customSteps.isNotEmpty()) {
-            var nearestStep = value
-            var minDistance = Float.MAX_VALUE
-
-            for (step in customSteps) {
-                val distance = kotlin.math.abs(value - step)
-                if (distance < minDistance) {
-                    minDistance = distance
-                    nearestStep = step
-                }
-            }
-
-            if (minDistance < snapThreshold * 2) {
-                value = nearestStep
-                onValueChange(nearestStep)
+            val stepInfo = findNearestStepInAttractionRange(value)
+            
+            // Only snap if within attraction range
+            if (stepInfo != null) {
+                value = stepInfo.first
+                onValueChange(stepInfo.first)
             }
         }
+        
+        // Always reset thumb scale to normal after release
+        thumbScale = 1f
 
         onValueChangeFinished?.invoke()
     }
@@ -252,6 +262,7 @@ fun rememberWavySliderState(
     customSteps: List<Float> = emptyList(),
     onValueChange: (Float) -> Unit = {},
     onValueChangeFinished: (() -> Unit)? = null,
+    attractionRadius: Float = 0.03f,
 ): WavySliderState {
     return androidx.compose.runtime.remember {
         WavySliderState(
@@ -259,6 +270,7 @@ fun rememberWavySliderState(
             customSteps = customSteps,
             onValueChange = onValueChange,
             onValueChangeFinished = onValueChangeFinished,
+            attractionRadius = attractionRadius,
         )
     }.also { state ->
         state.updateCallbacks(onValueChange, onValueChangeFinished)

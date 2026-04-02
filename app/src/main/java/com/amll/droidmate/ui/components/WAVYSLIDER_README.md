@@ -9,7 +9,8 @@ WavySlider 是一个基于 Material Design 3 风格的创新型滑动组件，�
 - 🖱️ **完整交互**: 支持拖动、点击和键盘控制
 - ♿ **无障碍支持**: 完整的语义支持和键盘导航
 - 🎨 **Material 3**: 遵循 Material Design 3 设计规范
-- 🌊 **软吸附效果**: 接近步进点时自动平滑吸附
+- 🧲 **智能吸附**: 接近步进点时自动吸附，支持可配置吸引力范围
+- 🔍 **视觉反馈**: 靠近标记点时 thumb 和标记点自动放大提示
 
 ## 快速开始
 
@@ -28,7 +29,7 @@ fun BasicSliderExample() {
 }
 ```
 
-### 自定义步进点位置
+### 自定义步进点位置和吸引力范围
 
 ```kotlin
 @Composable
@@ -42,10 +43,16 @@ fun CustomStepsSliderExample() {
         value = value,
         onValueChange = { value = it },
         customSteps = customSteps,
+        attractionRadius = 0.03f, // 吸引力范围（默认 3% 轨道长度）
         modifier = Modifier.fillMaxWidth()
     )
 }
 ```
+
+**吸引力范围说明：**
+- 当手指拖动到距离标记点 `attractionRadius` 范围内时，thumb 和标记点会放大提示
+- 释放手指时，如果在吸引范围内，thumb 会自动吸附到最近的标记点
+- 增大该值会使吸附更容易发生，减小该值会使吸附更精确
 
 ### 自定义波浪参数
 
@@ -103,6 +110,10 @@ fun WavySlider(
     amplitude: Float = 1f,
     wavelength: Dp = WavySliderDefaults.Wavelength,
     waveSpeed: Dp = WavySliderDefaults.WaveSpeed,
+    waveAmplitude: Dp = WavySliderDefaults.WaveAmplitude,
+    thumbWidth: Dp = WavySliderDefaults.ThumbSize.width,
+    thumbHeight: Dp = WavySliderDefaults.ThumbSize.height,
+    attractionRadius: Float = 0.03f,
 )
 ```
 
@@ -121,6 +132,10 @@ fun WavySlider(
 | `amplitude` | Float | 1f | 波浪振幅（0.0 - 1.0） |
 | `wavelength` | Dp | WavySliderDefaults.Wavelength | 波长 |
 | `waveSpeed` | Dp | WavySliderDefaults.WaveSpeed | 波浪移动速度 |
+| `waveAmplitude` | Dp | WavySliderDefaults.WaveAmplitude | 波浪振幅（dp 单位） |
+| `thumbWidth` | Dp | WavySliderDefaults.ThumbSize.width | thumb 宽度（可自定义） |
+| `thumbHeight` | Dp | WavySliderDefaults.ThumbSize.height | thumb 高度（可自定义） |
+| `attractionRadius` | Float | 0.03f | 吸引力半径（归一化坐标，3% 轨道长度） |
 
 ### WavySliderState
 
@@ -222,22 +237,47 @@ fun DynamicStepsSlider() {
 }
 ```
 
-## 软吸附机制
+## 智能吸附与视觉反馈机制
 
-WavySlider 实现了智能软吸附系统：
+WavySlider 实现了创新的布尔式吸附系统，结合了清晰的视觉反馈：
 
-1. **接近检测**: 当滑块距离步进点小于阈值时触发
-2. **平滑过渡**: 使用线性插值实现平滑吸附效果
-3. **拖动结束**: 释放时自动对齐到最近的步进点
+### 1. 拖动过程中的行为
+
+**无阻力自由拖动：**
+- thumb 始终完全跟随手指位置移动
+- 没有任何延迟或阻力感
+- 保证流畅的操作体验
+
+**视觉反馈（布尔逻辑）：**
+- ✅ 进入吸引区 → thumb 和标记点**立即放大到 1.3 倍**
+- ❌ 离开吸引区 → thumb 和标记点**立即恢复正常大小**
+- 没有渐变过程，干净利落的开关式反馈
+
+### 2. 释放手指后的行为
+
+**吸附逻辑：**
+- ✅ 在吸引区内 → 自动对齐到最近的标记点（精确定位）
+- ❌ 不在吸引区 → 保持在当前位置
+
+**视觉恢复：**
+- 无论是否吸附，thumb 和标记点**一律恢复正常大小**
+- 保持界面简洁，避免视觉干扰
+
+### 3. 关键特性
 
 ```kotlin
-// 吸附阈值可通过状态对象调整
-val state = rememberWavySliderState(
-    initialValue = 0.5f,
-    customSteps = listOf(0.0f, 0.5f, 1.0f)
-)
-state.snapThreshold = 0.08f // 增加吸附范围
+// 吸引力范围控制
+attractionRadius = 0.03f // 默认 3% 轨道长度
+
+// 放大倍数（固定值）
+thumbScale = 1.3f // 吸引区内放大 30%
 ```
+
+**用户体验优势：**
+- 🎯 **精确控制**：释放时才吸附，用户可以快速越过不需要的标记点
+- 👁️ **清晰反馈**：放大效果明确提示"这里有个标记点"
+- ✨ **流畅操作**：拖动过程无阻力，手感顺滑
+- 🧹 **界面整洁**：释放后统一恢复正常，没有多余视觉元素
 
 ## 手势支持
 
@@ -257,6 +297,8 @@ state.snapThreshold = 0.08f // 增加吸附范围
 1. **值范围**: 所有值和步进点位置必须在 0.0 到 1.0 范围内
 2. **性能**: 避免在 compositions 中频繁创建新的 customSteps 列表
 3. **波速**: waveSpeed 默认匹配 wavelength，实现每秒移动一个波长的效果
+4. **吸引力范围**: attractionRadius 过大会导致容易误吸附，过小会降低实用性，建议保持默认值 0.03f
+5. **视觉反馈**: 放大效果仅在拖动过程中生效，释放后会自动恢复正常大小
 
 ## 示例代码
 

@@ -949,11 +949,12 @@ fun NowPlayingCard(
                     WavySlider(
                         value = sliderValue / nowPlaying.duration.toFloat().coerceAtLeast(1f),
                         onValueChange = { normalizedValue ->
+                            // Only update internal slider value during drag, don't seek yet
                             sliderValue = normalizedValue * nowPlaying.duration.toFloat().coerceAtLeast(1f)
                             isSeeking = true
-                            onSeek(sliderValue.toLong())
                         },
                         onValueChangeFinished = {
+                            // Seek only when user releases the finger
                             onSeek(sliderValue.toLong())
                             isSeeking = false
                         },
@@ -973,7 +974,9 @@ fun NowPlayingCard(
                         ),
                         amplitude = 1f,  // 使用默认振幅 1.0（最大波浪效果）
                         wavelength = WavySliderDefaults.Wavelength,  // 16.dp，默认波长
-                        waveSpeed = if (nowPlaying.isPlaying) WavySliderDefaults.WaveSpeed else 0.dp  // 暂停时停止波浪动画
+                        waveSpeed = if (nowPlaying.isPlaying) WavySliderDefaults.WaveSpeed else 0.dp, // 暂停时停止波浪动画
+                        thumbHeight = 24.dp,
+                        attractionRadius = 0.01f
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(formatTime(sliderValue.toLong()), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))

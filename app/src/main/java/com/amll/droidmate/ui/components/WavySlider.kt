@@ -21,6 +21,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -67,6 +68,8 @@ import kotlin.math.sin
  * @param amplitude the wave's amplitude (0.0 to 1.0)
  * @param wavelength the length of a wave
  * @param waveSpeed the speed in which the wave will move (DP per second)
+ * @param thumbWidth custom width for the thumb, defaults to MD3 standard
+ * @param thumbHeight custom height for the thumb, defaults to MD3 standard
  */
 @Composable
 fun WavySlider(
@@ -82,6 +85,9 @@ fun WavySlider(
     wavelength: Dp = WavySliderDefaults.Wavelength,
     waveSpeed: Dp = WavySliderDefaults.WaveSpeed,
     waveAmplitude: Dp = WavySliderDefaults.WaveAmplitude,
+    thumbWidth: Dp = WavySliderDefaults.ThumbSize.width,
+    thumbHeight: Dp = WavySliderDefaults.ThumbSize.height,
+    attractionRadius: Float = 0.03f, // 3% of track length
 ) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -93,7 +99,8 @@ fun WavySlider(
         initialValue = value.fastCoerceIn(0f, 1f),
         customSteps = customSteps,
         onValueChange = onValueChange,
-        onValueChangeFinished = onValueChangeFinished
+        onValueChangeFinished = onValueChangeFinished,
+        attractionRadius = attractionRadius
     )
     
     var sliderValue by remember { mutableFloatStateOf(state.value) }
@@ -170,29 +177,29 @@ fun WavySlider(
     // Touch/drag handling
     val dragModifier = if (enabled) {
         Modifier.pointerInput(state) {
-            forEachGesture {
-                awaitPointerEventScope {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    var lastX = down.position.x
-                    
-                    // Set initial value based on touch position
-                    val initialValue = state.setValueFromPixel(lastX)
-                    sliderValue = initialValue
-                    onValueChange(initialValue)
-                    
-                    horizontalDrag(down.id) { change ->
-                        val currentX = change.position.x
-                        val delta = currentX - lastX
-                        lastX = currentX
-                        val newValue = state.drag(delta)
-                        sliderValue = newValue
-                        onValueChange(newValue)
-                        change.consume()
-                    }
-                    
-                    state.onDragStopped()
-                    onValueChangeFinished?.invoke()
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                var lastX = down.position.x
+                
+                // Set initial value based on touch position but don't notify yet
+                val initialValue = state.setValueFromPixel(lastX)
+                sliderValue = initialValue
+                // Don't call onValueChange here - only update internal state
+                
+                horizontalDrag(down.id) { change ->
+                    val currentX = change.position.x
+                    val delta = currentX - lastX
+                    lastX = currentX
+                    val newValue = state.drag(delta)
+                    sliderValue = newValue
+                    // Only update internal state, don't notify during drag
+                    change.consume()
                 }
+                
+                // Only notify when drag is finished
+                onValueChange(sliderValue)
+                state.onDragStopped()
+                onValueChangeFinished?.invoke()
             }
         }
     } else {
@@ -229,7 +236,9 @@ fun WavySlider(
             amplitude = amplitude,
             wavelengthPx = wavelengthPx,
             waveSpeedPx = waveSpeedPx,
-            waveAmplitudePx = with(density) { waveAmplitude.toPx() }
+            waveAmplitudePx = with(density) { waveAmplitude.toPx() },
+            thumbWidthPx = with(density) { thumbWidth.toPx() },
+            thumbHeightPx = with(density) { thumbHeight.toPx() }
         )
     }
 }
@@ -242,20 +251,19 @@ private fun WavySliderDrawing(
     amplitude: Float,
     wavelengthPx: Float,
     waveSpeedPx: Float,
-    waveAmplitudePx: Float
+    waveAmplitudePx: Float,
+    thumbWidthPx: Float,
+    thumbHeightPx: Float,
 ) {
     val density = LocalDensity.current
     val trackHeightPx = with(density) { WavySliderDefaults.TrackHeight.toPx() }
-    // MD3 standard thumb: width=4dp, height=44dp (thin vertical handle)
-    val thumbWidthPx = with(density) { WavySliderDefaults.ThumbSize.width.toPx() }
-    val thumbHeightPx = with(density) { WavySliderDefaults.ThumbSize.height.toPx() }
     
     // MD3 standard: 6dp gap on each side of thumb
     val thumbSideGapPx = with(density) { 6.dp.toPx() }
     
     // Calculate canvas height to accommodate both track and thumb
     // Thumb needs enough vertical space to be fully visible
-    val canvasHeightDp = maxOf(WavySliderDefaults.TrackHeight * 2, WavySliderDefaults.ThumbSize.height)
+    val canvasHeightDp = maxOf(WavySliderDefaults.TrackHeight * 2, with(density) { thumbHeightPx.toDp() })
     
     // Animate wave movement over time (only if waveSpeed > 0)
     val timeOffset = if (waveSpeedPx > 0) {
@@ -315,14 +323,15 @@ private fun WavySliderDrawing(
             waveAmplitudePx = waveAmplitudePx
         )
         
-        // Draw thumb (MD3 pill shape - horizontal rounded rectangle)
-        // MD3 standard: width=32dp, height=16dp (2:1 ratio)
-        // Use smaller corner radius for pill shape (height/2 for full round ends)
+        // Draw thumb with dynamic scale for visual feedback when near a step
+        val scaledThumbWidth = thumbWidthPx * state.thumbScale
+        val scaledThumbHeight = thumbHeightPx * state.thumbScale
+        
         drawRoundRect(
             color = colors.thumbColor(enabled),
-            topLeft = Offset(thumbCenterX - thumbWidthPx / 2, centerY - thumbHeightPx / 2),
-            size = androidx.compose.ui.geometry.Size(thumbWidthPx, thumbHeightPx),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(thumbHeightPx / 2, thumbHeightPx / 2)
+            topLeft = Offset(thumbCenterX - scaledThumbWidth / 2, centerY - scaledThumbHeight / 2),
+            size = androidx.compose.ui.geometry.Size(scaledThumbWidth, scaledThumbHeight),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(scaledThumbHeight / 2, scaledThumbHeight / 2)
         )
         if (state.customSteps.isNotEmpty()) {
             drawStepMarkers(
@@ -331,7 +340,8 @@ private fun WavySliderDrawing(
                 centerY = centerY,
                 trackHeight = trackHeightPx,
                 currentValue = state.value,
-                customSteps = state.customSteps
+                customSteps = state.customSteps,
+                attractionRadius = state.attractionRadius
             )
         }
     }
@@ -398,13 +408,14 @@ private fun DrawScope.drawStepMarkers(
     centerY: Float,
     trackHeight: Float,
     currentValue: Float,
-    customSteps: List<Float>
+    customSteps: List<Float>,
+    attractionRadius: Float = 0.03f
 ) {
     val markerRadius = trackHeight
     
     for (step in customSteps) {
         val x = step * trackWidth
-        val isNearCurrent = abs(step - currentValue) < 0.05f
+        val isNearCurrent = abs(step - currentValue) < attractionRadius
         
         drawCircle(
             color = if (isNearCurrent) stepColor else stepColor.copy(alpha = 0.5f),
