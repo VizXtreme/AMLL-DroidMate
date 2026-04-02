@@ -961,6 +961,31 @@ private fun escapeJsString(value: String): String {
         .replace("\t", "\\t")
 }
 
+/**
+ * 清洗背景歌词文本：移除第一个 "(" 和最后一个 ")"
+ * 
+ * 这个函数用于在生成 JSON 时处理背景歌词，移除括号但保留其他内容。
+ * TTML 原始数据中会保留完整的括号格式。
+ * 
+ * @param text 原始文本
+ * @return 清洗后的文本（移除了首尾括号）
+ */
+private fun cleanBackgroundText(text: String): String {
+    // 背景歌词同样遵循可见空格语义：禁止 trim。
+    // 仅去除文本中第一个 "(" 和最后一个 ")"，不改动其它内容。
+    val firstParenIndex = text.indexOf('(')
+    val lastParenIndex = text.lastIndexOf(')')
+    
+    if (firstParenIndex != -1 && lastParenIndex != -1 && lastParenIndex > firstParenIndex) {
+        // 移除第一个 "(" 和最后一个 ")"
+        return text.substring(0, firstParenIndex) +
+               text.substring(firstParenIndex + 1, lastParenIndex) +
+               text.substring(lastParenIndex + 1)
+    }
+    
+    return text
+}
+
 private fun buildLyricsJson(lyrics: TTMLLyrics): String {
     val bgLines = lyrics.lines.filter { it.isBG }
     val bgWithTranslation = bgLines.count { !it.translation.isNullOrBlank() }
@@ -972,14 +997,26 @@ private fun buildLyricsJson(lyrics: TTMLLyrics): String {
     var debugCount = 0
     
     val linesJson = lyrics.lines.joinToString(",") { line ->
-        val text = line.text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
+        // 背景歌词清洗：移除第一个 "(" 和最后一个 ")"
+        val cleanedText = if (line.isBG) {
+            cleanBackgroundText(line.text)
+        } else {
+            line.text
+        }
+        
+        val text = cleanedText.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
         val translation = line.translation?.replace("\\", "\\\\")?.replace("\"", "\\\"") ?: ""
         val transliteration = line.transliteration?.replace("\\", "\\\\")?.replace("\"", "\\\"") ?: ""
         
         // 构建 words 数组
         val wordsJson = if (line.words.isNotEmpty()) {
             line.words.joinToString(",") { word ->
-                val wordText = word.word.replace("\\", "\\\\").replace("\"", "\\\"")
+                // 背景歌词的单词也需要清洗
+                val wordText = if (line.isBG) {
+                    cleanBackgroundText(word.word).replace("\\", "\\\\").replace("\"", "\\\"")
+                } else {
+                    word.word.replace("\\", "\\\\").replace("\"", "\\\"")
+                }
                 """{"word":"$wordText","startTime":${word.startTime},"endTime":${word.endTime}}"""
             }
         } else {
