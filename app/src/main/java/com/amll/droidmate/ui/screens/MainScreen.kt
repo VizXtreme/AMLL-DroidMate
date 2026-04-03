@@ -1041,7 +1041,7 @@ fun PermissionStatusCard(notificationAccessGranted: Boolean, onOpenNotificationA
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
             Text(
-                "请在系统设置中开启通知访问权限，或前往应用内设置页面配置。",
+                "滥用通知使用权危及安全，因此系统可能会弹窗阻止。AMLL DroidMate 是开源软件，您可以查看本应用的执行逻辑，因此在应用来源可靠的情况下无需感到担忧。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
             )
