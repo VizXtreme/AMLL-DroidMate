@@ -1,40 +1,29 @@
 package com.amll.droidmate.ui.screens
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Color
-import android.net.Uri
+import android.view.View
+import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.view.View
-import android.view.ViewGroup
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import com.amll.droidmate.data.parser.escapeXML
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.amll.droidmate.ui.AppSettings
-import com.amll.droidmate.websocket.AMLLWebSocketClient
 import androidx.compose.ui.viewinterop.AndroidView
 import com.amll.droidmate.domain.model.TTMLLyrics
-import com.amll.droidmate.websocket.WsProtocolV2Helper
+import com.amll.droidmate.ui.AppSettings
+import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
 import java.io.File
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicInteger
+import android.graphics.Color as AndroidColor
 
 /**
  * AMLL 歌词视图渲染模式
@@ -459,7 +448,7 @@ fun AMLLLyricsView(
                         lastAlbumArtUri = null
                         lastFontConfigSignature = null
                         // 确保页面加载后背景仍然透明
-                        view.setBackgroundColor(Color.TRANSPARENT)
+                        view.setBackgroundColor(AndroidColor.TRANSPARENT)
                         
                         // 注入 WebSocket 桥接代码（如果启用了 WebSocket）
                         if (isWebSocketConnected) {
@@ -504,7 +493,7 @@ fun AMLLLyricsView(
 
                 // 透明 WebView 配置，允许宿主 Compose 层的专辑图背景透出
                 // 先设置背景透明
-                setBackgroundColor(Color.TRANSPARENT)
+                setBackgroundColor(AndroidColor.TRANSPARENT)
                 // 使用 NONE 让 View 自行决定渲染方式，通常会使用硬件加速
                 // 同时避免软件渲染导致的帧率问题
                 setLayerType(View.LAYER_TYPE_NONE, null)

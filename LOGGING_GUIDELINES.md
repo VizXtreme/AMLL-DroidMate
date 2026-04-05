@@ -403,6 +403,10 @@ lifecycleScope.launch {
 
 ### ❌ 错误示例
 ```kotlin
+
+// 未使用 Timber
+println("Error occurred") // ❌ 不应该使用 println
+
 // 过于简单的消息（缺少模块标记）
 Timber.e("Error occurred") // ❌ 应该：Timber.e("[Network] Request failed: ${e.message}", e)
 

@@ -1,27 +1,26 @@
 package androidx.compose.material3
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.horizontalDrag
-import androidx.compose.foundation.gestures.forEachGesture
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.requiredSizeIn
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.horizontalDrag
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredSizeIn
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -42,8 +41,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
-import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
@@ -95,7 +94,7 @@ fun WavySlider(
     val waveSpeedPx = with(density) { waveSpeed.toPx() }
     val thumbWidthPx = with(density) { thumbWidth.toPx() }
     val thumbHeightPx = with(density) { thumbHeight.toPx() }
-    val thumbSideGapPx = with(density) { 6.dp.toPx() }
+    val thumbSideGapPx = with(density) { WavySliderDefaults.ThumbTrackGapSize.toPx() }
     
     // Create state first
     val state = rememberWavySliderState(
@@ -180,12 +179,12 @@ fun WavySlider(
     
     // Touch/drag handling
     val dragModifier = if (enabled) {
-        Modifier.pointerInput(state) {
+        Modifier.pointerInput(state, availableTrackWidth) {
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
                 var lastX = down.position.x
                 
-                // Calculate initial value from touch position
+                // Calculate initial value from touch position (absolute positioning)
                 // Thumb center moves from (thumbSideGapPx + thumbWidthPx/2) to (trackWidth - thumbSideGapPx - thumbWidthPx/2)
                 // Position 0 in value space corresponds to (thumbSideGapPx + thumbWidthPx/2) in pixel space
                 val touchOffset = lastX - (thumbSideGapPx + thumbWidthPx / 2)
@@ -193,21 +192,21 @@ fun WavySlider(
                 val initialValue = (relativeX / availableTrackWidth).fastCoerceIn(0f, 1f)
                 sliderValue = initialValue
                 state.value = initialValue
-                // Don't call onValueChange here - only update internal state
+                onValueChange(initialValue)
                 
                 horizontalDrag(down.id) { change ->
                     val currentX = change.position.x
-                    val delta = currentX - lastX
-                    lastX = currentX
-                    // Use delta directly for dragging
-                    val newValue = state.drag(delta, availableTrackWidth)
+                    // Use absolute positioning instead of relative delta
+                    val touchOffset = currentX - (thumbSideGapPx + thumbWidthPx / 2)
+                    val relativeX = touchOffset.coerceIn(0f, availableTrackWidth)
+                    val newValue = (relativeX / availableTrackWidth).fastCoerceIn(0f, 1f)
                     sliderValue = newValue
-                    // Only update internal state, don't notify during drag
+                    state.value = newValue
+                    onValueChange(newValue)
                     change.consume()
                 }
                 
-                // Only notify when drag is finished
-                onValueChange(sliderValue)
+                // Notify when drag is finished
                 state.onDragStopped()
                 onValueChangeFinished?.invoke()
             }
@@ -220,7 +219,7 @@ fun WavySlider(
         modifier = modifier
             .requiredSizeIn(
                 minWidth = 160.dp,
-                minHeight = WavySliderDefaults.TrackHeight
+                minHeight = thumbHeight
             )
             .then(keyboardModifier)
             .then(hoverIconModifier)
@@ -274,8 +273,8 @@ private fun WavySliderDrawing(
     val density = LocalDensity.current
     val trackHeightPx = with(density) { WavySliderDefaults.TrackHeight.toPx() }
     
-    // MD3 standard: 6dp gap on each side of thumb
-    val thumbSideGapPx = with(density) { 6.dp.toPx() }
+    // MD3 standard (XS size): 6dp gap on each side of thumb
+    val thumbSideGapPx = with(density) { WavySliderDefaults.ThumbTrackGapSize.toPx() }
     
     // Calculate canvas height to accommodate both track and thumb
     // Thumb needs enough vertical space to be fully visible
@@ -329,14 +328,16 @@ private fun WavySliderDrawing(
             size = Size(trackWidth - thumbCenterX - thumbSideGapPx * 2, trackHeightPx),
             cornerRadius = CornerRadius(trackHeightPx / 2)
         )
-        // Draw active track with wave (MD3 standard: 3dp amplitude, 40dp wavelength)
-        // Wave ends at thumb center - gap
+        // Draw active track with wave (wave width = inactive track width - 6dp)
+        // Wave ends so that the round cap is exactly thumbSideGapPx away from thumb
+        val wavyTrackHeightPx = trackHeightPx - with(density) { 6.dp.toPx() }
+        val wavyEndX = thumbCenterX - thumbWidthPx / 2 - wavyTrackHeightPx / 2 - thumbSideGapPx
         drawWavyTrack(
             color = colors.activeTrackColor(enabled),
             startX = 0f,
-            endX = thumbCenterX - thumbSideGapPx,
+            endX = wavyEndX,
             centerY = centerY,
-            trackHeight = trackHeightPx,
+            trackHeight = wavyTrackHeightPx,
             amplitude = amplitude,
             wavelengthPx = wavelengthPx,
             timeOffset = timeOffset,
@@ -433,7 +434,7 @@ private fun DrawScope.drawStepMarkers(
     attractionRadius: Float = 0.03f,
     offsetX: Float = 0f
 ) {
-    val markerRadius = trackHeight
+    val markerRadius = trackHeight / 2
     
     // Calculate thumb center position for proper step marker positioning
     // Steps should be positioned based on normalized value (0.0 to 1.0)

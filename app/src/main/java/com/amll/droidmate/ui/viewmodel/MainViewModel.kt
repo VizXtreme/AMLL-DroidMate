@@ -6,9 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.amll.droidmate.data.converter.TTMLConverter
 import com.amll.droidmate.data.parser.SongStructureParser
-import com.amll.droidmate.data.repository.LyricsCacheRepository
 import com.amll.droidmate.data.repository.LyricsRepository
-import com.amll.droidmate.ui.screens.getAppNameFromPackage
 import com.amll.droidmate.di.ServiceLocator
 import com.amll.droidmate.domain.model.NowPlayingMusic
 import com.amll.droidmate.domain.model.SongStructure
@@ -17,6 +15,7 @@ import com.amll.droidmate.service.LyricNotificationManager
 import com.amll.droidmate.service.MediaInfoService
 import com.amll.droidmate.service.WebSocketForegroundService
 import com.amll.droidmate.ui.AppSettings
+import com.amll.droidmate.ui.screens.getAppNameFromPackage
 import com.amll.droidmate.util.AudioDeviceHelper
 import com.amll.droidmate.websocket.AMLLWebSocketClient
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -377,7 +376,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     kotlin.math.abs(music.currentPosition - oldMusic.currentPosition) > 1000 // 超过 1 秒
                 
                 _nowPlayingMusic.value = music
-                Timber.d("[PlaybackControl] Now playing: ${music?.title} - ${music?.artist}")
                 
                 // 同步到 WebSocket（如果启用）
                 if (music != null && AppSettings.isWebSocketProtocolEnabled(context)) {

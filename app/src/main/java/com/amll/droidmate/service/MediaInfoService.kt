@@ -114,7 +114,6 @@ class MediaInfoService(private val context: Context) {
                     val finalAlbumArtUri = when {
                         // 情况 1: 获取到了新的 Bitmap → 重新处理
                         newAlbumArtBitmap != null -> {
-                            Timber.d("[MediaInfoService] Got album art bitmap, processing...")
                             processAlbumArtBitmap(bitmap = newAlbumArtBitmap, title, artist, packageName)
                         }
                         // 情况 2: 当前没有专辑图，尝试从 URI 获取
@@ -130,7 +129,6 @@ class MediaInfoService(private val context: Context) {
                         }
                         // 情况 3: 保持使用当前的专辑图（无变化）
                         else -> {
-                            Timber.v("[MediaInfoService] Album art unchanged, using cache")
                             currentAlbumArtUri
                         }
                     }
@@ -152,10 +150,9 @@ class MediaInfoService(private val context: Context) {
                     if (shouldUpdateBasicInfo(oldMusic, updatedMusic)) {
                         _nowPlayingMusic.value = updatedMusic
                         val hasAlbumArtChanged = finalAlbumArtUri != currentAlbumArtUri
-                        Timber.d("[MediaInfoService] Updated: pos=$position ms, albumArt=${!finalAlbumArtUri.isNullOrBlank()}, changed=$hasAlbumArtChanged")
                     } else {
                         if (shouldLogVerbose()) {
-                            Timber.v("[MediaInfoService] No significant changes, skipped update")
+
                         }
                     }
                 }

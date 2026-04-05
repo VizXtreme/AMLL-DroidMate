@@ -21,56 +21,93 @@ package com.amll.droidmate.ui.screens
 
 import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.ContextWrapper
 import android.net.Uri
 import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TextSnippet
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.ripple
+import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.WavySlider
 import androidx.compose.material3.WavySliderDefaults
-import com.amll.droidmate.ui.screens.AMLLLyricsView
-import com.amll.droidmate.ui.screens.AMLLRenderMode
-import androidx.compose.runtime.*
+import androidx.compose.material3.ripple
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -84,23 +121,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.DpSize
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.amll.droidmate.R
-import com.amll.droidmate.domain.model.LyricLine
-import com.amll.droidmate.domain.model.SongStructure
-import com.amll.droidmate.ui.theme.AlbumColorExtractor
 import com.amll.droidmate.domain.model.NowPlayingMusic
+import com.amll.droidmate.domain.model.SongStructure
 import com.amll.droidmate.domain.model.TTMLLyrics
 import com.amll.droidmate.ui.AppSettings
 import com.amll.droidmate.ui.CardClickAction
 import com.amll.droidmate.ui.CustomLyricsActivity
-import com.amll.droidmate.ui.viewmodel.MainViewModel
-import com.amll.droidmate.ui.theme.DroidMateTheme
+import com.amll.droidmate.ui.theme.AlbumColorExtractor
 import com.amll.droidmate.ui.theme.SuccessGreen
-import com.amll.droidmate.ui.theme.WarningAmber
+import com.amll.droidmate.ui.viewmodel.MainViewModel
 import com.amll.droidmate.update.GitHubUpdateChecker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -342,7 +375,7 @@ fun MainScreen() {
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
+                            modifier = Modifier.background(MaterialTheme.colorScheme.background)
                         ) {
                             // text/icons use onSurface same as the card
                             CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
@@ -511,6 +544,7 @@ fun MainScreen() {
             if (showAutoUpdateDialog) {
                 AlertDialog(
                     onDismissRequest = { showAutoUpdateDialog = false },
+                    containerColor = MaterialTheme.colorScheme.background,
                     title = { Text(autoUpdateDialogTitle) },
                     text = { Text(autoUpdateDialogMessage) },
                     confirmButton = {
@@ -938,8 +972,10 @@ fun NowPlayingCard(
 
                 var isSeeking by remember { mutableStateOf(false) }
                 var draggedSliderValue by remember { mutableStateOf(nowPlaying.currentPosition.toFloat()) }
-                var sliderValue = if (isSeeking) draggedSliderValue else nowPlaying.currentPosition.toFloat()
-                LaunchedEffect(nowPlaying?.currentPosition) {
+                var sliderValue by remember { mutableStateOf(nowPlaying.currentPosition.toFloat()) }
+                
+                // Only update sliderValue from playback position when not seeking
+                LaunchedEffect(nowPlaying?.currentPosition, isSeeking) {
                     if (!isSeeking) {
                         sliderValue = nowPlaying?.currentPosition?.toFloat() ?: 0f
                     }
@@ -963,8 +999,7 @@ fun NowPlayingCard(
                             .map { (it.toFloat() / nowPlaying.duration.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f) }  // 归一化到 0-1
                             .distinct(),  // 去重
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(16.dp),
+                            .fillMaxWidth(),
                         colors = WavySliderDefaults.colors(
                             thumbColor = sliderColor,
                             activeTrackColor = sliderColor,
@@ -1033,7 +1068,7 @@ fun NowPlayingCard(
 
 @Composable
 fun PermissionStatusCard(notificationAccessGranted: Boolean, onOpenNotificationAccessSettings: () -> Unit, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f))) {
+    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 "需要通知访问权限才能正常使用此应用。",
@@ -1049,8 +1084,13 @@ fun PermissionStatusCard(notificationAccessGranted: Boolean, onOpenNotificationA
                 horizontalArrangement = Arrangement.End,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                TextButton(onClick = onOpenNotificationAccessSettings) { 
-                    Text("去授权") 
+                Button(
+                    onClick = onOpenNotificationAccessSettings,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) { 
+                    Text("去授权", color = MaterialTheme.colorScheme.onError)
                 }
             }
         }

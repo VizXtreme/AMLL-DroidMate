@@ -49,5 +49,6 @@ plugins {
 // ```
 tasks.register("clean", Delete::class) {
     // 删除根项目的 build 目录
-    delete(rootProject.buildDir)
+    delete(layout.buildDirectory)
 }
+

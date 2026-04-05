@@ -35,6 +35,11 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     
     repositories {
+        // 阿里云镜像（加速国内访问）
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
+        
         // Google 仓库：AndroidX、Material Design 等官方库
         google()
         

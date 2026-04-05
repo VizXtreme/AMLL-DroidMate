@@ -32,7 +32,7 @@ object WavySliderDefaults {
 
     /**
      * Default thumb size for the wavy slider.
-     * MD3 standard (XS size): width=4dp, height=44dp (thin vertical handle)
+     * MD3 standard (XS size): width=4dp, height=44dp
      */
     val ThumbSize: DpSize = DpSize(4.dp, 44.dp)
 
@@ -40,7 +40,7 @@ object WavySliderDefaults {
      * Default track height for the wavy slider.
      * MD3 standard (XS size): 16dp
      */
-    val TrackHeight: Dp = 4.dp
+    val TrackHeight: Dp = 16.dp
 
     /**
      * Default wavelength for the wavy effect.
@@ -50,7 +50,7 @@ object WavySliderDefaults {
 
     /**
      * Default wave amplitude.
-     * MD3 standard: 3dp (half of track height for proper wave rendering)
+     * MD3 standard: 3dp (scaled for proper wave rendering)
      */
     val WaveAmplitude: Dp = 3.dp
 
@@ -66,15 +66,15 @@ object WavySliderDefaults {
 
     /**
      * The gap between the thumb and the track.
-     * This ensures proper visual spacing between components.
+     * MD3 standard (XS size): 6dp on each side
      */
-    internal val ThumbTrackGapSize: Dp = 0.dp
+    internal val ThumbTrackGapSize: Dp = 6.dp
 
     /**
      * The corner size for the track's inside corners.
-     * Used for precise thumb position calculation.
+     * MD3 standard (XS size): 8dp
      */
-    internal val TrackInsideCornerSize: Dp = 2.dp
+    internal val TrackInsideCornerSize: Dp = 8.dp
 
     /**
      * Creates a [WavySliderColors] with default colors.

@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
@@ -215,13 +217,24 @@ object AlbumColorExtractor {
         val secondary = secondarySwatch?.let { Color(it.rgb).adjustForLightMode() }
             ?: Color(0xFF8B5CF6)
 
-        // 背景色：浅色
-        val background = palette.lightMutedSwatch?.let {
-            Color(it.rgb).lighten(0.8f).adjustSaturation(0.2f)
-        } ?: Color(0xFFFAFAFA)
+        // 背景色：基于 MD3 Tonal Palette 规范
+        // 使用 primary 颜色的极浅变体，创建柔和的背景色调
+        val background = primary.let {
+            // MD3 浅色模式背景通常使用 primary 的 98-99% 亮度版本
+            it.copy(alpha = 0.05f) // 降低不透明度以创建微妙的色调
+                .lighten(0.95f)    // 大幅提亮至接近白色
+                .adjustSaturation(0.05f) // 降低饱和度，保持中性
+        }
+        // 确保背景色足够明亮 (MD3 建议背景亮度 > 0.95)
+        val backgroundFinal = if (background.luminance() < 0.95f) {
+            background.withMinLuminance(0.98f)
+        } else {
+            background
+        }
 
-        // Surface色：纯白或接近白
-        val surface = background.lighten(0.1f).coerceAtMost(Color.White)
+        // Surface 色：基于 MD3 Elevation 规范
+        // Surface 应该比背景稍亮，创建微妙的层次感
+        val surface = backgroundFinal.lighten(0.02f).coerceAtMost(Color.White)
 
         // 确保对比度
         val onPrimary = if (primary.luminance() > 0.5f) Color.Black else Color.White
@@ -236,11 +249,11 @@ object AlbumColorExtractor {
             onSecondary = onSecondary,
             tertiary = primary.rotatehue(30f),
             onTertiary = onPrimary,
-            background = background,
+            background = backgroundFinal,
             onBackground = onBackground,
             surface = surface,
             onSurface = onSurface,
-            surfaceVariant = surface.darken(0.05f),
+            surfaceVariant = primary.copy(alpha = 0.08f), // MD3 建议使用更低的不透明度
             onSurfaceVariant = onSurface.copy(alpha = 0.8f),
             error = Color(0xFFEF4444),
             onError = Color.White
@@ -299,26 +312,6 @@ object AlbumColorExtractor {
     }
 
     /**
-     * 使颜色变暗
-     */
-    private fun Color.darken(factor: Float): Color {
-        val hsv = FloatArray(3)
-        android.graphics.Color.colorToHSV(this.toArgb(), hsv)
-        hsv[2] = (hsv[2] * (1f - factor)).coerceAtLeast(0f)
-        return Color(android.graphics.Color.HSVToColor(hsv))
-    }
-
-    /**
-     * 使颜色变亮
-     */
-    private fun Color.lighten(factor: Float): Color {
-        val hsv = FloatArray(3)
-        android.graphics.Color.colorToHSV(this.toArgb(), hsv)
-        hsv[2] = (hsv[2] + (1f - hsv[2]) * factor).coerceAtMost(1f)
-        return Color(android.graphics.Color.HSVToColor(hsv))
-    }
-
-    /**
      * 保证颜色至少达到指定亮度（直接设置亮度值）
      */
     private fun Color.withMinLuminance(minLuminance: Float): Color {
@@ -329,32 +322,60 @@ object AlbumColorExtractor {
     }
 
     /**
-     * 调整饱和度
-     */
-    private fun Color.adjustSaturation(factor: Float): Color {
-        val hsv = FloatArray(3)
-        android.graphics.Color.colorToHSV(this.toArgb(), hsv)
-        hsv[1] = (hsv[1] * factor).coerceIn(0f, 1f)
-        return Color(android.graphics.Color.HSVToColor(hsv))
-    }
-
-    /**
-     * 旋转色相
-     */
-    private fun Color.rotatehue(degrees: Float): Color {
-        val hsv = FloatArray(3)
-        android.graphics.Color.colorToHSV(this.toArgb(), hsv)
-        hsv[0] = (hsv[0] + degrees) % 360f
-        return Color(android.graphics.Color.HSVToColor(hsv))
-    }
-
-    /**
      * 限制颜色的最大值
      */
     private fun Color.coerceAtMost(other: Color): Color {
         return if (this.luminance() > other.luminance()) other else this
     }
 }
+
+// ==================== 颜色处理扩展函数（包级可见） ====================
+
+/**
+ * 使颜色变亮
+ */
+internal fun Color.lighten(factor: Float): Color {
+    val hsv = FloatArray(3)
+    android.graphics.Color.colorToHSV(this.toArgb(), hsv)
+    hsv[2] = (hsv[2] + (1f - hsv[2]) * factor).coerceAtMost(1f)
+    return Color(android.graphics.Color.HSVToColor(hsv))
+}
+
+/**
+ * 使颜色变暗
+ */
+internal fun Color.darken(factor: Float): Color {
+    val hsv = FloatArray(3)
+    android.graphics.Color.colorToHSV(this.toArgb(), hsv)
+    hsv[2] = (hsv[2] * (1f - factor)).coerceAtLeast(0f)
+    return Color(android.graphics.Color.HSVToColor(hsv))
+}
+
+/**
+ * 调整饱和度
+ */
+internal fun Color.adjustSaturation(factor: Float): Color {
+    val hsv = FloatArray(3)
+    android.graphics.Color.colorToHSV(this.toArgb(), hsv)
+    hsv[1] = (hsv[1] * factor).coerceIn(0f, 1f)
+    return Color(android.graphics.Color.HSVToColor(hsv))
+}
+
+/**
+ * 旋转色相
+ */
+internal fun Color.rotatehue(degrees: Float): Color {
+    val hsv = FloatArray(3)
+    android.graphics.Color.colorToHSV(this.toArgb(), hsv)
+    hsv[0] = (hsv[0] + degrees) % 360f
+    if (hsv[0] < 0) hsv[0] += 360f
+    return Color(android.graphics.Color.HSVToColor(hsv))
+}
+
+/**
+ * 旋转色相（别名，兼容 MD3 规范命名）
+ */
+internal fun Color.rotateHue(degrees: Float): Color = rotatehue(degrees)
 
 /**
  * 动态颜色方案数据类
@@ -375,3 +396,57 @@ data class DynamicColorScheme(
     val error: Color,
     val onError: Color
 )
+
+/**
+ * 将动态颜色方案转换为 Material Design 3 ColorScheme
+ * 
+ * @param isDarkTheme 是否为深色模式
+ * @return 完整的 Material ColorScheme
+ */
+fun DynamicColorScheme.toMaterialColorScheme(isDarkTheme: Boolean) = if (isDarkTheme) {
+    darkColorScheme(
+        primary = primary,
+        onPrimary = onPrimary,
+        primaryContainer = primary.copy(alpha = 0.2f),
+        onPrimaryContainer = onPrimary,
+        secondary = secondary,
+        onSecondary = onSecondary,
+        secondaryContainer = secondary.copy(alpha = 0.2f),
+        onSecondaryContainer = onSecondary,
+        tertiary = tertiary,
+        onTertiary = onTertiary,
+        tertiaryContainer = tertiary.copy(alpha = 0.2f),
+        onTertiaryContainer = onTertiary,
+        background = background,
+        onBackground = onBackground,
+        surface = surface,
+        onSurface = onSurface,
+        surfaceVariant = surfaceVariant,
+        onSurfaceVariant = onSurfaceVariant,
+        error = error,
+        onError = onError
+    )
+} else {
+    lightColorScheme(
+        primary = primary,
+        onPrimary = onPrimary,
+        primaryContainer = primary.copy(alpha = 0.1f),
+        onPrimaryContainer = primary,
+        secondary = secondary,
+        onSecondary = onSecondary,
+        secondaryContainer = secondary.copy(alpha = 0.1f),
+        onSecondaryContainer = secondary,
+        tertiary = tertiary,
+        onTertiary = onTertiary,
+        tertiaryContainer = tertiary.copy(alpha = 0.1f),
+        onTertiaryContainer = tertiary,
+        background = background,
+        onBackground = onBackground,
+        surface = surface,
+        onSurface = onSurface,
+        surfaceVariant = surfaceVariant,
+        onSurfaceVariant = onSurfaceVariant,
+        error = error,
+        onError = onError
+    )
+}
