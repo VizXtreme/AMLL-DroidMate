@@ -280,25 +280,35 @@ private fun WavySliderDrawing(
     // Thumb needs enough vertical space to be fully visible
     val canvasHeightDp = maxOf(WavySliderDefaults.TrackHeight * 2, with(density) { thumbHeightPx.toDp() })
     
-    // Animate wave movement over time (only if waveSpeed > 0)
-    val timeOffset = if (waveSpeedPx > 0) {
-        val infiniteTransition = rememberInfiniteTransition(label = "wave")
-        infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = (2 * PI).toFloat(),
-            animationSpec = infiniteRepeatable(
-                animation = tween(
-                    durationMillis = (1000 * wavelengthPx / waveSpeedPx).toInt(),
-                    easing = LinearEasing
-                ),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "waveTimeOffset"
-        ).value
-    } else {
-        // No animation when waveSpeed is 0 - keep wave static
-        0f
+    // Animate wave movement over time with continuous phase tracking
+    val timeOffsetAnimatable = remember { androidx.compose.animation.core.Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    
+    LaunchedEffect(waveSpeedPx, wavelengthPx) {
+        if (waveSpeedPx > 0) {
+            // Calculate animation duration for one complete cycle
+            val durationMillis = (1000 * wavelengthPx / waveSpeedPx).toInt()
+            
+            // Continuously animate
+            while (true) {
+                // Animate to next cycle
+                timeOffsetAnimatable.animateTo(
+                    targetValue = timeOffsetAnimatable.value + (2 * PI).toFloat(),
+                    animationSpec = tween(
+                        durationMillis = durationMillis,
+                        easing = LinearEasing
+                    )
+                )
+                // Snap back to keep values in reasonable range
+                timeOffsetAnimatable.snapTo(timeOffsetAnimatable.value % (2 * PI).toFloat())
+            }
+        } else {
+            // Cancel any ongoing animation when stopped
+            timeOffsetAnimatable.stop()
+        }
     }
+    
+    val timeOffset = timeOffsetAnimatable.value
     
     Canvas(
         modifier = Modifier
