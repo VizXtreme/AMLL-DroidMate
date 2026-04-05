@@ -24,12 +24,13 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -40,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import com.amll.droidmate.service.MediaInfoService
 import com.amll.droidmate.ui.base.BaseComposeActivity
@@ -145,27 +147,45 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
         }
     }
 
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("管理时间轴偏移") },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                        }
+            val topAppBarState = rememberTopAppBarState()
+            val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
+
+            Scaffold(
+                    modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                    topBar = {
+                        LargeTopAppBar(
+                            title = { Text("管理时间轴偏移") },
+                            navigationIcon = {
+                                androidx.compose.material3.FilledIconButton(
+                                    onClick = onBack,
+                                    colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                    )
+                                ) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                                }
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.background,
+                                scrolledContainerColor = MaterialTheme.colorScheme.background
+                            ),
+                            actions = {
+                                androidx.compose.material3.FilledIconButton(
+                                    onClick = { showClearDialog = true },
+                                    colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                    )
+                                ) {
+                                    Icon(Icons.Default.DeleteSweep, contentDescription = "删除所有")
+                                }
+                            },
+                            scrollBehavior = scrollBehavior,
+                            modifier = Modifier.statusBarsPadding()
+                        )
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background
-                    ),
-                    actions = {
-                        IconButton(onClick = { showClearDialog = true }) {
-                            Icon(Icons.Default.DeleteSweep, contentDescription = "删除所有")
-                        }
-                    },
-                    modifier = Modifier.statusBarsPadding()
-                )
-            },
-        floatingActionButton = {
+                floatingActionButton = {
             FloatingActionButton(
                 onClick = { openDialog(null) },
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp)

@@ -23,10 +23,12 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -155,31 +157,50 @@ private fun logDisplayPage(onBack: () -> Unit) {
         }
     }
     
-    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        // 顶部工具栏
-        TopAppBar(
-            title = { 
-                Column {
-                    Text("应用日志")
-                    Text(
-                        text = "共 ${stats.total} 条 | V:${stats.verboseCount} D:${stats.debugCount} I:${stats.infoCount} W:${stats.warnCount} E:${stats.errorCount}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                }
-            },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回"
-                    )
-                }
-            },
-            actions = {
+    val topAppBarState = rememberTopAppBarState()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
+
+    androidx.compose.material3.Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeTopAppBar(
+                title = {
+                    Column {
+                        Text("应用日志")
+                        Text(
+                            text = "共 ${stats.total} 条 | V:${stats.verboseCount} D:${stats.debugCount} I:${stats.infoCount} W:${stats.warnCount} E:${stats.errorCount}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                },
+                navigationIcon = {
+                    androidx.compose.material3.FilledIconButton(
+                        onClick = onBack,
+                        colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "返回"
+                        )
+                    }
+                },
+                actions = {
                 // 日志等级筛选按钮
                 Box {
-                    IconButton(onClick = { showFilterDropdown = true }) {
+                    androidx.compose.material3.FilledIconButton(
+                        onClick = { showFilterDropdown = true },
+                        colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    ) {
                         Icon(
                             imageVector = Icons.Default.FilterList,
                             contentDescription = "筛选日志",
@@ -256,13 +277,19 @@ private fun logDisplayPage(onBack: () -> Unit) {
                 }
                 
                 // 暂停/继续记录按钮
-                IconButton(onClick = { 
-                    isLoggingPaused = !isLoggingPaused
-                    // 保存到持久化存储
-                    LogHelper.setLoggingPaused(isLoggingPaused)
-                    val action = if (isLoggingPaused) "暂停" else "继续"
-                    Toast.makeText(context, "已$action 记录日志", Toast.LENGTH_SHORT).show()
-                }) {
+                androidx.compose.material3.FilledIconButton(
+                    onClick = {
+                        isLoggingPaused = !isLoggingPaused
+                        // 保存到持久化存储
+                        LogHelper.setLoggingPaused(isLoggingPaused)
+                        val action = if (isLoggingPaused) "暂停" else "继续"
+                        Toast.makeText(context, "已$action 记录日志", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
                     Icon(
                         imageVector = if (isLoggingPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
                         contentDescription = if (isLoggingPaused) "继续记录" else "暂停记录",
@@ -271,34 +298,49 @@ private fun logDisplayPage(onBack: () -> Unit) {
                 }
                 
                 // 清除日志按钮
-                IconButton(onClick = { 
-                    LogHelper.clearLogs()
-                    logEntries = emptyList()
-                    Toast.makeText(context, "日志已清除", Toast.LENGTH_SHORT).show()
-                }) {
+                androidx.compose.material3.FilledIconButton(
+                    onClick = {
+                        LogHelper.clearLogs()
+                        logEntries = emptyList()
+                        Toast.makeText(context, "日志已清除", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "清除日志",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                
+
                 // 导出日志按钮
-                IconButton(onClick = {
-                    val fileName = "droidmate_log_${System.currentTimeMillis()}.txt"
-                    saveFileLauncher.launch(fileName)
-                }) {
+                androidx.compose.material3.FilledIconButton(
+                    onClick = {
+                        val fileName = "droidmate_log_${System.currentTimeMillis()}.txt"
+                        saveFileLauncher.launch(fileName)
+                    },
+                    colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
                     Icon(
                         imageVector = Icons.Default.FileDownload,
                         contentDescription = "导出日志"
                     )
                 }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background
+                ),
+                scrollBehavior = scrollBehavior
             )
-        )
-        
+        }
+    ) { innerPadding ->
         // 暂停/恢复自动滚动提示
         AnimatedVisibility(visible = isPaused || !autoScrollEnabled) {
             Card(
@@ -365,7 +407,8 @@ private fun logDisplayPage(onBack: () -> Unit) {
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp)
+                    .padding(innerPadding),
                 contentPadding = PaddingValues(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {

@@ -82,13 +82,15 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.WavySlider
 import androidx.compose.material3.WavySliderDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -111,6 +113,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -177,6 +180,7 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     else -> null
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
     val context = LocalContext.current
@@ -348,110 +352,108 @@ fun MainScreen() {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+    val topAppBarState = rememberTopAppBarState()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
+
+    androidx.compose.material3.Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
             if (!isLyricsFullscreen) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Box {
-                        // introduce single interaction source so modifier and IconButton share it
-                        val menuInteractionSource = remember { MutableInteractionSource() }
-                        IconButton(
-                            onClick = { showMenu = true },
-                            colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
-                            interactionSource = menuInteractionSource,
-                            modifier = Modifier.indication(
-                                menuInteractionSource,
-                                ripple(color = rippleColor.value)
-                            )
-                        ) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "菜单")
-                        }
-                        // background matching cardBg so both elements follow album color
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(MaterialTheme.colorScheme.background)
-                        ) {
-                            // text/icons use onSurface same as the card
-                            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
-                                DropdownMenuItem(
-                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.TextSnippet, contentDescription = null) },
-                                    text = { Text("自选歌词") },
-                                    onClick = {
-                                        val intent = Intent(context, CustomLyricsActivity::class.java).apply {
-                                            putExtra(CustomLyricsActivity.EXTRA_TITLE, nowPlaying?.title ?: "")
-                                            putExtra(CustomLyricsActivity.EXTRA_ARTIST, nowPlaying?.artist ?: "")
-                                            putExtra(
-                                                CustomLyricsActivity.EXTRA_PLAYBACK_SOURCE,
-                                                getAppNameFromPackage(context, nowPlaying?.packageName) ?: ""
+                LargeTopAppBar(
+                    title = { Text(text = stringResource(R.string.app_name)) },
+                    actions = {
+                        // AppBar action with anchored M3 DropdownMenu
+                        Box {
+                            val menuInteractionSource = remember { MutableInteractionSource() }
+                                        androidx.compose.material3.FilledIconButton(
+                                            onClick = { showMenu = true },
+                                            modifier = Modifier.indication(menuInteractionSource, ripple(color = rippleColor.value)),
+                                            colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                                contentColor = MaterialTheme.colorScheme.onSurface
                                             )
+                                        ) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "菜单")
+                                }
+
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false },
+                                // Use Material3 container tokens so the menu follows MD3 look
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 4.dp,
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+                                    DropdownMenuItem(
+                                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.TextSnippet, contentDescription = null) },
+                                        text = { Text("自选歌词") },
+                                        onClick = {
+                                            val intent = Intent(context, CustomLyricsActivity::class.java).apply {
+                                                putExtra(CustomLyricsActivity.EXTRA_TITLE, nowPlaying?.title ?: "")
+                                                putExtra(CustomLyricsActivity.EXTRA_ARTIST, nowPlaying?.artist ?: "")
+                                                putExtra(
+                                                    CustomLyricsActivity.EXTRA_PLAYBACK_SOURCE,
+                                                    getAppNameFromPackage(context, nowPlaying?.packageName) ?: ""
+                                                )
+                                            }
+                                            customLyricsLauncher.launch(intent)
+                                            showMenu = false
                                         }
-                                        customLyricsLauncher.launch(intent)
-                                        showMenu = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    leadingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) },
-                                    text = { Text("刷新") },
-                                    onClick = { 
-                                        // 在协程中执行刷新操作，以支持 suspend 函数调用
-                                        scope.launch {
-                                            // 1. 数据层刷新：重新匹配和获取歌词
-                                            viewModel.fetchLyrics()
-                                            
-                                            // 2. 连接层刷新：强制重连 WebSocket（如果已启用）
-                                            viewModel.refreshWebSocketConnection()
-                                            
-                                            // 3. UI 组件刷新：
-                                            //    - 递增 key 以强制重组并重新加载歌词 WebView 组件
-                                            webViewReloadKey++
-                                            
-                                            //    - 触发专辑图及其提取的动态主题色的重新计算与应用
-                                            //      通过改变 key 触发 LaunchedEffect 重新执行 AlbumColorExtractor
-                                            val currentUri = nowPlaying?.albumArtUri
-                                            if (!currentUri.isNullOrBlank()) {
-                                                try {
-                                                    val colors = AlbumColorExtractor.extractColorsFromAlbumArt(context, currentUri, isDarkTheme)
-                                                    rippleColor.value = colors?.primary ?: initialPrimary
-                                                    
-                                                    // ✅ 当刷新按钮触发时，也通过 WebSocket 发送专辑图到外部服务
-                                                    if (AppSettings.isWebSocketProtocolEnabled(context)) {
-                                                        viewModel.sendAlbumArtToWebSocket(currentUri)
-                                                        Timber.d("[MainScreen] Sent album art to WebSocket on manual refresh: $currentUri")
+                                    )
+                                    DropdownMenuItem(
+                                        leadingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) },
+                                        text = { Text("刷新") },
+                                        onClick = {
+                                            scope.launch {
+                                                viewModel.fetchLyrics()
+                                                viewModel.refreshWebSocketConnection()
+                                                webViewReloadKey++
+                                                val currentUri = nowPlaying?.albumArtUri
+                                                if (!currentUri.isNullOrBlank()) {
+                                                    try {
+                                                        val colors = AlbumColorExtractor.extractColorsFromAlbumArt(context, currentUri, isDarkTheme)
+                                                        rippleColor.value = colors?.primary ?: initialPrimary
+                                                        if (AppSettings.isWebSocketProtocolEnabled(context)) {
+                                                            viewModel.sendAlbumArtToWebSocket(currentUri)
+                                                            Timber.d("[MainScreen] Sent album art to WebSocket on manual refresh: $currentUri")
+                                                        }
+                                                    } catch (_: Exception) {
+                                                        rippleColor.value = initialPrimary
                                                     }
-                                                } catch (_: Exception) {
+                                                } else {
                                                     rippleColor.value = initialPrimary
                                                 }
-                                            } else {
-                                                rippleColor.value = initialPrimary
+                                                viewModel.refreshSongStructures()
+                                                showMenu = false
+                                                Timber.d("[UI] 刷新按钮被点击：webViewReloadKey=$webViewReloadKey")
                                             }
-                                            
-                                            //    - 刷新歌词结构条的显示（fetchLyrics 会自动触发，但这里显式调用确保及时更新）
-                                            viewModel.refreshSongStructures()
-                                            
-                                            // 4. 状态重置：关闭菜单
-                                            showMenu = false
-                                            
-                                            // 提供视觉反馈（可选）
-                                            Timber.d("[UI] 刷新按钮被点击：webViewReloadKey=$webViewReloadKey")
                                         }
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                                    text = { Text("设置") },
-                                    onClick = { context.startActivity(Intent(context, com.amll.droidmate.ui.SettingsActivity::class.java)); showMenu = false }
-                                )
+                                    )
+                                    DropdownMenuItem(
+                                        leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                                        text = { Text("设置") },
+                                        onClick = { context.startActivity(Intent(context, com.amll.droidmate.ui.SettingsActivity::class.java)); showMenu = false }
+                                    )
+                                }
                             }
                         }
-                    }
-                }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        scrolledContainerColor = MaterialTheme.colorScheme.background
+                    ),
+                    scrollBehavior = scrollBehavior,
+                    modifier = Modifier.statusBarsPadding()
+                )
             }
+        }
+    ) { innerPadding ->
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            // no-op: menu is anchored in the AppBar actions
 
             if (!notificationAccessGranted && !isLyricsFullscreen) {
                 PermissionStatusCard(

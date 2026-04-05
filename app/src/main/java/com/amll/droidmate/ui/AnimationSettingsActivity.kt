@@ -1,66 +1,53 @@
 package com.amll.droidmate.ui
 
-import android.content.Intent
 import android.net.Uri
-import android.os.Bundle
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.amll.droidmate.ui.base.BaseComposeActivity
 import com.amll.droidmate.ui.theme.DynamicThemeManager
 import java.io.File
 import java.io.IOException
-import com.amll.droidmate.ui.theme.SuccessGreen
-import com.amll.droidmate.ui.theme.WarningAmber
 
 /**
  * 有相当一部分设置未完工！这些设置已被注释。
@@ -224,27 +211,42 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
     var enableBackgroundStaticMode by remember { mutableStateOf(AppSettings.isAmllBackgroundStaticModeEnabled(context)) }
     var rendererExpanded by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-        TopAppBar(
-            title = { Text("AMLL 歌词组件设置") },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回"
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background
-            )
-        )
+    val topAppBarState = rememberTopAppBarState()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
+    androidx.compose.material3.Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeTopAppBar(
+                title = { Text("AMLL 歌词组件设置") },
+                navigationIcon = {
+                    androidx.compose.material3.FilledIconButton(
+                        onClick = onBack,
+                        colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "返回"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background
+                ),
+                scrollBehavior = scrollBehavior
+            )
+        }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(16.dp)
+                .padding(innerPadding),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
@@ -475,7 +477,7 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                         )
                                     }
 
-                                    Switch(
+                                    SwitchWithIcon(
                                         checked = enabledFontIds.contains(font.id),
                                         onCheckedChange = { enabled ->
                                             val next = enabledFontIds.toMutableSet()
@@ -534,7 +536,7 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
-                        Switch(
+                        SwitchWithIcon(
                             checked = enableSpring,
                             onCheckedChange = { enabled ->
                                 enableSpring = enabled
@@ -557,7 +559,7 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
-                        Switch(
+                        SwitchWithIcon(
                             checked = enableScale,
                             onCheckedChange = { enabled ->
                                 enableScale = enabled
@@ -580,7 +582,7 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
-                        Switch(
+                        SwitchWithIcon(
                             checked = enableBlur,
                             onCheckedChange = { enabled ->
                                 enableBlur = enabled
@@ -603,7 +605,7 @@ private fun AnimationSettingsPage(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
-                        Switch(
+                        SwitchWithIcon(
                             checked = hidePassedLines,
                             onCheckedChange = { enabled ->
                                 hidePassedLines = enabled

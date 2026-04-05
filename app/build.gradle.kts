@@ -168,6 +168,24 @@ tasks.named("preBuild") {
     dependsOn(buildFrontendProvider)
 }
 
+// Copy Material Symbols variable font from .project into res/font before resource merge.
+// This avoids committing a binary into VCS while still bundling the recommended MD3 icon font.
+val copyMaterialSymbols = tasks.register<Copy>("copyMaterialSymbols") {
+    val srcFile = rootProject.file(".project/MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf")
+    if (srcFile.exists()) {
+        from(srcFile)
+        into(file("src/main/res/font"))
+        rename { "material_symbols_outlined.ttf" }
+    } else {
+        doLast { logger.warn("Material Symbols font not found at ${srcFile.absolutePath}, skipping copy") }
+    }
+}
+
+// Ensure the font is copied before resource merging (preBuild is executed before that)
+tasks.named("preBuild") {
+    dependsOn(copyMaterialSymbols)
+}
+
 // ============================================================================
 // 版本号生成器（使用时间戳）
 // ============================================================================
@@ -274,6 +292,7 @@ dependencies {
     // ==================== Compose BOM (Bill of Materials) ====================
     // 使用 BOM 统一管理所有 Compose 相关库的版本，避免版本冲突
     implementation(platform("androidx.compose:compose-bom:2026.03.00"))
+    implementation("androidx.compose.material3:material3:1.4.0")
     androidTestImplementation(platform("androidx.compose:compose-bom:2026.03.00"))
 
     // ==================== AndroidX 核心库 ====================
