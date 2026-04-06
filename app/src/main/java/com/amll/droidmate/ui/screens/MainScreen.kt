@@ -605,7 +605,7 @@ fun MainScreen() {
                                 Card(
                                     modifier = Modifier.padding(32.dp),
                                     colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f)
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                                     ),
                                     shape = RoundedCornerShape(16.dp)
                                 ) {
