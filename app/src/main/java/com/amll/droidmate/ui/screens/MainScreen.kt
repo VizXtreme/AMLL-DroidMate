@@ -389,8 +389,8 @@ fun MainScreen() {
                             ) {
                                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
                                     DropdownMenuItem(
-                                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.TextSnippet, contentDescription = null) },
                                         text = { Text("自选歌词") },
+                                        trailingIcon = { Icon(Icons.AutoMirrored.Filled.TextSnippet, contentDescription = null) },
                                         onClick = {
                                             val intent = Intent(context, CustomLyricsActivity::class.java).apply {
                                                 putExtra(CustomLyricsActivity.EXTRA_TITLE, nowPlaying?.title ?: "")
@@ -405,8 +405,8 @@ fun MainScreen() {
                                         }
                                     )
                                     DropdownMenuItem(
-                                        leadingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) },
                                         text = { Text("刷新") },
+                                        trailingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) },
                                         onClick = {
                                             scope.launch {
                                                 viewModel.fetchLyrics()
@@ -434,8 +434,8 @@ fun MainScreen() {
                                         }
                                     )
                                     DropdownMenuItem(
-                                        leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) },
                                         text = { Text("设置") },
+                                        trailingIcon = { Icon(Icons.Default.Settings, contentDescription = null) },
                                         onClick = { context.startActivity(Intent(context, com.amll.droidmate.ui.SettingsActivity::class.java)); showMenu = false }
                                     )
                                 }

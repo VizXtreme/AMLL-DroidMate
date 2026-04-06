@@ -35,18 +35,17 @@ fun SwitchWithIcon(
                 Icon(
                     imageVector = Icons.Filled.Check,
                     contentDescription = null,
-                    modifier = Modifier.size(androidx.compose.material3.SwitchDefaults.IconSize)
+                    modifier = Modifier.size(androidx.compose.material3.SwitchDefaults.IconSize),
+                    tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary
                 )
             } else {
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = null,
-                    modifier = Modifier.size(androidx.compose.material3.SwitchDefaults.IconSize)
+                    modifier = Modifier.size(androidx.compose.material3.SwitchDefaults.IconSize),
+                    tint = androidx.compose.material3.MaterialTheme.colorScheme.inverseOnSurface
                 )
             }
         }
     )
 }
-
-
-

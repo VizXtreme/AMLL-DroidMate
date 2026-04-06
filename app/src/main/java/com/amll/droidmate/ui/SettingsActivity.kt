@@ -13,6 +13,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,18 +26,19 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -129,6 +131,7 @@ private fun SettingsPage(
     val switchColors = SwitchDefaults.colors(
         checkedThumbColor = rippleColor,
         checkedTrackColor = rippleColor.copy(alpha = 0.5f),
+        checkedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
         uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
         uncheckedTrackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f)
     )
@@ -204,7 +207,22 @@ private fun SettingsPage(
             )
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        if (!lyricNotificationEnabled) {
+                            if (needsNotificationPermission() && !hasNotificationPermission(context)) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                lyricNotificationEnabled = true
+                                AppSettings.setLyricNotificationEnabled(context, true)
+                            }
+                        } else {
+                            lyricNotificationEnabled = false
+                            AppSettings.setLyricNotificationEnabled(context, false)
+                            com.amll.droidmate.service.LyricNotificationManager(context).cancel()
+                        }
+                    },
                 // ensure the card stands out in light theme as well
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
@@ -288,7 +306,13 @@ private fun SettingsPage(
             )
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val newState = !skipPreviousRewinds
+                        skipPreviousRewinds = newState
+                        AppSettings.setSkipPreviousRewindsEnabled(context, newState)
+                    },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(
@@ -318,7 +342,13 @@ private fun SettingsPage(
             }
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val newState = !processMetadataEnabled
+                        processMetadataEnabled = newState
+                        AppSettings.setMetadataProcessingEnabled(context, newState)
+                    },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(
@@ -348,7 +378,13 @@ private fun SettingsPage(
             }
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val newState = !agentRecognizerEnabled
+                        agentRecognizerEnabled = newState
+                        AppSettings.setAgentRecognizerEnabled(context, newState)
+                    },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(
@@ -388,13 +424,28 @@ private fun SettingsPage(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
 
-            Button(
-                onClick = {
-                    context.startActivity(Intent(context, WsProtocolSettingsActivity::class.java))
-                },
-                modifier = Modifier.fillMaxWidth()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        context.startActivity(Intent(context, WsProtocolSettingsActivity::class.java))
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Text("打开 WebSocket 传递设置")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("WebSocket 传递设置", color = MaterialTheme.colorScheme.onSurface)
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowRight,
+                        contentDescription = "进入",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
 
@@ -408,13 +459,28 @@ private fun SettingsPage(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
-            Button(
-                onClick = {
-                    context.startActivity(Intent(context, LyricOffsetSettingsActivity::class.java))
-                },
-                modifier = Modifier.fillMaxWidth()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        context.startActivity(Intent(context, LyricOffsetSettingsActivity::class.java))
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Text("歌词时间轴偏移设置")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("歌词时间轴偏移设置", color = MaterialTheme.colorScheme.onSurface)
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowRight,
+                        contentDescription = "进入",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
             
 
@@ -423,13 +489,28 @@ private fun SettingsPage(
                 style = MaterialTheme.typography.titleMedium
             )
 
-            Button(
-                onClick = {
-                    context.startActivity(Intent(context, AnimationSettingsActivity::class.java))
-                },
-                modifier = Modifier.fillMaxWidth()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        context.startActivity(Intent(context, AnimationSettingsActivity::class.java))
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Text("打开 AMLL 歌词组件设置")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("AMLL 歌词组件设置", color = MaterialTheme.colorScheme.onSurface)
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowRight,
+                        contentDescription = "进入",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
             Text(
@@ -448,7 +529,13 @@ private fun SettingsPage(
                     Text("当前版本: ${getCurrentVersionName(context)}", color = MaterialTheme.colorScheme.onSurface)
 
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val newState = !autoCheckEnabled
+                                autoCheckEnabled = newState
+                                AppSettings.setAutoUpdateCheckEnabled(context, newState)
+                            },
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.fillMaxWidth(0.75f)) {
@@ -542,11 +629,28 @@ private fun SettingsPage(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
-            TextButton(
-                onClick = onOpenNotificationSettings,
-                modifier = Modifier.fillMaxWidth()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onOpenNotificationSettings()
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Text("转至“读取、回复和控制通知”")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("转至“读取、回复和控制通知”", color = MaterialTheme.colorScheme.onSurface)
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowRight,
+                        contentDescription = "进入",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
             Text(
@@ -554,13 +658,28 @@ private fun SettingsPage(
                 style = MaterialTheme.typography.titleMedium
             )
 
-            Button(
-                onClick = {
-                    context.startActivity(Intent(context, LogDisplayActivity::class.java))
-                },
-                modifier = Modifier.fillMaxWidth()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        context.startActivity(Intent(context, LogDisplayActivity::class.java))
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Text("查看日志")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("查看日志", color = MaterialTheme.colorScheme.onSurface)
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowRight,
+                        contentDescription = "进入",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
             Text(

@@ -1,9 +1,9 @@
 package com.amll.droidmate.ui
 
 import android.content.Context
+import com.amll.droidmate.util.PreferenceHelper
 import org.json.JSONArray
 import org.json.JSONObject
-import com.amll.droidmate.util.PreferenceHelper
 
 /**
  * 卡片点击行为枚举
@@ -96,7 +96,15 @@ object AppSettings {
     private const val KEY_AMLL_ANIMATION_HIDE_PASSED_LINES = "amll_animation_hide_passed_lines"  // 隐藏已唱过的歌词行
     private const val KEY_AMLL_ANIMATION_WORD_FADE_WIDTH = "amll_animation_word_fade_width"  // 逐字渐变宽度
     private const val KEY_AMLL_ANIMATION_FPS = "amll_animation_fps"  // 动画帧率
-    
+    // 物理弹簧参数（分轴设置）
+    private const val KEY_AMLL_SPRING_POSY_MASS = "amll_spring_posy_mass"
+    private const val KEY_AMLL_SPRING_POSY_DAMPING = "amll_spring_posy_damping"
+    private const val KEY_AMLL_SPRING_POSY_STIFFNESS = "amll_spring_posy_stiffness"
+
+    private const val KEY_AMLL_SPRING_SCALE_MASS = "amll_spring_scale_mass"
+    private const val KEY_AMLL_SPRING_SCALE_DAMPING = "amll_spring_scale_damping"
+    private const val KEY_AMLL_SPRING_SCALE_STIFFNESS = "amll_spring_scale_stiffness"
+
     // 歌词样式相关设置
     private const val KEY_AMLL_LYRIC_PLAYER_IMPLEMENTATION = "amll_lyric_player_implementation"  // 歌词播放器实现
     private const val KEY_AMLL_LYRIC_SIZE_PRESET = "amll_lyric_size_preset"  // 歌词字体大小预设
@@ -125,7 +133,15 @@ object AppSettings {
     private const val DEFAULT_AMLL_ANIMATION_HIDE_PASSED_LINES = false  // 默认不隐藏已唱过的行
     private const val DEFAULT_AMLL_ANIMATION_WORD_FADE_WIDTH = 0.5f     // 默认渐变宽度 0.5
     private const val DEFAULT_AMLL_ANIMATION_FPS = 60  // 默认 60 FPS
-    
+    // 默认弹簧参数（与 core 默认保持一致）
+    private const val DEFAULT_AMLL_SPRING_POSY_MASS = 0.9f
+    private const val DEFAULT_AMLL_SPRING_POSY_DAMPING = 15.0f
+    private const val DEFAULT_AMLL_SPRING_POSY_STIFFNESS = 90.0f
+
+    private const val DEFAULT_AMLL_SPRING_SCALE_MASS = 2.0f
+    private const val DEFAULT_AMLL_SPRING_SCALE_DAMPING = 25.0f
+    private const val DEFAULT_AMLL_SPRING_SCALE_STIFFNESS = 100.0f
+
     // 歌词样式默认值
     private const val DEFAULT_AMLL_LYRIC_PLAYER_IMPLEMENTATION = "dom"  // 默认 DOM 实现
     private const val DEFAULT_AMLL_LYRIC_SIZE_PRESET = "medium"  // 默认中等字体大小
@@ -516,6 +532,62 @@ object AppSettings {
 
     fun setAmllAnimationFps(context: Context, value: Int) {
         prefs(context).putLong(KEY_AMLL_ANIMATION_FPS, value.toLong())
+    }
+
+    // === 弹簧参数（纵向 posY） ===
+    fun getAmllSpringPosYMass(context: Context): Float {
+        return prefs(context).getString(KEY_AMLL_SPRING_POSY_MASS, DEFAULT_AMLL_SPRING_POSY_MASS.toString())
+            ?.toFloatOrNull() ?: DEFAULT_AMLL_SPRING_POSY_MASS
+    }
+
+    fun setAmllSpringPosYMass(context: Context, value: Float) {
+        prefs(context).putString(KEY_AMLL_SPRING_POSY_MASS, value.toString())
+    }
+
+    fun getAmllSpringPosYDamping(context: Context): Float {
+        return prefs(context).getString(KEY_AMLL_SPRING_POSY_DAMPING, DEFAULT_AMLL_SPRING_POSY_DAMPING.toString())
+            ?.toFloatOrNull() ?: DEFAULT_AMLL_SPRING_POSY_DAMPING
+    }
+
+    fun setAmllSpringPosYDamping(context: Context, value: Float) {
+        prefs(context).putString(KEY_AMLL_SPRING_POSY_DAMPING, value.toString())
+    }
+
+    fun getAmllSpringPosYStiffness(context: Context): Float {
+        return prefs(context).getString(KEY_AMLL_SPRING_POSY_STIFFNESS, DEFAULT_AMLL_SPRING_POSY_STIFFNESS.toString())
+            ?.toFloatOrNull() ?: DEFAULT_AMLL_SPRING_POSY_STIFFNESS
+    }
+
+    fun setAmllSpringPosYStiffness(context: Context, value: Float) {
+        prefs(context).putString(KEY_AMLL_SPRING_POSY_STIFFNESS, value.toString())
+    }
+
+    // === 弹簧参数（缩放 scale） ===
+    fun getAmllSpringScaleMass(context: Context): Float {
+        return prefs(context).getString(KEY_AMLL_SPRING_SCALE_MASS, DEFAULT_AMLL_SPRING_SCALE_MASS.toString())
+            ?.toFloatOrNull() ?: DEFAULT_AMLL_SPRING_SCALE_MASS
+    }
+
+    fun setAmllSpringScaleMass(context: Context, value: Float) {
+        prefs(context).putString(KEY_AMLL_SPRING_SCALE_MASS, value.toString())
+    }
+
+    fun getAmllSpringScaleDamping(context: Context): Float {
+        return prefs(context).getString(KEY_AMLL_SPRING_SCALE_DAMPING, DEFAULT_AMLL_SPRING_SCALE_DAMPING.toString())
+            ?.toFloatOrNull() ?: DEFAULT_AMLL_SPRING_SCALE_DAMPING
+    }
+
+    fun setAmllSpringScaleDamping(context: Context, value: Float) {
+        prefs(context).putString(KEY_AMLL_SPRING_SCALE_DAMPING, value.toString())
+    }
+
+    fun getAmllSpringScaleStiffness(context: Context): Float {
+        return prefs(context).getString(KEY_AMLL_SPRING_SCALE_STIFFNESS, DEFAULT_AMLL_SPRING_SCALE_STIFFNESS.toString())
+            ?.toFloatOrNull() ?: DEFAULT_AMLL_SPRING_SCALE_STIFFNESS
+    }
+
+    fun setAmllSpringScaleStiffness(context: Context, value: Float) {
+        prefs(context).putString(KEY_AMLL_SPRING_SCALE_STIFFNESS, value.toString())
     }
 
     // === 歌词样式设置 ===

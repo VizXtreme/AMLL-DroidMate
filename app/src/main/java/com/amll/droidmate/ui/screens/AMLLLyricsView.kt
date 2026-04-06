@@ -224,7 +224,9 @@ fun AMLLLyricsView(
     var isPageReady by remember { mutableStateOf(false) }
     
     // 上一次配置值的缓存（用于去重，避免重复调用 JavaScript）
-    var lastModeValue by remember { mutableStateOf<String?>(null) }
+    // Cache last applied render-mode (dom/dom-lite) and lyric player implementation
+    var lastRenderModeValue by remember { mutableStateOf<String?>(null) }
+    var lastLyricPlayerImplValue by remember { mutableStateOf<String?>(null) }
     var lastBackgroundProfileValue by remember { mutableStateOf<String?>(null) }
     var lastLyricSizePreset by remember { mutableStateOf<String?>(null) }
     var lastEnableAdvanceDynamicTime by remember { mutableStateOf<Boolean?>(null) }
@@ -416,7 +418,8 @@ fun AMLLLyricsView(
                      */
                     override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                         isPageReady = false
-                        lastModeValue = null
+                        lastRenderModeValue = null
+                        lastLyricPlayerImplValue = null
                         lastBackgroundProfileValue = null
                         lastLyrics = null
                         lastLyricsPayload = null
@@ -434,7 +437,8 @@ fun AMLLLyricsView(
                     override fun onPageFinished(view: WebView, url: String) {
                         isPageReady = true
                         // Force one re-sync after page finishes to avoid losing early bridge calls.
-                        lastModeValue = null
+                        lastRenderModeValue = null
+                        lastLyricPlayerImplValue = null
                         lastBackgroundProfileValue = null
                         // 页面刷新结束时不主动清空 lastLyrics，让我们知道是否还有有效歌词
                         // lastLyrics = null
@@ -583,10 +587,10 @@ fun AMLLLyricsView(
             // ==================== 渲染模式配置 ====================
             // 根据 renderMode 设置渲染模式（dom 或 dom-lite）
             val modeValue = if (renderMode == AMLLRenderMode.DOM) "dom" else "dom-lite"
-            if (lastModeValue != modeValue) {
+            if (lastRenderModeValue != modeValue) {
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setRenderMode($modeValue)")
                 view.evaluateJavascript("window.setRenderMode && window.setRenderMode('$modeValue');", null)
-                lastModeValue = modeValue
+                lastRenderModeValue = modeValue
             }
 
             // ==================== 动画 FPS 设置 ====================
@@ -637,10 +641,10 @@ fun AMLLLyricsView(
                 "canvas" -> "canvas"
                 else -> "dom"
             }
-            if (lastModeValue != renderModeValue) {
+            if (lastLyricPlayerImplValue != renderModeValue) {
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setLyricPlayerImplementation($renderModeValue)")
                 view.evaluateJavascript("window.setLyricPlayerImplementation && window.setLyricPlayerImplementation('$renderModeValue');", null)
-                lastModeValue = renderModeValue
+                lastLyricPlayerImplValue = renderModeValue
             }
 
             // 歌词字体大小预设

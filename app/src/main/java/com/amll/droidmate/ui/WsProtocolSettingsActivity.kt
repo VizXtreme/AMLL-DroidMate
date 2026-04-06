@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,11 +25,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -217,7 +216,22 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
             }
             
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val newState = !websocketEnabled
+                        websocketEnabled = newState
+                        AppSettings.setWebSocketProtocolEnabled(context, newState)
+
+                        // 切换开关时立即生效连接
+                        if (newState && isValidWebSocketAddress(websocketAddress)) {
+                            Timber.d("[WebSocketSettings] 启用 WebSocket，尝试连接：$websocketAddress")
+                            webSocketClient.connect(websocketAddress)
+                        } else {
+                            Timber.d("[WebSocketSettings] 禁用 WebSocket，断开连接")
+                            webSocketClient.disconnect()
+                        }
+                    },
                 colors = CardDefaults.cardColors(containerColor = statusCardBg)
             ) {
                 Column(
@@ -440,7 +454,13 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
 
             // WebView 全局开关卡片
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val newState = !webViewEnabled
+                        webViewEnabled = newState
+                        AppSettings.setWebViewEnabled(context, newState)
+                    },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(
