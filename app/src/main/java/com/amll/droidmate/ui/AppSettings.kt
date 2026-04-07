@@ -141,7 +141,7 @@ object AppSettings {
     private const val DEFAULT_AMLL_SPRING_SCALE_MASS = 2.0f
     private const val DEFAULT_AMLL_SPRING_SCALE_DAMPING = 25.0f
     private const val DEFAULT_AMLL_SPRING_SCALE_STIFFNESS = 100.0f
-
+    
     // 歌词样式默认值
     private const val DEFAULT_AMLL_LYRIC_PLAYER_IMPLEMENTATION = "dom"  // 默认 DOM 实现
     private const val DEFAULT_AMLL_LYRIC_SIZE_PRESET = "medium"  // 默认中等字体大小
