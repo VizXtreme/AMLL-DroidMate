@@ -1,3 +1,8 @@
+>[!CAUTION]
+># 停止维护公告
+>
+>鉴于本仓库主各项水平有限，没有能力（即智商太低）再与 AMLL 相关项目维护者保持良好的沟通。即日起停止对本项目的维护，感谢您一路以来的支持。我相信各位能找到更好的项目，毕竟大佬这么多又不缺我一个脑瘫，对吧？
+
 # AMLL DroidMate
 
 即开即用 Android 端外置歌词显示器，集成 [AMLL](https://github.com/amll-dev/applemusic-like-lyrics) 风格渲染与多源歌词检索能力。
