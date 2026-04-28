@@ -1,4 +1,4 @@
-# DroidMate 日志使用规范
+# ScoreMuse 日志使用规范
 
 ## 📋 日志等级说明
 
@@ -320,7 +320,7 @@ Timber.d("[Debug] Variable value: $value") // ❌ [Debug] 不是有效的模块�
 ### 完整格式示例
 ```
 时间戳 [级别] 类名：[模块标记] 消息内容
-2026-03-30 10:49:43.690 [D] AMLLLyricsViewKt: [AGENT] Starting recognition
+2026-03-30 10:49:43.690 [D] LyricsViewKt: [AGENT] Starting recognition
 ```
 
 ### 消息内容要求
@@ -528,4 +528,4 @@ Timber.w("[AlbumArtExtractor] Extraction failed, using default image")
 ---
 
 **最后更新：** 2026-03-30  
-**维护者：** DroidMate 开发团队
+**维护者：** ScoreMuse 开发团队

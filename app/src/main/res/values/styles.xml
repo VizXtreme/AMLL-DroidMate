@@ -5,7 +5,7 @@
   ~ 定义应用中使用的主题和样式。
   ~ 
   ~ **当前主题**：
-  ~ - Theme.DroidMate: 基于 Material Design 3 的自定义主题
+  ~ - Theme.ScoreMuse: 基于 Material Design 3 的自定义主题
   ~ - 支持日夜模式自动切换（DayNight）
   ~ - 无ActionBar 设计（使用 Compose TopAppBar）
   ~ 
@@ -15,7 +15,7 @@
   ~ - 更好的无障碍支持
   -->
 <resources>
-    <!-- DroidMate 应用主题 -->
+    <!-- ScoreMuse 应用主题 -->
     <!-- 继承自 Material3 日夜主题，不带 ActionBar（使用 Compose 实现） -->
-    <style name="Theme.DroidMate" parent="Theme.Material3.DayNight.NoActionBar" />
+    <style name="Theme.ScoreMuse" parent="Theme.Material3.DayNight.NoActionBar" />
 </resources>

@@ -12,8 +12,8 @@
   -->
 <resources>
     <!-- 应用名称（显示在启动器和通知栏） -->
-    <string name="app_name">AMLL DroidMate</string>
+    <string name="app_name">ScoreMuse</string>
     
     <!-- Activity 名称（用于界面标题等） -->
-    <string name="activity_name">DroidMate</string>
+    <string name="activity_name">ScoreMuse</string>
 </resources>

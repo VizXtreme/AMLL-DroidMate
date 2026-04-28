@@ -35,16 +35,16 @@
 # 注意：避免使用过于宽泛的规则（影响 100+ 类），只保留必要的类
 
 # MainActivity：应用主入口，必须保留
--keep class com.amll.droidmate.MainActivity { *; }
+-keep class io.github.zeehan2005.scoremuse.MainActivity { *; }
 
 # Service 层：后台服务组件，必须保留
--keep class com.amll.droidmate.service.** { *; }
+-keep class io.github.zeehan2005.scoremuse.service.** { *; }
 
 # UI Screens：Compose 界面组件，必须保留
--keep class com.amll.droidmate.ui.screens.** { *; }
+-keep class io.github.zeehan2005.scoremuse.ui.screens.** { *; }
 
 # Domain Models：数据模型，用于序列化和数据库
--keep class com.amll.droidmate.domain.model.** { *; }
+-keep class io.github.zeehan2005.scoremuse.domain.model.** { *; }
 
 # (移除 blanket package rule，让 shrinker 自动修剪未使用的类)
 
@@ -78,9 +78,9 @@
 # 假设 Timber 调用没有副作用，可以安全移除
 # 这能减小 APK 体积并提升性能
 -assumenosideeffects class timber.log.Timber {
-    public static *** d(...);  // Debug 日志
-    public static *** v(...);  // Verbose 日志
-    public static *** i(...);  // Info 日志
+    public static *** d(...);  # Debug 日志
+    public static *** v(...);  # Verbose 日志
+    public static *** i(...);  # Info 日志
 }
 
 # ==================== Ktor 网络库保留规则 ====================

@@ -1,14 +1,7 @@
+
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import org.gradle.api.tasks.TaskAction
-import javax.inject.Inject
-import org.gradle.process.ExecOperations
-import java.io.File
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.provider.Provider
 
 // ============================================================================
 // DroidMate Android 应用构建配置
@@ -38,162 +31,15 @@ plugins {
     kotlin("plugin.compose")
 }
 
-// ============================================================================
-// 自定义 Gradle 任务：构建前端资源
-// ============================================================================
-// 
-// **功能说明**：
-// 这个任务负责在 Android 构建之前，先编译前端 TypeScript/React 代码，
-// 生成 AMLL 歌词渲染所需的 Web 资源（HTML、CSS、JS）。
-// 
-// **工作流程**：
-// 1. 检查 frontend 目录是否存在
-// 2. Windows: 执行 build-android.ps1 PowerShell 脚本
-// 3. Linux/macOS: 执行 pnpm run build:android
-// 4. 生成的资源自动复制到 app/src/main/assets/amll/
-// 
-// **增量构建支持**：
-// - 监听 frontend/src 目录变化
-// - 只有源文件变化时才重新构建
-// ============================================================================
-/**
- * 构建前端资源的自定义 Gradle 任务
- * 
- * 这个任务使用 ExecOperations 在构建过程中调用外部命令（pnpm 或 PowerShell）
- * 来编译前端代码并生成 Web 资源。
- * 
- * @param execOperations Gradle 提供的执行操作接口，用于运行外部进程
- */
-abstract class BuildFrontendTask @Inject constructor(
-    private val execOperations: ExecOperations
-) : DefaultTask() {
-    
-    // ==================== 任务输入输出配置 ====================
-    
-    /**
-     * 前端源代码目录（增量构建的输入）
-     * 
-     * Gradle 会监控这个目录的变化，只有文件变化时才执行任务
-     * PathSensitivity.RELATIVE: 只关心相对路径，不关心绝对路径
-     */
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val frontendSrcDir: DirectoryProperty
-    
-    /**
-     * 输出目录（用于 up-to-date 检查）
-     * 
-     * Gradle 会比较输出目录的时间戳，判断是否需要重新执行任务
-     */
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
-    
-    /**
-     * 根项目目录（内部使用，不参与 up-to-date 检查）
-     * 
-     * @Internal: 标记为内部属性，不影响任务状态
-     */
-    @get:Internal
-    abstract val rootProjectDir: DirectoryProperty
-    
-    init {
-        // 任务分组：在 Gradle 任务列表中归类到 "frontend" 组
-        group = "frontend"
-        // 任务描述：在 gradle tasks 命令中显示的说明
-        description = "Build frontend assets using pnpm"
-    }
-    
-    /**
-     * 执行前端构建的核心逻辑
-     * 
-     * 这个函数会在每次执行 buildFrontend 任务时被调用。
-     * 它会根据操作系统选择合适的构建命令。
-     */
-    @TaskAction
-    fun buildFrontend() {
-        // Step 1: 获取项目根目录和前端目录路径
-        val rootDir = rootProjectDir.get().asFile
-        val frontendDir = File(rootDir, "frontend")
-        val scriptsDir = File(rootDir, "scripts")
-        // 检测操作系统（Windows 需要特殊处理）
-        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
-        
-        // Step 2: 检查前端目录是否存在，不存在则跳过构建
-        if (!frontendDir.exists()) {
-            logger.warn("Frontend directory not found, skipping build")
-            return
-        }
-        
-        logger.info("Building frontend in ${frontendDir.absolutePath}")
-        
-        // Step 3: 根据操作系统选择构建命令
-        val command = if (isWindows) {
-            // Windows: 使用 PowerShell 执行构建脚本
-            listOf("powershell", "-ExecutionPolicy", "Bypass", "-File", 
-                File(scriptsDir, "build-android.ps1").absolutePath)
-        } else {
-            // Linux/macOS: 直接使用 pnpm 命令
-            listOf("pnpm", "run", "build:android")
-        }
-        
-        // Step 4: 执行构建命令
-        execOperations.exec {
-            // 设置工作目录为 frontend 目录
-            workingDir(frontendDir)
-            // 执行命令
-            commandLine(command)
-        }
-    }
-}
-
-// ============================================================================
-// 注册并配置 buildFrontend 任务
-// ============================================================================
-val buildFrontendProvider = tasks.register("buildFrontend", BuildFrontendTask::class.java) {
-    // 只设置前端源码目录为输入 - 这是我们要监控变化的内容
-    frontendSrcDir.set(File(rootProject.projectDir, "frontend/src"))
-    
-    // 设置输出目录用于 up-to-date 检查
-    outputDir.set(File(rootProject.projectDir, "app/src/main/assets/amll"))
-    
-    // 设置根项目目录供任务执行时使用
-    rootProjectDir.set(rootProject.layout.projectDirectory)
-}
-
-// ============================================================================
-// 构建依赖关系：在 preBuild 之前先执行 buildFrontend
-// ============================================================================
-// preBuild 是 Android 构建的标准前置任务，在它之前先构建前端资源
-tasks.named("preBuild") {
-    dependsOn(buildFrontendProvider)
-}
-
-// Copy Material Symbols variable font from .project into res/font before resource merge.
-// This avoids committing a binary into VCS while still bundling the recommended MD3 icon font.
-val copyMaterialSymbols = tasks.register<Copy>("copyMaterialSymbols") {
-    val srcFile = rootProject.file(".project/MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf")
-    if (srcFile.exists()) {
-        from(srcFile)
-        into(file("src/main/res/font"))
-        rename { "material_symbols_outlined.ttf" }
-    } else {
-        doLast { logger.warn("Material Symbols font not found at ${srcFile.absolutePath}, skipping copy") }
-    }
-}
-
-// Ensure the font is copied before resource merging (preBuild is executed before that)
-tasks.named("preBuild") {
-    dependsOn(copyMaterialSymbols)
-}
 
 // ============================================================================
 // 版本号生成器（使用时间戳）
 // ============================================================================
-// Provider API 实现懒加载：只有在真正需要时才计算时间戳
-// 确保每次构建都有新的版本号，便于区分不同构建版本
-val buildTimestampProvider: Provider<String> = providers.provider {
+// 确保每次构建都重新计算时间戳
+// 直接定义为一个函数，每次调用都会重新计算
+fun getBuildTimestamp(): String {
     // 格式：yyyyMMddHHmmss (例如：20260401123456)
-    SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(Date())
+    return SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(Date())
 }
 
 // ============================================================================
@@ -202,25 +48,26 @@ val buildTimestampProvider: Provider<String> = providers.provider {
 android {
     // ==================== 基本配置 ====================
     // 包名：应用的唯一标识符（用于 Google Play、安装等）
-    namespace = "com.amll.droidmate"
+    namespace = "dev.amll.droidmate"
     // 编译 SDK 版本：使用最新 SDK 以获得新特性支持
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         // 应用 ID：设备的唯一标识（可以与 namespace 不同）
-        applicationId = "com.amll.droidmate"
+        applicationId = "dev.amll.droidmate"
         
         // 最低支持的 Android 版本（API 26 = Android 8.0）
         minSdk = 26
         
         // 目标 SDK：针对最新版本优化
-        targetSdk = 36
+        targetSdk = 37
         
         // 版本号：整数，每次发布递增（Google Play 要求）
         versionCode = 1
         
         // 版本名称：显示给用户的版本信息（使用时间戳格式）
-        versionName = "Alpha ${buildTimestampProvider.get()}" // 版本号
+//        versionName = "Alpha ${getBuildTimestamp()}" // 开发版
+        versionName = "v1.0.0" // 正式版
         
         // 使用支持库处理 VectorDrawable（兼容旧版本）
         vectorDrawables.useSupportLibrary = true
@@ -242,6 +89,7 @@ android {
                 // 项目自定义规则
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     // Java 兼容性配置
@@ -273,13 +121,15 @@ android {
 // APK 文件命名配置
 // ============================================================================
 // 使用现代 Gradle API (androidComponents) 为每个构建变体自定义 APK 文件名
-// 格式：AMLL-DroidMate-Alpha-时间戳.apk
+// 格式：ScoreMuse-Alpha-时间戳.apk
 androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
             // 重命名 APK 文件（仅适用于 VariantOutputImpl 类型）
             (output as? com.android.build.api.variant.impl.VariantOutputImpl)?.outputFileName?.set(
-                "AMLL-DroidMate-Alpha-${buildTimestampProvider.get()}.apk" //版本号
+                // 版本号
+//                "ScoreMuse-Alpha-${getBuildTimestamp()}.apk" // 开发版
+                "ScoreMuse-v1.0.0.apk" // 正式版
             )
         }
     }
@@ -291,9 +141,9 @@ androidComponents {
 dependencies {
     // ==================== Compose BOM (Bill of Materials) ====================
     // 使用 BOM 统一管理所有 Compose 相关库的版本，避免版本冲突
-    implementation(platform("androidx.compose:compose-bom:2026.03.00"))
-    implementation("androidx.compose.material3:material3:1.4.0")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2026.03.00"))
+    implementation(platform("androidx.compose:compose-bom:2026.04.01"))
+    implementation("androidx.compose.material3:material3:1.5.0-alpha18")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2026.04.01"))
 
     // ==================== AndroidX 核心库 ====================
     // Kotlin 扩展函数，提供更简洁的 API
@@ -318,10 +168,10 @@ dependencies {
 
     // ==================== Media3 UI 组件 ====================
     // 提供 DefaultTimeBar 和其他播放器控制组件
-    implementation("androidx.media3:media3-ui:1.0.0")
+    implementation("androidx.media3:media3-ui:1.10.0")
     
     // WebView 支持（用于 AMLL 歌词渲染）
-    implementation("androidx.webkit:webkit:1.8.0")
+    implementation("androidx.webkit:webkit:1.15.0")
     // ==================== Jetpack Compose UI ====================
     // 版本号由 BOM 统一管理，不需要单独指定
     // Compose UI 核心功能
@@ -333,7 +183,7 @@ dependencies {
     // Material Design 3 组件库
     implementation("androidx.compose.material3:material3")
     // Google Material 设计组件（非 Compose 版本）
-    implementation("com.google.android.material:material:1.11.0")
+    implementation("com.google.android.material:material:1.13.0")
     // Material 图标扩展库（更多图标选择）
     implementation("androidx.compose.material:material-icons-extended")
     
@@ -343,23 +193,20 @@ dependencies {
 
     // ==================== Ktor 网络客户端（3.x 版本） ====================
     // Ktor 核心库（HTTP 客户端）
-    implementation("io.ktor:ktor-client-core:3.4.1")
+    implementation("io.ktor:ktor-client-core:3.3.3")
     // OkHttp 引擎（Android 平台实现）
-    implementation("io.ktor:ktor-client-okhttp:3.4.1")
+    implementation("io.ktor:ktor-client-okhttp:3.3.3")
     // 内容协商（JSON/XML 序列化）
-    implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
+    implementation("io.ktor:ktor-client-content-negotiation:3.3.3")
     // 序列化支持
-    implementation("io.ktor:ktor-client-serialization:3.4.1")
+    implementation("io.ktor:ktor-client-serialization:3.3.3")
     // Kotlinx JSON 序列化器
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
 
     // ==================== JSON 序列化 ====================
     // Kotlinx Serialization: Kotlin 原生的 JSON 序列化库
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
-    // ==================== 中文简繁转换 ====================
-    // OpenCC4J: 用于改进歌曲匹配（处理简体/繁体中文）
-    implementation("com.github.houbb:opencc4j:1.6.0")
 
     // ==================== 协程（异步编程） ====================
     // Android 平台协程（包含主线程调度器）
@@ -383,14 +230,14 @@ dependencies {
     
     // 协程测试支持（TestDispatcher 等）
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-    
+
     // Ktor Mock 引擎（单元测试用）
-    testImplementation("io.ktor:ktor-client-mock:3.4.1")
-    testImplementation("io.ktor:ktor-client-mock-jvm:3.4.1")
+    testImplementation("io.ktor:ktor-client-mock:3.4.2")
+    testImplementation("io.ktor:ktor-client-mock-jvm:3.4.2")
     
     // Android 仪器化测试（在模拟器/真机上运行）
-    androidTestImplementation("io.ktor:ktor-client-mock:3.4.1")
-    androidTestImplementation("io.ktor:ktor-client-mock-jvm:3.4.1")
+    androidTestImplementation("io.ktor:ktor-client-mock:3.4.2")
+    androidTestImplementation("io.ktor:ktor-client-mock-jvm:3.4.2")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     
