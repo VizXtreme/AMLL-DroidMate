@@ -6,7 +6,7 @@
 
 Android 端外置歌词显示器：AMLL + ScoreMuse
 
-<img src="https://github.com/user-attachments/assets/3d34c9d8-37d5-4ca6-b45b-be02bc85e377" width="500">
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/43114e82-f439-4e40-9ed6-2090ccd5b0e9" />
 
 
 
