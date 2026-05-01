@@ -57,12 +57,12 @@ object AMLLSettings {
     private const val KEY_WEBVIEW_ENABLED = "webview_enabled"  // WebView 开关
 
     // 默认值常量（当用户未设置时使用）
-    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SPRING = true  // 默认启用弹簧动画
-    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SCALE = true   // 默认启用缩放
-    private const val DEFAULT_AMLL_ANIMATION_ENABLE_BLUR = true    // 默认启用模糊
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SPRING = false  // 默认禁用弹簧动画（性能优化）
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SCALE = false   // 默认禁用缩放（性能优化）
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_BLUR = false    // 默认禁用模糊（性能优化）
     private const val DEFAULT_AMLL_ANIMATION_HIDE_PASSED_LINES = false  // 默认不隐藏已唱过的行
     private const val DEFAULT_AMLL_ANIMATION_WORD_FADE_WIDTH = 0.5f     // 默认渐变宽度 0.5
-    private const val DEFAULT_AMLL_ANIMATION_FPS = 60  // 默认 60 FPS
+    private const val DEFAULT_AMLL_ANIMATION_FPS = 30  // 默认 30 FPS（性能优化，降低动画帧率）
     // 默认弹簧参数（与 core 默认保持一致）
     private const val DEFAULT_AMLL_SPRING_POSY_MASS = 0.9f
     private const val DEFAULT_AMLL_SPRING_POSY_DAMPING = 15.0f
@@ -83,11 +83,11 @@ object AMLLSettings {
     private const val DEFAULT_AMLL_LETTER_SPACING = ""  // 默认字符间距
 
     // 歌词背景默认值
-    private const val DEFAULT_AMLL_BACKGROUND_RENDERER = "mesh"  // 默认网格渐变渲染器
+    private const val DEFAULT_AMLL_BACKGROUND_RENDERER = "css-bg"  // 默认使用 CSS 背景（性能优化，最省资源）
     private const val DEFAULT_AMLL_CSS_BACKGROUND_PROPERTY = "#111111"  // 默认黑色背景
-    private const val DEFAULT_AMLL_BACKGROUND_FPS = 60  // 默认 60 FPS
-    private const val DEFAULT_AMLL_BACKGROUND_RENDER_SCALE = 1.0f  // 默认 1 倍渲染
-    private const val DEFAULT_AMLL_BACKGROUND_STATIC_MODE = false  // 默认不禁用动态效果
+    private const val DEFAULT_AMLL_BACKGROUND_FPS = 24  // 默认 24 FPS（性能优化）
+    private const val DEFAULT_AMLL_BACKGROUND_RENDER_SCALE = 0.75f  // 默认 0.75 倍渲染（性能优化，降低分辨率）
+    private const val DEFAULT_AMLL_BACKGROUND_STATIC_MODE = true  // 默认启用静态模式（性能优化，禁用动态效果）
 
     private const val DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS = "ws://localhost:11444"  // 默认本地地址
     private const val DEFAULT_WEBSOCKET_PROTOCOL_ENABLED = false  // 默认关闭

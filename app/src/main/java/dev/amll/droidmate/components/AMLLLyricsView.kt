@@ -267,6 +267,17 @@ fun AMLLLyricsView(
     var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
     var lastMotionConfigValue by remember { mutableStateOf<String?>(null) }
     
+    // ==================== 时间更新节流 ====================
+    // 记录上一次更新时间的时间戳（用于节流，避免每帧都更新）
+    var lastTimeUpdateTimestamp by remember { mutableStateOf(0L) }
+    // 时间更新间隔（毫秒）- 减少频繁的 JS 调用
+    val TIME_UPDATE_INTERVAL_MS = 50L
+    
+    // ==================== 歌词开关状态缓存（用于去重） ====================
+    var lastTranslationLineEnabled by remember { mutableStateOf<Boolean?>(null) }
+    var lastRomanLineEnabled by remember { mutableStateOf<Boolean?>(null) }
+    var lastSwapTransRomanEnabled by remember { mutableStateOf<Boolean?>(null) }
+    
     // ==================== WebSocket 发送状态记录 ====================
     // 记录上一次发送的状态，用于去重（避免频繁发送相同数据）
     var lastSentMusicId by remember { mutableStateOf<String?>(null) }
@@ -600,10 +611,14 @@ fun AMLLLyricsView(
 
             Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Update callback - WebView actual size: width=${view.width}, height=${view.height}, measuredWidth=${view.measuredWidth}, measuredHeight=${view.measuredHeight}")
 
-            // ==================== 更新时间同步 ====================
-            // 立即更新时间，减少歌词行激活延迟
-            Timber.d("[AMLLLyrics] [WebView] [$debugSource#$instanceId] Bridge call: updateTime($currentTime)")
-            view.evaluateJavascript("window.updateTime && window.updateTime($currentTime);", null)
+            // ==================== 更新时间同步（节流优化） ====================
+            // 仅在时间间隔超过阈值时才更新，避免每帧都调用 JS
+            val now = System.currentTimeMillis()
+            if (now - lastTimeUpdateTimestamp >= TIME_UPDATE_INTERVAL_MS) {
+                Timber.d("[AMLLLyrics] [WebView] [$debugSource#$instanceId] Bridge call: updateTime($currentTime)")
+                view.evaluateJavascript("window.updateTime && window.updateTime($currentTime);", null)
+                lastTimeUpdateTimestamp = now
+            }
             
             // 同时通过 WebSocket 发送到外部服务
             sendPlaybackStatusToWebSocket(currentTime, isPlayingState.value)
@@ -679,20 +694,21 @@ fun AMLLLyricsView(
                 lastLyricSizePreset = lyricSizePreset
             }
 
-            // 翻译歌词开关
+            // 翻译歌词开关（去重优化）
             val enableTranslationLine = AMLLSettings.isAmllTranslationLineEnabled(view.context)
-            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableTranslationLine($enableTranslationLine)")
-            view.evaluateJavascript("window.setEnableTranslationLine && window.setEnableTranslationLine($enableTranslationLine);", null)
+            if (lastTranslationLineEnabled != enableTranslationLine) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableTranslationLine($enableTranslationLine)")
+                view.evaluateJavascript("window.setEnableTranslationLine && window.setEnableTranslationLine($enableTranslationLine);", null)
+                lastTranslationLineEnabled = enableTranslationLine
+            }
 
-            // 音译歌词开关
+            // 音译歌词开关（去重优化）
             val enableRomanLine = AMLLSettings.isAmllRomanLineEnabled(view.context)
-            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableRomanLine($enableRomanLine)")
-            view.evaluateJavascript("window.setEnableRomanLine && window.setEnableRomanLine($enableRomanLine);", null)
-
-            // 交换音译和翻译位置
-            val enableSwapTransRoman = AMLLSettings.isAmllSwapTransRomanLineEnabled(view.context)
-            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableSwapTransRomanLine($enableSwapTransRoman)")
-            view.evaluateJavascript("window.setEnableSwapTransRomanLine && window.setEnableSwapTransRomanLine($enableSwapTransRoman);", null)
+            if (lastRomanLineEnabled != enableRomanLine) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableRomanLine($enableRomanLine)")
+                view.evaluateJavascript("window.setEnableRomanLine && window.setEnableRomanLine($enableRomanLine);", null)
+                lastRomanLineEnabled = enableRomanLine
+            }
 
             // 提前歌词行时序
             val enableAdvanceDynamicTime = AMLLSettings.isAmllAdvanceDynamicLyricTimeEnabled(view.context)
