@@ -1,7 +1,7 @@
 package dev.amll.droidmate.components
 
 import kotlin.math.abs
-import dev.amll.droidmate.data.repository.LyricsRepository.MatchType
+import io.github.zeehan2005.scoremuse.data.repository.LyricsRepository.MatchType
 
 /**
  * 歌词匹配工具类

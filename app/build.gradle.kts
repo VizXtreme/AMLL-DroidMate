@@ -158,6 +158,14 @@ fun getBuildTimestamp(): String {
 // Android 应用配置
 // ============================================================================
 android {
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("\\sign.jks")
+            storePassword = "AHC8jzFB0nsARVGPsHff"
+            keyAlias = "key0"
+            keyPassword = "AHC8jzFB0nsARVGPsHff"
+        }
+    }
     // ==================== 基本配置 ====================
     // 包名：应用的唯一标识符（用于 Google Play、安装等）
     namespace = "dev.amll.droidmate"

@@ -5,7 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
-import dev.amll.droidmate.global.NowPlayingMusic
+import io.github.zeehan2005.scoremuse.global.NowPlayingMusic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -387,6 +387,18 @@ class MediaInfoService(private val context: Context) {
     fun rewind() {
         currentController?.transportControls?.rewind()
         Timber.i("[PlaybackControl] Rewind command sent") 
+    }
+    
+    fun setVolume(volume: Double) {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+        val maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
+        val targetVolume = (volume * maxVolume).toInt().coerceIn(0, maxVolume)
+        audioManager.setStreamVolume(
+            android.media.AudioManager.STREAM_MUSIC,
+            targetVolume,
+            0  // 不显示音量 UI
+        )
+        Timber.i("[PlaybackControl] Volume set to: $volume (system level: $targetVolume/$maxVolume)")
     }
     
     /**

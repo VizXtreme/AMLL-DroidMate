@@ -1,6 +1,6 @@
 package dev.amll.droidmate.components
 
-import dev.amll.droidmate.data.repository.LyricsRepository.MatchType
+import io.github.zeehan2005.scoremuse.data.repository.LyricsRepository.MatchType
 
 /**
  * 歌曲匹配评估器

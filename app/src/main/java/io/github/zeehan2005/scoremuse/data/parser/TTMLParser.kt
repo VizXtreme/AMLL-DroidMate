@@ -1,11 +1,11 @@
-package com.amll.droidmate.data.parser
+package io.github.zeehan2005.scoremuse.data.parser
 
-import dev.amll.droidmate.global.LyricLine
-import dev.amll.droidmate.global.LyricWord
-import dev.amll.droidmate.global.SongStructure
-import dev.amll.droidmate.global.SongStructureType
-import dev.amll.droidmate.global.TTMLLyrics
-import dev.amll.droidmate.global.TTMLMetadata
+import io.github.zeehan2005.scoremuse.global.LyricLine
+import io.github.zeehan2005.scoremuse.global.LyricWord
+import io.github.zeehan2005.scoremuse.global.SongStructure
+import io.github.zeehan2005.scoremuse.global.SongStructureType
+import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
+import io.github.zeehan2005.scoremuse.global.LyricsMetadata
 import timber.log.Timber
 import org.w3c.dom.Document
 import org.w3c.dom.Element
@@ -37,7 +37,7 @@ object TTMLParser {
     private val factory = DocumentBuilderFactory.newInstance()
     
     /**
-     * 解析 TTML 内容，返回完整的 TTMLLyrics 对象
+     * 解析 TTML 内容，返回完整的 UnifiedLyrics 对象
      * 
      * 这是 TTML 解析的主入口方法。它会：
      * 1. 解析 XML 文档结构
@@ -52,9 +52,9 @@ object TTMLParser {
      * @param content TTML XML 字符串
      * @return 包含元数据和歌词行的完整对象
      */
-    fun parse(content: String): TTMLLyrics {
-        if (content.isBlank()) return TTMLLyrics(
-            metadata = TTMLMetadata(title = "Unknown", artist = "Unknown"),
+    fun parse(content: String): UnifiedLyrics {
+        if (content.isBlank()) return UnifiedLyrics(
+            metadata = LyricsMetadata(title = "Unknown", artist = "Unknown"),
             lines = emptyList()
         )
 
@@ -63,22 +63,25 @@ object TTMLParser {
         // attempt a normal parse first; if it fails we may be dealing with
         // malformed metadata tags (common in Apple-supplied TTML) and we'll
         // retry after sanitizing the input.
-        fun tryParse(input: String): TTMLLyrics {
+        fun tryParse(input: String): UnifiedLyrics {
             val doc = builder.parse(input.byteInputStream())
             return parseTTMLDocument(doc)
         }
 
+        // 首先尝试正常解析
         return try {
             tryParse(content)
         } catch (e: Exception) {
-            Timber.i("[TTMLParser] Initial TTML parse failed, trying sanitization", e)
-            val sanitized = sanitizeTTMLContent(content)
-            return try {
+            Timber.w("[TTMLParser] Normal parse failed, attempting sanitized parse", e)
+            // 如果失败，尝试清理格式后重试
+            try {
+                val sanitized = sanitizeTTMLContent(content)
                 tryParse(sanitized)
             } catch (e2: Exception) {
-                Timber.e("[TTMLParser] Failed to parse ttml content after sanitization", e2)
-                TTMLLyrics(
-                    metadata = TTMLMetadata(title = "Unknown", artist = "Unknown"),
+                Timber.e("[TTMLParser] Both normal and sanitized parse failed", e2)
+                // 完全失败时返回空列表，不会崩溃
+                UnifiedLyrics(
+                    metadata = LyricsMetadata(title = "Unknown", artist = "Unknown"),
                     lines = emptyList()
                 )
             }
@@ -88,7 +91,7 @@ object TTMLParser {
     /**
      * 旧版兼容方法，仅返回歌词行（不推荐在新代码中使用）
      */
-    @Deprecated("Use parse(content): TTMLLyrics instead")
+    @Deprecated("Use parse(content): UnifiedLyrics instead")
     fun parseLegacy(content: String): List<LyricLine> {
         return parse(content).lines
     }
@@ -108,7 +111,7 @@ object TTMLParser {
         var bgTransliteration: String? = null
     )
 
-    private fun parseTTMLDocument(doc: Document): TTMLLyrics {
+    private fun parseTTMLDocument(doc: Document): UnifiedLyrics {
         val parsedParagraphs = mutableListOf<ParsedParagraph>()
         
         // 解析 TTML 元数据中的歌曲结构信息
@@ -117,8 +120,8 @@ object TTMLParser {
         Timber.d("[SongStructure] TTML metadata parsing complete: ${songStructures.size} structures found")
 
         try {
-            val body = doc.getElementsByTagName("body").item(0) as? Element ?: return TTMLLyrics(
-                metadata = TTMLMetadata(title = "Unknown", artist = "Unknown"),
+            val body = doc.getElementsByTagName("body").item(0) as? Element ?: return UnifiedLyrics(
+                metadata = LyricsMetadata(title = "Unknown", artist = "Unknown"),
                 lines = emptyList()
             )
             val paragraphs = body.getElementsByTagName("p")
@@ -132,8 +135,8 @@ object TTMLParser {
             }
         } catch (e: Exception) {
             Timber.e("[TTMLParser] Failed to parse TTML document structure", e)
-            return TTMLLyrics(
-                metadata = TTMLMetadata(title = "Unknown", artist = "Unknown"),
+            return UnifiedLyrics(
+                metadata = LyricsMetadata(title = "Unknown", artist = "Unknown"),
                 lines = emptyList()
             )
         }
@@ -185,42 +188,22 @@ object TTMLParser {
             var title: String? = null
             var artist: String? = null
             var album: String? = null
-            var language = "ja"
+            val language = "ja"
             var rawXmlMetadata: String? = null
             
             if (metadataElement != null) {
                 // ✅ 保存原始 metadata 元素的完整 XML，用于未来扩展和保留未使用的信息
                 rawXmlMetadata = elementToXml(metadataElement)
                 Timber.d("[TTMLParser] Saved raw XML metadata (${rawXmlMetadata.length} chars) for future extensibility")
-                
-                // 尝试从 amll:meta 标签中读取元数据
-                val metaElements = metadataElement.getElementsByTagName("amll:meta")
-                for (i in 0 until metaElements.length) {
-                    val meta = metaElements.item(i) as? Element ?: continue
-                    val key = meta.getAttribute("key")
-                    val value = meta.getAttribute("value")
-                    
-                    when (key) {
-                        "title" -> title = value
-                        "artist" -> artist = value
-                        "album" -> album = value
-                        "language" -> language = value
-                    }
-                }
-                
+
+
                 // 如果没有找到，尝试从 itunes 命名空间读取
-                if (title == null) {
-                    title = metadataElement.getAttribute("itunes:title").takeIf { it.isNotEmpty() }
-                }
-                if (artist == null) {
-                    artist = metadataElement.getAttribute("itunes:artist").takeIf { it.isNotEmpty() }
-                }
-                if (album == null) {
-                    album = metadataElement.getAttribute("itunes:album").takeIf { it.isNotEmpty() }
-                }
+                title = metadataElement.getAttribute("itunes:title").takeIf { it.isNotEmpty() }
+                artist = metadataElement.getAttribute("itunes:artist").takeIf { it.isNotEmpty() }
+                album = metadataElement.getAttribute("itunes:album").takeIf { it.isNotEmpty() }
             }
             
-            TTMLMetadata(
+            LyricsMetadata(
                 title = title ?: "Unknown",
                 artist = artist ?: "Unknown",
                 album = album,
@@ -229,11 +212,11 @@ object TTMLParser {
             )
         } catch (e: Exception) {
             Timber.w("[TTMLParser] Failed to parse metadata", e)
-            TTMLMetadata(title = "Unknown", artist = "Unknown")
+            LyricsMetadata(title = "Unknown", artist = "Unknown")
         }
         
-        Timber.d("[SongStructure] Creating TTMLLyrics with ${songStructures.size} structures")
-        return TTMLLyrics(
+        Timber.d("[SongStructure] Creating UnifiedLyrics with ${songStructures.size} structures")
+        return UnifiedLyrics(
             metadata = metadata.copy(songStructures = songStructures.ifEmpty { null }),
             lines = lines
         )
@@ -475,7 +458,7 @@ object TTMLParser {
                             if (!includeBackground) return ""
                             return iteratePlainTextChildren(
                                 element,
-                                includeBackground = includeBackground,
+                                includeBackground = true,
                                 backgroundOnly = backgroundOnly,
                                 inBackground = true
                             )
@@ -566,7 +549,7 @@ object TTMLParser {
                 // 多 agent 模式下，首个声部固定在左侧。
                 currentIsRight = false
                 lastAgent = agent
-                Timber.d("[AGENT-DEBUG] alternating: line $i first agent='$agent' -> isDuet=$currentIsRight")
+                Timber.d("[AGENT-DEBUG] alternating: line $i first agent='$agent' -> isDuet=${false}")
             } else if (agent != lastAgent) {
                 currentIsRight = !currentIsRight
                 Timber.d("[AGENT-DEBUG] alternating: line $i agent change from '$lastAgent' to '$agent' -> isDuet=$currentIsRight")
@@ -865,14 +848,47 @@ object TTMLParser {
     }
 
     /**
-     * Hacky pre‑parser step to strip dangerous <amll:meta> elements which often
-     * contain unescaped characters or malformed attributes. Lyrics extraction
-     * does not rely on them, and removing them resolves XML exceptions.
+     * 清理 TTML 内容，修复常见的格式问题
+     * 
+     * 主要处理：
+     * 1. 移除 BOM (Byte Order Mark)
+     * 2. 修复不完整的命名空间声明
+     * 3. 清理非法字符
+     * 4. 确保 XML 结构完整
      */
-    private fun sanitizeTTMLContent(raw: String): String {
-        return raw.replace(
-            Regex("<amll:meta\\b[^>]*?(?:\\/>|>.*?<\\/amll:meta>)", RegexOption.DOT_MATCHES_ALL),
-            ""
-        )
+    private fun sanitizeTTMLContent(content: String): String {
+        var sanitized = content
+        
+        // 1. 移除 BOM
+        if (sanitized.startsWith("\uFEFF")) {
+            sanitized = sanitized.substring(1)
+        }
+        
+        // 2. 修复常见的命名空间问题 - 确保有必要的命名空间声明
+        if (!sanitized.contains("xmlns:ttm=")) {
+            sanitized = sanitized.replace(
+                "<tt ",
+                "<tt xmlns:ttm=\"http://www.w3.org/ns/ttml#metadata\" "
+            )
+        }
+        
+        if (!sanitized.contains("xmlns:itunes=")) {
+            sanitized = sanitized.replace(
+                "<tt ",
+                "<tt xmlns:itunes=\"http://music.apple.com/namespace/1.0/\" "
+            )
+        }
+        
+        // 3. 清理一些常见的非法 XML 字符（但保留合法的歌词字符）
+        sanitized = sanitized.replace(Regex("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]"), "")
+        
+        // 4. 确保根元素闭合
+        if (!sanitized.trimEnd().endsWith("</tt>")) {
+            Timber.w("[TTMLParser] TTML content may be incomplete or malformed")
+        }
+        
+        return sanitized
     }
+
+
 }

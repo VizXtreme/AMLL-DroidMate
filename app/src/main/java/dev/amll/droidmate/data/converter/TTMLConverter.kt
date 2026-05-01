@@ -1,13 +1,11 @@
-package com.amll.droidmate.data.converter
+package dev.amll.droidmate.data.converter
 
-import dev.amll.droidmate.global.LyricLine
-import dev.amll.droidmate.global.TTMLLyrics
-import dev.amll.droidmate.global.TTMLMetadata
-import dev.amll.droidmate.global.SongStructure
-import com.amll.droidmate.data.parser.TimestampUtils
+import io.github.zeehan2005.scoremuse.global.LyricLine
+import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
+import io.github.zeehan2005.scoremuse.data.parser.global.TimestampUtils
+import io.github.zeehan2005.scoremuse.data.parser.global.UnifiedLyricsParser
+import io.github.zeehan2005.scoremuse.global.LyricsMetadata
 import timber.log.Timber
-import org.json.JSONArray
-import org.json.JSONObject
 
 /**
  * TTML 转换器 - 将歌词转换为 TTML 格式
@@ -42,13 +40,13 @@ object TTMLConverter {
      * @param text 原始文本
      * @return 转义后的安全文本
      */
-    private fun escapeXml(text: String): String {
+    private fun escapeXml(text: String?): String? {
         return text
-            .replace("&", "&amp;")   // 必须第一个转义，避免双重转义
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("'", "&apos;")
+            ?.replace("&", "&amp;")   // 必须第一个转义，避免双重转义
+            ?.replace("<", "&lt;")
+            ?.replace(">", "&gt;")
+            ?.replace("\"", "&quot;")
+            ?.replace("'", "&apos;")
     }
 
     /**
@@ -69,7 +67,7 @@ object TTMLConverter {
      * @return TTML 格式的 XML 字符串
      */
     fun toTTMLString(
-        lyrics: TTMLLyrics,
+        lyrics: UnifiedLyrics,
         formatted: Boolean = false
     ): String {
         val sb = StringBuilder()
@@ -301,9 +299,9 @@ object TTMLConverter {
         title: String = "Unknown",
         artist: String = "Unknown",
         album: String? = null
-    ): TTMLLyrics {
-        return TTMLLyrics(
-            metadata = TTMLMetadata(
+    ): UnifiedLyrics {
+        return UnifiedLyrics(
+            metadata = LyricsMetadata(
                 title = title,
                 artist = artist,
                 album = album,
@@ -367,7 +365,7 @@ object TTMLConverter {
      * @param artist 艺术家（可选）
      * @param album 专辑（可选）
      * @param processMetadata 是否处理元数据（默认禁用，防止强行处理导致翻译/音译错位）
-     * @return TTMLLyrics 对象，如果解析失败则返回 null
+     * @return UnifiedLyrics 对象，如果解析失败则返回 null
      */
     fun fromLyrics(
         content: String,
@@ -375,9 +373,9 @@ object TTMLConverter {
         artist: String = "Unknown",
         album: String? = null,
         processMetadata: Boolean = false
-    ): TTMLLyrics? {
+    ): UnifiedLyrics? {
         return try {
-            com.amll.droidmate.data.parser.UnifiedLyricsParser.parse(
+            UnifiedLyricsParser.parse(
                 content = content,
                 title = title,
                 artist = artist,
@@ -398,7 +396,7 @@ object TTMLConverter {
         message = "Use fromLyrics() instead for better format support",
         replaceWith = ReplaceWith("fromLyrics(lrcContent)")
     )
-    fun fromLRC(lrcContent: String): TTMLLyrics? {
+    fun fromLRC(lrcContent: String): UnifiedLyrics? {
         return fromLyrics(lrcContent)
     }
 }

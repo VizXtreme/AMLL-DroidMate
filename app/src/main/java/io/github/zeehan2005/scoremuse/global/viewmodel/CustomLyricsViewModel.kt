@@ -1,4 +1,4 @@
-package dev.amll.droidmate.global.viewmodel
+package io.github.zeehan2005.scoremuse.global.viewmodel
 
 
 
@@ -6,20 +6,21 @@ package dev.amll.droidmate.global.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.amll.droidmate.data.converter.TTMLConverter
-import dev.amll.droidmate.data.repository.LyricsRepository
-import dev.amll.droidmate.data.repository.LyricsCacheRepository
+//import io.github.zeehan2005.scoremuse.data.converter.XMLConverter
+import io.github.zeehan2005.scoremuse.data.repository.LyricsRepository
+import io.github.zeehan2005.scoremuse.data.repository.LyricsCacheRepository
 import io.github.zeehan2005.scoremuse.components.ServiceLocator
-import dev.amll.droidmate.global.LyricsSearchResult
-import dev.amll.droidmate.data.parser.global.LyricsFormat
-import dev.amll.droidmate.global.LyricsFeature
-import io.github.zeehan2005.scoremuse.global.AppSettings
+import io.github.zeehan2005.scoremuse.global.LyricsSearchResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import timber.log.Timber
+import androidx.compose.runtime.Stable
+import dev.amll.droidmate.data.converter.TTMLConverter
+import io.github.zeehan2005.scoremuse.data.parser.global.LyricsFormat
+import io.github.zeehan2005.scoremuse.global.LyricsFeature
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -39,6 +40,7 @@ import java.util.concurrent.atomic.AtomicLong
  * @param features 特性集合（对唱/背景/重叠/翻译/音译/逐字/结构标记）
  * @param seq 单调递增序列号（用于区分到达顺序，打破平局）
  */
+@Stable
 data class CustomLyricsCandidate(
     val provider: String,
     val songId: String,
@@ -75,7 +77,6 @@ data class CustomLyricsCandidate(
  * 
  * **支持的歌词源（按优先级）**：
  * 1. cache（本地缓存）- 最高优先级，快速响应
- * 2. amll（AMLL 服务）- Apple Music 歌词
  * 3. kugou（酷狗音乐）- 中文歌词丰富
  * 4. netease/ncm（网易云音乐）- 独立音乐人多
  * 5. qq/qqmusic（QQ 音乐）- 版权库大
@@ -144,21 +145,16 @@ class CustomLyricsViewModel @JvmOverloads constructor(
         val aCache = a.provider.equals("cache", true)
         val bCache = b.provider.equals("cache", true)
         if (aCache != bCache) {
-            val res = if (aCache) -1 else 1
-            Timber.d("[LyricsMatcher] compareCandidates cache: $a vs $b -> $res")
-            return res
+            return if (aCache) -1 else 1
         }
 
         // 2. confidence + features
         val confDiff = a.confidence - b.confidence
         if (confDiff != 0f) {
-            val res = -confDiff.compareTo(0f)
-            Timber.d("[LyricsMatcher] compareCandidates confidence: $a vs $b -> $res (diff=$confDiff)")
-            return res
+            return -confDiff.compareTo(0f)
         }
         val featDiff = b.features.size - a.features.size
         if (featDiff != 0) {
-            Timber.d("[LyricsMatcher] compareCandidates features: $a vs $b -> $featDiff")
             return featDiff
         }
 
@@ -201,12 +197,9 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                     val aIn = preferredProviders.contains(a.provider.lowercase())
                     val bIn = preferredProviders.contains(b.provider.lowercase())
                     if (aIn != bIn) {
-                        val res = if (aIn) -1 else 1
-                    Timber.d("[LyricsMatcher] compareCandidates source bias: $a vs $b -> $res")
-                    return res
-                }
+                        return if (aIn) -1 else 1
+                    }
             }
-
             // 3b. if one of the candidates is from AMLL DB and its songId has a
             //    platform prefix matching the current source, favour it.
             fun amllMatches(candidate: CustomLyricsCandidate): Boolean {
@@ -240,20 +233,16 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             val preferQQ = lowerSource.contains("qq") && !lowerSource.contains("酷狗")
             if (preferKugou) {
                 if (a.provider.lowercase() == "kugou" && b.provider.lowercase() == "qq") {
-                    Timber.d("[LyricsMatcher] compareCandidates tme pref kugou: $a vs $b -> -1")
                     return -1
                 }
                 if (a.provider.lowercase() == "qq" && b.provider.lowercase() == "kugou") {
-                    Timber.d("[LyricsMatcher] compareCandidates tme pref kugou: $a vs $b -> 1")
                     return 1
                 }
             } else if (preferQQ) {
                 if (a.provider.lowercase() == "qq" && b.provider.lowercase() == "kugou") {
-                    Timber.d("[LyricsMatcher] compareCandidates tme pref qq: $a vs $b -> -1")
                     return -1
                 }
                 if (a.provider.lowercase() == "kugou" && b.provider.lowercase() == "qq") {
-                    Timber.d("[LyricsMatcher] compareCandidates tme pref qq: $a vs $b -> 1")
                     return 1
                 }
             }
@@ -262,19 +251,14 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             val pa = providerPriority[a.provider.lowercase()] ?: Int.MAX_VALUE
             val pb = providerPriority[b.provider.lowercase()] ?: Int.MAX_VALUE
             if (pa != pb) {
-                val res = pa - pb
-                Timber.d("[LyricsMatcher] compareCandidates provider priority: $a vs $b -> $res")
-                return res
+                return pa - pb
             }
         }
 
         // 5. equal -> break tie with seq, earlier arrivals first
         if (a.seq != b.seq) {
-            val res = a.seq.compareTo(b.seq)
-            Timber.d("[LyricsMatcher] compareCandidates seq tie-break asc: $a(seq=${a.seq}) vs $b(seq=${b.seq}) -> $res")
-            return res
+            return a.seq.compareTo(b.seq)
         }
-        Timber.d("[LyricsMatcher] compareCandidates tie: $a vs $b -> 0 (preserve order)")
         return 0
     }
 
@@ -293,10 +277,15 @@ class CustomLyricsViewModel @JvmOverloads constructor(
     private val seqGenerator = AtomicLong()
 
     // helper used by searchCandidates and loadMore
-    private suspend fun publishCandidate(candidate: CustomLyricsCandidate) {
+    private fun publishCandidate(candidate: CustomLyricsCandidate) {
         val withSeq = candidate.copy(seq = seqGenerator.incrementAndGet())
-        _candidates.value = (_candidates.value + withSeq)
-            .sortedWith(combinedComparator)
+        val currentList = _candidates.value.toMutableList()
+        currentList.add(withSeq)
+        // 只在列表大小发生变化时排序，减少排序频率
+        if (currentList.size > 1) {
+            currentList.sortWith(combinedComparator)
+        }
+        _candidates.value = currentList
     }
 
     private val _isSearching = MutableStateFlow(false)
@@ -336,7 +325,9 @@ class CustomLyricsViewModel @JvmOverloads constructor(
 
             try {
                 // 缓存优先加入
-                lyricsCacheRepository.findBySong(title, artist)?.let { cached ->
+                withContext(Dispatchers.IO) {
+                    lyricsCacheRepository.findBySong(title, artist)
+                }?.let { cached ->
                     if (currentSongKey == songKey) {
                         publishCandidate(
                             CustomLyricsCandidate(
@@ -360,12 +351,14 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                         publishCandidate(candidate)
                         // fetch features in background and re-sort when ready
                         val feats = runCatching {
-                            lyricsRepository.getLyricsFeatures(
-                                candidate.provider,
-                                candidate.songId,
-                                candidate.title,
-                                candidate.artist
-                            )
+                            withContext(Dispatchers.IO) {
+                                lyricsRepository.getLyricsFeatures(
+                                    candidate.provider,
+                                    candidate.songId,
+                                    candidate.title,
+                                    candidate.artist
+                                )
+                            }
                         }.getOrDefault(emptySet())
                         if (currentSongKey == songKey) {
                             _candidates.value = _candidates.value
@@ -374,13 +367,13 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                                         it.copy(features = feats)
                                     } else it
                                 }
-                                .sortedWith(combinedComparator)
+                            // 特性更新时不重新排序，因为特性数量对排序影响较小，减少排序频率
                         }
                     }
                 }
 
             } catch (e: Exception) {
-                Timber.e("[LyricsViewModel] Failed to search candidates", e)
+                Timber.e(e, "[LyricsViewModel] Failed to search candidates")
                 _errorMessage.value = "搜索候选歌词失败: ${e.message}"
             } finally {
                 _isSearching.value = false
@@ -400,23 +393,25 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                 if (candidate.provider == "cache") {
                     // 直接读取缓存内容
                     val cached = lyricsCacheRepository.findBySong(candidate.title, candidate.artist)
-                    if (cached != null && cached.ttmlContent.isNotBlank()) {
+                    if (cached != null && cached.xmlContent.isNotBlank()) {
                         // 只在歌曲未切换时应用歌词
                         if (currentSongKey == songKey) {
                             _appliedLyricsSource.value = cached.source
-                            _appliedLyricsText.value = cached.ttmlContent
+                            _appliedLyricsText.value = cached.xmlContent
                         }
                     } else {
                         _errorMessage.value = "缓存歌词不存在或内容为空"
                     }
                 } else {
                     // 传递候选歌词的 title 和 artist 以确保正确的元数据
-                    val result = lyricsRepository.getLyrics(
-                        candidate.provider,
-                        candidate.songId,
-                        candidate.title,
-                        candidate.artist
-                    )
+                    val result = withContext(Dispatchers.IO) {
+                        lyricsRepository.getLyrics(
+                            candidate.provider,
+                            candidate.songId,
+                            candidate.title,
+                            candidate.artist
+                        )
+                    }
                     if (result.isSuccess && result.lyrics != null) {
                         // 转换为TTML格式以保留words数组(逐词同步数据)
                         // 只在歌曲未切换时应用歌词
@@ -426,17 +421,16 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                                 provider = candidate.provider,
                                 title = candidate.title,
                                 artist = candidate.artist,
-                                id = candidate.songId,
-                                metadataMatch = candidate.metadataMatch
+                                id = candidate.songId
                             )
-                            _appliedLyricsText.value = TTMLConverter.toTTMLString(result.lyrics)
+//                            _appliedLyricsText.value = XMLConverter.toXMLString(result.lyrics)
                         }
                     } else {
                         _errorMessage.value = result.errorMessage ?: "应用候选歌词失败"
                     }
                 }
             } catch (e: Exception) {
-                Timber.e("[LyricsViewModel] Failed to apply candidate", e)
+                Timber.e(e, "[LyricsViewModel] Failed to apply candidate")
                 _errorMessage.value = "应用候选歌词失败: ${e.message}"
             } finally {
                 _isApplying.value = false
@@ -445,9 +439,6 @@ class CustomLyricsViewModel @JvmOverloads constructor(
     }
 
     companion object {
-        // threshold used to compare candidate confidences (must still be
-        // accessible inside candidateComparator which appears earlier in the file)
-        private const val CONFIDENCE_THRESHOLD = 0.15f
 
         /**
          * Given raw lyrics input return an appropriate "source" label that will
@@ -472,29 +463,24 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             provider: String,
             title: String,
             artist: String,
-            id: String?,
-            metadataMatch: Boolean = false
+            id: String?
         ): String {
             // every provider uses the same template: 服务商：歌曲名 - 歌手名(id)
-            val providerName = if (provider.equals("amll", true) && metadataMatch) {
-                "AMLL TTML DB (基于歌名)"
-            } else {
-                providerDisplayName(provider)
-            }
+            val providerName = providerDisplayName(provider)
             return "$providerName：$title - $artist(${id ?: ""})"
         }
 
         /**
          * Human-friendly name for a lyrics provider.
          *
-         * If an ID is supplied (e.g. AMLL songId) it will be appended in parentheses
+         * If an ID is supplied (e.g. songId) it will be appended in parentheses
          * for providers where that makes sense.
          */
         private fun providerDisplayName(provider: String): String {
             // The UI list only shows a friendly name; IDs should not be
             // appended directly after the provider name.  Previously we added
-            // the AMLL songId here which caused the title to read
-            // "AMLL TTML DB (12345)".  That was confusing and the ID is still
+            // the songId here which caused the title to read
+            // That was confusing and the ID is still
             // surfaced elsewhere if needed so drop it from the display name.
             val base = when (provider.lowercase()) {
                 "netease", "ncm" -> "网易云音乐"
@@ -522,11 +508,13 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             // can still be used to track how many we have shown locally but the
             // data source itself does not support pagination.  we therefore ignore
             // the stored offset when querying and instead update it afterwards.
-            val newResults = when (provider.lowercase()) {
-                "qq", "qqmusic" -> lyricsRepository.searchQQMusic(title, artist)
-                "netease", "ncm" -> lyricsRepository.searchNetease(title, artist)
-                "kugou" -> lyricsRepository.searchKugou(title, artist)
-                else -> emptyList()
+            val newResults = withContext(Dispatchers.IO) {
+                when (provider.lowercase()) {
+                    "qq", "qqmusic" -> lyricsRepository.searchQQMusic(title, artist)
+                    "netease", "ncm" -> lyricsRepository.searchNetease(title, artist)
+                    "kugou" -> lyricsRepository.searchKugou(title, artist)
+                    else -> emptyList()
+                }
             }
             val start = offsets.getOrDefault(provider, 0)
             offsets[provider] = start + newResults.size
@@ -551,10 +539,8 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                     // 非 TTML 格式才需要转换
                     val parsed = TTMLConverter.fromLyrics(
                         content = input,
-                        title = if (title.isBlank()) "自选歌词" else title,
-                        artist = if (artist.isBlank()) "Unknown" else artist,
-                        // ⭐ 修复关键：只有在设置启用时才处理元数据
-                        processMetadata = AppSettings.isMetadataProcessingEnabled(getApplication())
+                        title = title.ifBlank { "自选歌词" },
+                        artist = artist.ifBlank { "Unknown" }
                     )
                     if (parsed != null) {
                         _appliedLyricsText.value = TTMLConverter.toTTMLString(parsed)
@@ -564,7 +550,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                     }
                 }
             } catch (e: Exception) {
-                Timber.e("[LyricsViewModel] Failed to parse manual lyrics", e)
+                Timber.e(e, "[LyricsViewModel] Failed to parse manual lyrics")
                 _errorMessage.value = "解析歌词失败：${e.message}"
             } finally {
                 _isApplying.value = false
@@ -575,44 +561,6 @@ class CustomLyricsViewModel @JvmOverloads constructor(
     fun consumeAppliedLyricsText() {
         _appliedLyricsText.value = null
         _appliedLyricsSource.value = null
-    }
-
-    private suspend fun appendCandidate(candidate: CustomLyricsCandidate, mutex: Mutex) {
-        mutex.withLock {
-            val key = "${candidate.provider.lowercase()}:${candidate.songId}"
-            val exists = _candidates.value.any { "${it.provider.lowercase()}:${it.songId}" == key }
-            if (exists) return
-
-            val withSeq = candidate.copy(seq = seqGenerator.incrementAndGet())
-            _candidates.value = (_candidates.value + withSeq)
-                .sortedWith(candidateComparator)
-        }
-
-        // kick off a coroutine to resolve supported features; update candidate when ready
-        viewModelScope.launch {
-            val features = runCatching {
-                lyricsRepository.getLyricsFeatures(
-                    candidate.provider,
-                    candidate.songId,
-                    candidate.title,
-                    candidate.artist
-                )
-            }.getOrDefault(emptySet())
-
-            if (features.isNotEmpty()) {
-                mutex.withLock {
-                    _candidates.value = _candidates.value
-                        .map {
-                            if (it.provider.equals(candidate.provider, true) && it.songId == candidate.songId) {
-                                it.copy(features = features)
-                            } else {
-                                it
-                            }
-                        }
-                        .sortedWith(candidateComparator)
-                }
-            }
-        }
     }
 
     private fun LyricsSearchResult.toCandidate(): CustomLyricsCandidate {

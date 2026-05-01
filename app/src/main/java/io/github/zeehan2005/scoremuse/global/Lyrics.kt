@@ -1,5 +1,6 @@
-package dev.amll.droidmate.global
+package io.github.zeehan2005.scoremuse.global
 
+import androidx.compose.runtime.Stable
 import kotlinx.serialization.Serializable
 
 /**
@@ -8,6 +9,7 @@ import kotlinx.serialization.Serializable
  * 这个数据类封装了从系统媒体会话中获取的当前播放音乐的所有信息。
  * 它用于在应用内部传递和展示当前播放的歌曲详情。
  */
+@Stable
 @Serializable
 data class NowPlayingMusic(
     val title: String,              // 歌曲标题
@@ -27,6 +29,7 @@ data class NowPlayingMusic(
  * 这个数据类表示歌词中的一个单词或音节，包含精确的时间信息。
  * 用于实现逐字高亮效果（类似 Apple Music 的歌词显示方式）。
  */
+@Stable
 @Serializable
 data class LyricWord(
     val word: String,           // 歌词文本（可以是一个字、一个词或带空格的短语）
@@ -45,6 +48,7 @@ data class LyricWord(
  * - 逐词时间信息（用于逐字高亮）
  * - 特殊标记（背景音、合唱等）
  */
+@Stable
 @Serializable
 data class LyricLine(
     val startTime: Long,            // 行开始时间（毫秒）
@@ -59,36 +63,37 @@ data class LyricLine(
 )
 
 /**
- * TTML 歌词结构
+ * 统一歌词结构
  *
- * TTML (Timed Text Markup Language) 是一种基于 XML 的字幕格式标准。
- * 这个数据类用于在应用内部表示 TTML 格式的歌词，方便在不同格式之间转换。
+ * 这个数据类用于在应用内部表示统一的歌词格式，方便在不同格式之间转换。
  */
+@Stable
 @Serializable
-data class TTMLLyrics(
-    val metadata: TTMLMetadata,     // 元数据（歌名、歌手、专辑等）
+data class UnifiedLyrics(
+    val metadata: LyricsMetadata,     // 元数据（歌名、歌手、专辑等）
     val lines: List<LyricLine>,     // 所有歌词行
     // 保留原始 TTML 字符串，用于 WebSocket 发送时直接使用，避免重新序列化
     val rawTtml: String? = null     // 原始 TTML XML 字符串（可选）
 )
 
 /**
- * TTML 元数据
+ * 歌词元数据
  *
  * 包含歌曲的附加信息，这些信息通常来自歌词文件的头部元数据。
  */
+@Stable
 @Serializable
-data class TTMLMetadata(
+data class LyricsMetadata(
     val title: String,                      // 歌曲标题
     val artist: String,                     // 艺术家
     val album: String? = null,              // 专辑名称（可选）
-    val language: String = "ja",            // 语言代码（默认日语）
+    val language: String? = null,            // 语言代码（可选）
     val duration: Long = 0L,                // 歌曲总时长（毫秒）
-    val source: String = "DroidMate",       // 来源标识
+    val source: String = "ScoreMuse",       // 来源标识
     val songStructures: List<SongStructure>? = null,  // 歌曲结构段落（主歌、副歌等）
-    // 保留原始 TTML 的完整 metadata 元素内容（用于未来扩展和保留未使用的 XML 信息）
+    // 保留原始 XML 的完整 metadata 元素内容（用于未来扩展和保留未使用的 XML 信息）
     val rawXmlMetadata: String? = null,     // 原始 XML 元数据（可选）
-    // 标记是否为 fallback 结果（true 表示是从其他格式转换而来，非原始 TTML）
+    // 标记是否为 fallback 结果（true 表示是从其他格式转换而来，非原始格式）
     val isFallback: Boolean = false         // 是否为 fallback 结果
 )
 
@@ -118,6 +123,7 @@ enum class SongStructureType(val displayName: String) {
  *
  * 表示歌曲中某个特定段落的详细信息，包括时间范围和类型。
  */
+@Stable
 @Serializable
 data class SongStructure(
     val label: String,        // 段落标签（例如 "Verse 1", "Chorus"）
@@ -152,9 +158,10 @@ enum class LyricsFeature(val displayName: String) {
  * 当用户搜索歌词时，返回的可能有多首匹配的歌曲。
  * 这个数据类表示其中一首歌曲的搜索结果。
  */
+@Stable
 @Serializable
 data class LyricsSearchResult(
-    val provider: String,   // 来源："qq" (QQ 音乐), "netease" (网易云), "amll" 等
+    val provider: String,   // 来源："qq" (QQ 音乐), "netease" (网易云)等
     val songId: String,     // 歌曲 ID（用于后续获取歌词）
     val title: String,      // 歌曲标题
     val artist: String,     // 艺术家
@@ -177,10 +184,11 @@ data class LyricsSearchResult(
  *
  * 封装了获取歌词的最终结果，包括成功/失败状态和具体的歌词数据。
  */
+@Stable
 @Serializable
 data class LyricsResult(
     val isSuccess: Boolean,       // 是否成功获取
-    val lyrics: TTMLLyrics? = null,  // 歌词数据（如果成功）
+    val lyrics: UnifiedLyrics? = null,  // 歌词数据（如果成功）
     val errorMessage: String? = null,  // 错误信息（如果失败）
     val source: String? = null    // 歌词来源
 )
@@ -191,12 +199,13 @@ data class LyricsResult(
  * 为了减少网络请求并提高加载速度，获取到的歌词会被缓存在本地。
  * 这个数据类表示缓存中的一条记录。
  */
+@Stable
 @Serializable
 data class CachedLyricEntry(
     val id: String,           // 唯一标识符
     val title: String,        // 歌曲标题
     val artist: String,       // 艺术家
     val source: String,       // 来源平台
-    val ttmlContent: String,  // TTML 格式的歌词内容
+    val xmlContent: String,  // XML 格式的歌词内容
     val updatedAt: Long       // 最后更新时间（毫秒时间戳）
 )

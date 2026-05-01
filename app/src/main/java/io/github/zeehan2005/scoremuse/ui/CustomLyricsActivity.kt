@@ -42,8 +42,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.amll.droidmate.global.viewmodel.CustomLyricsCandidate
-import dev.amll.droidmate.global.viewmodel.CustomLyricsViewModel
+import io.github.zeehan2005.scoremuse.global.viewmodel.CustomLyricsCandidate
+import io.github.zeehan2005.scoremuse.global.viewmodel.CustomLyricsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

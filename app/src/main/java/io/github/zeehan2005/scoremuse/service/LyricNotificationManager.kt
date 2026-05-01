@@ -14,7 +14,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import io.github.zeehan2005.scoremuse.MainActivity
 import dev.amll.droidmate.R
-import dev.amll.droidmate.global.LyricLine
+import io.github.zeehan2005.scoremuse.global.LyricLine
 
 /**
  * 歌词通知管理器

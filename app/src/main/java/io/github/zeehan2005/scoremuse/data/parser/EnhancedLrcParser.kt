@@ -1,8 +1,8 @@
-package dev.amll.droidmate.data.parser
+package io.github.zeehan2005.scoremuse.data.parser
 
-import com.amll.droidmate.data.parser.TimestampUtils
-import dev.amll.droidmate.global.LyricLine
-import dev.amll.droidmate.global.LyricWord
+import io.github.zeehan2005.scoremuse.data.parser.global.TimestampUtils
+import io.github.zeehan2005.scoremuse.global.LyricLine
+import io.github.zeehan2005.scoremuse.global.LyricWord
 import timber.log.Timber
 
 /**
@@ -107,13 +107,13 @@ object EnhancedLrcParser {
         
         // 检查是否包含逐字时间戳
         val hasWordTimestamps = WORD_TIMESTAMP_REGEX.containsMatchIn(contentAfterTimestamp)
-        
-        if (hasWordTimestamps) {
+
+        return if (hasWordTimestamps) {
             // 解析逐字时间戳
-            return parseLineWithWordTimestamps(lineStartMs, contentAfterTimestamp, allLines, lineNumber)
+            parseLineWithWordTimestamps(lineStartMs, contentAfterTimestamp, allLines, lineNumber)
         } else {
             // 普通 LRC 行，没有逐字时间戳
-            return parseSimpleLine(lineStartMs, contentAfterTimestamp, allLines, lineNumber)
+            parseSimpleLine(lineStartMs, contentAfterTimestamp, allLines, lineNumber)
         }
     }
     

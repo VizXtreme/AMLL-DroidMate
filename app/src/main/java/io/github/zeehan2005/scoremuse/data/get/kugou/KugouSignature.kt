@@ -1,4 +1,4 @@
-package com.amll.droidmate.data.network
+package io.github.zeehan2005.scoremuse.data.get.kugou
 
 import java.security.MessageDigest
 import timber.log.Timber

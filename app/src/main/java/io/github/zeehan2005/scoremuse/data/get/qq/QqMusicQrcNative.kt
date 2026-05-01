@@ -1,4 +1,4 @@
-package com.amll.droidmate.data.network
+package io.github.zeehan2005.scoremuse.data.get.qq
 
 /**
  * JNI bridge to the native QQ Music QRC decoder implemented in Rust.
@@ -10,5 +10,4 @@ object QqMusicQrcNative {
 
     external fun decryptQrcHex(hex: String?): String?
 
-    external fun freeRustString(ptr: Long)
 }

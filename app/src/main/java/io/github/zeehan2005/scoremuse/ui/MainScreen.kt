@@ -118,13 +118,13 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import dev.amll.droidmate.global.viewmodel.MainViewModel
+import io.github.zeehan2005.scoremuse.global.viewmodel.MainViewModel
 import dev.amll.droidmate.R
 import io.github.zeehan2005.scoremuse.global.AppSettings
 import io.github.zeehan2005.scoremuse.global.CardClickAction
-import dev.amll.droidmate.global.NowPlayingMusic
-import dev.amll.droidmate.global.SongStructure
-import dev.amll.droidmate.global.TTMLLyrics
+import io.github.zeehan2005.scoremuse.global.NowPlayingMusic
+import io.github.zeehan2005.scoremuse.global.SongStructure
+import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 import io.github.zeehan2005.scoremuse.ui.components.WavySlider
 import io.github.zeehan2005.scoremuse.ui.components.WavySliderDefaults
 import io.github.zeehan2005.scoremuse.ui.settings.SettingsActivity
@@ -1092,7 +1092,7 @@ fun MainScreen() {
 private fun LyricsVisualLayer(
     modifier: Modifier = Modifier.Companion,
     nowPlaying: NowPlayingMusic?,
-    lyrics: TTMLLyrics?,
+    lyrics: UnifiedLyrics?,
     currentTime: Long,
     webViewReloadKey: Int,
     onLineSeek: (Long) -> Unit,

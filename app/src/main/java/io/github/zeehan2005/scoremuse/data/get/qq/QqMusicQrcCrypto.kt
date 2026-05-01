@@ -1,5 +1,6 @@
-package com.amll.droidmate.data.network
+package io.github.zeehan2005.scoremuse.data.get.qq
 
+import android.util.Base64
 import timber.log.Timber
 import java.io.ByteArrayInputStream
 import java.nio.charset.Charset
@@ -86,7 +87,7 @@ object QqMusicQrcCrypto {
             val base64Regex = Regex("^[A-Za-z0-9+/=\\s]+$")
             if (candidate.length % 4 == 0 && base64Regex.matches(candidate)) {
                 try {
-                    val decoded = android.util.Base64.decode(candidate, android.util.Base64.DEFAULT)
+                    val decoded = Base64.decode(candidate, Base64.DEFAULT)
                     val decodedText = String(decoded, Charsets.UTF_8)
                     Timber.d("[QqMusicQrcCrypto] Interpreted decrypted output as Base64; decoded text preview=${decodedText.take(200)}")
                     return decodedText  // Base64 解码成功，直接返回

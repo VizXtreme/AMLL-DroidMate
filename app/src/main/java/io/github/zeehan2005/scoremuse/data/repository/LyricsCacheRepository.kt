@@ -1,8 +1,7 @@
-package dev.amll.droidmate.data.repository
+package io.github.zeehan2005.scoremuse.data.repository
 
 import android.content.Context
-import dev.amll.droidmate.global.CachedLyricEntry
-import io.github.zeehan2005.scoremuse.components.PreferenceHelper
+import io.github.zeehan2005.scoremuse.global.CachedLyricEntry
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
@@ -18,7 +17,7 @@ import java.util.UUID
  * 支持添加、查询、更新、删除操作。
  */
 class LyricsCacheRepository(context: Context) {
-    private val prefs = PreferenceHelper(context, PREFS_NAME)
+    private val prefs = io.github.zeehan2005.scoremuse.components.PreferenceHelper(context, PREFS_NAME)
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -79,15 +78,15 @@ class LyricsCacheRepository(context: Context) {
      * @param title 歌曲标题
      * @param artist 艺术家
      * @param source 来源平台（qq、netease 等）
-     * @param ttmlContent TTML 格式的歌词内容
+     * @param xmlContent TTML 格式的歌词内容
      */
     fun upsert(
         title: String,
         artist: String,
         source: String,
-        ttmlContent: String
+        xmlContent: String
     ) {
-        if (ttmlContent.isBlank()) return
+        if (xmlContent.isBlank()) return
 
         val all = readAll().toMutableList()
         val titleKey = normalize(title)
@@ -115,7 +114,7 @@ class LyricsCacheRepository(context: Context) {
             title = title,
             artist = artist,
             source = source,
-            ttmlContent = ttmlContent,
+            xmlContent = xmlContent,
             updatedAt = System.currentTimeMillis()
         )
 
@@ -152,7 +151,7 @@ class LyricsCacheRepository(context: Context) {
     }
 
     private companion object {
-        private const val PREFS_NAME = "droidmate_lyrics_cache"
+        private const val PREFS_NAME = "ScoreMuse_lyrics_cache"
         private const val KEY_CACHE_JSON = "lyrics_cache_json"
     }
 }

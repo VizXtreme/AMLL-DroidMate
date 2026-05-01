@@ -1,4 +1,4 @@
-package dev.amll.droidmate.data.get.netease
+package io.github.zeehan2005.scoremuse.data.get.netease
 
 import java.security.MessageDigest
 import javax.crypto.Cipher

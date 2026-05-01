@@ -16,6 +16,7 @@ import dev.amll.droidmate.R
 import com.amll.droidmate.websocket.AMLLWebSocketClient
 import dev.amll.droidmate.global.AMLLSettings
 import io.github.zeehan2005.scoremuse.service.MediaInfoService
+import io.github.zeehan2005.scoremuse.global.NowPlayingMusic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

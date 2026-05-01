@@ -1,4 +1,4 @@
-package com.amll.droidmate.data.parser
+package io.github.zeehan2005.scoremuse.data.parser.global
 
 import timber.log.Timber
 

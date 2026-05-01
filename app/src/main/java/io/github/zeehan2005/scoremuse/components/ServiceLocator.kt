@@ -1,8 +1,8 @@
 package io.github.zeehan2005.scoremuse.components
 
 import android.content.Context
-import dev.amll.droidmate.data.repository.LyricsCacheRepository
-import dev.amll.droidmate.data.repository.LyricsRepository
+import io.github.zeehan2005.scoremuse.data.repository.LyricsCacheRepository
+import io.github.zeehan2005.scoremuse.data.repository.LyricsRepository
 
 /**
  * 简单的手动服务定位器

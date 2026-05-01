@@ -45,8 +45,8 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.unit.dp
-import dev.amll.droidmate.data.repository.LyricsCacheRepository
-import dev.amll.droidmate.global.CachedLyricEntry
+import io.github.zeehan2005.scoremuse.data.repository.LyricsCacheRepository
+import io.github.zeehan2005.scoremuse.global.CachedLyricEntry
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date

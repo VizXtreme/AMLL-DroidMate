@@ -5,11 +5,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import dev.amll.droidmate.global.AMLLSettings
-import dev.amll.droidmate.global.TTMLLyrics
+import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 import com.amll.droidmate.websocket.AMLLWebSocketClient
-import com.amll.droidmate.websocket.WsProtocolV2Helper
-import com.amll.droidmate.data.converter.TTMLConverter
-import io.github.zeehan2005.scoremuse.global.AppSettings
+import dev.amll.droidmate.data.converter.TTMLConverter
 import kotlinx.serialization.json.JsonObject
 import timber.log.Timber
 
@@ -54,7 +52,7 @@ fun InitializeWebSocketListener(
     duration: Long,
     currentTime: Long,
     isPlaying: Boolean,
-    lyrics: TTMLLyrics?,
+    lyrics: UnifiedLyrics?,
     debugSource: String,
     onCommandReceived: ((String, JsonObject?) -> Unit)? = null,
     onConnectedCallback: (() -> Unit)? = null,

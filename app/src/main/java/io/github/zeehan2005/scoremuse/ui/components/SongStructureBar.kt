@@ -36,8 +36,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import dev.amll.droidmate.global.SongStructure
-import dev.amll.droidmate.global.SongStructureType
+import io.github.zeehan2005.scoremuse.global.SongStructure
+import io.github.zeehan2005.scoremuse.global.SongStructureType
 import io.github.zeehan2005.scoremuse.ui.formatTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking

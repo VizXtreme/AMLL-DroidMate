@@ -1,40 +1,42 @@
-﻿package dev.amll.droidmate.data.repository
+﻿package io.github.zeehan2005.scoremuse.data.repository
 
-import com.amll.droidmate.data.parser.mergeLyricLines
-import dev.amll.droidmate.data.parser.global.LyricsFormat
-import com.amll.droidmate.data.parser.TTMLParser
-import dev.amll.droidmate.data.get.netease.NeteaseEapiCrypto
-import com.amll.droidmate.data.network.QqMusicQrcCrypto
-import com.amll.droidmate.data.network.KugouDecrypter
+import io.github.zeehan2005.scoremuse.data.parser.global.mergeLyricLines
+import io.github.zeehan2005.scoremuse.data.parser.global.LyricsFormat
+import io.github.zeehan2005.scoremuse.data.parser.TTMLParser
+import io.github.zeehan2005.scoremuse.data.get.netease.NeteaseEapiCrypto
+import io.github.zeehan2005.scoremuse.data.get.qq.QqMusicQrcCrypto
+import io.github.zeehan2005.scoremuse.data.get.kugou.KugouDecrypter
 import android.content.Context
-import android.util.Base64
-import com.amll.droidmate.data.parser.LrcParser
-import com.amll.droidmate.data.parser.UnifiedLyricsParser
-import dev.amll.droidmate.global.*
+import androidx.room.util.copy
+import dev.amll.droidmate.data.converter.TTMLConverter
+import io.github.zeehan2005.scoremuse.data.parser.global.UnifiedLyricsParser
+import io.github.zeehan2005.scoremuse.global.LyricLine
+import io.github.zeehan2005.scoremuse.global.LyricsFeature
+import io.github.zeehan2005.scoremuse.global.LyricsResult
+import io.github.zeehan2005.scoremuse.global.LyricsSearchResult
+import io.github.zeehan2005.scoremuse.global.SongStructureType
+import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 import io.github.zeehan2005.scoremuse.global.AppSettings
+import io.github.zeehan2005.scoremuse.global.SongStructure
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.*
-import java.net.UnknownHostException
 import timber.log.Timber
-import java.text.Normalizer
-import kotlin.math.abs
-import kotlin.math.exp
+import java.net.UnknownHostException
 
 /**
  * 歌词仓库 - 从多个来源获取和管理歌词
@@ -52,7 +54,7 @@ import kotlin.math.exp
  * - 缓存优先策略
  * - 中文简繁转换
  */
-@OptIn(DelicateCoroutinesApi::class)
+@OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
 open class LyricsRepository(
     private val httpClient: HttpClient,
     private val cacheRepo: LyricsCacheRepository? = null,
@@ -61,8 +63,7 @@ open class LyricsRepository(
 
     private val processMetadata: Boolean
         get() = context?.let { AppSettings.isMetadataProcessingEnabled(it) } ?: false
-    // scope used for background AMLL probes; keeps them independent of caller
-    private val amllProbeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // scope used for background TTML probes; keeps them independent of caller
 
     // exposed for testing
     enum class MatchType(val score: Int) {
@@ -84,8 +85,6 @@ open class LyricsRepository(
         NO_MATCH(0), LOW(2), MEDIUM(4), HIGH(5), VERY_HIGH(6), PERFECT(7)
     }
 
-    @Volatile
-    private var lastAmlLError: String? = null
 
     /**
      * 从 QQ 音乐搜索歌词
@@ -179,7 +178,7 @@ open class LyricsRepository(
     /**
      * 从 QQ 音乐获取歌词内容
      */
-    open suspend fun getQQMusicLyrics(songMid: String, title: String? = null, artist: String? = null): TTMLLyrics? {
+    open suspend fun getQQMusicLyrics(songMid: String, title: String? = null, artist: String? = null): UnifiedLyrics? {
         return try {
             val (mid, numericId) = parseQqSongIds(songMid)
 
@@ -285,18 +284,18 @@ open class LyricsRepository(
             }
             
             // 检查内容是否有效（防止"0"或其他无效标记）
-            if (contentToUse.length < 5 || contentToUse == "0") {
+            if (contentToUse.length < 5) {
                 Timber.e("[LyricsRepository] Content from QQ Music is invalid (likely empty): '$contentToUse'")
                 // 检查是否有备选LRC内容
-                if (contentToUse != lyricContent && !lyricContent.isNullOrBlank() && lyricContent.length >= 5 && lyricContent != "0") {
+                if (contentToUse != lyricContent && !lyricContent.isNullOrBlank() && lyricContent.length >= 5) {
                     Timber.i("[LyricsRepository] Fallback to LRC format from QQ Music")
                     // 重新使用LRC
                     val fallbackDecoded = try {
-                        String(Base64.decode(lyricContent, Base64.DEFAULT))
+                        String(android.util.Base64.decode(lyricContent, android.util.Base64.DEFAULT))
                     } catch (e: IllegalArgumentException) {
                         lyricContent
                     }
-                    if (fallbackDecoded.length > 5 && fallbackDecoded != "0") {
+                    if (fallbackDecoded.length > 5) {
                         val fallbackLyrics = UnifiedLyricsParser.parse(
                             content = fallbackDecoded,
                             title = title ?: "Unknown",
@@ -320,7 +319,7 @@ open class LyricsRepository(
                     QqMusicQrcCrypto.decryptQrcHex(contentToUse)
                 } else {
                     // 当内容不是 HEX 时，大多数情况是 Base64 编码的 LRC/QRC
-                    String(Base64.decode(contentToUse, Base64.DEFAULT))
+                    String(android.util.Base64.decode(contentToUse, android.util.Base64.DEFAULT))
                 }
             } catch (e: Exception) {
                 Timber.e("[LyricsRepository] Failed to decode QQ Music lyrics content", e)
@@ -348,11 +347,11 @@ open class LyricsRepository(
                 ?.let {
                     runCatching {
                         val decoded = try {
-                            String(Base64.decode(it, Base64.DEFAULT))
+                            String(android.util.Base64.decode(it, android.util.Base64.DEFAULT))
                         } catch (e: IllegalArgumentException) {
                             it
                         }
-                        LrcParser.parse(decoded)
+                        io.github.zeehan2005.scoremuse.data.parser.LrcParser.parse(decoded)
                     }.getOrNull()
                 }
 
@@ -361,7 +360,7 @@ open class LyricsRepository(
                 ?.let {
                     runCatching {
                         val decoded = try {
-                            String(Base64.decode(it, Base64.DEFAULT))
+                            String(android.util.Base64.decode(it, android.util.Base64.DEFAULT))
                         } catch (e: IllegalArgumentException) {
                             it
                         }
@@ -387,33 +386,12 @@ open class LyricsRepository(
         return if (songId.all { it.isDigit() }) null to songId.toLongOrNull() else songId to null
     }
 
-    /**
-     * Parse a song identifier that may include an AMLL platform prefix.
-     * Examples:
-     *   "ncm:12345" -> ("ncm","12345")
-     *   "qq:ABCDEFGHI" -> ("qq","ABCDEFGHI")
-     *   "98765" -> ("ncm","98765")  // default to ncm for backward compatibility
-     */
-    private fun parseAmlLId(raw: String): Pair<String, String> {
-        // If the raw string is already a URL (e.g. from the AMLL search "file" field),
-        // treat it as a direct download link.
-        if (raw.startsWith("http://") || raw.startsWith("https://")) {
-            return "url" to raw
-        }
-
-        val parts = raw.split(":", limit = 2)
-        return if (parts.size == 2 && parts[0].isNotBlank()) {
-            parts[0].lowercase() to parts[1]
-        } else {
-            "ncm" to raw
-        }
-    }
 
     private suspend fun getQQMusicLyricsViaLyricDownload(
         musicId: Long,
         title: String?,
         artist: String?
-    ): TTMLLyrics? {
+    ): UnifiedLyrics? {
         return try {
             val response = httpClient.post("https://c.y.qq.com/qqmusic/fcgi-bin/lyric_download.fcg") {
                 header("Referer", "https://y.qq.com/")
@@ -454,7 +432,7 @@ open class LyricsRepository(
             val translationLines = transEncrypted?.let {
                 runCatching {
                     val decoded = decodeQqLyricPayload(it)
-                    LrcParser.parse(decoded)
+                    io.github.zeehan2005.scoremuse.data.parser.LrcParser.parse(decoded)
                 }.getOrNull()
             }
 
@@ -484,7 +462,7 @@ open class LyricsRepository(
         return if (QqMusicQrcCrypto.looksLikeHex(raw)) {
             QqMusicQrcCrypto.decryptQrcHex(raw)
         } else {
-            String(Base64.decode(raw, Base64.DEFAULT))
+            String(android.util.Base64.decode(raw, android.util.Base64.DEFAULT))
         }
     }
 
@@ -578,7 +556,7 @@ open class LyricsRepository(
     /**
      * 从网易云音乐获取歌词内容
      */
-    open suspend fun getNeteaseLyrics(songId: String, title: String? = null, artist: String? = null): TTMLLyrics? {
+    open suspend fun getNeteaseLyrics(songId: String, title: String? = null, artist: String? = null): UnifiedLyrics? {
         return try {
             val payload = buildJsonObject {
                 put("id", songId)
@@ -1016,7 +994,7 @@ open class LyricsRepository(
      * matching candidate; otherwise we still query by hash and take the
      * first result as before.
      */
-    open suspend fun getKugouLyrics(idOrHash: String, title: String? = null, artist: String? = null): TTMLLyrics? {
+    open suspend fun getKugouLyrics(idOrHash: String, title: String? = null, artist: String? = null): UnifiedLyrics? {
         return try {
             // 基于 Unilyric 的实现
             // https://lyrics.kugou.com 是官方歌词 API
@@ -1138,10 +1116,9 @@ open class LyricsRepository(
      */
     private fun stripAccents(input: String): String {
         // remove diacritics (e.g. é -> e) to make comparison accent-insensitive
-        val normalized = Normalizer.normalize(input, Normalizer.Form.NFD)
+        val normalized = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD)
         return Regex("\\p{InCombiningDiacriticalMarks}+").replace(normalized, "")
     }
-
 
     internal fun normalizeForComparison(name: String): String {
         // apply Chinese traditional->simplified conversion (align with Unilyric logic)
@@ -1200,13 +1177,6 @@ open class LyricsRepository(
             confidence = (matchType.score / 100f).coerceIn(0f, 1f),
             matchType = matchType.name
         )
-    }
-
-    /**
-     * 规范化标题用于匹配（基于 Unilyric 的 compare_name）
-     */
-    internal fun normalizeTitle(title: String): String {
-        return normalizeForComparison(title.lowercase())
     }
 
     internal fun normalizeArtistList(artist: String): List<String> {
@@ -1443,7 +1413,7 @@ open class LyricsRepository(
         }
 
         // If every artist on one side is matched on the other side, treat as perfect.
-        // This helps handle cases where AMLL DB returns multiple alternate artist spellings;
+        // This helps handle cases where ScoreMuse returns multiple alternate artist spellings;
         // as long as the local artist list is fully covered by one of the API variants, we
         // consider it an exact match.
         if (intersection == n1.size || intersection == n2.size) return ArtistMatchType.PERFECT
@@ -1465,11 +1435,11 @@ open class LyricsRepository(
     internal fun compareDuration(duration1: Long?, duration2: Long?): NameMatchType? {
         val d1 = duration1 ?: return null
         val d2 = duration2 ?: return null
-        val diff = abs(d1 - d2).toDouble() / 1000.0
+        val diff = kotlin.math.abs(d1 - d2).toDouble() / 1000.0
 
         // 高斯衰减近似 Unilyric 的时长比较
         val sigma = 3.0
-        val similarity = exp(-(diff * diff) / (2.0 * sigma * sigma))
+        val similarity = kotlin.math.exp(-(diff * diff) / (2.0 * sigma * sigma))
         return when {
             similarity > 0.98 -> NameMatchType.PERFECT
             similarity > 0.90 -> NameMatchType.VERY_HIGH
@@ -1545,65 +1515,6 @@ open class LyricsRepository(
         Timber.d("[MatchEvaluator]       -> Result: $normalizedScore below all thresholds = NONE(0)")
         return MatchType.NONE
     }
-    
-    /**
-     * 解析LRC格式歌词
-     * 支持翻译和音译（可选）
-     * 采用与unilyrics一致的转换规则
-     * 使用新的 UnifiedLyricsParser
-     */
-    fun parseLRC(
-        lrcContent: String,
-        translationLrc: String? = null,
-        transliterationLrc: String? = null
-    ): TTMLLyrics? {
-        return try {
-            // 使用新的 UnifiedLyricsParser
-            val ttml = UnifiedLyricsParser.parse(
-                lrcContent,
-                processMetadata = processMetadata
-            ) ?: return null
-            
-            val merged = mergeLyricLines(
-                ttml.lines,
-                translationLrc?.let { LrcParser.parse(it) },
-                transliterationLrc?.let { LrcParser.parse(it) }
-            )
-            ttml.copy(lines = merged)
-        } catch (e: Exception) {
-            Timber.e("[LRCParser] Error parsing LRC", e)
-            null
-        }
-    }
-
-    /**
-     * 解析 YRC 格式歌词（网易云逐字格式）
-     * 支持翻译和音译（可选）
-     * 使用新的 UnifiedLyricsParser
-     */
-    private fun parseYRC(
-        yrcContent: String,
-        translationLrc: String? = null,
-        transliterationLrc: String? = null
-    ): TTMLLyrics? {
-        return try {
-            // 使用新的 UnifiedLyricsParser，它会自动检测YRC格式
-            val ttml = UnifiedLyricsParser.parse(
-                yrcContent,
-                processMetadata = processMetadata
-            ) ?: return null
-            
-            val merged = mergeLyricLines(
-                ttml.lines,
-                translationLrc?.let { LrcParser.parse(it) },
-                transliterationLrc?.let { LrcParser.parse(it) }
-            )
-            ttml.copy(lines = merged)
-        } catch (e: Exception) {
-            Timber.e("[YRCParser] Error parsing YRC", e)
-            null
-        }
-    }
 
     private fun parseTimedLRCMap(lrcContent: String?): Map<Long, String> {
         if (lrcContent.isNullOrBlank()) return emptyMap()
@@ -1637,8 +1548,8 @@ open class LyricsRepository(
         if (timedMap.isEmpty()) return null
         timedMap[targetStart]?.let { return it }
 
-        val nearest = timedMap.minByOrNull { abs(it.key - targetStart) } ?: return null
-        val delta = abs(nearest.key - targetStart)
+        val nearest = timedMap.minByOrNull { kotlin.math.abs(it.key - targetStart) } ?: return null
+        val delta = kotlin.math.abs(nearest.key - targetStart)
         return if (delta <= 800L) nearest.value else null
     }
 
@@ -1649,10 +1560,10 @@ open class LyricsRepository(
     ): List<LyricLine> {
         val translationLines = translationContent
             ?.takeIf { it.isNotBlank() }
-            ?.let { LrcParser.parse(it) }
+            ?.let { io.github.zeehan2005.scoremuse.data.parser.LrcParser.parse(it) }
         val romanizationLines = transliterationContent
             ?.takeIf { it.isNotBlank() }
-            ?.let { LrcParser.parse(it) }
+            ?.let { io.github.zeehan2005.scoremuse.data.parser.LrcParser.parse(it) }
 
         val strictMerged = mergeLyricLines(mainLines, translationLines, romanizationLines)
 
@@ -1701,6 +1612,7 @@ open class LyricsRepository(
             .replace("&nbsp;", " ")
             .replace("&#160;", " ")
             .replace("&#32;", " ")
+            .replace("&amp;", "&")
             .replace("&lt;", "<")
             .replace("&gt;", ">")
             .replace("&quot;", "\"")
@@ -1709,13 +1621,38 @@ open class LyricsRepository(
     }
 
     /**
+     * Parse a song identifier that may include an AMLL platform prefix.
+     * Examples:
+     *   "ncm:12345" -> ("ncm","12345")
+     *   "qq:ABCDEFGHI" -> ("qq","ABCDEFGHI")
+     *   "98765" -> ("ncm","98765")  // default to ncm for backward compatibility
+     */
+    private fun parseAmlLId(raw: String): Pair<String, String> {
+        // If the raw string is already a URL (e.g. from the AMLL search "file" field),
+        // treat it as a direct download link.
+        if (raw.startsWith("http://") || raw.startsWith("https://")) {
+            return "url" to raw
+        }
+
+        val parts = raw.split(":", limit = 2)
+        return if (parts.size == 2 && parts[0].isNotBlank()) {
+            parts[0].lowercase() to parts[1]
+        } else {
+            "ncm" to raw
+        }
+    }
+
+    @Volatile
+    private var lastAmlLError: String? = null
+
+    /**
      * 从 AMLL TTML DB 获取歌词 (通过网易云音乐ID)
      */
-    open suspend fun getAMLL_TTMLLyrics(
+    open suspend fun getAMLL_UnifiedLyrics(
         songId: String,
         title: String? = null,
         artist: String? = null
-    ): TTMLLyrics? {
+    ): UnifiedLyrics? {
         // allow callers to pass a platform prefix (e.g. "qq:12345") or omit for
         // backwards compatibility.  default platform is ncm (网易云).
         // If the "songId" is a direct URL (from AMLL search "file" field), we treat it as
@@ -1788,12 +1725,12 @@ open class LyricsRepository(
                         // 检查是否有歌曲结构
                         val songStructures = parsed.metadata.songStructures
                         if (!songStructures.isNullOrEmpty()) {
-                            Timber.d("[SongStructure] ✅ getAMLL_TTMLLyrics received ${songStructures.size} structures")
+                            Timber.d("[SongStructure] ✅ getAMLL_UnifiedLyrics received ${songStructures.size} structures")
                             songStructures.forEachIndexed { index, structure ->
                                 Timber.d("[SongStructure]   [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms (${structure.duration}ms)")
                             }
                         } else {
-                            Timber.d("[SongStructure] ⚠️ getAMLL_TTMLLyrics received no structure info")
+                            Timber.d("[SongStructure] ⚠️ getAMLL_UnifiedLyrics received no structure info")
                         }
                         
                         // Mark the source for AMLL lyrics so downstream feature analysis
@@ -1839,6 +1776,8 @@ open class LyricsRepository(
         title: String,
         artist: String
     ): List<LyricsSearchResult> = searchLyricsIncremental(title, artist) { }
+
+    private val amllProbeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * 增量搜索歌词：某个来源先返回就先通知上层，避免 UI 必须等待全部来源结束。
@@ -1888,13 +1827,13 @@ open class LyricsRepository(
                         return@outer
                     }
 
-                    val channel = Channel<Pair<String, TTMLLyrics>>(capacity = 1)
+                    val channel = Channel<Pair<String, UnifiedLyrics>>(capacity = 1)
                     val jobs = segments.map { seg ->
                         amllProbeScope.launch {
                             val prefixId = "qq:$seg"
                             Timber.d("[AMLLBridge] Probing AMLL DB for QQ candidate segment: $prefixId (raw=$rawId)")
                             val amllResult = runCatching {
-                                getAMLL_TTMLLyrics(prefixId, title = result.title, artist = result.artist)
+                                getAMLL_UnifiedLyrics(prefixId, title = result.title, artist = result.artist)
                             }.getOrNull()
                             if (amllResult != null) {
                                 channel.trySend(prefixId to amllResult)
@@ -1944,7 +1883,7 @@ open class LyricsRepository(
                     val prefixId = "ncm:${result.songId}"
                     Timber.d("[AMLLBridge] Probing AMLL DB for Netease candidate: $prefixId")
                     val amllResult = runCatching {
-                        getAMLL_TTMLLyrics(prefixId, title = result.title, artist = result.artist)
+                        getAMLL_UnifiedLyrics(prefixId, title = result.title, artist = result.artist)
                     }.getOrNull()?.let { lyrics ->
                         result.copy(
                             provider = "amll",
@@ -1988,7 +1927,7 @@ open class LyricsRepository(
      * 智能获取歌词 - 自动搜索并选择最佳来源
      * 这是推荐的歌词获取方式,模仿 Unilyric 的工作流程
      *
-     * 优先级说明：如果本地缓存（AMLL 数据库）包含候选歌词，会在
+     * 优先级说明：如果本地缓存包含候选歌词，会在
      * 其他在线来源之前尝试返回该缓存结果。
      *
      * @param currentSourceName 可选的播放来源名称（例如播放器应用名）。
@@ -2066,7 +2005,7 @@ open class LyricsRepository(
      */
     protected open suspend fun getCachedLyrics(title: String, artist: String): LyricsResult? {
         val entry = cacheRepo?.findBySong(title, artist) ?: return null
-        val parsed = entry.ttmlContent.takeIf { it.isNotBlank() }
+        val parsed = entry.xmlContent.takeIf { it.isNotBlank() }
             ?.let { parseTTML(it, entry.title, entry.artist) }
             ?: return null
         return LyricsResult(
@@ -2085,7 +2024,7 @@ open class LyricsRepository(
         return try {
             val normalizedProvider = provider.lowercase()
             val lyrics = when (normalizedProvider) {
-                "amll" -> getAMLL_TTMLLyrics(songId, title, artist)
+                "amll" -> getAMLL_UnifiedLyrics(songId, title, artist)
                 "netease", "ncm" -> getNeteaseLyrics(songId, title, artist)
                 "qq", "qqmusic" -> getQQMusicLyrics(songId, title, artist)
                 "kugou" -> getKugouLyrics(songId, title, artist)
@@ -2137,8 +2076,8 @@ open class LyricsRepository(
         artist: String? = null
     ): Set<LyricsFeature> {
         val normalizedProvider = provider.lowercase()
-        val lyrics: TTMLLyrics? = when (normalizedProvider) {
-            "amll" -> getAMLL_TTMLLyrics(songId, title, artist)
+        val lyrics: UnifiedLyrics? = when (normalizedProvider) {
+            "amll" -> getAMLL_UnifiedLyrics(songId, title, artist)
             "netease", "ncm" -> getNeteaseLyrics(songId, title, artist)
             "qq", "qqmusic" -> getQQMusicLyrics(songId, title, artist)
             "kugou" -> getKugouLyrics(songId, title, artist)
@@ -2230,7 +2169,7 @@ open class LyricsRepository(
                     setOf("qq", "kugou").contains(b.first.provider.lowercase())
             val tmeSource = currentSourceName?.lowercase()?.let { it.contains("qq") || it.contains("酷狗") } ?: false
             if (bothTme && tmeSource) {
-                val lowerSource = currentSourceName?.lowercase() ?: ""
+                val lowerSource = currentSourceName.lowercase()
                 val preferKugou = lowerSource.contains("酷狗") && !lowerSource.contains("qq")
                 val preferQQ = lowerSource.contains("qq") && !lowerSource.contains("酷狗")
                 if (preferKugou) {
@@ -2261,7 +2200,7 @@ open class LyricsRepository(
         }).map { it.first }
     }
 
-    private fun analyzeFeatures(lyrics: TTMLLyrics): Set<LyricsFeature> {
+    private fun analyzeFeatures(lyrics: UnifiedLyrics): Set<LyricsFeature> {
         val features = mutableSetOf<LyricsFeature>()
         val lines = lyrics.lines
         if (lines.any { it.isDuet }) features.add(LyricsFeature.DUET)
@@ -2285,11 +2224,11 @@ open class LyricsRepository(
         }
         if (hasRealWords) features.add(LyricsFeature.WORDS)
         // Only mark overlap as a feature for sources where it is expected to be
-        // meaningful (e.g. AMLL TTML DB results or a raw TTML file). Other sources
+        // meaningful (e.g. TTML results or a raw TTML file). Other sources
         // may produce overlapping timings during conversion and should not be
         // treated as a true "overlap" feature.
         val sourceLower = lyrics.metadata.source.lowercase()
-        val shouldMarkOverlap = sourceLower.contains("amll") || sourceLower.contains("ttml")
+        val shouldMarkOverlap = sourceLower.contains("ttml")
         if (shouldMarkOverlap && lines.zipWithNext().any { it.second.startTime < it.first.endTime }) {
             features.add(LyricsFeature.OVERLAP)
         }
@@ -2354,13 +2293,13 @@ open class LyricsRepository(
                 else -> provider.uppercase()
             }
             var idPart = songId ?: ""
-            if (provider.lowercase() == "amll" && !idPart.isNullOrBlank() && idPart.contains(":")) {
+            if (idPart.isNotBlank() && idPart.contains(":")) {
                 val parts = idPart.split(":", limit = 2)
                 val plat = parts[0].uppercase()
                 idPart = parts[1]
                 providerName = "$providerName($plat)"
             }
-            if (provider.lowercase() == "amll" && metadataMatch) {
+            if (metadataMatch) {
                 providerName = "$providerName (基于歌名)"
             }
             return "自动识别:$providerName：$title - $artist($idPart)"
@@ -2373,19 +2312,26 @@ open class LyricsRepository(
          * @param artist 可选歌手名，用于覆盖 TTML 文件中可能缺失的元数据
          */
         fun parseTTML(
-            ttmlContent: String,
+            xmlContent: String,
             title: String? = null,
             artist: String? = null
-        ): TTMLLyrics? {
+        ): UnifiedLyrics? {
             return try {
-                Timber.d("[BG-LYRICS-DEBUG] LyricsRepository.parseTTML input: length=${ttmlContent.length}, hasXbg=${ttmlContent.contains("ttm:role=\"x-bg\"")}, hasXTranslation=${ttmlContent.contains("ttm:role=\"x-translation\"")}")
-                val ttmlLyrics = TTMLParser.parse(ttmlContent)
+                Timber.d("[BG-LYRICS-DEBUG] LyricsRepository.parseTTML input: length=${xmlContent.length}")
+                // 使用 TTML 解析器
+                Timber.d("[TTMLParser] Detected TTML format, using TTMLParser")
+                val parsedLyrics = TTMLParser.parse(xmlContent)
+                
+                if (parsedLyrics.lines.isEmpty()) {
+                    Timber.e("[LyricsRepository] Failed to parse lyrics content")
+                    return null
+                }
                 
                 // 检查是否有解析到的歌曲结构
-                val songStructures = ttmlLyrics.metadata.songStructures
-                if (!songStructures.isNullOrEmpty()) {
+                val songStructures = parsedLyrics.metadata.songStructures
+                if (songStructures != null && songStructures.isNotEmpty()) {
                     Timber.d("[SongStructure] ✅ LyricsRepository received ${songStructures.size} structures")
-                    songStructures.forEachIndexed { index, structure ->
+                    songStructures.forEachIndexed { index: Int, structure: SongStructure ->
                         Timber.d("[SongStructure]   [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms (${structure.duration}ms)")
                     }
                 } else {
@@ -2393,75 +2339,24 @@ open class LyricsRepository(
                 }
                 
                 // 如果提供了自定义标题或艺术家，覆盖元数据（但保留 songStructures）
-                val metadata = ttmlLyrics.metadata.copy(
-                    title = title ?: ttmlLyrics.metadata.title,
-                    artist = artist ?: ttmlLyrics.metadata.artist,
+                val metadata = parsedLyrics.metadata.copy(
+                    title = title ?: parsedLyrics.metadata.title,
+                    artist = artist ?: parsedLyrics.metadata.artist,
                     songStructures = songStructures  // 保留歌曲结构信息
                 )
                 
-                // 保存原始 TTML 内容到 rawTtml 字段，用于后续 WebSocket 发送
-                ttmlLyrics.copy(metadata = metadata, rawTtml = ttmlContent)
+                // 保存原始内容到 rawTtml 字段，用于后续 WebSocket 发送
+                UnifiedLyrics(
+                    metadata = metadata,
+                    lines = parsedLyrics.lines,
+                    rawTtml = xmlContent
+                )
             } catch (e: Exception) {
-                Timber.e("[TTMLParser] Error parsing TTML", e)
+                Timber.e("[LyricsRepository] Error parsing lyrics", e)
                 null
             }
         }
 
-        private fun isWhitespaceDelimiterWithoutNewline(text: String): Boolean {
-            if (text.isEmpty()) return false
-            if (!text.all { it.isWhitespace() }) return false
-            val hasNewline = text.any { it == '\n' || it == '\r' }
-            if (hasNewline) return false
-            return text.any { it.isWhitespace() }
-        }
-
-        private fun extractAttribute(attributes: String, attrName: String): String? {
-            val regex = Regex("""\b${Regex.escape(attrName)}\s*=\s*"([^"]*)""", RegexOption.IGNORE_CASE)
-            return regex.find(attributes)?.groupValues?.getOrNull(1)
-        }
-
-        private fun decodeXmlEntities(text: String): String {
-            return text
-                .replace("&nbsp;", " ")
-                .replace("&#160;", " ")
-                .replace("&#32;", " ")
-                .replace("&lt;", "<")
-                .replace("&gt;", ">")
-                .replace("&quot;", "\"")
-                .replace("&apos;", "'")
-                .replace("&amp;", "&")
-        }
-
-        private fun appendSpaceToPreviousWord(words: MutableList<LyricWord>) {
-            if (words.isEmpty()) return
-            val last = words.last()
-            if (last.word.isNotEmpty() && !last.word.last().isWhitespace()) {
-                words[words.lastIndex] = last.copy(word = "${last.word} ")
-            }
-        }
-
-        /**
-         * TTML <p>/<span> 空格保留策略：
-         * 1. span 之间的外部空白补到前一个词尾；
-         * 2. span 内文本（包括前后空格）按原样保留。
-         */
-        private fun normalizeWordText(
-            rawText: String,
-            hasExternalSpaceBefore: Boolean,
-            words: MutableList<LyricWord>
-        ): String? {
-            // TTML <p>/<span> 中空格是可见内容，不能用 trim 抹掉。
-            if (hasExternalSpaceBefore) {
-                appendSpaceToPreviousWord(words)
-            }
-
-            if (rawText.isEmpty()) {
-                return null
-            }
-
-            return rawText
-        }
-        
         /**
          * 将时间字符串转换为毫秒
          * 支持格式："mm:ss.ms" 或 "mm:ss.mss" 或 "00:01.500s"

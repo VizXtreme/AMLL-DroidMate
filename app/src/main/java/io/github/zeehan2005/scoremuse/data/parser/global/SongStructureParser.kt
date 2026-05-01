@@ -1,9 +1,8 @@
-package com.amll.droidmate.data.parser
+package io.github.zeehan2005.scoremuse.data.parser.global
 
-import dev.amll.droidmate.global.LyricLine
-import dev.amll.droidmate.global.SongStructure
-import dev.amll.droidmate.global.SongStructureType
-import dev.amll.droidmate.global.TTMLLyrics
+import io.github.zeehan2005.scoremuse.global.LyricLine
+import io.github.zeehan2005.scoremuse.global.SongStructure
+import io.github.zeehan2005.scoremuse.global.SongStructureType
 import timber.log.Timber
 
 /**
@@ -68,15 +67,7 @@ object SongStructureParser {
         
         return inferStructureFromLyrics(lyricsLines, songDuration)
     }
-    
-    /**
-     * 从 TTMLLyrics 对象解析歌曲结构
-     * 优先使用元数据中的结构信息
-     */
-    fun parseStructure(lyrics: TTMLLyrics): List<SongStructure> {
-        return parseStructure(lyrics.lines, lyrics.metadata.songStructures)
-    }
-    
+
     /**
      * 从歌词行自动推断歌曲结构
      * 
@@ -201,13 +192,14 @@ object SongStructureParser {
             
             // 所有间隔都需要 >= 4 秒才显示
             if (gap >= INTERLUDE_THRESHOLD_MS) {
-                val type = when {
-                    i == 0 -> SongStructureType.INTRO_INST  // 不会到这里，保留以防逻辑变化
-                    i == lyricLines.size - 2 -> {
+                val type = when (i) {
+                    0 -> SongStructureType.INTRO_INST  // 不会到这里，保留以防逻辑变化
+                    lyricLines.size - 2 -> {
                         // 倒数第二段和最后一段之间的间隔，需要判断是 outro_inst 还是 outro_para
                         // 因为后面还有最后一段歌词，所以是 outro_inst（纯音乐尾奏）
                         SongStructureType.OUTRO_INST
                     }
+
                     else -> SongStructureType.INTERLUDE
                 }
                 

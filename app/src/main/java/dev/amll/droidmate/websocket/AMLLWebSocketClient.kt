@@ -1,5 +1,6 @@
 package com.amll.droidmate.websocket
 
+import dev.amll.droidmate.data.converter.TTMLConverter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -7,7 +8,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
@@ -22,7 +22,7 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.concurrent.TimeUnit
 import javax.net.SocketFactory
-import dev.amll.droidmate.global.TTMLLyrics
+import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 
 /**
  * AMLL WebSocket 客户端（单例模式）
@@ -195,7 +195,7 @@ class AMLLWebSocketClient private constructor(
         duration: Long,
         currentTime: Long,
         isPlaying: Boolean,
-        lyrics: TTMLLyrics?,
+        lyrics: UnifiedLyrics?,
         onConnectedCallback: (() -> Unit)? = null,
         onCommandReceived: ((String, kotlinx.serialization.json.JsonObject?) -> Unit)? = null,
         onErrorCallback: ((Throwable) -> Unit)? = null
@@ -257,7 +257,7 @@ class AMLLWebSocketClient private constructor(
                 }
                 
                 val ttmlContent = lyrics?.let {
-                    com.amll.droidmate.data.converter.TTMLConverter.toTTMLString(it).takeIf { it.isNotBlank() }
+                    TTMLConverter.toTTMLString(it).takeIf { it.isNotBlank() }
                 }
                 
                 val state = PlayState(

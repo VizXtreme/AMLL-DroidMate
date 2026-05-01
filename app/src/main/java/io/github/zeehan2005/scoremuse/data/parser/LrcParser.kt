@@ -1,7 +1,10 @@
-package com.amll.droidmate.data.parser
+package io.github.zeehan2005.scoremuse.data.parser
 
-import dev.amll.droidmate.global.LyricLine
-import dev.amll.droidmate.global.LyricWord
+import io.github.zeehan2005.scoremuse.data.parser.global.DEFAULT_LAST_LRC_LINE_DURATION_MS
+import io.github.zeehan2005.scoremuse.data.parser.global.normalizeTextWhitespace
+import io.github.zeehan2005.scoremuse.data.parser.global.parseAndStoreMetadata
+import io.github.zeehan2005.scoremuse.global.LyricLine
+import io.github.zeehan2005.scoremuse.global.LyricWord
 import timber.log.Timber
 
 /**

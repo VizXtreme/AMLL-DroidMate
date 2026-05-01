@@ -1,7 +1,8 @@
-package com.amll.droidmate.data.parser
+package io.github.zeehan2005.scoremuse.data.parser
 
-import dev.amll.droidmate.global.LyricLine
-import dev.amll.droidmate.global.LyricWord
+import io.github.zeehan2005.scoremuse.data.parser.global.processSyllableText
+import io.github.zeehan2005.scoremuse.global.LyricLine
+import io.github.zeehan2005.scoremuse.global.LyricWord
 import org.json.JSONObject
 import timber.log.Timber
 

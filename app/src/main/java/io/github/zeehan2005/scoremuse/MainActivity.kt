@@ -14,7 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.amll.droidmate.global.viewmodel.MainViewModel
+import io.github.zeehan2005.scoremuse.global.viewmodel.MainViewModel
 import io.github.zeehan2005.scoremuse.ui.MainScreen
 import io.github.zeehan2005.scoremuse.global.theme.AlbumColorExtractor
 import io.github.zeehan2005.scoremuse.global.theme.ScoreMuseTheme

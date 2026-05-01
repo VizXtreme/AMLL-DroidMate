@@ -25,9 +25,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import dev.amll.droidmate.global.TTMLLyrics
 import dev.amll.droidmate.global.AMLLSettings
 import dev.amll.droidmate.websocket.InitializeWebSocketListener
+import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
 import timber.log.Timber
@@ -65,7 +65,7 @@ private val AMLL_VIEW_INSTANCE_COUNTER = AtomicInteger(0)
 @Composable
 fun AMLLLyricsView(
     // 歌词数据（TTML 格式，包含完整的歌曲结构和时间信息）
-    lyrics: TTMLLyrics?,
+    lyrics: UnifiedLyrics?,
     // 当前播放进度（毫秒），用于同步歌词高亮
     currentTime: Long,
     // 歌曲唯一标识符（用于去重和状态追踪）
@@ -256,7 +256,7 @@ fun AMLLLyricsView(
     var lastEnableAdvanceDynamicTime by remember { mutableStateOf<Boolean?>(null) }
     
     // 上一次的歌词数据引用（用于检测歌词是否变化）
-    var lastLyrics by remember { mutableStateOf<TTMLLyrics?>(null) }
+    var lastLyrics by remember { mutableStateOf<UnifiedLyrics?>(null) }
     // 上一次生成的歌词 JSON 字符串（用于页面刷新后重新注入）
     var lastLyricsPayload by remember { mutableStateOf<String?>(null) }
     
@@ -1002,7 +1002,7 @@ private fun cleanBackgroundText(text: String): String {
     return text
 }
 
-private fun buildLyricsJson(lyrics: TTMLLyrics): String {
+private fun buildLyricsJson(lyrics: UnifiedLyrics): String {
     val bgLines = lyrics.lines.filter { it.isBG }
     val bgWithTranslation = bgLines.count { !it.translation.isNullOrBlank() }
     val bgWithRoman = bgLines.count { !it.transliteration.isNullOrBlank() }

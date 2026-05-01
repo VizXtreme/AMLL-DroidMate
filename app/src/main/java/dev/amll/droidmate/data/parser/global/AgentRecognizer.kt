@@ -1,7 +1,8 @@
 package dev.amll.droidmate.data.parser.global
 
 import kotlin.collections.first
-import dev.amll.droidmate.global.LyricLine
+import io.github.zeehan2005.scoremuse.global.LyricLine
+import io.github.zeehan2005.scoremuse.global.LyricWord
 
 /**
  * 歌手/角色标签识别器
@@ -100,12 +101,12 @@ object AgentRecognizer {
     }
 
     private fun adjustWordsForPrefix(
-        words: List<dev.amll.droidmate.global.LyricWord>,
+        words: List<LyricWord>,
         prefix: String,
         remainingText: String
-    ): List<dev.amll.droidmate.global.LyricWord> {
+    ): List<LyricWord> {
         if (words.isEmpty()) return listOf(
-            dev.amll.droidmate.global.LyricWord(
+            LyricWord(
                 word = remainingText,
                 startTime = 0L,
                 endTime = 0L
@@ -123,7 +124,7 @@ object AgentRecognizer {
         }
 
         return listOf(
-            dev.amll.droidmate.global.LyricWord(
+            LyricWord(
                 word = if (trimmedFirstWord.isNotEmpty()) trimmedFirstWord else remainingText,
                 startTime = startTime,
                 endTime = endTime
