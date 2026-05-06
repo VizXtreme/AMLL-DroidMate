@@ -188,27 +188,13 @@ android {
         // 版本名称：显示给用户的版本信息（使用时间戳格式）
         versionName = "Alpha ${getBuildTimestamp()}" // 开发版
 //        versionName = "v1.0.0" // 正式版
-        
-        // 使用支持库处理 VectorDrawable（兼容旧版本）
-        vectorDrawables.useSupportLibrary = true
 
-        // 测试运行器：AndroidX 测试框架
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         // Release 构建类型（生产环境）
         release {
             // 是否启用代码压缩（ProGuard/R8）
-            isMinifyEnabled = false
-            
-            // ProGuard 配置文件
-            proguardFiles(
-                // 使用默认的优化规则
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                // 项目自定义规则
-                "proguard-rules.pro"
-            )
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -226,15 +212,6 @@ android {
         compose = true
     }
 
-    // Lint 静态检查配置
-    lint {
-        // 禁用的检查列表
-        disable += listOf(
-            // FullBackupContent: 我们已经配置了 backup_rules.xml，不需要额外检查
-            "FullBackupContent"
-            // NetworkSecurityConfig 保持启用，以检查网络安全问题
-        )
-    }
     buildToolsVersion = "37.0.0"
 }
 

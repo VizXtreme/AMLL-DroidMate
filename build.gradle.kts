@@ -32,23 +32,5 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.3.20" apply false
 }
 
-// ==================== 清理任务 ====================
-// 注册一个名为 "clean" 的任务，用于删除构建产物
-// 
-// **用途**：
-// - 解决缓存问题（当代码修改但构建未生效时）
-// - 释放磁盘空间（构建目录可能很大）
-// - 准备干净的构建环境
-// 
-// **使用方法**：
-// ```bash
-// # 命令行执行
-// ./gradlew clean
-// 
-// # 或在 Android Studio 中点击 Build -> Clean Project
-// ```
-tasks.register("clean", Delete::class) {
-    // 删除根项目的 build 目录
-    delete(layout.buildDirectory)
-}
+
 
