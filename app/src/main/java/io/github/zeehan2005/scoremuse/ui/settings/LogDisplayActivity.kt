@@ -123,7 +123,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
     }
 
     // 日志统计
-    val stats by remember { mutableStateOf(LogHelper.getLogStats()) }
+    var stats by remember { mutableStateOf(LogHelper.getLogStats()) }
 
     // 文件保存启动器 - 使用 SAF (Storage Access Framework)
     // 系统会自动打开保存对话框，默认在 Downloads，用户可以选择其他位置
@@ -166,6 +166,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
             // 无论暂停状态如何，都根据选择的等级过滤日志（自动包含更高等级）
             // 这样在暂停时也能看到筛选效果
             logEntries = LogHelper.getFilteredLogsByMinLevel(minLogLevel)
+            stats = LogHelper.getLogStats()
 
             // 如果未暂停记录且启用了自动滚动，滚动到最后
             if (!isLoggingPaused && autoScrollEnabled && !isPaused && logEntries.isNotEmpty()) {
@@ -337,6 +338,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                         onClick = {
                             LogHelper.clearLogs()
                             logEntries = emptyList()
+                            stats = LogHelper.getLogStats()
                             Toast.makeText(context, "日志已清除", Toast.LENGTH_SHORT).show()
                         },
                         colors = IconButtonDefaults.filledIconButtonColors(
