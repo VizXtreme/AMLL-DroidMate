@@ -681,7 +681,7 @@ private fun SettingsPage(
                             context.startActivity(
                                 Intent(
                                     Intent.ACTION_VIEW,
-                                    "https://github.com/Zeehan2005/ScoreMuse".toUri()
+                                    "https://github.com/Zeehan2005/AMLL-DroidMate".toUri()
                                 )
                             )
                         },
@@ -690,19 +690,19 @@ private fun SettingsPage(
                         Text("项目仓库")
                     }
 
-//                    TextButton(
-//                        onClick = {
-//                            context.startActivity(
-//                                Intent(
-//                                    Intent.ACTION_VIEW,
-//                                    "https://github.com/Zeehan2005/ScoreMuse/blob/main/README.md".toUri()
-//                                )
-//                            )
-//                        },
-//                        modifier = Modifier.fillMaxWidth()
-//                    ) {
-//                        Text("协助改进歌词")
-//                    }
+                    TextButton(
+                        onClick = {
+                            context.startActivity(
+                                Intent(
+                                    Intent.ACTION_VIEW,
+                                    "https://github.com/amll-dev/amll-ttml-db/blob/main/README.md".toUri()
+                                )
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("在 AMLL TTML DB 协助改进歌词")
+                    }
                 }
             }
         }
