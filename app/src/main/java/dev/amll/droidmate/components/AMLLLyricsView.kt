@@ -266,7 +266,8 @@ fun AMLLLyricsView(
     // 字体配置相关状态
     var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
     var lastMotionConfigValue by remember { mutableStateOf<String?>(null) }
-    
+    var lastPlaybackStateValue by remember { mutableStateOf<Boolean?>(null) }
+
     // ==================== 时间更新节流 ====================
     // 记录上一次更新时间的时间戳（用于节流，避免每帧都更新）
     var lastTimeUpdateTimestamp by remember { mutableStateOf(0L) }
@@ -299,10 +300,6 @@ fun AMLLLyricsView(
      */
     fun sendPlaybackStatusToWebSocket(currentTime: Long, isPlaying: Boolean) {
         // WebSocket 未连接时直接返回，避免无效操作
-        if (!isWebSocketConnected) {
-            Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] WebSocket 未连接，跳过发送")
-            return
-        }
             
         // ==================== 状态变化检测 ====================
         // 检查歌曲基本信息是否变化（ID、名称、专辑、艺术家）
@@ -456,6 +453,7 @@ fun AMLLLyricsView(
                         lastRenderModeValue = null
                         lastLyricPlayerImplValue = null
                         lastBackgroundProfileValue = null
+                        lastPlaybackStateValue = null
                         lastLyrics = null
                         lastLyricsPayload = null
                         lastAlbumArtUri = null
@@ -522,9 +520,13 @@ fun AMLLLyricsView(
                     allowFileAccess = true         // 允许访问文件
                     allowContentAccess = true      // 允许访问内容提供者
                     // 仅允许从本地文件 URI 读取资源（用于专辑封面）
-                    // 禁用跨文件访问以提升安全性
-                    allowFileAccessFromFileURLs = false
-                    allowUniversalAccessFromFileURLs = false
+                    // NOTE: 在部分 Android WebView/Chromium 版本下，file:// 原点会阻止对同源或跨源本地资源的请求，
+                    // 导致静态脚本（amll.bundle.js）或 module import 被阻塞并报错：
+                    // "requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https"。
+                    // 在可控的调试环境中将下面两个选项设为 true 可允许 file:// 页面访问 file:// 下的资源并加载本地脚本。
+                    // 请在完成验证后考虑恢复为 false 以减少攻击面。
+                    allowFileAccessFromFileURLs = true
+                    allowUniversalAccessFromFileURLs = true
                     // 禁用缓存确保每次加载最新的文件
                     cacheMode = WebSettings.LOAD_NO_CACHE
                     setRenderPriority(WebSettings.RenderPriority.HIGH)
@@ -609,13 +611,19 @@ fun AMLLLyricsView(
                 return@AndroidView
             }
 
-            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Update callback - WebView actual size: width=${view.width}, height=${view.height}, measuredWidth=${view.measuredWidth}, measuredHeight=${view.measuredHeight}")
+            // ==================== 播放状态同步 ====================
+            // 先同步播放/暂停状态，确保后续 updateTime() 以正确状态运行
+            if (lastPlaybackStateValue != isPlayingState.value) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setPaused(${!isPlayingState.value})")
+                view.evaluateJavascript("window.setPaused && window.setPaused(${!isPlayingState.value});", null)
+                lastPlaybackStateValue = isPlayingState.value
+            }
+
 
             // ==================== 更新时间同步（节流优化） ====================
             // 仅在时间间隔超过阈值时才更新，避免每帧都调用 JS
             val now = System.currentTimeMillis()
             if (now - lastTimeUpdateTimestamp >= TIME_UPDATE_INTERVAL_MS) {
-                Timber.d("[AMLLLyrics] [WebView] [$debugSource#$instanceId] Bridge call: updateTime($currentTime)")
                 view.evaluateJavascript("window.updateTime && window.updateTime($currentTime);", null)
                 lastTimeUpdateTimestamp = now
             }
@@ -754,7 +762,6 @@ fun AMLLLyricsView(
                 else -> """{"renderer":"mesh","fps":$backgroundFps,"renderScale":$backgroundRenderScale,"staticMode":$enableBackgroundStaticMode}"""
             }
 
-            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureLyricBackground(config=$backgroundConfig)")
             view.evaluateJavascript("window.configureLyricBackground && window.configureLyricBackground($backgroundConfig);", null)
 
             // ==================== 歌词数据更新 ====================
@@ -798,8 +805,6 @@ fun AMLLLyricsView(
                     lastLyricsPayload = testLyricsJson
                 }
                 lastLyrics = lyrics
-            } else {
-                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Lyrics reference unchanged")
             }
 
             // ==================== 专辑封面更新 ====================

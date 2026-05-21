@@ -141,7 +141,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 Timber.d("[PlaybackControl] Skip to previous command completed")
                             }
                             "seekPlayProgress" -> {
-                                val progress = valueObj?.get("progress")?.jsonPrimitive?.content?.toLongOrNull()
+                                val progress = valueObj.get("progress")?.jsonPrimitive?.content?.toLongOrNull()
                                 if (progress != null) {
                                     Timber.i("[PlaybackControl] Executing seek command: $progress ms")
                                     seekTo(progress)
@@ -151,7 +151,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 }
                             }
                             "setVolume" -> {
-                                val volume = valueObj?.get("volume")?.jsonPrimitive?.content?.toDoubleOrNull()
+                                val volume = valueObj.get("volume")?.jsonPrimitive?.content?.toDoubleOrNull()
                                 if (volume != null) {
                                     Timber.i("[PlaybackControl] Executing set volume command: $volume")
                                     setVolume(volume)
@@ -514,7 +514,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     lyricsMutable.value = finalLyrics
                     updateSongStructures(finalLyrics)
                     // ⭐ 修复关键：始终缓存原始歌词内容（不经过元数据处理）
-                    val rawXmlContent = TTMLConverter.toTTMLString(result.lyrics!!)
+                    val rawXmlContent = TTMLConverter.toTTMLString(result.lyrics)
                     lyricsCacheRepository.upsert(
                         title = music.title,
                         artist = music.artist,

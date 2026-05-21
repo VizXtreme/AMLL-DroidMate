@@ -47,19 +47,19 @@ import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 class AMLLWebSocketClient private constructor(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 ) {
-    
+
     companion object {
         @Volatile
         private var instance: AMLLWebSocketClient? = null
-        
+
         /**
          * 获取单例实例（线程安全的延迟初始化）
-         * 
+         *
          * 使用双重检查锁定模式确保：
          * 1. 只在第一次调用时创建实例
          * 2. 多线程环境下安全
          * 3. 后续调用直接返回实例，无锁开销
-         * 
+         *
          * @return 全局唯一的 AMLLWebSocketClient 实例
          */
         fun getInstance(): AMLLWebSocketClient {
@@ -67,10 +67,10 @@ class AMLLWebSocketClient private constructor(
                 instance ?: AMLLWebSocketClient().also { instance = it }
             }
         }
-        
+
         /**
          * 重置单例（用于测试或重新初始化）
-         * 
+         *
          * 调用此方法会销毁现有连接并清空实例，
          * 下次调用 getInstance() 时会创建新的实例
          */
@@ -397,7 +397,7 @@ class AMLLWebSocketClient private constructor(
     private var webSocket: WebSocket? = null
     // 使用固定的本地端口（每次启动时固定）
     private val localPort = 50000 + (System.currentTimeMillis() % 1000).toInt()
-    
+
     // 自定义 SocketFactory 用于绑定本地端口
     private class FixedPortSocketFactory(private val localPort: Int) : SocketFactory() {
         override fun createSocket(): Socket {
@@ -728,7 +728,7 @@ class AMLLWebSocketClient private constructor(
             }
         }
     }
-    
+
     /**
      * 断开 WebSocket 连接
      */
@@ -759,7 +759,7 @@ class AMLLWebSocketClient private constructor(
             Timber.w("[WebSocket] Not connected or handshake incomplete, cannot send message: $message")
             return
         }
-        
+
         scope.launch {
             try {
                 webSocket?.send(message)
@@ -787,7 +787,7 @@ class AMLLWebSocketClient private constructor(
             Timber.w("[WebSocket] Not connected, cannot send binary message")
             return
         }
-        
+
         scope.launch {
             try {
                 val byteString = ByteString.of(*data)

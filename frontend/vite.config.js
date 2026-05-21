@@ -12,13 +12,13 @@
  */
 import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
-import react from '@vitejs/plugin-react'
 
 // 使用 defineConfig 定义配置，获得更好的 TypeScript 类型提示
 export default defineConfig({
   // ==================== 插件配置 ====================
-  // React 插件：支持 JSX/TSX 语法转换
-  plugins: [react()],
+  // 本工程在 frontend/src/main.tsx 使用的是 AMLL core API（无 React 挂载），
+  // 因此移除 React 插件可以避免把 React 相关运行时打包进最终 bundle。
+  plugins: [],
   // ==================== 基础路径 ====================
   // 设置资源引用的基础路径为相对路径 './'
   // 这样在 Android WebView 中加载时可以正确找到资源
@@ -44,12 +44,19 @@ export default defineConfig({
       formats: ['iife'],  // 输出格式：IIFE（立即执行函数表达式）
       fileName: () => 'amll.bundle.js',  // 输出文件名（固定为 amll.bundle.js）
     },
+    // Ensure CommonJS packages (and local workspace packages) are processed
+    commonjsOptions: {
+      include: [/node_modules/, /@applemusic-like-lyrics/]
+    },
+    // Vite sometimes externalizes deps for library mode; make sure core is bundled
+    rollupOptions: {
+      // no externalization for AMLL core
+      external: []
+    },
   },
   // ==================== 模块解析配置 ====================
   resolve: {
-    // 强制去重，确保运行时只有一个 React / React DOM 副本
-    // 这很重要，因为多个 React 副本会导致运行时错误
-    dedupe: ['react', 'react-dom', 'jotai'],
+    // 不再需要对 react/react-dom 去重（本项目不使用 React 运行时）
   },
   // ==================== 开发服务器配置 ====================
   server: {

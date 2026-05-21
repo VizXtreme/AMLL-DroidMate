@@ -57,9 +57,9 @@ object AMLLSettings {
     private const val KEY_WEBVIEW_ENABLED = "webview_enabled"  // WebView 开关
 
     // 默认值常量（当用户未设置时使用）
-    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SPRING = false  // 默认禁用弹簧动画（性能优化）
-    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SCALE = false   // 默认禁用缩放（性能优化）
-    private const val DEFAULT_AMLL_ANIMATION_ENABLE_BLUR = false    // 默认禁用模糊（性能优化）
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SPRING = true  // 弹簧动画
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_SCALE = true   // 缩放
+    private const val DEFAULT_AMLL_ANIMATION_ENABLE_BLUR = true    // 模糊
     private const val DEFAULT_AMLL_ANIMATION_HIDE_PASSED_LINES = false  // 默认不隐藏已唱过的行
     private const val DEFAULT_AMLL_ANIMATION_WORD_FADE_WIDTH = 0.5f     // 默认渐变宽度 0.5
     private const val DEFAULT_AMLL_ANIMATION_FPS = 30  // 默认 30 FPS（性能优化，降低动画帧率）

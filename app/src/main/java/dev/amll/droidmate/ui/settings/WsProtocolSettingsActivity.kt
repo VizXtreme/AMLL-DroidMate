@@ -252,7 +252,7 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
                             webSocketClient.disconnect()
                         }
                     },
-                colors = CardDefaults.cardColors(containerColor = statusCardBg as Color)
+                colors = CardDefaults.cardColors(containerColor = statusCardBg)
             ) {
                 Column(
                     modifier = Modifier
@@ -338,7 +338,7 @@ private fun WsProtocolSettingsPage(onBack: () -> Unit) {
             
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = batteryCardBg as Color)
+                colors = CardDefaults.cardColors(containerColor = batteryCardBg)
             ) {
                 Column(
                     modifier = Modifier

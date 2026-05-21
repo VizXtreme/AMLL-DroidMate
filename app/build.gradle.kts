@@ -1,14 +1,6 @@
-
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.TaskAction
-import org.gradle.process.ExecOperations
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import javax.inject.Inject
 
 // ============================================================================
 // DroidMate Android 应用构建配置
@@ -201,9 +193,9 @@ android {
     // Java 兼容性配置
     compileOptions {
         // 源代码 Java 版本
-        sourceCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_25
         // 目标字节码 Java 版本
-        targetCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_25
     }
 
     // Jetpack Compose 功能开关
