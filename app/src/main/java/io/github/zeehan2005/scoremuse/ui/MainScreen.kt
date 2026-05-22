@@ -44,6 +44,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -1174,7 +1175,7 @@ fun NowPlayingCard(
     modifier: Modifier = Modifier.Companion,
     nowPlaying: NowPlayingMusic?,
     context: Context,
-    songStructures: List<SongStructure> = emptyList(),  // 添加歌曲结构参数
+    songStructures: List<SongStructure> = emptyList(),
     onPlayPauseClick: () -> Unit,
     onSkipPreviousClick: () -> Unit,
     onSkipNextClick: () -> Unit,
@@ -1182,229 +1183,215 @@ fun NowPlayingCard(
     onFastForward: () -> Unit,
     onSeek: (Long) -> Unit,
     onCardClick: () -> Unit,
-    // new parameter: background color for card (should match dropdown)
     cardBg: Color = MaterialTheme.colorScheme.primaryContainer,
-    // slider/thumb color (pass rippleColor from caller)
     sliderColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     Trace.beginSection("Compose:NowPlayingCard")
     val scope = rememberCoroutineScope()
-
-    // 优化：使用更高效的状态管理
     var isSeeking by remember { mutableStateOf(false) }
 
-    // card background is provided by caller (computed in MainScreen)
     Card(
         modifier = modifier.clickable { onCardClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = cardBg,
-            // content stays onSurface for legibility as before
             contentColor = MaterialTheme.colorScheme.onSurface
         )
     ) {
-        if (nowPlaying != null) {
-            // 优化：使用固定高度的Column，减少布局计算
-            Column(Modifier.Companion.padding(16.dp)) {
-                // 优化：使用Row的weight分配，减少布局计算
-                Row(verticalAlignment = Alignment.Companion.CenterVertically) {
-                    // 优化：使用固定尺寸的AsyncImage，减少布局计算
-                    AsyncImage(
-                        model = nowPlaying.albumArtUri,
-                        contentDescription = null,
-                        modifier = Modifier.Companion.size(64.dp)
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                    )
-                    Spacer(Modifier.Companion.width(12.dp))
-                    Column(modifier = Modifier.Companion.weight(1f)) {
-                        // 优化：使用remember缓存appName计算结果
-                        val appName by remember(nowPlaying.packageName) {
-                            derivedStateOf {
-                                nowPlaying.packageName?.let { getAppNameFromPackage(context, it) }
-                            }
-                        }
-                        Text(
-                            appName ?: "播放源应用",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            lineHeight = 12.sp
+        Box(modifier = Modifier.Companion.fillMaxWidth()) {
+            if (nowPlaying?.albumArtUri != null) {
+                AsyncImage(
+                    model = nowPlaying.albumArtUri,
+                    contentDescription = null,
+                    contentScale = ContentScale.Companion.Crop,
+                    modifier = Modifier.Companion
+                        .matchParentSize()
+                        .blur(40.dp)
+                        .alpha(0.2f)
+                )
+                Box(
+                    modifier = Modifier.Companion
+                        .matchParentSize()
+                        .background(
+                            brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                colors = listOf(
+                                    cardBg.copy(alpha = 0.6f),
+                                    cardBg.copy(alpha = 0.95f)
+                                )
+                            )
                         )
-                        Text(
-                            nowPlaying.title,
-                            fontWeight = FontWeight.Companion.Bold,
-                            fontSize = 16.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Companion.Ellipsis,
-                            lineHeight = 20.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            nowPlaying.artist,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Companion.Ellipsis
-                        )
-                    }
-                }
-                // add a bit more breathing room between the track info and slider
-                Spacer(Modifier.Companion.height(16.dp))
-                // While the user is actively dragging the slider, we should not overwrite the
-                // thumb position from playback updates (which would make the thumb jump).
-                // At the same time we want to send seek updates to the playback source in real time.
+                )
+            }
 
-                var draggedSliderValue by remember { mutableStateOf(nowPlaying.currentPosition.toFloat()) }
-                val sliderValue by remember(nowPlaying, isSeeking) {
-                    derivedStateOf {
-                        if (!isSeeking) nowPlaying.currentPosition.toFloat() else draggedSliderValue
-                    }
-                }
-
-                Column {
-                    // progress slider with wavy style
-                    WavySlider(
-                        value = sliderValue / nowPlaying.duration.toFloat().coerceAtLeast(1f),
-                        onValueChange = { normalizedValue ->
-                            draggedSliderValue =
-                                normalizedValue * nowPlaying.duration.toFloat().coerceAtLeast(1f)
-                            isSeeking = true
-                        },
-                        onValueChangeFinished = {
-                            onSeek(draggedSliderValue.toLong())
-                            isSeeking = false
-                        },
-                        customSteps = songStructures
-                            .map { it.startTime }  // 获取所有起始时间
-                            .filter { it > 0 && it < nowPlaying.duration }
-                            .map {
-                                (it.toFloat() / nowPlaying.duration.toFloat()
-                                    .coerceAtLeast(1f)).coerceIn(0f, 1f)
-                            }  // 归一化到 0-1
-                            .distinct(),  // 去重
-                        modifier = Modifier.Companion
-                            .fillMaxWidth(),
-                        colors = WavySliderDefaults.colors(
-                            thumbColor = sliderColor,
-                            activeTrackColor = sliderColor,
-                            inactiveTrackColor = sliderColor.copy(alpha = 0.3f),
-                            stepColor = sliderColor.copy(alpha = 0.7f)  // 设置标记点颜色
-                        ),
-                        amplitude = 1f,  // 使用默认振幅 1.0（最大波浪效果）
-                        wavelength = WavySliderDefaults.Wavelength,  // 16.dp，默认波长
-                        waveSpeed = if (nowPlaying.isPlaying) WavySliderDefaults.WaveSpeed else 0.dp, // 暂停时停止波浪动画
-                        thumbHeight = 24.dp,
-                        attractionRadius = 0.01f
-                    )
+            if (nowPlaying != null) {
+                Column(Modifier.Companion.padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 20.dp)) {
                     Row(
-                        Modifier.Companion.fillMaxWidth(),
+                        modifier = Modifier.Companion.fillMaxWidth(),
+                        verticalAlignment = Alignment.Companion.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            formatTime(sliderValue.toLong()),
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            nowPlaying.album ?: "",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.Companion.weight(1f, fill = false)
                         )
+                        val appName by remember(nowPlaying.packageName) {
+                            derivedStateOf { nowPlaying.packageName?.let { getAppNameFromPackage(context, it) } }
+                        }
                         Text(
-                            formatTime(nowPlaying.duration),
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            appName ?: "",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
-                }
-                Row(
-                    modifier = Modifier.Companion.fillMaxWidth().height(40.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.Companion.CenterVertically
-                ) {
-                    val leftInteractionSource = remember { MutableInteractionSource() }
-                    Box(
-                        modifier = Modifier.Companion.weight(1f).fillMaxHeight()
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                            .indication(leftInteractionSource, ripple())
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onTap = { onSkipPreviousClick() },
-                                    onPress = { offset ->
-                                        val press = PressInteraction.Press(offset)
-                                        leftInteractionSource.tryEmit(press)
-                                        val job = scope.launch {
-                                            delay(500); while (true) {
-                                            onRewind(); delay(200)
-                                        }
-                                        }
-                                        try {
-                                            awaitPointerEventScope {
-                                                waitForUpOrCancellation(); job.cancel(); leftInteractionSource.tryEmit(
-                                                PressInteraction.Release(press)
-                                            )
-                                            }
-                                        } catch (e: Exception) {
-                                            job.cancel(); leftInteractionSource.tryEmit(
-                                                PressInteraction.Cancel(press)
-                                            )
-                                        }
-                                    }
-                                )
+
+                    Spacer(Modifier.Companion.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.Companion.fillMaxWidth(),
+                        verticalAlignment = Alignment.Companion.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = nowPlaying.albumArtUri,
+                            contentDescription = null,
+                            modifier = Modifier.Companion
+                                .size(76.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        )
+                        Spacer(Modifier.Companion.width(16.dp))
+                        Column(modifier = Modifier.Companion.weight(1f)) {
+                            Text(
+                                nowPlaying.title,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Companion.Bold,
+                                maxLines = 2,
+                                overflow = TextOverflow.Companion.Ellipsis,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                lineHeight = 24.sp
+                            )
+                            Text(
+                                nowPlaying.artist,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Companion.Ellipsis,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                            )
+                        }
+                        
+                        IconButton(
+                            onClick = { onPlayPauseClick() },
+                            modifier = Modifier.Companion.size(56.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape),
+                            colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onPrimary)
+                        ) {
+                            Icon(
+                                if (nowPlaying.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                modifier = Modifier.Companion.size(32.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.Companion.height(16.dp))
+
+                    var draggedSliderValue by remember { mutableStateOf(nowPlaying.currentPosition.toFloat()) }
+                    val sliderValue by remember(nowPlaying, isSeeking) {
+                        derivedStateOf { if (!isSeeking) nowPlaying.currentPosition.toFloat() else draggedSliderValue }
+                    }
+
+                    var isRemainingTimeMode by remember { mutableStateOf(AppSettings.isRemainingTimeMode(context)) }
+
+                    Row(
+                        modifier = Modifier.Companion.fillMaxWidth(),
+                        verticalAlignment = Alignment.Companion.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        // 最外侧：倒退
+                        MediaControlButton(
+                            icon = Icons.Default.FastRewind,
+                            onClick = { onSkipPreviousClick() },
+                            onLongPress = { onRewind() },
+                            scope = scope,
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+
+                        // 其次：当前时间
+                        val timeAlpha = if (isSeeking) 1.0f else 0.8f
+                        Text(
+                            formatTime(sliderValue.toLong()),
+                            fontSize = 11.sp,
+                            modifier = Modifier.Companion.alpha(timeAlpha),
+                            fontWeight = if (isSeeking) FontWeight.Companion.Bold else FontWeight.Companion.Normal,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            maxLines = 1
+                        )
+
+                        // 增加左侧间距，避免较粗的 Active 进度条贴得太近
+                        Spacer(Modifier.Companion.width(6.dp))
+
+                        // 中间：进度条
+                        WavySlider(
+                            value = sliderValue / nowPlaying.duration.toFloat().coerceAtLeast(1f),
+                            onValueChange = { normalizedValue ->
+                                draggedSliderValue = normalizedValue * nowPlaying.duration.toFloat().coerceAtLeast(1f)
+                                isSeeking = true
                             },
-                        contentAlignment = Alignment.Companion.Center
-                    ) {
-                        Icon(
-                            Icons.Default.FastRewind,
-                            contentDescription = null,
-                            modifier = Modifier.Companion.size(28.dp),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    Box(
-                        modifier = Modifier.Companion.weight(1.5f).fillMaxHeight()
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                            .clickable { onPlayPauseClick() },
-                        contentAlignment = Alignment.Companion.Center
-                    ) {
-                        Icon(
-                            if (nowPlaying.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            modifier = Modifier.Companion.size(40.dp),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    val rightInteractionSource = remember { MutableInteractionSource() }
-                    Box(
-                        modifier = Modifier.Companion.weight(1f).fillMaxHeight()
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                            .indication(rightInteractionSource, ripple())
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onTap = { onSkipNextClick() },
-                                    onPress = { offset ->
-                                        val press = PressInteraction.Press(offset)
-                                        rightInteractionSource.tryEmit(press)
-                                        val job = scope.launch {
-                                            delay(500); while (true) {
-                                            onFastForward(); delay(200)
-                                        }
-                                        }
-                                        try {
-                                            awaitPointerEventScope {
-                                                waitForUpOrCancellation(); job.cancel(); rightInteractionSource.tryEmit(
-                                                PressInteraction.Release(press)
-                                            )
-                                            }
-                                        } catch (e: Exception) {
-                                            job.cancel(); rightInteractionSource.tryEmit(
-                                                PressInteraction.Cancel(press)
-                                            )
-                                        }
-                                    }
-                                )
+                            onValueChangeFinished = {
+                                onSeek(draggedSliderValue.toLong())
+                                isSeeking = false
                             },
-                        contentAlignment = Alignment.Companion.Center
-                    ) {
-                        Icon(
-                            Icons.Default.FastForward,
-                            contentDescription = null,
-                            modifier = Modifier.Companion.size(28.dp),
-                            tint = MaterialTheme.colorScheme.onSurface
+                            customSteps = songStructures
+                                .map { it.startTime }
+                                .filter { it > 0 && it < nowPlaying.duration }
+                                .map { (it.toFloat() / nowPlaying.duration.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f) }
+                                .distinct(),
+                            modifier = Modifier.Companion.weight(1f),
+                            colors = WavySliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.onPrimary,
+                                stepColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
+                                activeTrackColor = MaterialTheme.colorScheme.onPrimary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f),
+                            ),
+                            waveSpeed = if (nowPlaying.isPlaying) WavySliderDefaults.WaveSpeed else 0.dp,
+                        )
+
+                        // 其次：时间显示模式（总时长 vs 剩余时长）
+                        val rightTimeText = if (isRemainingTimeMode) {
+                            "-${formatTime((nowPlaying.duration - sliderValue.toLong()).coerceAtLeast(0L))}"
+                        } else {
+                            formatTime(nowPlaying.duration)
+                        }
+
+                        Text(
+                            rightTimeText,
+                            fontSize = 11.sp,
+                            modifier = Modifier.Companion
+                                .alpha(timeAlpha)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    isRemainingTimeMode = !isRemainingTimeMode
+                                    AppSettings.setRemainingTimeMode(context, isRemainingTimeMode)
+                                },
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            maxLines = 1
+                        )
+
+                        // 最外侧：快进
+                        MediaControlButton(
+                            icon = Icons.Default.FastForward,
+                            onClick = { onSkipNextClick() },
+                            onLongPress = { onFastForward() },
+                            scope = scope,
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
@@ -1413,6 +1400,53 @@ fun NowPlayingCard(
     }
     Trace.endSection()
 }
+
+@Composable
+private fun MediaControlButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    onLongPress: () -> Unit,
+    scope: kotlinx.coroutines.CoroutineScope,
+    tint: Color
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = Modifier.Companion
+            .size(48.dp)
+            .clip(CircleShape)
+            .indication(interactionSource, ripple())
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { onClick() },
+                    onPress = { offset ->
+                        val press = PressInteraction.Press(offset)
+                        interactionSource.tryEmit(press)
+                        val job = scope.launch {
+                            delay(500)
+                            while (true) {
+                                onLongPress()
+                                delay(200)
+                            }
+                        }
+                        try {
+                            awaitPointerEventScope {
+                                waitForUpOrCancellation()
+                                job.cancel()
+                                interactionSource.tryEmit(PressInteraction.Release(press))
+                            }
+                        } catch (e: Exception) {
+                            job.cancel()
+                            interactionSource.tryEmit(PressInteraction.Cancel(press))
+                        }
+                    }
+                )
+            },
+        contentAlignment = Alignment.Companion.Center
+    ) {
+        Icon(icon, null, modifier = Modifier.Companion.size(28.dp), tint = tint)
+    }
+}
+
 
 @Composable
 fun PermissionStatusCard(onOpenNotificationAccessSettings: () -> Unit, modifier: Modifier = Modifier.Companion) {

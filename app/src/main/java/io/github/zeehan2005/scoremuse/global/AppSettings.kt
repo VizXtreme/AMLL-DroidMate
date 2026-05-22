@@ -84,11 +84,20 @@ object AppSettings {
     private const val KEY_SKIP_PREVIOUS_REWINDS = "skip_previous_rewinds"  // 跳过上一首回退
     private const val KEY_PROCESS_METADATA_ENABLED = "process_metadata_enabled"  // 处理元数据开关
     private const val KEY_AGENT_RECOGNIZER_ENABLED = "agent_recognizer_enabled"  // Agent 识别器开关
+    private const val KEY_MEDIA_CARD_REMAINING_TIME_MODE = "media_card_remaining_time_mode" // 剩余时间显示模式
 
 
     // 辅助函数：获取 SharedPreferences 实例（避免重复代码）
     private fun prefs(context: Context) =
         PreferenceHelper(context, PREFS_NAME)
+
+    fun isRemainingTimeMode(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_MEDIA_CARD_REMAINING_TIME_MODE, false)
+    }
+
+    fun setRemainingTimeMode(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_MEDIA_CARD_REMAINING_TIME_MODE, enabled)
+    }
 
     fun getCardClickAction(context: Context): CardClickAction {
         val value = prefs(context).getString(KEY_CARD_CLICK_ACTION, CardClickAction.ASK.value)
