@@ -23132,15 +23132,24 @@ void main() {
     try {
       if (!playerInstance) return;
       const lp = playerInstance;
-      if (options.enableSpring !== void 0 && lp.setLinePosYSpringParams) {
-        lp.setLinePosYSpringParams(options.enableSpring ? { mass: 0.9, damping: 15, stiffness: 90 } : { mass: 1, damping: 30, stiffness: 50 });
+      if (lp.setLinePosYSpringParams) {
+        const posY = options.springPosY || { mass: 0.9, damping: 15, stiffness: 90 };
+        lp.setLinePosYSpringParams(posY);
       }
-      if (options.enableScale !== void 0 && lp.setLineScaleSpringParams) {
-        lp.setLineScaleSpringParams(options.enableScale ? { mass: 2, damping: 25, stiffness: 100 } : { mass: 1, damping: 30, stiffness: 50 });
+      if (options.enableSpring !== void 0 && lp.setEnableSpring) {
+        lp.setEnableSpring(options.enableSpring);
+      }
+      if (lp.setLineScaleSpringParams) {
+        const scale = options.springScale || { mass: 2, damping: 25, stiffness: 100 };
+        lp.setLineScaleSpringParams(scale);
+      }
+      if (options.enableScale !== void 0 && lp.setEnableScale) {
+        lp.setEnableScale(options.enableScale);
       }
       if (options.enableBlur !== void 0 && lp.setEnableBlur) lp.setEnableBlur(options.enableBlur);
       if (options.hidePassedLines !== void 0 && lp.setHidePassedLines) lp.setHidePassedLines(options.hidePassedLines);
       if (options.wordFadeWidth !== void 0 && lp.setWordFadeWidth) lp.setWordFadeWidth(options.wordFadeWidth);
+      if (lp.calcLayout) lp.calcLayout();
     } catch (e2) {
       logToAndroid(`configureLyricMotion error: ${e2.message}`, "error");
     }
@@ -23156,6 +23165,32 @@ void main() {
       if (options.staticMode !== void 0 && backgroundRender.setStaticMode) backgroundRender.setStaticMode(options.staticMode);
     } catch (e2) {
       logToAndroid(`configureBackgroundEffect error: ${e2.message}`, "error");
+    }
+  };
+  window.configureLyricBackground = function(options) {
+    logToAndroid(`configureLyricBackground: ${JSON.stringify(options)}`, "debug");
+    try {
+      const renderer = options.renderer;
+      const bgElement = backgroundRender?.getElement?.();
+      if (bgElement) {
+        if (renderer === "css-bg") {
+          bgElement.style.display = "none";
+        } else {
+          bgElement.style.display = "block";
+        }
+      }
+      if (backgroundRender) {
+        if (options.fps !== void 0 && backgroundRender.setFPS) backgroundRender.setFPS(options.fps);
+        if (options.renderScale !== void 0 && backgroundRender.setRenderScale) backgroundRender.setRenderScale(options.renderScale);
+        if (options.staticMode !== void 0 && backgroundRender.setStaticMode) backgroundRender.setStaticMode(options.staticMode);
+      }
+      if (renderer === "css-bg" && options.cssProperty) {
+        document.body.style.background = options.cssProperty;
+      } else {
+        document.body.style.background = "transparent";
+      }
+    } catch (e2) {
+      logToAndroid(`configureLyricBackground error: ${e2.message}`, "error");
     }
   };
   window.setRenderMode = function(mode) {

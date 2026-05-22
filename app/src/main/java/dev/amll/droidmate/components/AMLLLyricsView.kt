@@ -670,7 +670,17 @@ fun AMLLLyricsView(
                 "enableBlur":${AMLLSettings.isAmllAnimationBlurEnabled(view.context)},
                 "hidePassedLines":${AMLLSettings.isAmllAnimationHidePassedLinesEnabled(view.context)},
                 "wordFadeWidth":${AMLLSettings.getAmllAnimationWordFadeWidth(view.context)},
-                "fps":$fpsValue
+                "fps":$fpsValue,
+                "springPosY": {
+                    "mass": ${AMLLSettings.getAmllSpringPosYMass(view.context)},
+                    "damping": ${AMLLSettings.getAmllSpringPosYDamping(view.context)},
+                    "stiffness": ${AMLLSettings.getAmllSpringPosYStiffness(view.context)}
+                },
+                "springScale": {
+                    "mass": ${AMLLSettings.getAmllSpringScaleMass(view.context)},
+                    "damping": ${AMLLSettings.getAmllSpringScaleDamping(view.context)},
+                    "stiffness": ${AMLLSettings.getAmllSpringScaleStiffness(view.context)}
+                }
             }""".trimIndent().replace("\n", "")
 
             if (lastMotionConfigValue != motionConfig) {
