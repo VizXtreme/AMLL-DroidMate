@@ -29,7 +29,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -97,7 +96,7 @@ class LogDisplayActivity : BaseComposeActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 private fun LogDisplayPage(onBack: () -> Unit) {
     val context = LocalContext.current
@@ -194,7 +193,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
     Scaffold(
-        modifier = Modifier.Companion
+        modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -249,7 +248,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                         ) {
                             Text(
                                 text = "日志等级",
-                                modifier = Modifier.Companion.padding(
+                                modifier = Modifier.padding(
                                     horizontal = 16.dp,
                                     vertical = 8.dp
                                 ),
@@ -270,9 +269,9 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                                 DropdownMenuItem(
                                     text = {
                                         Row(
-                                            modifier = Modifier.Companion.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.Companion.CenterVertically
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(
                                                 text = label,
@@ -301,11 +300,11 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                                     },
                                     colors = MenuItemColors(
                                         textColor = MaterialTheme.colorScheme.onSurface,
-                                        leadingIconColor = Color.Companion.Unspecified,
-                                        trailingIconColor = Color.Companion.Unspecified,
-                                        disabledTextColor = Color.Companion.Unspecified,
-                                        disabledLeadingIconColor = Color.Companion.Unspecified,
-                                        disabledTrailingIconColor = Color.Companion.Unspecified
+                                        leadingIconColor = Color.Unspecified,
+                                        trailingIconColor = Color.Unspecified,
+                                        disabledTextColor = Color.Unspecified,
+                                        disabledLeadingIconColor = Color.Unspecified,
+                                        disabledTrailingIconColor = Color.Unspecified
                                     )
                                 )
                             }
@@ -381,7 +380,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
         // 暂停/恢复自动滚动提示
         AnimatedVisibility(visible = isPaused || !autoScrollEnabled) {
             Card(
-                modifier = Modifier.Companion
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 colors = CardDefaults.cardColors(
@@ -389,11 +388,11 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                 )
             ) {
                 Row(
-                    modifier = Modifier.Companion
+                    modifier = Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Companion.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = if (isPaused) "已暂停自动滚动" else "自动滚动已关闭",
@@ -442,7 +441,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
         SelectionContainer {
             LazyColumn(
                 state = listState,
-                modifier = Modifier.Companion
+                modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp)
                     .padding(innerPadding),
@@ -452,8 +451,8 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                 if (logEntries.isEmpty()) {
                     item {
                         Box(
-                            modifier = Modifier.Companion.fillMaxSize(),
-                            contentAlignment = Alignment.Companion.Center
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "暂无日志",
@@ -480,22 +479,22 @@ private fun LogEntryItem(entry: LogHelper.LogEntry) {
         "I" -> Color(0xFF4CAF50).copy(alpha = 0.1f) to Color(0xFF388E3C)
         "W" -> Color(0xFFFF9800).copy(alpha = 0.1f) to Color(0xFFF57C00)
         "E", "A" -> Color(0xFFF44336).copy(alpha = 0.1f) to Color(0xFFD32F2F)
-        else -> Color.Companion.Transparent to MaterialTheme.colorScheme.onSurface
+        else -> Color.Transparent to MaterialTheme.colorScheme.onSurface
     }
 
     Card(
-        modifier = Modifier.Companion.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = bgColor)
     ) {
         Column(
-            modifier = Modifier.Companion.padding(12.dp),
+            modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             // 第一行：时间和日志级别
             Row(
-                modifier = Modifier.Companion.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Companion.CenterVertically
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = entry.formattedTime(),
@@ -512,7 +511,7 @@ private fun LogEntryItem(entry: LogHelper.LogEntry) {
                         text = entry.tag,
                         style = MaterialTheme.typography.labelSmall,
                         color = textColor,
-                        modifier = Modifier.Companion.padding(horizontal = 6.dp, vertical = 2.dp),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         maxLines = 1
                     )
                 }
@@ -528,7 +527,7 @@ private fun LogEntryItem(entry: LogHelper.LogEntry) {
                         text = "[${entry.level}]",
                         style = MaterialTheme.typography.labelMedium,
                         color = textColor,
-                        modifier = Modifier.Companion.padding(horizontal = 6.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
             }
@@ -538,7 +537,7 @@ private fun LogEntryItem(entry: LogHelper.LogEntry) {
                 text = entry.message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = textColor,
-                modifier = Modifier.Companion.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

@@ -38,7 +38,7 @@ object LogHelper {
     
     // 内部状态
     private val logEntries = ConcurrentLinkedDeque<LogEntry>()  // 线程安全的日志队列
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())  // 时间格式化
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.ROOT)  // 时间格式化
     private var nextId = 0L  // 自增 ID 生成器，为每条日志分配唯一编号
     private var currentLogSize = 0L  // 当前日志总大小（字节）
     

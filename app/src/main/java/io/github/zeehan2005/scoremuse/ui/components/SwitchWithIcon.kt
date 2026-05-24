@@ -21,7 +21,7 @@ import androidx.compose.ui.semantics.semantics
 fun SwitchWithIcon(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier.Companion,
+    modifier: Modifier = Modifier,
     colors: SwitchColors = SwitchDefaults.colors(),
 ) {
     // Use Material3 native thumbContent to show icons inside the switch thumb. This matches the
@@ -36,14 +36,14 @@ fun SwitchWithIcon(
                 Icon(
                     imageVector = Icons.Filled.Check,
                     contentDescription = null,
-                    modifier = Modifier.Companion.size(SwitchDefaults.IconSize),
+                    modifier = Modifier.size(SwitchDefaults.IconSize),
                     tint = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = null,
-                    modifier = Modifier.Companion.size(SwitchDefaults.IconSize),
+                    modifier = Modifier.size(SwitchDefaults.IconSize),
                     tint = MaterialTheme.colorScheme.inverseOnSurface
                 )
             }

@@ -64,7 +64,7 @@ object YrcParser {
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.w("[YrcParser] Failed to parse YRC line $lineNum", e)
+                    Timber.w("[YrcParser] Failed to parse YRC line $lineNum $e")
                 }
             } else {
                 if (lineNum <= 5 || (lineNum > contentLines.size - 3)) {
@@ -103,7 +103,7 @@ object YrcParser {
                 metadata.getOrPut(key) { mutableListOf() }.add(values.joinToString(", "))
             }
         } catch (e: Exception) {
-            Timber.w("[YrcParser] Metadata parse failed on line $lineNum", e)
+            Timber.w("[YrcParser] Metadata parse failed on line $lineNum $e")
         }
     }
 
@@ -132,7 +132,7 @@ object YrcParser {
                 LyricWord(
                     word = text,
                     startTime = sylStart,
-                    endTime = sylStart + sylDuration
+                    endTime = sylStart + maxOf(1L, sylDuration) // 确保持续时间至少为 1ms，防止 JS 侧计算 NaN
                 )
             )
         }
@@ -141,7 +141,7 @@ object YrcParser {
 
         return LyricLine(
             startTime = lineStart,
-            endTime = lineStart + lineDuration,
+            endTime = lineStart + maxOf(1L, lineDuration), // 确保持续时间至少为 1ms
             text = words.joinToString(separator = "") { it.word }.trimEnd(),
             words = words
         )

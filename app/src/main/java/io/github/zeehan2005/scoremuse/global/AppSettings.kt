@@ -83,13 +83,21 @@ object AppSettings {
     private const val KEY_LAST_UPDATE_CHECK_AT = "last_update_check_at"  // 上次检查更新的时间戳
     private const val KEY_SKIP_PREVIOUS_REWINDS = "skip_previous_rewinds"  // 跳过上一首回退
     private const val KEY_PROCESS_METADATA_ENABLED = "process_metadata_enabled"  // 处理元数据开关
-    private const val KEY_AGENT_RECOGNIZER_ENABLED = "agent_recognizer_enabled"  // Agent 识别器开关
     private const val KEY_MEDIA_CARD_REMAINING_TIME_MODE = "media_card_remaining_time_mode" // 剩余时间显示模式
+    private const val KEY_SONG_STRUCTURE_BAR_ENABLED = "song_structure_bar_enabled" // 歌曲结构条开关
 
 
     // 辅助函数：获取 SharedPreferences 实例（避免重复代码）
     private fun prefs(context: Context) =
         PreferenceHelper(context, PREFS_NAME)
+
+    fun isSongStructureBarEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_SONG_STRUCTURE_BAR_ENABLED, true)
+    }
+
+    fun setSongStructureBarEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBoolean(KEY_SONG_STRUCTURE_BAR_ENABLED, enabled)
+    }
 
     fun isRemainingTimeMode(context: Context): Boolean {
         return prefs(context).getBoolean(KEY_MEDIA_CARD_REMAINING_TIME_MODE, false)

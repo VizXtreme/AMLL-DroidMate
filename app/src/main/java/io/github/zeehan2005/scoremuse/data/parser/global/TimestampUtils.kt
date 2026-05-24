@@ -1,6 +1,7 @@
 package io.github.zeehan2005.scoremuse.data.parser.global
 
 import timber.log.Timber
+import java.util.Locale
 
 /**
  * 统一的时间戳转换工具类
@@ -55,7 +56,7 @@ object TimestampUtils {
             }
         } catch (e: Exception) {
             // 捕获所有异常，确保不会因为时间戳解析错误导致程序崩溃
-            Timber.e("[TimestampUtils] Failed to parse time string: $timeStr", e)
+            Timber.e("[TimestampUtils] Failed to parse time string: $timeStr $e")
             0L
         }
     }
@@ -85,14 +86,14 @@ object TimestampUtils {
         val ms = millis % 1000
         
         return when (format) {
-            Format.MM_SS_MS -> String.format("%02d:%02d.%03d", minutes, seconds, ms)
-            Format.HH_MM_SS_MS -> String.format("%02d:%02d:%02d.%03d", hours, minutes, seconds, ms)
+            Format.MM_SS_MS -> String.format(Locale.ROOT, "%02d:%02d.%03d", minutes, seconds, ms)
+            Format.HH_MM_SS_MS -> String.format(Locale.ROOT, "%02d:%02d:%02d.%03d", hours, minutes, seconds, ms)
             Format.AUTO -> {
                 // 智能选择：如果超过 1 小时就使用时分秒格式，否则使用分秒格式
                 if (hours > 0) {
-                    String.format("%02d:%02d:%02d.%03d", hours, minutes, seconds, ms)
+                    String.format(Locale.ROOT, "%02d:%02d:%02d.%03d", hours, minutes, seconds, ms)
                 } else {
-                    String.format("%02d:%02d.%03d", minutes, seconds, ms)
+                    String.format(Locale.ROOT, "%02d:%02d.%03d", minutes, seconds, ms)
                 }
             }
         }

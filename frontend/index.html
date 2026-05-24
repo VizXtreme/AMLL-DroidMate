@@ -25,19 +25,12 @@
     <!-- 视口设置：响应式布局，适配不同屏幕尺寸 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
+    <!-- 加载构建生成的 CSS -->
+    <link rel="stylesheet" href="./frontend.css" />
+
     <!-- 页面标题：显示在浏览器标签页上 -->
     <title>AMLL DroidMate Frontend WebView</title>
-    
-    <!-- 样式表：引入内联的 CSS 文件（包含所有样式） -->
-    <link rel="stylesheet" href="./frontend.css" />
-    <!-- ==================== 禁用缓存 ==================== -->
-    <!-- 这三个 meta 标签确保 WebView 始终使用最新的代码，不使用缓存 -->
-    <!-- Cache-Control: no-cache, no-store, must-revalidate (HTTP 1.1) -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <!-- Pragma: no-cache (HTTP 1.0 向后兼容) -->
-    <meta http-equiv="Pragma" content="no-cache" />
-    <!-- Expires: 0 (立即过期) -->
-    <meta http-equiv="Expires" content="0" />
+
     <!-- ==================== 内联样式 ==================== -->
     <!-- 覆盖浏览器默认的用户代理样式表，确保与 Android 原生样式一致 -->
     <style>
@@ -169,29 +162,50 @@
                             return
                         }
                         showError('未检测到 core 全局对象。请确认 amll.bundle.js 是否随 index.html 一起打包到 assets，并且路径正确。')
-                    }, 300)
+                    }, 1000) // 增加等待时间以确保 Wasm 初始化完成
                     return
                 }
                 var src = bundleCandidates[i]
-                loadScript(src)
-                    .then(function () {
-                        console.log('[INDEX] loaded bundle', src)
+
+                // 优先使用 import() 加载 ES 模块
+                console.log('[INDEX] attempting to import bundle as module:', src)
+                import(src)
+                    .then(function (m) {
+                        console.log('[INDEX] bundle imported as module', src)
                         loaded = true
-                        var core = findCore()
-                        if (core) {
-                            initCore(core)
-                        } else {
-                            // allow the bundle a small time to set globals
-                            setTimeout(function () {
-                                var core2 = findCore()
-                                if (core2) initCore(core2)
-                                else showError('加载 ' + src + ' 成功，但未检测到 core 全局对象。请在控制台检查 window 对象。')
-                            }, 200)
-                        }
+
+                        // 循环检查直到 core 对象出现，最长等待 3 秒
+                        var startTime = Date.now()
+                        var checkTimer = setInterval(function() {
+                            var core = findCore() || m.AMLLBundle || m.default || m
+                            var elapsed = Date.now() - startTime
+
+                            if (core) {
+                                clearInterval(checkTimer)
+                                initCore(core)
+                            } else if (elapsed > 3000) {
+                                clearInterval(checkTimer)
+                                showError('模块加载成功，但 3 秒内未检测到有效的 core 对象（Top-level init 缓慢或失败）。')
+                            }
+                        }, 100)
                     })
                     .catch(function (err) {
-                        console.warn('[INDEX] bundle load failed', src, err)
-                        tryNext(i + 1)
+                        console.warn('[INDEX] bundle module import failed, falling back to script tag', src, err)
+                        // 回退到传统的 script 标签加载
+                        loadScript(src)
+                            .then(function () {
+                                console.log('[INDEX] loaded bundle via script tag', src)
+                                loaded = true
+                                setTimeout(function() {
+                                    var core = findCore()
+                                    if (core) initCore(core)
+                                    else tryNext(i + 1)
+                                }, 200)
+                            })
+                            .catch(function (err) {
+                                console.warn('[INDEX] bundle load failed', src, err)
+                                tryNext(i + 1)
+                            })
                     })
             })(0)
         })();

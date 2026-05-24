@@ -1,6 +1,7 @@
 package io.github.zeehan2005.scoremuse.ui.components
 
 import android.os.Trace
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,6 +32,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -68,15 +71,17 @@ import kotlin.collections.plus
  * @param currentTime 当前播放时间（毫秒），用于高亮当前段落
  * @param onSeekTo 用户点击段落时的跳转回调（传入目标时间）
  * @param modifier Compose 修饰符（用于调整大小、背景等）
+ * @param baseColor 基础颜色，用于生成非活动状态的渐变背景
  */
 @Composable
 fun SongStructureBar(
     structures: List<SongStructure>,
     currentTime: Long,
     onSeekTo: (Long) -> Unit,
-    modifier: Modifier = Modifier.Companion
+    modifier: Modifier = Modifier,
+    baseColor: Color = MaterialTheme.colorScheme.surfaceVariant
 ) {
-    Trace.beginSection("Compose:SongStructureBar")
+
     // 如果没有歌曲结构信息，直接返回不显示任何内容
     if (structures.isEmpty()) {
         return
@@ -203,7 +208,7 @@ fun SongStructureBar(
                     listState.layoutInfo.visibleItemsInfo.find { it.index == currentStructureIndex }
 
                 if (visibleItem != null) {
-                    // 直接从 layoutInfo 获取目标 chip 的实际位置信息
+                    // 直接从 layoutInfo 获取目标 chip 的实际 position 信息
                     val chipStartOffsetPx = visibleItem.offset // chip 起始位置的偏移量（相对于当前可视区域左边缘）
                     val chipSizePx = visibleItem.size // chip 的实际大小（宽度）
 
@@ -252,14 +257,15 @@ fun SongStructureBar(
                     structure = structure,
                     isCurrent = currentTime in structure.startTime..structure.endTime,
                     onClick = { onSeekTo(structure.startTime) },
-                    modifier = Modifier.Companion
+                    baseColor = baseColor,
+                    modifier = Modifier
                         .then(
                             if (expandedWidthPx != null) {
                                 // 如果已经计算出扩展宽度（像素），直接使用
                                 Modifier.width(with(density) { expandedWidthPx.toDp() })
                             } else {
                                 // 否则先测量自然宽度
-                                Modifier.Companion.onGloballyPositioned { coordinates ->
+                                Modifier.onGloballyPositioned { coordinates ->
                                     val width = coordinates.size.width
                                     if (chipNaturalWidthsPx[index] != width) {
                                         chipNaturalWidthsPx = chipNaturalWidthsPx + (index to width)
@@ -281,21 +287,30 @@ fun SongStructureBar(
  * @param isCurrent 是否为当前播放的段落
  * @param onClick 点击回调
  * @param modifier 修饰符
+ * @param baseColor 基础颜色，用于生成渐变背景
  */
 @Composable
 fun SongStructureChip(
     structure: SongStructure,
     isCurrent: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier.Companion
+    modifier: Modifier = Modifier,
+    baseColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
 ) {
-    Trace.beginSection("Compose:SongStructureChip_${structure.startTime}")
-    // 使用 Material Theme 的标准配色方案
-    val backgroundColor = if (isCurrent) {
+
+    // 使用渐变色方案，匹配 NowPlayingCard 的视觉效果
+    val chipBaseColor = if (isCurrent) {
         MaterialTheme.colorScheme.primary
     } else {
-        MaterialTheme.colorScheme.surfaceVariant
+        baseColor
     }
+
+    val brush = Brush.verticalGradient(
+        colors = listOf(
+            chipBaseColor.copy(alpha = 0.8f),
+            chipBaseColor.copy(alpha = 0.95f)
+        )
+    )
 
     val contentColor = if (isCurrent) {
         MaterialTheme.colorScheme.onPrimary
@@ -315,39 +330,45 @@ fun SongStructureChip(
             .clickable(onClick = onClick)
             .height(56.dp), // 固定高度，让所有芯片保持一致
         shape = RoundedCornerShape(16.dp),
-        color = backgroundColor
+        color = Color.Transparent // 背景由内部 Box 的 background 处理
     ) {
-        Column(
-            modifier = Modifier.Companion.padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.Companion.CenterHorizontally,
-            verticalArrangement = Arrangement.Center // 垂直居中
+        Box(
+            modifier = Modifier
+                .background(brush)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center
         ) {
-            // 纯音乐类型只显示音符符号，其他显示结构标签和时间
-            if (isInstrumentalType) {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
-                    contentDescription = structure.type.displayName,
-                    tint = contentColor, // 使用内容颜色，保持单色
-                    modifier = Modifier.Companion.size(28.dp) // 增大音符图标
-                )
-            } else {
-                // 主文本：结构标签
-                Text(
-                    text = structure.label,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = contentColor,
-                    fontWeight = if (isCurrent) FontWeight.Companion.Bold else FontWeight.Companion.Normal,
-                    textAlign = TextAlign.Companion.Center
-                )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center // 垂直居中
+            ) {
+                // 纯音乐类型只显示音符符号，其他显示结构标签和时间
+                if (isInstrumentalType) {
+                    Icon(
+                        imageVector = Icons.Default.MusicNote,
+                        contentDescription = structure.type.displayName,
+                        tint = contentColor, // 使用内容颜色，保持单色
+                        modifier = Modifier.size(28.dp) // 增大音符图标
+                    )
+                } else {
+                    // 主文本：结构标签
+                    Text(
+                        text = structure.label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = contentColor,
+                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                        textAlign = TextAlign.Center
+                    )
 
-                // 副文本：时间范围（仅非纯音乐类型显示）
-                Text(
-                    text = "${formatTime(structure.startTime)} - ${formatTime(structure.endTime)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = contentColor.copy(alpha = 0.6f),
-                    modifier = Modifier.Companion.padding(top = 2.dp),
-                    textAlign = TextAlign.Companion.Center
-                )
+                    // 副文本：时间范围（仅非纯音乐类型显示）
+                    Text(
+                        text = "${formatTime(structure.startTime)} - ${formatTime(structure.endTime)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = contentColor.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(top = 2.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }

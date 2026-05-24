@@ -15,17 +15,17 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChecklistRtl
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Deselect
-import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
@@ -111,23 +111,18 @@ class LyricsCacheActivity : BaseComposeActivity() {
         LyricsCachePage(
             repository = repository,
             onBack = { finish() },
-            context = this, // 使用 Activity 上下文
-            onExport = { content ->
-                exportTtmlContent = content
-            }
+            context = this // 使用 Activity 上下文
         )
     }
     
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LyricsCachePage(
     repository: LyricsCacheRepository,
     onBack: () -> Unit,
-    context: android.content.Context,
-    onExport: (String) -> Unit
+    context: android.content.Context
 ) {
     var query by remember { mutableStateOf("") }
     var cacheEntries by remember { mutableStateOf(repository.getAll()) }
@@ -158,18 +153,18 @@ private fun LyricsCachePage(
         isSelectionMode = false
     }
 
-    val handleExportSelected = {
+    run {
         if (selectedEntries.isNotEmpty()) {
             val selectedItems = displayEntries.filter { selectedEntries.contains(it.id) }
-            
+
             // 使用文件导出 API 导出第一个选中的条目
             // 对于多个条目，我们可以逐个导出或打包成 zip
             val entry = selectedItems.first()
             val fileName = "${entry.title}_${entry.artist}_${entry.source}.xml"
-            
+
             // 存储要导出的歌词内容
 //            onExport(entry.xmlContent)
-            
+
             // 启动文件选择器（使用新的 API）
             (context as? android.app.Activity)?.let { activity ->
                 if (activity is LyricsCacheActivity) {
@@ -276,11 +271,17 @@ private fun LyricsCachePage(
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    label = { Text("搜索") },
-                    placeholder = { Text("输入 标题 / 歌手 / 来源") },
+                    placeholder = { Text("搜索 ( 标题 / 歌手 / 来源 )") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "搜索"
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = CircleShape,
                     singleLine = true
                 )
 

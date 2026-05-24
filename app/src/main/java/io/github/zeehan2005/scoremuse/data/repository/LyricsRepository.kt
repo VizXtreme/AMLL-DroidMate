@@ -7,8 +7,6 @@ import io.github.zeehan2005.scoremuse.data.get.netease.NeteaseEapiCrypto
 import io.github.zeehan2005.scoremuse.data.get.qq.QqMusicQrcCrypto
 import io.github.zeehan2005.scoremuse.data.get.kugou.KugouDecrypter
 import android.content.Context
-import androidx.room.util.copy
-import dev.amll.droidmate.data.converter.TTMLConverter
 import io.github.zeehan2005.scoremuse.data.parser.global.UnifiedLyricsParser
 import io.github.zeehan2005.scoremuse.global.LyricLine
 import io.github.zeehan2005.scoremuse.global.LyricsFeature
@@ -54,7 +52,6 @@ import java.net.UnknownHostException
  * - 缓存优先策略
  * - 中文简繁转换
  */
-@OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
 open class LyricsRepository(
     private val httpClient: HttpClient,
     private val cacheRepo: LyricsCacheRepository? = null,
@@ -170,7 +167,7 @@ open class LyricsRepository(
                 .take(3)
                 .map { it.first }
         } catch (e: Exception) {
-            Timber.e("[LyricsRepository] Error searching QQ Music", e)
+            Timber.e("[LyricsRepository] Error searching QQ Music $e")
             emptyList()
         }
     }
@@ -322,7 +319,7 @@ open class LyricsRepository(
                     String(android.util.Base64.decode(contentToUse, android.util.Base64.DEFAULT))
                 }
             } catch (e: Exception) {
-                Timber.e("[LyricsRepository] Failed to decode QQ Music lyrics content", e)
+                Timber.e("[LyricsRepository] Failed to decode QQ Music lyrics content $e")
                 Timber.d("[LyricsRepository] First 200 chars of content: ${contentToUse.take(200)}")
                 // 尝试直接使用原始内容（可能本身就是未经编码的歌词）
                 contentToUse
@@ -373,7 +370,7 @@ open class LyricsRepository(
             return mainLyrics.copy(lines = merged)
             
         } catch (e: Exception) {
-            Timber.e("[LyricsRepository] Error fetching QQ Music lyrics", e)
+            Timber.e("[LyricsRepository] Error fetching QQ Music lyrics $e")
             null
         }
     }
@@ -445,7 +442,7 @@ open class LyricsRepository(
 
             mainLyrics.copy(lines = mergeLyricLines(mainLyrics.lines, translationLines, romanizationLines))
         } catch (e: Exception) {
-            Timber.i("[LyricsRepository] QQ lyric_download failed, fallback to PlayLyricInfo", e)
+            Timber.i("[LyricsRepository] QQ lyric_download failed, fallback to PlayLyricInfo $e")
             null
         }
     }
@@ -547,7 +544,7 @@ open class LyricsRepository(
                 .take(3)
                 .map { it.first }
         } catch (e: Exception) {
-            Timber.e("[LyricsRepository] Error searching Netease", e)
+            Timber.e("[LyricsRepository] Error searching Netease $e")
             emptyList()
         }
     }
@@ -672,7 +669,7 @@ open class LyricsRepository(
             )
             
         } catch (e: Exception) {
-            Timber.e("[LyricsRepository] Error fetching Netease lyrics", e)
+            Timber.e("[LyricsRepository] Error fetching Netease lyrics $e")
             null
         }
     }
@@ -694,7 +691,7 @@ open class LyricsRepository(
             }
 
             // Debug: log the outgoing request payload
-            Timber.d("[LyricsRepository] AMLL DB search request payload: ${payload.toString()}")
+            Timber.d("[LyricsRepository] AMLL DB search request payload: $payload")
 
             // Search mirrors in parallel to improve robustness and speed
             val endpoints = listOf(
@@ -703,7 +700,7 @@ open class LyricsRepository(
 
             val joined = coroutineScope {
                 val deferreds: List<Deferred<List<LyricsSearchResult>>> = endpoints.map { endpoint ->
-                    async<List<LyricsSearchResult>> {
+                    async {
                         runCatching {
                             val response = httpClient.post(endpoint) {
                                 contentType(ContentType.Application.Json)
@@ -712,7 +709,7 @@ open class LyricsRepository(
 
                             if (!response.status.isSuccess()) {
                                 Timber.w("[LyricsRepository] AMLL DB search failed on $endpoint: ${response.status}")
-                                return@runCatching emptyList<LyricsSearchResult>()
+                                return@runCatching emptyList()
                             }
 
                             val responseBody = response.body<String>()
@@ -720,7 +717,7 @@ open class LyricsRepository(
 
                             val resultArray = Json.parseToJsonElement(responseBody).jsonArray
                             Timber.d("[LyricsRepository] AMLL parsed array size: ${resultArray.size}")
-                            if (resultArray.isEmpty()) return@runCatching emptyList<LyricsSearchResult>()
+                            if (resultArray.isEmpty()) return@runCatching emptyList()
 
                             // helper to extract a list of strings from either a primitive or an array
                             fun JsonElement?.asStringList(): List<String> = when (this) {
@@ -818,7 +815,7 @@ open class LyricsRepository(
                                 )
                             }
                         }.getOrElse {
-                            Timber.w("[LyricsRepository] AMLL DB search failed on $endpoint", it)
+                            Timber.w("[LyricsRepository] AMLL DB search failed on $endpoint $it")
                             emptyList()
                         }
                     }
@@ -836,7 +833,7 @@ open class LyricsRepository(
                 .distinctBy { "${it.provider}:${it.songId}" }
                 .take(20)
         } catch (e: Exception) {
-            Timber.w("[LyricsRepository] AMLL DB search failed", e)
+            Timber.w("[LyricsRepository] AMLL DB search failed $e")
             emptyList()
         }
     }
@@ -879,7 +876,7 @@ open class LyricsRepository(
             kugouHashToProposalCache[hash] = id
             return id
         } catch (e: Exception) {
-            Timber.e("[LyricsRepository] Error fetching proposal id for kugou hash $hash", e)
+            Timber.e("[LyricsRepository] Error fetching proposal id for kugou hash $hash $e")
             kugouHashToProposalCache[hash] = null
             return null
         }
@@ -977,7 +974,7 @@ open class LyricsRepository(
                 .take(3)
                 .map { it.first }
         } catch (e: Exception) {
-            Timber.e("[Kugou] Error searching Kugou", e)
+                Timber.e("[Kugou] Error searching Kugou $e")
             emptyList()
         }
     }
@@ -1106,7 +1103,7 @@ open class LyricsRepository(
             )
             
         } catch (e: Exception) {
-            Timber.e("[Kugou] Error fetching Kugou lyrics", e)
+            Timber.e("[Kugou] Error fetching Kugou lyrics $e")
             null
         }
     }
@@ -1648,7 +1645,7 @@ open class LyricsRepository(
     /**
      * 从 AMLL TTML DB 获取歌词 (通过网易云音乐ID)
      */
-    open suspend fun getAMLL_UnifiedLyrics(
+    open suspend fun getAMLLLyrics(
         songId: String,
         title: String? = null,
         artist: String? = null
@@ -1750,9 +1747,9 @@ open class LyricsRepository(
                     Timber.w("[AMLLBridge] TTML parse yielded empty result: $url")
                 } catch (e: UnknownHostException) {
                     unknownHostCount += 1
-                    Timber.w("[AMLLBridge] AMLL host unresolved: $url", e)
+                    Timber.w("[AMLLBridge] AMLL host unresolved: $url $e")
                 } catch (e: Exception) {
-                    Timber.w("[AMLLBridge] AMLL endpoint failed: $url", e)
+                    Timber.w("[AMLLBridge] AMLL endpoint failed: $url $e")
                 }
             }
         }
@@ -1833,7 +1830,7 @@ open class LyricsRepository(
                             val prefixId = "qq:$seg"
                             Timber.d("[AMLLBridge] Probing AMLL DB for QQ candidate segment: $prefixId (raw=$rawId)")
                             val amllResult = runCatching {
-                                getAMLL_UnifiedLyrics(prefixId, title = result.title, artist = result.artist)
+                                getAMLLLyrics(prefixId, title = result.title, artist = result.artist)
                             }.getOrNull()
                             if (amllResult != null) {
                                 channel.trySend(prefixId to amllResult)
@@ -1883,7 +1880,7 @@ open class LyricsRepository(
                     val prefixId = "ncm:${result.songId}"
                     Timber.d("[AMLLBridge] Probing AMLL DB for Netease candidate: $prefixId")
                     val amllResult = runCatching {
-                        getAMLL_UnifiedLyrics(prefixId, title = result.title, artist = result.artist)
+                        getAMLLLyrics(prefixId, title = result.title, artist = result.artist)
                     }.getOrNull()?.let { lyrics ->
                         result.copy(
                             provider = "amll",
@@ -1986,7 +1983,7 @@ open class LyricsRepository(
             }
             return result
         } catch (e: Exception) {
-            Timber.e("[SearchService] Error in auto-fetch lyrics", e)
+            Timber.e("[SearchService] Error in auto-fetch lyrics $e")
             return LyricsResult(
                 isSuccess = false,
                 errorMessage = "获取歌词时发生错误：${e.message}"
@@ -2024,7 +2021,7 @@ open class LyricsRepository(
         return try {
             val normalizedProvider = provider.lowercase()
             val lyrics = when (normalizedProvider) {
-                "amll" -> getAMLL_UnifiedLyrics(songId, title, artist)
+                "amll" -> getAMLLLyrics(songId, title, artist)
                 "netease", "ncm" -> getNeteaseLyrics(songId, title, artist)
                 "qq", "qqmusic" -> getQQMusicLyrics(songId, title, artist)
                 "kugou" -> getKugouLyrics(songId, title, artist)
@@ -2054,7 +2051,7 @@ open class LyricsRepository(
                 )
             }
         } catch (e: Exception) {
-            Timber.e("[SearchService] Error getting lyrics from $provider", e)
+            Timber.e("[SearchService] Error getting lyrics from $provider $e")
             LyricsResult(
                 isSuccess = false,
                 errorMessage = "获取歌词出错：${e.message}"
@@ -2077,7 +2074,7 @@ open class LyricsRepository(
     ): Set<LyricsFeature> {
         val normalizedProvider = provider.lowercase()
         val lyrics: UnifiedLyrics? = when (normalizedProvider) {
-            "amll" -> getAMLL_UnifiedLyrics(songId, title, artist)
+            "amll" -> getAMLLLyrics(songId, title, artist)
             "netease", "ncm" -> getNeteaseLyrics(songId, title, artist)
             "qq", "qqmusic" -> getQQMusicLyrics(songId, title, artist)
             "kugou" -> getKugouLyrics(songId, title, artist)
@@ -2125,7 +2122,7 @@ open class LyricsRepository(
             if (aAml != bAml) return@Comparator if (aAml) -1 else 1
 
             // 4b. for AMLL results, prefer ID-based matches over metadata-based ones
-            if (aAml && bAml) {
+            if (aAml) {
                 if (a.first.metadataMatch != b.first.metadataMatch) {
                     return@Comparator if (!a.first.metadataMatch) -1 else 1
                 }
@@ -2329,7 +2326,7 @@ open class LyricsRepository(
                 
                 // 检查是否有解析到的歌曲结构
                 val songStructures = parsedLyrics.metadata.songStructures
-                if (songStructures != null && songStructures.isNotEmpty()) {
+                if (!songStructures.isNullOrEmpty()) {
                     Timber.d("[SongStructure] ✅ LyricsRepository received ${songStructures.size} structures")
                     songStructures.forEachIndexed { index: Int, structure: SongStructure ->
                         Timber.d("[SongStructure]   [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms (${structure.duration}ms)")
@@ -2352,7 +2349,7 @@ open class LyricsRepository(
                     rawTtml = xmlContent
                 )
             } catch (e: Exception) {
-                Timber.e("[LyricsRepository] Error parsing lyrics", e)
+                Timber.e("[LyricsRepository] Error parsing lyrics $e")
                 null
             }
         }

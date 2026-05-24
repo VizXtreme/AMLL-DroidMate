@@ -92,7 +92,7 @@ object QqMusicQrcCrypto {
                     Timber.d("[QqMusicQrcCrypto] Interpreted decrypted output as Base64; decoded text preview=${decodedText.take(200)}")
                     return decodedText  // Base64 解码成功，直接返回
                 } catch (e: Exception) {
-                    Timber.w("[QqMusicQrcCrypto] Base64 decode of decrypted content failed", e)
+                    Timber.w("[QqMusicQrcCrypto] Base64 decode of decrypted content failed $e")
                 }
             }
         }
@@ -129,7 +129,7 @@ object QqMusicQrcCrypto {
                 Timber.d("[QqMusicQrcCrypto] Final result length (GB18030): ${gb18030.length}, preview (first 300 chars): ${gb18030.take(300)}")
                 return gb18030
             } catch (e: Exception) {
-                Timber.i("[QqMusicQrcCrypto] GB18030 decode failed; falling back to UTF-8", e)
+                Timber.i("[QqMusicQrcCrypto] GB18030 decode failed; falling back to UTF-8 $e")
             }
         }
 
@@ -155,7 +155,7 @@ object QqMusicQrcCrypto {
         return try {
             InflaterInputStream(ByteArrayInputStream(data)).use { it.readBytes() }
         } catch (e: Exception) {
-            Timber.i("[QqMusicQrcCrypto] Zlib decompression failed, retrying as raw deflate", e)
+            Timber.i("[QqMusicQrcCrypto] Zlib decompression failed, retrying as raw deflate $e")
             // Some QQ QRC payloads appear to be raw DEFLATE without zlib headers.
             InflaterInputStream(ByteArrayInputStream(data), Inflater(/* nowrap */ true)).use { it.readBytes() }
         }
@@ -188,7 +188,7 @@ object QqMusicQrcCrypto {
                 Timber.d("[QqMusicQrcCrypto] Attempt decompress at offset $offset (header=0x78 0x${"%02X".format(second)})")
                 return decompress(data.copyOfRange(offset, data.size))
             } catch (e: Exception) {
-                Timber.w("[QqMusicQrcCrypto] Decompress attempt failed at offset $offset", e)
+                Timber.w("[QqMusicQrcCrypto] Decompress attempt failed at offset $offset $e")
             }
         }
 
@@ -412,14 +412,14 @@ object QqMusicQrcCrypto {
                     val sBoxIndex = calculateSboxIndex(sBoxInput)
                     val fourBitOutput = S_BOXES[sBoxIdx][sBoxIndex]
                     val preP = fourBitOutput shl (28 - (sBoxIdx * 4))
-                    applyQqPboxPermutation(preP, P_BOX)
+                    applyQqPboxPermutation(preP)
                 }
             }
         }
 
-        private fun applyQqPboxPermutation(input: Int, table: IntArray): Int {
+        private fun applyQqPboxPermutation(input: Int): Int {
             val sourceBits = IntArray(32) { i -> (input ushr (31 - i)) and 1 }
-            val destBits = IntArray(32) { idx -> sourceBits[table[idx] - 1] }
+            val destBits = IntArray(32) { idx -> sourceBits[P_BOX[idx] - 1] }
             var output = 0
             destBits.forEachIndexed { i, bit ->
                 output = output or (bit shl (31 - i))

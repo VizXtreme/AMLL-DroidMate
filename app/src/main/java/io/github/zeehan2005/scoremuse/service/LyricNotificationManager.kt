@@ -52,7 +52,7 @@ open class LyricNotificationManager(private val context: Context) {
 
         // 构建通知
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_name)  // 通知专用图标
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)  // 通知专用图标
             .setContentText(safeLine)  // 通知内容
             .setStyle(NotificationCompat.BigTextStyle().bigText(safeLine))  // 支持多行展开
             .setContentIntent(contentIntent)  // 点击意图

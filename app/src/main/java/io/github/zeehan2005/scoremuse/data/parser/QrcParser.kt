@@ -111,7 +111,7 @@ object QrcParser {
                 LyricWord(
                     word = text,
                     startTime = startMs,
-                    endTime = startMs + durationMs
+                    endTime = startMs + maxOf(1L, durationMs) // 确保持续时间至少为 1ms，防止 JS 侧计算 NaN
                 )
             )
         }
@@ -135,7 +135,7 @@ object QrcParser {
                     LyricWord(
                         word = fallbackText,
                         startTime = lineStartMs,
-                        endTime = lineEnd
+                        endTime = maxOf(lineStartMs + 1, lineEnd) // 确保持续时间至少为 1ms
                     )
                 )
             }
@@ -147,7 +147,8 @@ object QrcParser {
         // 计算行的开始和结束时间
         // 优先使用行级时间戳，如果没有则使用第一个和最后一个单词的时间
         val lineStart = lineStartMs ?: words.first().startTime
-        val lineEnd = lineStart + (lineDurationMs ?: (words.last().endTime - lineStart))
+        val rawLineEnd = lineStart + (lineDurationMs ?: (words.last().endTime - lineStart))
+        val lineEnd = maxOf(lineStart + 1, rawLineEnd) // 确保行持续时间至少为 1ms
 
         // 创建 LyricLine 对象
         return LyricLine(
@@ -246,7 +247,7 @@ object QrcParser {
             Timber.d("[QrcParser] Extracted $lyricContents.size LyricContent entries from QRC XML (DOM)")
             lyricContents.joinToString(separator = "\n")
         } catch (e: Exception) {
-            Timber.w("[QrcParser] Failed to parse QRC XML content; falling back to raw content", e)
+            Timber.w("[QrcParser] Failed to parse QRC XML content; falling back to raw content $e")
             content
         }
     }

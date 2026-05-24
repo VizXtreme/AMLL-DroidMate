@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
@@ -20,7 +21,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +48,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
+import timber.log.Timber
 
 /**
  * 自定义歌词选择界面
@@ -83,20 +84,19 @@ class CustomLyricsActivity : BaseComposeActivity() {
         LaunchedEffect(playbackSource) {
             viewModel.updateCurrentSource(playbackSource)
         }
-        val appliedSource by viewModel.appliedLyricsSource.collectAsState()
         
         // 渲染自定义歌词页面
         CustomLyricsPage(
             title = title,
             artist = artist,
             onBack = { finish() },
-            onApply = { lyricsText ->
+            onApply = { lyricsText, lyricsSource ->
                 // 构建返回结果
                 val result = Intent().apply {
                     putExtra(EXTRA_TITLE, title)
                     putExtra(EXTRA_ARTIST, artist)
                     putExtra(EXTRA_LYRICS_TEXT, lyricsText)
-                    putExtra(EXTRA_SOURCE, appliedSource ?: "manual")
+                    putExtra(EXTRA_SOURCE, lyricsSource)
                 }
                 setResult(RESULT_OK, result)
                 finish()
@@ -114,13 +114,13 @@ class CustomLyricsActivity : BaseComposeActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 private fun CustomLyricsPage(
     title: String,
     artist: String,
     onBack: () -> Unit,
-    onApply: (String) -> Unit
+    onApply: (String, String) -> Unit
 ) {
     val vm: CustomLyricsViewModel = viewModel()
     val candidates by vm.candidates.collectAsState()
@@ -132,6 +132,7 @@ private fun CustomLyricsPage(
     val isApplying by vm.isApplying.collectAsState()
     val errorMessage by vm.errorMessage.collectAsState()
     val appliedLyricsText by vm.appliedLyricsText.collectAsState()
+    val appliedLyricsSource by vm.appliedLyricsSource.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
     var manualText by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
@@ -156,7 +157,7 @@ private fun CustomLyricsPage(
                         // Error reading file
                     }
                 } catch (e: Exception) {
-                    // Error handling
+                    Timber.e(e, "[CustomLyrics] Failed to read lyrics from file")
                 }
             }
         }
@@ -168,7 +169,7 @@ private fun CustomLyricsPage(
 
     LaunchedEffect(appliedLyricsText) {
         if (!appliedLyricsText.isNullOrBlank()) {
-            onApply(appliedLyricsText!!)
+            onApply(appliedLyricsText!!, appliedLyricsSource ?: "manual")
             vm.consumeAppliedLyricsText()
         }
     }
@@ -318,10 +319,11 @@ private fun CustomLyricsPage(
             OutlinedTextField(
                 value = manualText,
                 onValueChange = { manualText = it },
-                label = { Text("长按以粘贴") },
-                placeholder = { Text("支持多种格式") },
+                placeholder = { Text("长按以粘贴") },
                 modifier = Modifier
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = CircleShape,
                 minLines = 1 // 减少行数以进一步降低高度
             )
 

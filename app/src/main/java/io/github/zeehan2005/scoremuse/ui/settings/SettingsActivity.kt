@@ -6,14 +6,12 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,7 +28,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -38,7 +35,6 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -99,31 +95,24 @@ class SettingsActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
-            val isDarkTheme = isSystemInDarkTheme()
+            val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
             val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
-
+            
             ScoreMuseTheme(
                 darkTheme = isDarkTheme,
                 dynamicColorScheme = dynamicColorScheme
             ) {
-                Surface(
-                    modifier = Modifier.Companion.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    SettingsPage(
-                        onBack = { finish() },
-                        onOpenNotificationSettings = {
-                            // 打开系统通知监听设置页面
-                            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                        }
-                    )
-                }
+                SettingsPage(
+                    onBack = { finish() },
+                    onOpenNotificationSettings = {
+                        startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    }
+                )
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsPage(
     onBack: () -> Unit,
@@ -164,6 +153,13 @@ private fun SettingsPage(
             )
         )
     }
+    var songStructureBarEnabled by remember {
+        mutableStateOf(
+            AppSettings.isSongStructureBarEnabled(
+                context
+            )
+        )
+    }
     var updateDialogTitle by remember { mutableStateOf("") }
     var updateDialogMessage by remember { mutableStateOf("") }
     var updateDialogUrl by remember { mutableStateOf<String?>(null) }
@@ -185,7 +181,7 @@ private fun SettingsPage(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
     Scaffold(
-        modifier = Modifier.Companion.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
                 title = { Text("设置") },
@@ -212,7 +208,7 @@ private fun SettingsPage(
         }
     ) { innerPadding ->
         Column(
-            modifier = Modifier.Companion
+            modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
@@ -221,11 +217,12 @@ private fun SettingsPage(
         ) {
             Text(
                 text = "常驻通知实时歌词",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Card(
-                modifier = Modifier.Companion
+                modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
                         if (!lyricNotificationEnabled) {
@@ -245,13 +242,13 @@ private fun SettingsPage(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(
-                    modifier = Modifier.Companion
+                    modifier = Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Companion.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.Companion.fillMaxWidth(0.78f)) {
+                    Column(modifier = Modifier.fillMaxWidth(0.78f)) {
                         Text("常驻通知实时歌词", color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             text = """需要通知权限。获得锁屏权限后可锁屏显示。""",
@@ -284,16 +281,54 @@ private fun SettingsPage(
             }
 
             Text(
-                text = "“正在播放”卡片点击行为",
-                style = MaterialTheme.typography.titleMedium
+                text = "歌曲结构显示条",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Card(
-                modifier = Modifier.Companion.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val newState = !songStructureBarEnabled
+                        songStructureBarEnabled = newState
+                        AppSettings.setSongStructureBarEnabled(context, newState)
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth(0.75f)) {
+                        Text("歌曲结构显示条", color = MaterialTheme.colorScheme.onSurface)
+
+                    }
+                    SwitchWithIcon(
+                        checked = songStructureBarEnabled,
+                        onCheckedChange = { enabled ->
+                            songStructureBarEnabled = enabled
+                            AppSettings.setSongStructureBarEnabled(context, enabled)
+                        },
+                        colors = switchColors
+                    )
+                }
+            }
+            Text(
+                text = "“正在播放”卡片点击行为",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(
-                    modifier = Modifier.Companion.padding(12.dp),
+                    modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     CardClickActionOption(
@@ -325,11 +360,12 @@ private fun SettingsPage(
 
             Text(
                 text = "辅助功能",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Card(
-                modifier = Modifier.Companion
+                modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
                         val newState = !skipPreviousRewinds
@@ -339,13 +375,13 @@ private fun SettingsPage(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(
-                    modifier = Modifier.Companion
+                    modifier = Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Companion.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.Companion.fillMaxWidth(0.75f)) {
+                    Column(modifier = Modifier.fillMaxWidth(0.75f)) {
                         Text("点击上一首回到 0:00", color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             text = "点击上一首按钮会先回到歌曲开头，而不是直接跳转到上一首。",
@@ -363,6 +399,8 @@ private fun SettingsPage(
                     )
                 }
             }
+
+
 
 //            Card(
 //                modifier = Modifier
@@ -439,16 +477,17 @@ private fun SettingsPage(
 
             Text(
                 text = "歌词时间轴偏移",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
                 text = "歌曲偏移 + 设备偏移",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
             Card(
-                modifier = Modifier.Companion
+                modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
                         context.startActivity(
@@ -461,11 +500,11 @@ private fun SettingsPage(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(
-                    modifier = Modifier.Companion
+                    modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Companion.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("歌词时间轴偏移设置", color = MaterialTheme.colorScheme.onSurface)
                     Icon(
@@ -481,15 +520,16 @@ private fun SettingsPage(
 
             Text(
                 text = "版本更新",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Card(
-                modifier = Modifier.Companion.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(
-                    modifier = Modifier.Companion.padding(12.dp),
+                    modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
@@ -498,7 +538,7 @@ private fun SettingsPage(
                     )
 
                     Row(
-                        modifier = Modifier.Companion
+                        modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
                                 val newState = !autoCheckEnabled
@@ -507,7 +547,7 @@ private fun SettingsPage(
                             },
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column(modifier = Modifier.Companion.fillMaxWidth(0.75f)) {
+                        Column(modifier = Modifier.fillMaxWidth(0.75f)) {
                             Text("自动检查更新", color = MaterialTheme.colorScheme.onSurface)
                             Text(
                                 text = "自动检查 GitHub Release",
@@ -589,7 +629,7 @@ private fun SettingsPage(
                                 showUpdateDialog = true
                             }
                         },
-                        modifier = Modifier.Companion.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(if (checkingUpdate) "检查中..." else "检查更新")
                     }
@@ -598,7 +638,8 @@ private fun SettingsPage(
 
             Text(
                 text = "通知访问权限",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = "必需权限。用于获取正在播放信息。",
@@ -611,7 +652,7 @@ private fun SettingsPage(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
             Card(
-                modifier = Modifier.Companion
+                modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
                         onOpenNotificationSettings()
@@ -619,11 +660,11 @@ private fun SettingsPage(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(
-                    modifier = Modifier.Companion
+                    modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Companion.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("转至“读取、回复和控制通知”", color = MaterialTheme.colorScheme.onSurface)
                     Icon(
@@ -636,11 +677,12 @@ private fun SettingsPage(
 
             Text(
                 text = "开发者工具",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Card(
-                modifier = Modifier.Companion
+                modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
                         context.startActivity(Intent(context, LogDisplayActivity::class.java))
@@ -648,11 +690,11 @@ private fun SettingsPage(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(
-                    modifier = Modifier.Companion
+                    modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Companion.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("查看日志", color = MaterialTheme.colorScheme.onSurface)
                     Icon(
@@ -665,15 +707,16 @@ private fun SettingsPage(
 
             Text(
                 text = "项目与贡献",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Card(
-                modifier = Modifier.Companion.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(
-                    modifier = Modifier.Companion.padding(8.dp),
+                    modifier = Modifier.padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     TextButton(
@@ -685,7 +728,7 @@ private fun SettingsPage(
                                 )
                             )
                         },
-                        modifier = Modifier.Companion.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("项目仓库")
                     }
@@ -779,12 +822,12 @@ private fun CardClickActionOption(
     onClick: () -> Unit
 ) {
     Row(
-        modifier = Modifier.Companion
+        modifier = Modifier
             .fillMaxWidth()
             .selectable(
                 selected = selected,
                 onClick = onClick,
-                role = Role.Companion.RadioButton
+                role = Role.RadioButton
             )
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.Start
@@ -793,7 +836,7 @@ private fun CardClickActionOption(
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.Companion.padding(start = 8.dp)
+            modifier = Modifier.padding(start = 8.dp)
         )
     }
 }

@@ -72,8 +72,11 @@ data class LyricLine(
 data class UnifiedLyrics(
     val metadata: LyricsMetadata,     // 元数据（歌名、歌手、专辑等）
     val lines: List<LyricLine>,     // 所有歌词行
-    // 保留原始 TTML 字符串，用于 WebSocket 发送时直接使用，避免重新序列化
-    val rawTtml: String? = null     // 原始 TTML XML 字符串（可选）
+    // 保留原始歌词字符串，用于 WebView 直接解析或 WebSocket 发送
+    val rawContent: String? = null,    // 原始歌词内容（可选）
+    val format: String? = null,        // 原始格式（可选，如 "ttml", "lrc", "yrc"）
+    // 兼容字段：保留原始 TTML 字符串
+    val rawTtml: String? = null        // 原始 TTML XML 字符串（可选）
 )
 
 /**

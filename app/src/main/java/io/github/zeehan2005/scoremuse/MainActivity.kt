@@ -5,20 +5,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.zeehan2005.scoremuse.global.viewmodel.MainViewModel
-import io.github.zeehan2005.scoremuse.ui.MainScreen
 import io.github.zeehan2005.scoremuse.global.theme.AlbumColorExtractor
-import io.github.zeehan2005.scoremuse.global.theme.ScoreMuseTheme
 import io.github.zeehan2005.scoremuse.global.theme.DynamicThemeManager
+import io.github.zeehan2005.scoremuse.global.theme.ScoreMuseTheme
+import io.github.zeehan2005.scoremuse.ui.MainScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -59,6 +55,9 @@ class MainActivity : ComponentActivity() {
             val nowPlaying by viewModel.nowPlayingMusic.collectAsState()
             val isDarkTheme = isSystemInDarkTheme()
             
+            // 观察全局动态颜色方案
+            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
+            
             LaunchedEffect(nowPlaying?.albumArtUri, isDarkTheme) {
                 val albumArtUri = nowPlaying?.albumArtUri
                 if (!albumArtUri.isNullOrBlank()) {
@@ -73,26 +72,20 @@ class MainActivity : ComponentActivity() {
                         }
                         DynamicThemeManager.updateColorScheme(colors)
                     } catch (e: Exception) {
-                        Timber.e("[AlbumArtExtractor] Failed to extract colors from album art", e)
+                        Timber.e("[AlbumArtExtractor] Failed to extract colors from album art $e")
                         DynamicThemeManager.clearColorScheme()
                     }
                 } else {
                     DynamicThemeManager.clearColorScheme()
                 }
             }
-            
-            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
-            
+
+            // 应用主题并加载主界面
             ScoreMuseTheme(
                 darkTheme = isDarkTheme,
                 dynamicColorScheme = dynamicColorScheme
             ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    MainScreen()
-                }
+                MainScreen()
             }
         }
     }

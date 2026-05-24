@@ -1,5 +1,6 @@
 package io.github.zeehan2005.scoremuse.data.get.netease
 
+import android.annotation.SuppressLint
 import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
@@ -53,6 +54,7 @@ object NeteaseEapiCrypto {
      * @param key 加密密钥
      * @return 加密后的大写十六进制字符串
      */
+    @SuppressLint("GetInstance")
     private fun aesEcbEncryptToUpperHex(data: ByteArray, key: ByteArray): String {
         val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
         val keySpec = SecretKeySpec(key, "AES")

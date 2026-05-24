@@ -15,7 +15,8 @@
   ~ - dataExtractionRules: Android 12+ 数据提取规则
   ~ - fullBackupContent: Android 6.0+ 自动备份规则
   -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
       ~ Android 11+ (API 30) 包可见性配置
@@ -47,7 +48,8 @@
     
     <!-- ==================== 前台服务权限 ==================== -->
     <!-- 前台服务：保持后台服务持续运行（Android 9.0+） -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"
+        tools:ignore="ForegroundServicesPolicy" />
     <!-- 媒体播放类型：用于歌词通知栏显示 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <!-- 数据同步类型：用于 WebSocket 后台同步 -->
@@ -71,7 +73,7 @@
       -->
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon='@mipmap/ic_launcher'
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.ScoreMuse"
@@ -98,11 +100,6 @@
             </intent-filter>
         </activity>
 
-        <!-- 歌词显示 Activity（占位符，尚未实现） -->
-        <activity
-            android:name="io.github.zeehan2005.scoremuse.ui.LyricsActivity"
-            android:exported="false"
-            android:theme="@style/Theme.ScoreMuse" />
 
         <!-- ==================== 设置类 Activity ==================== -->
         <!-- 主设置界面：包含所有应用配置选项 -->

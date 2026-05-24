@@ -170,7 +170,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
 
         // 3b. Among AMLL results, prefer ID-based matches over metadata-based ones.
         //      Metadata-based matches are those found by searching via title/artist.
-        if (aAml && bAml) {
+        if (aAml) {
             if (a.metadataMatch != b.metadataMatch) {
                 val res = if (!a.metadataMatch) -1 else 1
                 Timber.d("[LyricsMatcher] compareCandidates amll id-vs-metadata: $a vs $b -> $res")
@@ -423,7 +423,8 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                                 artist = candidate.artist,
                                 id = candidate.songId
                             )
-//                            _appliedLyricsText.value = XMLConverter.toXMLString(result.lyrics)
+                            // 优先使用原始歌词内容，以便利用前端的 WASM 解析器获得更精确的效果
+                            _appliedLyricsText.value = result.lyrics.rawContent ?: TTMLConverter.toTTMLString(result.lyrics)
                         }
                     } else {
                         _errorMessage.value = result.errorMessage ?: "应用候选歌词失败"
@@ -531,20 +532,20 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             try {
                 val format = LyricsFormat.detect(input)
                     
-                if (format == LyricsFormat.TTML) {
-                    // ✅ 对于 TTML 格式，直接保存原始内容，避免 toTTMLString 丢失歌曲结构
+                // 如果是已识别的格式（非纯文本），直接传递原文本以便前端 WASM 解析
+                if (format != LyricsFormat.PLAIN_TEXT) {
+                    _appliedLyricsSource.value = sourceFromInput(input)
                     _appliedLyricsText.value = input.trim()
-                    _appliedLyricsSource.value = "ttml"
                 } else {
-                    // 非 TTML 格式才需要转换
+                    // 对于纯文本，仍然进行一次转换以确保基本结构
                     val parsed = TTMLConverter.fromLyrics(
                         content = input,
                         title = title.ifBlank { "自选歌词" },
                         artist = artist.ifBlank { "Unknown" }
                     )
                     if (parsed != null) {
+                        _appliedLyricsSource.value = "manual"
                         _appliedLyricsText.value = TTMLConverter.toTTMLString(parsed)
-                        _appliedLyricsSource.value = sourceFromInput(input)
                     } else {
                         _errorMessage.value = "无法识别歌词格式"
                     }
@@ -569,7 +570,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
         val displayName = if (provider.equals("amll", true) && metadataMatch) {
             "AMLL TTML DB (基于歌名)"
         } else {
-            Companion.providerDisplayName(provider)
+            providerDisplayName(provider)
         }
         return CustomLyricsCandidate(
             provider = provider,

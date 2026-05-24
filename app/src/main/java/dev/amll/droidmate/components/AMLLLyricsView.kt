@@ -1,12 +1,11 @@
 package dev.amll.droidmate.components
 
+import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
-import android.media.AudioManager
-import android.net.Uri
 import android.util.Base64
-import android.view.KeyEvent
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.ConsoleMessage
@@ -16,26 +15,22 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import dev.amll.droidmate.global.AMLLSettings
-import dev.amll.droidmate.websocket.InitializeWebSocketListener
 import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
-import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
 import timber.log.Timber
-import java.io.EOFException
 import java.io.File
-import java.net.ConnectException
 import java.util.concurrent.atomic.AtomicInteger
 import android.graphics.Color as AndroidColor
+import androidx.core.net.toUri
 
 /**
  * AMLL 歌词视图渲染模式
@@ -54,30 +49,25 @@ import android.graphics.Color as AndroidColor
  */
 enum class AMLLRenderMode {
     DOM,         // 标准 DOM 渲染
-    DOM_LITE     // 轻量级 DOM 渲染
 }
 
-// AMLL 日志标签：用于 WebView 相关的日志输出
-private const val AMLL_LOG_TAG = "AMLL"
 // AMLL 视图实例计数器：用于调试和内存管理
 private val AMLL_VIEW_INSTANCE_COUNTER = AtomicInteger(0)
 
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun AMLLLyricsView(
+    // Compose 修饰符（用于调整大小、背景等样式）
+    modifier: Modifier = Modifier,
     // 歌词数据（TTML 格式，包含完整的歌曲结构和时间信息）
     lyrics: UnifiedLyrics?,
     // 当前播放进度（毫秒），用于同步歌词高亮
     currentTime: Long,
     // 歌曲唯一标识符（用于去重和状态追踪）
-    musicId: String = "",
     // 歌曲名称（显示在界面上）
-    musicName: String = "Unknown",
     // 专辑名称（用于元数据显示）
-    albumName: String = "",
     // 艺术家名称（显示在界面上）
-    artistName: String = "Unknown",
     // 歌曲总时长（毫秒）
-    duration: Long = 0L,
     // 专辑封面图片 URI（可以是 file://、content://或 data URL）
     albumArtUri: String? = null,
     // 渲染模式：DOM（完整效果）或 DOM_LITE（轻量版）
@@ -90,150 +80,11 @@ fun AMLLLyricsView(
     onLineSeek: ((Long) -> Unit)? = null,
     // 是否正在播放（用于同步播放/暂停状态）
     isPlaying: Boolean = true,
-    // Compose 修饰符（用于调整大小、背景等样式）
-    modifier: Modifier = Modifier
 ) {
     // 获取 Android Context（用于访问应用设置和资源）
-    val context = LocalContext.current
     // 检查 WebView 是否启用（用户可以在设置中禁用）
-    val webViewEnabled = AMLLSettings.isWebViewEnabled(context)
-    
-    // ==================== WebSocket 客户端和状态管理 ====================
-    // 获取全局唯一的 WebSocket 客户端单例
-    val webSocketClient = remember { 
-        com.amll.droidmate.websocket.AMLLWebSocketClient.getInstance() 
-    }
-    // WebSocket 连接状态（用于 UI 显示和逻辑判断）
-    var isWebSocketConnected by remember { mutableStateOf(false) }
-    
-    // 初始化 WebSocket 监听器（无论 WebView 是否启用都执行）
-    // 这样即使禁用 WebView，也能通过 WebSocket 同步播放状态
-    InitializeWebSocketListener(
-        musicId = musicId,
-        musicName = musicName,
-        albumName = albumName,
-        artistName = artistName,
-        duration = duration,
-        currentTime = currentTime,
-        isPlaying = isPlaying,
-        lyrics = lyrics,
-        debugSource = debugSource,
-        onCommandReceived = { command, valueObj ->
-            when (command) {
-                "pause" -> {
-                    Timber.i("[AMLLLyrics] 收到暂停命令，执行暂停操作")
-                    // 发送系统广播：媒体按钮事件（暂停）
-                    val pauseIntent = Intent("android.intent.action.MEDIA_BUTTON").apply {
-                        putExtra(
-                            Intent.EXTRA_KEY_EVENT,
-                            KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE)
-                        )
-                        addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
-                    }
-                    context.sendBroadcast(pauseIntent)
-                }
-                "resume" -> {
-                    Timber.i("[AMLLLyrics] 收到恢复播放命令，执行播放操作")
-                    // 发送系统广播：媒体按钮事件（播放）
-                    val playIntent = Intent("android.intent.action.MEDIA_BUTTON").apply {
-                        putExtra(
-                            Intent.EXTRA_KEY_EVENT,
-                            KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY)
-                        )
-                        addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
-                    }
-                    context.sendBroadcast(playIntent)
-                }
-                "forwardSong" -> {
-                    Timber.i("[AMLLLyrics] 收到下一首命令，执行下一首操作")
-                    // 发送系统广播：媒体按钮事件（下一首）
-                    val nextIntent = Intent("android.intent.action.MEDIA_BUTTON").apply {
-                        putExtra(
-                            Intent.EXTRA_KEY_EVENT,
-                            KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_NEXT)
-                        )
-                        addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
-                    }
-                    context.sendBroadcast(nextIntent)
-                }
-                "backwardSong" -> {
-                    Timber.i("[AMLLLyrics] 收到上一首命令，执行上一首操作")
-                    // 发送系统广播：媒体按钮事件（上一首）
-                    val prevIntent = Intent("android.intent.action.MEDIA_BUTTON").apply {
-                        putExtra(
-                            Intent.EXTRA_KEY_EVENT,
-                            KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PREVIOUS)
-                        )
-                        addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
-                    }
-                    context.sendBroadcast(prevIntent)
-                }
-                "seekPlayProgress" -> {
-                    val progress = valueObj?.get("progress")?.jsonPrimitive?.content?.toLongOrNull()
-                    if (progress != null) {
-                        Timber.i("[AMLLLyrics] 收到跳转进度命令：$progress ms，执行跳转操作")
-                        // 使用 MediaInfoService 进行跳转
-                        val mediaInfoService = io.github.zeehan2005.scoremuse.service.MediaInfoService(context)
-                        mediaInfoService.seekTo(progress)
-                    } else {
-                        Timber.w("[AMLLLyrics] 跳转进度命令参数无效")
-                    }
-                }
-                "setVolume" -> {
-                    val volume = valueObj?.get("volume")?.jsonPrimitive?.content?.toDoubleOrNull()
-                    if (volume != null) {
-                        Timber.i("[AMLLLyrics] 收到音量设置命令：$volume")
-                        // 使用 AudioManager 设置系统音量
-                        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-                        // 将 0.0-1.0 的音量转换为系统音量级别（0-15）
-                        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-                        val targetVolume = (volume * maxVolume).toInt().coerceIn(0, maxVolume)
-                        audioManager.setStreamVolume(
-                            AudioManager.STREAM_MUSIC,
-                            targetVolume,
-                            0  // 不显示音量 UI
-                        )
-                        Timber.d("[AMLLLyrics] 音量已设置：${volume} -> $targetVolume/$maxVolume")
-                    } else {
-                        Timber.w("[AMLLLyrics] 音量设置命令参数无效")
-                    }
-                }
-                "setRepeatMode", "setShuffleMode" -> {
-                    Timber.d("[AMLLLyrics] 收到不支持的命令：$command，忽略")
-                    // 忽略这些命令，不回复错误（避免频繁发送错误消息）
-                }
-                else -> {
-                    Timber.d("[AMLLLyrics] 未知命令：$command")
-                }
-            }
-        },
-        onConnectedCallback = {
-            isWebSocketConnected = true
-            Timber.d("[AMLLLyrics] WebSocket 已连接，当前歌曲信息：musicId=$musicId, musicName=$musicName, artist=$artistName")
-        },
-        onErrorCallback = { error ->
-            isWebSocketConnected = false
-            // 打印更详细的错误信息
-            when (error) {
-                is EOFException -> {
-                    Timber.e("[AMLLLyrics] 服务器主动断开了连接")
-                }
-                is ConnectException -> {
-                    Timber.e("[AMLLLyrics] 无法连接到服务器")
-                }
-                else -> {
-                    Timber.e("[AMLLLyrics] 未知错误类型：${error.javaClass.simpleName}")
-                }
-            }
-        }
-    )
-    
-    // 如果 WebView 被禁用，不渲染歌词 UI，但仍保持 WebSocket 通信
-    if (!webViewEnabled) {
-        Timber.d("[AMLLLyrics] [WebView] [$debugSource] WebView 已禁用，跳过歌词渲染（但 WebSocket 仍在运行）")
-        return
-    }
-    
+
+
     // ==================== 内部状态变量定义 ====================
     // 视图实例 ID（用于调试日志，区分多个 AMLLLyricsView 实例）
     val instanceId = remember { AMLL_VIEW_INSTANCE_COUNTER.incrementAndGet() }
@@ -267,160 +118,19 @@ fun AMLLLyricsView(
     var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
     var lastMotionConfigValue by remember { mutableStateOf<String?>(null) }
     var lastPlaybackStateValue by remember { mutableStateOf<Boolean?>(null) }
+    var lastBackgroundConfigValue by remember { mutableStateOf<String?>(null) }
 
     // ==================== 时间更新节流 ====================
     // 记录上一次更新时间的时间戳（用于节流，避免每帧都更新）
-    var lastTimeUpdateTimestamp by remember { mutableStateOf(0L) }
+    var lastTimeUpdateTimestamp by remember { mutableLongStateOf(0L) }
     // 时间更新间隔（毫秒）- 减少频繁的 JS 调用
-    val TIME_UPDATE_INTERVAL_MS = 50L
+    val timeUpdateIntervalMs = 50L
     
     // ==================== 歌词开关状态缓存（用于去重） ====================
     var lastTranslationLineEnabled by remember { mutableStateOf<Boolean?>(null) }
     var lastRomanLineEnabled by remember { mutableStateOf<Boolean?>(null) }
-    var lastSwapTransRomanEnabled by remember { mutableStateOf<Boolean?>(null) }
-    
-    // ==================== WebSocket 发送状态记录 ====================
-    // 记录上一次发送的状态，用于去重（避免频繁发送相同数据）
-    var lastSentMusicId by remember { mutableStateOf<String?>(null) }
-    var lastSentMusicName by remember { mutableStateOf<String?>(null) }
-    var lastSentAlbumName by remember { mutableStateOf<String?>(null) }
-    var lastSentArtistName by remember { mutableStateOf<String?>(null) }
-    var lastSentIsPlaying by remember { mutableStateOf<Boolean?>(null) }
-    
-    /**
-     * 发送播放状态到 WebSocket 服务器（V2 JSON 协议）
-     * 
-     * **优化策略**：
-     * - 仅在歌曲信息或播放状态变化时发送
-     * - 播放进度惯性除外（不频繁发送进度更新）
-     * - 使用 V2 JSON 协议而非二进制协议
-     * 
-     * @param currentTime 当前播放时间（毫秒）
-     * @param isPlaying 是否正在播放
-     */
-    fun sendPlaybackStatusToWebSocket(currentTime: Long, isPlaying: Boolean) {
-        // WebSocket 未连接时直接返回，避免无效操作
-            
-        // ==================== 状态变化检测 ====================
-        // 检查歌曲基本信息是否变化（ID、名称、专辑、艺术家）
-        val musicInfoChanged = musicId != lastSentMusicId ||
-                               musicName != lastSentMusicName ||
-                               albumName != lastSentAlbumName ||
-                               artistName != lastSentArtistName
-        
-        // 检查播放状态是否变化（播放/暂停）
-        val playingStateChanged = isPlaying != lastSentIsPlaying
-        
-        // ==================== 去重逻辑 ====================
-        // 只有状态变化时才发送，避免频繁网络请求
-        if (!musicInfoChanged && !playingStateChanged) {
-            // 状态无变化，不发送（播放进度惯性除外）
-            return
-        }
-            
-        // ==================== V2 JSON 协议消息发送 ====================
-        try {
-            // Step 1: 如果歌曲信息变化，发送新的歌曲信息
-            if (musicInfoChanged) {
-                // 使用 WsProtocolV2Helper 创建 SetMusicUpdate 消息
-                val message = com.amll.droidmate.websocket.WsProtocolV2Helper.createSetMusicUpdate(
-                    musicId = musicId,
-                    musicName = musicName,
-                    albumName = albumName,
-                    artists = listOf(com.amll.droidmate.websocket.WsProtocolV2Helper.Artist("1", artistName)),
-                    duration = duration
-                )
-                Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 发送歌曲信息 (V2 JSON): $musicName")
-                webSocketClient.send(message)
-                
-                // 更新记录的状态，避免下次重复发送
-                lastSentMusicId = musicId
-                lastSentMusicName = musicName
-                lastSentAlbumName = albumName
-                lastSentArtistName = artistName
-            }
-            
-            // Step 2: 如果播放状态变化，发送播放/暂停状态
-            if (playingStateChanged) {
-                // 根据播放状态选择对应的消息类型
-                val stateMessage = if (isPlaying) {
-                    com.amll.droidmate.websocket.WsProtocolV2Helper.createResumedUpdate()
-                } else {
-                    com.amll.droidmate.websocket.WsProtocolV2Helper.createPausedUpdate()
-                }
-                
-                Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 发送播放状态消息 (V2 JSON): isPlaying=$isPlaying")
-                webSocketClient.send(stateMessage)
-                
-                // 更新记录的状态
-                lastSentIsPlaying = isPlaying
-            }
-            
-            // ⭐ 注意：不发送播放进度更新（currentTime），避免频繁网络请求
-            // 只在用户主动跳转或歌曲切换时才更新进度
-        } catch (e: Exception) {
-            Timber.e("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 发送 V2 消息失败", e)
-        }
-    }
-    
-    // WebSocket 状态同步逻辑 - 当歌曲信息或播放状态变化时立即发送
-    LaunchedEffect(musicId, musicName, albumName, artistName, duration, isPlaying) {
-        if (AMLLSettings.isWebSocketProtocolEnabled(context) && isWebSocketConnected) {
-            // 当歌曲信息或播放状态变化时，立即发送新状态（播放进度惯性除外）
-            sendPlaybackStatusToWebSocket(currentTime, isPlaying)
-        }
-    }
-    
-    // 注入 WebSocket 桥接代码到 WebView
-    // 使用统一的 TTMLConverter.toTTMLString() 代替本地实现
-    
 
-    
-    /**
-     * 注入 WebSocket 桥接代码到 WebView
-     * 
-     * 这段 JavaScript 代码会在 WebView 中创建一个全局对象 `AndroidWebSocketBridge`，
-     * 允许前端页面通过 JavascriptInterface 发送消息到 Android 端。
-     * 
-     * **工作原理**：
-     * 1. 检查是否已存在桥接对象（避免重复注入）
-     * 2. 创建 send() 方法，将消息通过 JSON.stringify 序列化
-     * 3. 调用 window.Android.sendWebSocketMessage() 发送到 Android
-     */
-    fun injectWebSocketBridge(view: WebView) {
-        Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 注入 WebSocket 桥接代码")
-        
-        // 使用 evaluateJavascript 注入 JavaScript 代码
-        view.evaluateJavascript(
-            """
-            (function() {
-                // 检查是否已存在桥接对象（避免重复注入）
-                if (!window.AndroidWebSocketBridge) {
-                    // 创建全局桥接对象
-                    window.AndroidWebSocketBridge = {
-                        send: function(message) {
-                            // 通过 JavascriptInterface 发送到 Android
-                            // window.Android 是在 addJavascriptInterface 时注册的对象
-                            if (window.Android && window.Android.sendWebSocketMessage) {
-                                window.Android.sendWebSocketMessage(JSON.stringify(message));
-                            }
-                        }
-                    };
-                    console.log('[AMLL Bridge] WebSocket bridge injected');
-                }
-            })();
-            """.trimIndent(),
-            null  // 不需要回调结果
-        )
-    }
-    
-    // WebSocket 状态同步逻辑 - 当歌曲信息或播放状态变化时立即发送
-    LaunchedEffect(musicId, musicName, albumName, artistName, duration, isPlaying) {
-        if (AMLLSettings.isWebSocketProtocolEnabled(context) && isWebSocketConnected) {
-            // 当歌曲信息或播放状态变化时，立即发送新状态（播放进度惯性除外）
-            sendPlaybackStatusToWebSocket(currentTime, isPlaying)
-        }
-    }
+
 
     // ==================== WebView 组件定义 ====================
     // 使用 AndroidView 将原生 WebView 嵌入到 Compose 界面中
@@ -450,14 +160,8 @@ fun AMLLLyricsView(
                      */
                     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
                         isPageReady = false
-                        lastRenderModeValue = null
-                        lastLyricPlayerImplValue = null
-                        lastBackgroundProfileValue = null
-                        lastPlaybackStateValue = null
                         lastLyrics = null
                         lastLyricsPayload = null
-                        lastAlbumArtUri = null
-                        lastFontConfigSignature = null
                         Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView page started: $url")
                     }
 
@@ -470,9 +174,6 @@ fun AMLLLyricsView(
                     override fun onPageFinished(view: WebView, url: String) {
                         isPageReady = true
                         // Force one re-sync after page finishes to avoid losing early bridge calls.
-                        lastRenderModeValue = null
-                        lastLyricPlayerImplValue = null
-                        lastBackgroundProfileValue = null
                         // 页面刷新结束时不主动清空 lastLyrics，让我们知道是否还有有效歌词
                         // lastLyrics = null
                         // 页面刷新完成后如果我们之前有歌词 JSON 且当前仍然有 lyrics（不是因歌曲切换而清空），先立刻重新下发
@@ -482,15 +183,10 @@ fun AMLLLyricsView(
                         }
                         // 不清空 payload，让 update() 继续根据 lyrics 对象决定重新生成
                         // lastLyricsPayload = null
-                        lastAlbumArtUri = null
-                        lastFontConfigSignature = null
                         // 确保页面加载后背景仍然透明
                         view.setBackgroundColor(AndroidColor.TRANSPARENT)
                         
-                        // 注入 WebSocket 桥接代码（如果启用了 WebSocket）
-                        if (isWebSocketConnected) {
-                            injectWebSocketBridge(view)
-                        }
+
                         
                         Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView page finished: $url")
                     }
@@ -513,7 +209,6 @@ fun AMLLLyricsView(
                 }
                 // ==================== WebView 安全配置 ====================
                 // 已弃用的 WebView 配置，但为了保持兼容性暂时保留
-                @Suppress("DEPRECATION")
                 settings.apply {
                     javaScriptEnabled = true       // 启用 JavaScript
                     domStorageEnabled = true       // 启用 DOM 存储（localStorage 等）
@@ -554,7 +249,6 @@ fun AMLLLyricsView(
                         debugSource,
                         instanceId,
                         onLineSeekState.value,
-                        webSocketClient = webSocketClient, // 传递 WebSocket 客户端引用
                         onSeekRequested = { seekTime ->
                             // schedule a UI-thread action so that the webview can immediately
                             // acknowledge the seek and prevent the "lyrics running around" effect.
@@ -584,7 +278,23 @@ fun AMLLLyricsView(
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] JavascriptInterface added as Android")
 
                 // ==================== 点击事件监听 ====================
-                // 设置 WebView 点击监听器（用于处理整个歌词区域的点击）
+                // 使用 GestureDetector 辅助检测点击，避免 WebView 内部消费导致 setOnClickListener 失效
+                val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+                    override fun onSingleTapUp(e: MotionEvent): Boolean {
+                        Timber.d("[AMLLLyrics] [$debugSource#$instanceId] GestureDetector single tap up, performing click")
+                        this@apply.performClick()
+                        return true
+                    }
+                })
+
+                setOnTouchListener { _, event ->
+                    // 将触摸事件传递给 GestureDetector
+                    gestureDetector.onTouchEvent(event)
+                    // 始终返回 false，允许 WebView 处理滚动、长按选择等原生行为
+                    false
+                }
+
+                // 处理点击事件
                 setOnClickListener {
                     Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView onClick listener fired")
                     onLyricsClickState.value?.invoke()
@@ -623,13 +333,11 @@ fun AMLLLyricsView(
             // ==================== 更新时间同步（节流优化） ====================
             // 仅在时间间隔超过阈值时才更新，避免每帧都调用 JS
             val now = System.currentTimeMillis()
-            if (now - lastTimeUpdateTimestamp >= TIME_UPDATE_INTERVAL_MS) {
+            if (now - lastTimeUpdateTimestamp >= timeUpdateIntervalMs) {
                 view.evaluateJavascript("window.updateTime && window.updateTime($currentTime);", null)
                 lastTimeUpdateTimestamp = now
             }
-            
-            // 同时通过 WebSocket 发送到外部服务
-            sendPlaybackStatusToWebSocket(currentTime, isPlayingState.value)
+
 
             // ==================== 渲染模式配置 ====================
             // 根据 renderMode 设置渲染模式（dom 或 dom-lite）
@@ -642,46 +350,62 @@ fun AMLLLyricsView(
 
             // ==================== 动画 FPS 设置 ====================
             // 使用用户自定义的 FPS 值，不再根据渲染模式强制限制
-            val fpsValue = AMLLSettings.getAmllAnimationFps(view.context).coerceIn(15, 240)
+            val userFps = AMLLSettings.getAmllAnimationFps(view.context)
 
-            // ==================== 背景效果配置 ====================
-            // 根据渲染模式构建不同的背景效果配置
-            val backgroundProfile = if (renderMode == AMLLRenderMode.DOM) {
-                // 标准 DOM 模式：高质量渲染
-                """{"renderer":"pixi","fps":$fpsValue,"flowSpeed":2.35,"renderScale":0.9,"staticMode":false,"lowFreqVolume":1.0}"""
-            } else {
-                // DOM_LITE 模式：性能优化版
-                """{"renderer":"pixi","fps":$fpsValue,"flowSpeed":1.4,"renderScale":0.65,"staticMode":false,"lowFreqVolume":1.0}"""
+            // ==================== 歌词背景配置 ====================
+            val backgroundRenderer = AMLLSettings.getAmllBackgroundRenderer(view.context)
+            val cssBackgroundProperty = AMLLSettings.getAmllCssBackgroundProperty(view.context)
+            val backgroundFps = AMLLSettings.getAmllBackgroundFps(view.context) ?: userFps
+            val backgroundRenderScale = AMLLSettings.getAmllBackgroundRenderScale(view.context)
+            val enableBackgroundStaticMode = AMLLSettings.isAmllBackgroundStaticModeEnabled(view.context)
+
+            // 根据渲染器类型构建背景配置
+            val backgroundConfigObj = JSONObject().apply {
+                put("renderer", backgroundRenderer ?: "mesh")
+                if (backgroundRenderer == "css-bg") {
+                    cssBackgroundProperty?.let { put("cssProperty", it) }
+                } else {
+                    backgroundFps?.let { put("fps", it.coerceIn(15, 240)) }
+                    backgroundRenderScale?.let { put("renderScale", it.toDouble()) }
+                    enableBackgroundStaticMode?.let { put("staticMode", it) }
+                    
+                    // 根据渲染模式设置性能基准，但不强制覆盖具体的数值
+                    if (renderMode != AMLLRenderMode.DOM) {
+                        if (!has("renderScale")) put("renderScale", 0.65)
+                    }
+                }
             }
-            if (lastBackgroundProfileValue != backgroundProfile) {
-                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureBackgroundEffect(profile=$backgroundProfile)")
-                view.evaluateJavascript(
-                    "window.configureBackgroundEffect && window.configureBackgroundEffect($backgroundProfile);",
-                    null
-                )
-                lastBackgroundProfileValue = backgroundProfile
+            val backgroundConfig = backgroundConfigObj.toString()
+
+            if (lastBackgroundConfigValue != backgroundConfig) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureLyricBackground(config=$backgroundConfig)")
+                view.evaluateJavascript("window.configureLyricBackground && window.configureLyricBackground($backgroundConfig);", null)
+                lastBackgroundConfigValue = backgroundConfig
             }
 
             // ==================== 歌词动画运动配置 ====================
             // 构建歌词动画的运动配置文件（弹簧、缩放、模糊等效果）
-            val motionConfig = """{
-                "enableSpring":${AMLLSettings.isAmllAnimationSpringEnabled(view.context)},
-                "enableScale":${AMLLSettings.isAmllAnimationScaleEnabled(view.context)},
-                "enableBlur":${AMLLSettings.isAmllAnimationBlurEnabled(view.context)},
-                "hidePassedLines":${AMLLSettings.isAmllAnimationHidePassedLinesEnabled(view.context)},
-                "wordFadeWidth":${AMLLSettings.getAmllAnimationWordFadeWidth(view.context)},
-                "fps":$fpsValue,
-                "springPosY": {
-                    "mass": ${AMLLSettings.getAmllSpringPosYMass(view.context)},
-                    "damping": ${AMLLSettings.getAmllSpringPosYDamping(view.context)},
-                    "stiffness": ${AMLLSettings.getAmllSpringPosYStiffness(view.context)}
-                },
-                "springScale": {
-                    "mass": ${AMLLSettings.getAmllSpringScaleMass(view.context)},
-                    "damping": ${AMLLSettings.getAmllSpringScaleDamping(view.context)},
-                    "stiffness": ${AMLLSettings.getAmllSpringScaleStiffness(view.context)}
-                }
-            }""".trimIndent().replace("\n", "")
+            val motionConfigObj = JSONObject().apply {
+                AMLLSettings.isAmllAnimationSpringEnabled(view.context)?.let { put("enableSpring", it) }
+                AMLLSettings.isAmllAnimationScaleEnabled(view.context)?.let { put("enableScale", it) }
+                AMLLSettings.isAmllAnimationBlurEnabled(view.context)?.let { put("enableBlur", it) }
+                AMLLSettings.isAmllAnimationHidePassedLinesEnabled(view.context)?.let { put("hidePassedLines", it) }
+                AMLLSettings.getAmllAnimationWordFadeWidth(view.context)?.let { put("wordFadeWidth", it.toDouble()) }
+                userFps?.let { put("fps", it.coerceIn(15, 240)) }
+
+                val springPosY = JSONObject()
+                AMLLSettings.getAmllSpringPosYMass(view.context)?.let { springPosY.put("mass", it.toDouble()) }
+                AMLLSettings.getAmllSpringPosYDamping(view.context)?.let { springPosY.put("damping", it.toDouble()) }
+                AMLLSettings.getAmllSpringPosYStiffness(view.context)?.let { springPosY.put("stiffness", it.toDouble()) }
+                if (springPosY.length() > 0) put("springPosY", springPosY)
+
+                val springScale = JSONObject()
+                AMLLSettings.getAmllSpringScaleMass(view.context)?.let { springScale.put("mass", it.toDouble()) }
+                AMLLSettings.getAmllSpringScaleDamping(view.context)?.let { springScale.put("damping", it.toDouble()) }
+                AMLLSettings.getAmllSpringScaleStiffness(view.context)?.let { springScale.put("stiffness", it.toDouble()) }
+                if (springScale.length() > 0) put("springScale", springScale)
+            }
+            val motionConfig = motionConfigObj.toString()
 
             if (lastMotionConfigValue != motionConfig) {
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureLyricMotion(profile=$motionConfig)")
@@ -692,21 +416,23 @@ fun AMLLLyricsView(
             // ==================== 歌词样式配置 ====================
             // 歌词播放器实现（DOM / DOM Lite / Canvas）
             val lyricPlayerImpl = AMLLSettings.getAmllLyricPlayerImplementation(view.context)
-            val renderModeValue = when (lyricPlayerImpl) {
-                "dom" -> "dom"
-                "dom-slim" -> "dom-lite"
-                "canvas" -> "canvas"
-                else -> "dom"
-            }
-            if (lastLyricPlayerImplValue != renderModeValue) {
-                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setLyricPlayerImplementation($renderModeValue)")
-                view.evaluateJavascript("window.setLyricPlayerImplementation && window.setLyricPlayerImplementation('$renderModeValue');", null)
-                lastLyricPlayerImplValue = renderModeValue
+            if (lyricPlayerImpl != null) {
+                val renderModeValue = when (lyricPlayerImpl) {
+                    "dom" -> "dom"
+                    "dom-slim" -> "dom-lite"
+                    "canvas" -> "canvas"
+                    else -> "dom"
+                }
+                if (lastLyricPlayerImplValue != renderModeValue) {
+                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setLyricPlayerImplementation($renderModeValue)")
+                    view.evaluateJavascript("window.setLyricPlayerImplementation && window.setLyricPlayerImplementation('$renderModeValue');", null)
+                    lastLyricPlayerImplValue = renderModeValue
+                }
             }
 
             // 歌词字体大小预设
             val lyricSizePreset = AMLLSettings.getAmllLyricSizePreset(view.context)
-            if (lastLyricSizePreset != lyricSizePreset) {
+            if (lyricSizePreset != null && lastLyricSizePreset != lyricSizePreset) {
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setLyricSizePreset($lyricSizePreset)")
                 view.evaluateJavascript("window.setLyricSizePreset && window.setLyricSizePreset('$lyricSizePreset');", null)
                 lastLyricSizePreset = lyricSizePreset
@@ -714,7 +440,7 @@ fun AMLLLyricsView(
 
             // 翻译歌词开关（去重优化）
             val enableTranslationLine = AMLLSettings.isAmllTranslationLineEnabled(view.context)
-            if (lastTranslationLineEnabled != enableTranslationLine) {
+            if (enableTranslationLine != null && lastTranslationLineEnabled != enableTranslationLine) {
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableTranslationLine($enableTranslationLine)")
                 view.evaluateJavascript("window.setEnableTranslationLine && window.setEnableTranslationLine($enableTranslationLine);", null)
                 lastTranslationLineEnabled = enableTranslationLine
@@ -722,7 +448,7 @@ fun AMLLLyricsView(
 
             // 音译歌词开关（去重优化）
             val enableRomanLine = AMLLSettings.isAmllRomanLineEnabled(view.context)
-            if (lastRomanLineEnabled != enableRomanLine) {
+            if (enableRomanLine != null && lastRomanLineEnabled != enableRomanLine) {
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableRomanLine($enableRomanLine)")
                 view.evaluateJavascript("window.setEnableRomanLine && window.setEnableRomanLine($enableRomanLine);", null)
                 lastRomanLineEnabled = enableRomanLine
@@ -730,7 +456,7 @@ fun AMLLLyricsView(
 
             // 提前歌词行时序
             val enableAdvanceDynamicTime = AMLLSettings.isAmllAdvanceDynamicLyricTimeEnabled(view.context)
-            if (lastEnableAdvanceDynamicTime != enableAdvanceDynamicTime) {
+            if (enableAdvanceDynamicTime != null && lastEnableAdvanceDynamicTime != enableAdvanceDynamicTime) {
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setAdvanceLyricDynamicLyricTime($enableAdvanceDynamicTime)")
                 view.evaluateJavascript("window.setAdvanceLyricDynamicLyricTime && window.setAdvanceLyricDynamicLyricTime($enableAdvanceDynamicTime);", null)
                 lastEnableAdvanceDynamicTime = enableAdvanceDynamicTime
@@ -738,7 +464,7 @@ fun AMLLLyricsView(
             
             // 字体字重 - 通过 CSS 应用
             val fontWeight = AMLLSettings.getAmllFontWeight(view.context)
-            if (fontWeight > 0) {
+            if (fontWeight != null && fontWeight > 0) {
               Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyFontWeight($fontWeight)")
               view.evaluateJavascript(
                 "document.documentElement.style.setProperty('--amll-font-weight', '$fontWeight');",
@@ -748,7 +474,7 @@ fun AMLLLyricsView(
             
             // 字符间距 - 通过 CSS 应用
             val letterSpacing = AMLLSettings.getAmllLetterSpacing(view.context)
-            if (!letterSpacing.isNullOrBlank()) {
+            if (letterSpacing != null && letterSpacing.isNotBlank()) {
               val escapedLetterSpacing = escapeJsString(letterSpacing)
               Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyLetterSpacing('$escapedLetterSpacing')")
               view.evaluateJavascript(
@@ -757,23 +483,6 @@ fun AMLLLyricsView(
               )
             }
 
-            // ==================== 歌词背景配置 ====================
-            val backgroundRenderer = AMLLSettings.getAmllBackgroundRenderer(view.context)
-            val cssBackgroundProperty = AMLLSettings.getAmllCssBackgroundProperty(view.context)
-            val backgroundFps = AMLLSettings.getAmllBackgroundFps(view.context)
-            val backgroundRenderScale = AMLLSettings.getAmllBackgroundRenderScale(view.context)
-            val enableBackgroundStaticMode = AMLLSettings.isAmllBackgroundStaticModeEnabled(view.context)
-
-            // 根据渲染器类型构建背景配置
-            val backgroundConfig = when (backgroundRenderer) {
-                "css-bg" -> """{"renderer":"css-bg","cssProperty":"$cssBackgroundProperty"}"""
-                "pixi" -> """{"renderer":"pixi","fps":$backgroundFps,"renderScale":$backgroundRenderScale,"staticMode":$enableBackgroundStaticMode}"""
-                "mesh" -> """{"renderer":"mesh","fps":$backgroundFps,"renderScale":$backgroundRenderScale,"staticMode":$enableBackgroundStaticMode}"""
-                else -> """{"renderer":"mesh","fps":$backgroundFps,"renderScale":$backgroundRenderScale,"staticMode":$enableBackgroundStaticMode}"""
-            }
-
-            view.evaluateJavascript("window.configureLyricBackground && window.configureLyricBackground($backgroundConfig);", null)
-
             // ==================== 歌词数据更新 ====================
             // 只在 lyrics 对象引用改变时才重新构建 JSON（避免每秒都构建）
             if (lyrics !== lastLyrics) {
@@ -781,38 +490,20 @@ fun AMLLLyricsView(
                 if (lyrics != null && lyrics.lines.isNotEmpty()) {
                     // 构建歌词 JSON 数据结构
                     val lyricsJson = buildLyricsJson(lyrics)
+                    lastLyricsPayload = lyricsJson
                     Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: updateLyrics(lines=${lyrics.lines.size})")
                     // 添加详细日志，显示前几行歌词内容
                     lyrics.lines.take(3).forEachIndexed { idx, line ->
                         Timber.d("[AMLLLyrics]   Line $idx: text='${line.text}', words=${line.words.size}, isBG=${line.isBG}")
                     }
                     view.evaluateJavascript("window.updateLyrics && window.updateLyrics($lyricsJson);", null)
-                    lastLyricsPayload = lyricsJson
-                                
-                    // 通过 WebSocket 发送歌词更新（V2 协议）
-                    if (isWebSocketConnected) {
-                        try {
-                            // ⭐ 关键修复：使用原始 TTML 字符串而不是结构化 JSON
-                            // V2 协议格式：{"type":"state","value":{"update":"setLyric","format":"ttml","data":"<TTML 原始内容>"}}
-                            // 注意：data 字段应该是原始 TTML 字符串，不是 Base64 编码，也不是给 WebView 的结构化 JSON
-                            val ttmlContent = lyrics.rawTtml
-                            if (!ttmlContent.isNullOrBlank()) {
-                                val lyricMessage = com.amll.droidmate.websocket.WsProtocolV2Helper.createTTMLLyricUpdate(ttmlContent)
-                                webSocketClient.send(lyricMessage)
-                                Timber.d("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 已通过 WebSocket 发送歌词 (TTML format, size=${ttmlContent.length} chars)")
-                            } else {
-                                Timber.w("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] ⚠️ rawTtml is null/empty, skipping WebSocket send")
-                            }
-                        } catch (e: Exception) {
-                            Timber.e("[AMLLLyrics] [WebSocket] [$debugSource#$instanceId] 通过 WebSocket 发送歌词失败", e)
-                        }
-                    }
+
+
                 } else {
                     // 如果 lyrics 为空或 null，注入测试歌词以便调试
                     Timber.d("[AMLLLyrics] [$debugSource#$instanceId] No lyrics provided, injecting test lyrics")
                     val testLyricsJson = """{"metadata":{"title":"Test","artist":"AMLL"},"lines":[{"startTime":0,"endTime":3000,"text":"测试歌词","translatedLyric":"","romanLyric":"","words":[{"word":"测试","startTime":0,"endTime":1500},{"word":"歌词","startTime":1500,"endTime":3000}],"isBG":false,"isDuet":false},{"startTime":3000,"endTime":6000,"text":"第二行歌词","translatedLyric":"","romanLyric":"","words":[{"word":"第二行","startTime":3000,"endTime":4500},{"word":"歌词","startTime":4500,"endTime":6000}],"isBG":false,"isDuet":false}]}"""
                     view.evaluateJavascript("window.updateLyrics && window.updateLyrics($testLyricsJson);", null)
-                    lastLyricsPayload = testLyricsJson
                 }
                 lastLyrics = lyrics
             }
@@ -857,7 +548,7 @@ fun AMLLLyricsView(
                     FontWebEntry(
                         id = item.id,
                         sortKey = item.fontFamilyName,
-                        familyName = buildRuntimeFontFamilyName(item.fontFamilyName, item.id),
+                        familyName = buildRuntimeFontFamilyName(item.fontFamilyName),
                         uri = file.toURI().toString()
                     )
                 }
@@ -880,7 +571,7 @@ fun AMLLLyricsView(
             // 构建最终使用的字体家族栈
             val effectiveFamily = if (enabledFamilies.isNotEmpty()) {
                 val enabledStack = enabledFamilies.joinToString(", ") { "\"$it\"" }
-                "$enabledStack, $configuredFontFamily"
+                if (configuredFontFamily != null) "$enabledStack, $configuredFontFamily" else enabledStack
             } else {
                 configuredFontFamily
             }
@@ -925,12 +616,13 @@ private data class FontWebEntry(
     val uri: String
 )
 
-private fun buildRuntimeFontFamilyName(baseFamilyName: String, fontId: String): String {
+private fun buildRuntimeFontFamilyName(baseFamilyName: String): String {
     // 直接使用原始字体名称，以便与 CSS 中的 font-family 匹配
     return baseFamilyName
 }
 
-private fun parsePreferredFontOrder(configuredFontFamily: String): List<String> {
+private fun parsePreferredFontOrder(configuredFontFamily: String?): List<String> {
+    if (configuredFontFamily == null) return emptyList()
     return configuredFontFamily
         .split(',')
         .map { normalizeFontToken(it) }
@@ -956,9 +648,9 @@ private fun normalizeFontToken(value: String): String {
         .replace(Regex("[^a-z0-9]"), "")
 }
 
-private fun buildApplyFontScript(effectiveFamily: String, files: List<FontWebEntry>): String {
+private fun buildApplyFontScript(effectiveFamily: String?, files: List<FontWebEntry>): String {
     // 将字体家族名称转换为 JSON 安全的字符串
-    val familyJson = "\"${escapeJsStringForJson(effectiveFamily)}\""
+    val familyJson = if (effectiveFamily != null) "\"${escapeJsStringForJson(effectiveFamily)}\"" else "null"
     
     // 构建文件数组的 JSON 表示
     val filesArrayJson = if (files.isEmpty()) {
@@ -980,8 +672,10 @@ private fun buildApplyFontScript(effectiveFamily: String, files: List<FontWebEnt
         append("var css='';")
         append("for(var i=0;i<files.length;i+=1){var item=files[i];if(!item||!item.familyName||!item.uri)continue;if(item.uri.indexOf('data:image/svg+xml')===0)continue;css+='@font-face{font-family:\"'+item.familyName+'\";src:url(\"'+item.uri+'\");font-display:swap;}';}")
         append("styleNode.textContent=css;")
+        append("if(effectiveFamily){")
         append("document.documentElement.style.setProperty('--amll-user-font-family',effectiveFamily);")
         append("document.documentElement.style.setProperty('--amll-lp-font-family','var(--amll-user-font-family)');")
+        append("}")
         append("var players=document.querySelectorAll('.amll-lyric-player');")
         append("for(var j=0;j<players.length;j+=1){players[j].style.fontFamily='var(--amll-lp-font-family)';}")
         append("})();")
@@ -1064,12 +758,16 @@ private fun buildLyricsJson(lyrics: UnifiedLyrics): String {
                 } else {
                     word.word.replace("\\", "\\\\").replace("\"", "\\\"")
                 }
-                """{"word":"$wordText","startTime":${word.startTime},"endTime":${word.endTime}}"""
+                // 增加防御性检查：确保 endTime > startTime，防止 JS 计算 progress 时出现 NaN (0/0) 或 Infinity (1/0)
+                // 这修复了 "Invalid keyframe value for property maskPosition: NaNpx 0" 的报错
+                val wordEndTime = if (word.endTime <= word.startTime) word.startTime + 1 else word.endTime
+                """{"word":"$wordText","startTime":${word.startTime},"endTime":$wordEndTime}"""
             }
         } else {
             // 如果没有逐词信息，则使用整行文本作为单词
             val wordText = text.replace("\"", "\\\"")
-            """{"word":"$wordText","startTime":${line.startTime},"endTime":${line.endTime}}"""
+            val wordEndTime = if (line.endTime <= line.startTime) line.startTime + 1 else line.endTime
+            """{"word":"$wordText","startTime":${line.startTime},"endTime":$wordEndTime}"""
         }
         
         // 调试日志：只记录前 5 行
@@ -1082,12 +780,15 @@ private fun buildLyricsJson(lyrics: UnifiedLyrics): String {
         
         // 调试背景歌词的数据传递
         if (line.isBG) {
-            Timber.d("[BG-LYRICS-DEBUG] JSON for BG line: text='$text' translation='$translation' roman='$transliteration' isBG=${line.isBG}")
+            Timber.d("[BG-LYRICS-DEBUG] JSON for BG line: text='$text' translation='$translation' roman='$transliteration' isBG=true")
         }
         
+        // 增加防御性检查：确保整行的 endTime > startTime
+        val lineEndTime = if (line.endTime <= line.startTime) line.startTime + 1 else line.endTime
+
         """{
             "startTime":${line.startTime},
-            "endTime":${line.endTime},
+            "endTime":$lineEndTime,
             "text":"$text",
             "translatedLyric":"$translation",
             "romanLyric":"$transliteration",
@@ -1099,8 +800,14 @@ private fun buildLyricsJson(lyrics: UnifiedLyrics): String {
 
     val title = lyrics.metadata.title.replace("\\", "\\\\").replace("\"", "\\\"")
     val artist = lyrics.metadata.artist.replace("\\", "\\\\").replace("\"", "\\\"")
+    
+    // 如果有原始歌词内容，也包含在 JSON 中供前端解析
+    val rawPart = if (lyrics.rawContent != null) {
+        val escapedRaw = lyrics.rawContent.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
+        """, "raw": "$escapedRaw", "format": "${lyrics.format ?: "lrc"}" """
+    } else ""
 
-    return """{"metadata":{"title":"$title","artist":"$artist"},"lines":[$linesJson]}"""
+    return """{"metadata":{"title":"$title","artist":"$artist"},"lines":[$linesJson] $rawPart}"""
 }
 
 /**
@@ -1118,7 +825,6 @@ private fun buildLyricsJson(lyrics: UnifiedLyrics): String {
  * @param debugSource 调试来源标签
  * @param instanceId 实例 ID（用于区分多个视图）
  * @param onLineSeek 歌词行跳转回调
- * @param webSocketClient WebSocket 客户端引用（可选）
  * @param onSeekRequested 跳转请求回调
  * @param isPlayingProvider 播放状态提供者函数
  */
@@ -1126,7 +832,6 @@ class AMLLInterface(
     private val debugSource: String,
     private val instanceId: Int,
     private val onLineSeek: ((Long) -> Unit)? = null,
-    private val webSocketClient: com.amll.droidmate.websocket.AMLLWebSocketClient? = null, // WebSocket 客户端引用
     private val onSeekRequested: ((Long) -> Unit)? = null,
     private val isPlayingProvider: () -> Boolean = { true }
 ) {
@@ -1179,50 +884,7 @@ class AMLLInterface(
     fun isPlaying(): Boolean {
         return isPlayingProvider()
     }
-    
-    /**
-     * WebSocket 消息发送接口（供 JavaScript 调用）
-     * 
-     * 当 WebSocket 桥接对象需要发送消息到外部 AMLL 服务时调用此方法。
-     * 
-     * **支持的消息类型**：
-     * - ping/pong：心跳检测
-     * - seek：跳转请求
-     * - 其他自定义消息
-     * 
-     * @param message JSON 格式的消息字符串
-     */
-    @JavascriptInterface
-    fun sendWebSocketMessage(message: String) {
-        // 通过 WebSocket 发送到外部 AMLL 服务
-        Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 发送 WebSocket 消息：$message")
-        
-        try {
-            // 解析消息并转发到 WebSocket 客户端
-            val jsonObject = JSONObject(message)
-            val type = jsonObject.optString("type")
-            
-            when (type) {
-                "ping" -> {
-                    // 响应 ping 消息（心跳检测）
-                    webSocketClient?.send("{\"type\":\"pong\"}")
-                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 已响应 ping 消息")
-                }
-                "seek" -> {
-                    // 处理 seek 命令（如果需要）
-                    val time = jsonObject.optLong("time", 0L)
-                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 收到 seek 命令：time=$time")
-                }
-                else -> {
-                    // 其他类型的消息直接转发
-                    webSocketClient?.send(message)
-                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] 已转发 WebSocket 消息：type=$type")
-                }
-            }
-        } catch (e: Exception) {
-            Timber.e("[WebView] [$debugSource#$instanceId] 发送 WebSocket 消息失败", e)
-        }
-    }
+
 }
 
 /**
@@ -1258,7 +920,7 @@ private fun convertFileUriToDataUrl(context: Context, uriString: String?): Strin
             }
             uriString.startsWith("content://") -> {
                 // content:// URI：通过 ContentResolver 读取
-                val uri = Uri.parse(uriString)
+                val uri = uriString.toUri()
                 context.contentResolver.openInputStream(uri)
             }
             else -> {
@@ -1279,7 +941,7 @@ private fun convertFileUriToDataUrl(context: Context, uriString: String?): Strin
             "data:$mimeType;base64,$base64"
         }
     } catch (e: Exception) {
-        Timber.e("[AMLLLyrics] [WebView] Failed to convert file URI to data URL: $uriString", e)
+        Timber.e("[AMLLLyrics] [WebView] Failed to convert file URI to data URL: $uriString $e")
         null
     }
 }

@@ -6,6 +6,7 @@ import io.github.zeehan2005.scoremuse.data.parser.global.TimestampUtils
 import io.github.zeehan2005.scoremuse.data.parser.global.UnifiedLyricsParser
 import io.github.zeehan2005.scoremuse.global.LyricsMetadata
 import timber.log.Timber
+import java.util.Locale
 
 /**
  * TTML 转换器 - 将歌词转换为 TTML 格式
@@ -239,7 +240,7 @@ object TTMLConverter {
                     .replace("\n", "")
                 
                 // ⭐ 修复关键：对歌词内容进行 XML 转义，防止特殊字符导致解析失败
-                val escapedText = escapeXml(spanText)
+                escapeXml(spanText)
 
                 if (spanText.isEmpty()) {
                     // 保留空白词节点的最小分隔语义，避免词间被完全粘连。
@@ -326,7 +327,7 @@ object TTMLConverter {
         val seconds = totalSeconds % 60
         val ms = millis % 1000
             
-        return String.format("%02d:%02d.%03d", minutes, seconds, ms)
+        return String.format(Locale.ROOT, "%02d:%02d.%03d", minutes, seconds, ms)
     }
 
     /**
@@ -383,7 +384,7 @@ object TTMLConverter {
                 processMetadata = processMetadata
             )
         } catch (e: Exception) {
-            Timber.e("[TTMLConverter] Error parsing lyrics using Unilyric rules", e)
+            Timber.e("[TTMLConverter] Error parsing lyrics using Unilyric rules $e")
             null
         }
     }

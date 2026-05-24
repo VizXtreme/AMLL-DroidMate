@@ -40,6 +40,9 @@ class PreferenceHelper(context: Context, name: String) {
     private val pendingWrites = ConcurrentHashMap<String, Any>()
     private var saveJob: Job? = null
 
+    fun contains(key: String): Boolean =
+        prefs.contains(key)
+
     fun getString(key: String, default: String? = null): String? =
         prefs.getString(key, default)
 
@@ -81,6 +84,12 @@ class PreferenceHelper(context: Context, name: String) {
 
     fun getBoolean(key: String, default: Boolean = false): Boolean =
         prefs.getBoolean(key, default)
+
+    fun getInt(key: String, default: Int = 0): Int =
+        prefs.getInt(key, default)
+
+    fun getFloat(key: String, default: Float = 0f): Float =
+        prefs.getFloat(key, default)
 
     fun putBoolean(key: String, value: Boolean) {
         prefs.edit {putBoolean(key, value)}
@@ -141,10 +150,6 @@ class PreferenceHelper(context: Context, name: String) {
             delay(100)
             flushPendingWrites()
         }
-    }
-
-    fun edit(action: SharedPreferences.Editor.() -> Unit) {
-        prefs.edit()
     }
 
 }

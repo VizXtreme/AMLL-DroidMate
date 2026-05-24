@@ -1,7 +1,6 @@
 package io.github.zeehan2005.scoremuse.components
 
 import android.content.Context
-import io.github.zeehan2005.scoremuse.components.ServiceLocator
 import io.github.zeehan2005.scoremuse.global.UpdateChannel
 import io.ktor.client.call.body
 import io.ktor.client.request.get

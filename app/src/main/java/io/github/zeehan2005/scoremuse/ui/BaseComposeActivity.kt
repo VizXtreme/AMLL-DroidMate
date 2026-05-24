@@ -5,13 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import io.github.zeehan2005.scoremuse.global.theme.DynamicThemeManager
 import io.github.zeehan2005.scoremuse.global.theme.ScoreMuseTheme
@@ -50,20 +45,14 @@ abstract class BaseComposeActivity : ComponentActivity() {
 
         // 设置 Compose 内容视图
         setContent {
-            LocalContext.current
-            val isDarkTheme = isSystemInDarkTheme()  // 跟随系统深色模式
-            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()  // 监听动态配色变化
-
+            val isDarkTheme = isSystemInDarkTheme()
+            val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
+            
             ScoreMuseTheme(
                 darkTheme = isDarkTheme,
                 dynamicColorScheme = dynamicColorScheme
             ) {
-                Surface(
-                    modifier = Modifier.Companion.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    RenderContent()  // 调用子类实现来渲染具体内容
-                }
+                RenderContent()
             }
         }
     }

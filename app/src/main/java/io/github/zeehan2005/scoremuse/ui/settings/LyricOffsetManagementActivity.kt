@@ -9,16 +9,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -75,7 +76,7 @@ class LyricOffsetManagementActivity : BaseComposeActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 private fun LyricOffsetManagementPage(onBack: () -> Unit) {
     val context = LocalContext.current
@@ -149,7 +150,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
             val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
     Scaffold(
-        modifier = Modifier.Companion.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
                 title = { Text("管理时间轴偏移") },
@@ -180,7 +181,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                     }
                 },
                 scrollBehavior = scrollBehavior,
-                modifier = Modifier.Companion.statusBarsPadding()
+                modifier = Modifier.statusBarsPadding()
             )
         },
         floatingActionButton = {
@@ -193,7 +194,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
         }
     ) { padding ->
         Column(
-            modifier = Modifier.Companion
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
@@ -206,18 +207,24 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                label = { Text("搜索") },
-                placeholder = { Text("输入 歌曲 / 歌手 / 设备 / 来源") },
-                modifier = Modifier.Companion
+                placeholder = { Text("搜索 ( 歌曲 / 歌手 / 设备 / 来源 )") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "搜索"
+                    )
+                },
+                modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = CircleShape,
                 singleLine = true
             )
 
             Text(
                 text = "共 ${displayOffsets.size} 条",
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.Companion.padding(vertical = 4.dp),
+                modifier = Modifier.padding(vertical = 4.dp),
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
 
@@ -225,7 +232,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                 Text("当前没有已保存的偏移设置。", style = MaterialTheme.typography.bodyMedium)
             } else {
                 LazyColumn(
-                    modifier = Modifier.Companion.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(
@@ -233,13 +240,13 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                         key = { "${it.title}-${it.artist}-${it.device}-${it.source}" }) { entry ->
                         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                             Row(
-                                modifier = Modifier.Companion
+                                modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(12.dp),
-                                verticalAlignment = Alignment.Companion.CenterVertically,
+                                verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(Modifier.Companion.weight(1f)) {
+                                Column(Modifier.weight(1f)) {
                                     Text(
                                         "${entry.title} — ${entry.artist}",
                                         style = MaterialTheme.typography.bodyLarge
@@ -325,31 +332,31 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                             value = title,
                             onValueChange = { title = it },
                             label = { Text("歌曲名称") },
-                            modifier = Modifier.Companion.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
                             value = artist,
                             onValueChange = { artist = it },
                             label = { Text("歌手") },
-                            modifier = Modifier.Companion.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
                             value = device,
                             onValueChange = { device = it },
                             label = { Text("输出设备 (如: Bluetooth, Speaker)") },
-                            modifier = Modifier.Companion.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
                             value = source,
                             onValueChange = { source = it },
                             label = { Text("来源 (如: com.tencent.qqmusic)") },
-                            modifier = Modifier.Companion.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
                             value = offsetMsText,
                             onValueChange = { offsetMsText = it },
                             label = { Text("偏移 (毫秒)") },
-                            modifier = Modifier.Companion.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         errorMessage?.takeIf { it.isNotBlank() }?.let {

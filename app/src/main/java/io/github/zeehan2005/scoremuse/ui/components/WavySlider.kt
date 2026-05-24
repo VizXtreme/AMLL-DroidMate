@@ -1,6 +1,5 @@
 package io.github.zeehan2005.scoremuse.ui.components
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -14,9 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -62,7 +59,6 @@ import kotlin.math.sin
  * @param customSteps list of normalized step positions (0.0 to 1.0)
  * @param onValueChangeFinished called when value change has ended
  * @param colors [WavySliderColors] for different states
- * @param interactionSource the [MutableInteractionSource] for observing interactions
  * @param amplitude the wave's amplitude (0.0 to 1.0)
  * @param wavelength the length of a wave
  * @param waveSpeed the speed in which the wave will move (DP per second)
@@ -170,7 +166,7 @@ fun WavySlider(
     
     // Touch/drag handling
     val dragModifier = if (enabled) {
-        Modifier.pointerInput(state, availableTrackWidth.value) {
+        Modifier.pointerInput(state, availableTrackWidth.floatValue) {
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
                 val lastX = down.position.x
@@ -179,8 +175,8 @@ fun WavySlider(
                 // Thumb center moves from (thumbSideGapPx + thumbWidthPx/2) to (trackWidth - thumbSideGapPx - thumbWidthPx/2)
                 // Position 0 in value space corresponds to (thumbSideGapPx + thumbWidthPx/2) in pixel space
                 val touchOffset = lastX - (thumbSideGapPx + thumbWidthPx / 2)
-                val relativeX = touchOffset.coerceIn(0f, availableTrackWidth.value)
-                val initialValue = (relativeX / availableTrackWidth.value).fastCoerceIn(0f, 1f)
+                val relativeX = touchOffset.coerceIn(0f, availableTrackWidth.floatValue)
+                val initialValue = (relativeX / availableTrackWidth.floatValue).fastCoerceIn(0f, 1f)
                 state.value = initialValue
                 onValueChange(initialValue)
                 
@@ -188,8 +184,8 @@ fun WavySlider(
                     val currentX = change.position.x
                     // Use absolute positioning instead of relative delta
                     val touchOffset = currentX - (thumbSideGapPx + thumbWidthPx / 2)
-                    val relativeX = touchOffset.coerceIn(0f, availableTrackWidth.value)
-                    val newValue = (relativeX / availableTrackWidth.value).fastCoerceIn(0f, 1f)
+                    val relativeX = touchOffset.coerceIn(0f, availableTrackWidth.floatValue)
+                    val newValue = (relativeX / availableTrackWidth.floatValue).fastCoerceIn(0f, 1f)
                     state.value = newValue
                     onValueChange(newValue)
                     change.consume()
@@ -237,7 +233,7 @@ fun WavySlider(
             thumbWidthPx = thumbWidthPx,
             thumbHeightPx = thumbHeightPx,
             onTrackWidthCalculated = { availableWidth ->
-                availableTrackWidth.value = availableWidth
+                availableTrackWidth.floatValue = availableWidth
             }
         )
     }
@@ -267,40 +263,40 @@ private fun WavySliderDrawing(
     val canvasHeightDp = maxOf(WavySliderDefaults.TrackHeight * 2, with(density) { thumbHeightPx.toDp() })
     
     // 保存当前的时间偏移，用于暂停时保持波浪相位
-    val savedTimeOffset = remember { mutableStateOf(0f) }
-    val animationTimeOffset = remember { mutableStateOf(0f) }
+    val savedTimeOffset = remember { mutableFloatStateOf(0f) }
+    val animationTimeOffset = remember { mutableFloatStateOf(0f) }
     
     // 使用 LaunchedEffect 管理动画
     LaunchedEffect(waveSpeedPx) {
         if (waveSpeedPx > 0) {
             // 播放时，启动动画
-            var currentOffset = savedTimeOffset.value
+            var currentOffset: Float
             val duration = (1000 * wavelengthPx / waveSpeedPx).toInt()
             
             while (true) {
                 val startTime = System.currentTimeMillis()
                 while (System.currentTimeMillis() - startTime < duration) {
                     val progress = (System.currentTimeMillis() - startTime).toFloat() / duration
-                    currentOffset = savedTimeOffset.value + progress * (2 * PI).toFloat()
-                    animationTimeOffset.value = currentOffset
+                    currentOffset = savedTimeOffset.floatValue + progress * (2 * PI).toFloat()
+                    animationTimeOffset.floatValue = currentOffset
                     // 优化：使用合理的延迟值，平衡性能和流畅度
                     delay(20) // 约50fps，在各种设备上都能流畅运行
                 }
-                savedTimeOffset.value = 0f // 重置相位，避免无限增长
+                savedTimeOffset.floatValue = 0f // 重置相位，避免无限增长
             }
         }
     }
     
     // 优化：减少不必要的计算，只在需要时更新时间偏移
-    val timeOffset by remember(waveSpeedPx, animationTimeOffset.value) {
+    val timeOffset by remember(waveSpeedPx, animationTimeOffset.floatValue) {
         derivedStateOf {
             if (waveSpeedPx > 0) {
                 // 播放时，使用动画值
-                animationTimeOffset.value
+                animationTimeOffset.floatValue
             } else {
                 // 暂停时，保存当前动画值并使用
-                savedTimeOffset.value = animationTimeOffset.value % (2 * PI).toFloat()
-                savedTimeOffset.value
+                savedTimeOffset.floatValue = animationTimeOffset.floatValue % (2 * PI).toFloat()
+                savedTimeOffset.floatValue
             }
         }
     }
@@ -334,12 +330,14 @@ private fun WavySliderDrawing(
             cornerRadius = CornerRadius(trackHeightPx / 2)
         )
         // Draw active track with wave (wave width = inactive track width - 6dp)
-        // Wave ends so that the round cap is exactly thumbSideGapPx away from thumb
+        // Wave starts and ends so that the round cap is exactly thumbSideGapPx away from the edges/thumb
         val wavyTrackHeightPx = trackHeightPx - with(density) { 6.dp.toPx() }
+        val wavyStartX = thumbSideGapPx + wavyTrackHeightPx / 2
         val wavyEndX = thumbCenterX - thumbWidthPx / 2 - wavyTrackHeightPx / 2 - thumbSideGapPx
+        
         drawWavyTrack(
             color = colors.activeTrackColor(enabled),
-            startX = 0f,
+            startX = wavyStartX,
             endX = wavyEndX,
             centerY = centerY,
             trackHeight = wavyTrackHeightPx,
@@ -394,20 +392,24 @@ private fun DrawScope.drawWavyTrack(
     // Calculate the step size based on wavelength for better performance
     val stepSize = max(2f, wavelengthPx / 20f) // Reduce number of points
     
-    path.moveTo(startX, centerY)
+    // Start at the first point of the wave
+    val firstWaveOffset = (startX / wavelengthPx * 2 * PI + timeOffset).toFloat()
+    val firstY = centerY + sin(firstWaveOffset) * actualAmplitude
+    path.moveTo(startX, firstY)
     
-    var x = startX
+    var x = startX + stepSize
     while (x < endX) {
-        val waveOffset = ((x - startX) / wavelengthPx * 2 * PI + timeOffset).toFloat()
+        val waveOffset = (x / wavelengthPx * 2 * PI + timeOffset).toFloat()
         val y = centerY + sin(waveOffset) * actualAmplitude
         
-        if (x == startX) {
-            path.moveTo(x, y)
-        } else {
-            path.lineTo(x, y)
-        }
+        path.lineTo(x, y)
         x += stepSize
     }
+    
+    // Ensure the path reaches the end point
+    val finalWaveOffset = (endX / wavelengthPx * 2 * PI + timeOffset).toFloat()
+    val finalY = centerY + sin(finalWaveOffset) * actualAmplitude
+    path.lineTo(endX, finalY)
     
     // Draw the wave path with round cap for smooth ends
     drawPath(
@@ -418,18 +420,6 @@ private fun DrawScope.drawWavyTrack(
             cap = StrokeCap.Round
         )
     )
-    
-    // Draw a circle at the end point to create a smooth rounded end
-    if (endX > startX) {
-        val endWaveOffset = ((endX - startX) / wavelengthPx * 2 * PI + timeOffset).toFloat()
-        val endY = centerY + sin(endWaveOffset) * actualAmplitude
-        
-        drawCircle(
-            color = color,
-            radius = trackHeight / 2,
-            center = Offset(endX, endY)
-        )
-    }
 }
 
 private fun DrawScope.drawStepMarkers(

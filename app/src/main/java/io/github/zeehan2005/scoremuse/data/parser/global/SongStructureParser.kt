@@ -4,6 +4,7 @@ import io.github.zeehan2005.scoremuse.global.LyricLine
 import io.github.zeehan2005.scoremuse.global.SongStructure
 import io.github.zeehan2005.scoremuse.global.SongStructureType
 import timber.log.Timber
+import java.util.Locale
 
 /**
  * 歌曲结构解析器
@@ -244,6 +245,6 @@ object SongStructureParser {
         val totalSeconds = millis / 1000
         val minutes = totalSeconds / 60
         val seconds = totalSeconds % 60
-        return String.format("%d:%02d", minutes, seconds)
+        return String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
     }
 }

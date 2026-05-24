@@ -10,6 +10,7 @@ import timber.log.Timber
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.Node
+import java.util.Locale
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
@@ -55,7 +56,9 @@ object TTMLParser {
     fun parse(content: String): UnifiedLyrics {
         if (content.isBlank()) return UnifiedLyrics(
             metadata = LyricsMetadata(title = "Unknown", artist = "Unknown"),
-            lines = emptyList()
+            lines = emptyList(),
+            rawContent = "",
+            format = "ttml"
         )
 
         val builder = factory.newDocumentBuilder()
@@ -65,37 +68,31 @@ object TTMLParser {
         // retry after sanitizing the input.
         fun tryParse(input: String): UnifiedLyrics {
             val doc = builder.parse(input.byteInputStream())
-            return parseTTMLDocument(doc)
+            return parseTTMLDocument(doc).copy(rawContent = input, format = "ttml")
         }
 
         // 首先尝试正常解析
         return try {
             tryParse(content)
         } catch (e: Exception) {
-            Timber.w("[TTMLParser] Normal parse failed, attempting sanitized parse", e)
+                Timber.w("[TTMLParser] Normal parse failed, attempting sanitized parse $e")
             // 如果失败，尝试清理格式后重试
             try {
                 val sanitized = sanitizeTTMLContent(content)
                 tryParse(sanitized)
             } catch (e2: Exception) {
-                Timber.e("[TTMLParser] Both normal and sanitized parse failed", e2)
+                Timber.e("[TTMLParser] Both normal and sanitized parse failed $e2")
                 // 完全失败时返回空列表，不会崩溃
                 UnifiedLyrics(
                     metadata = LyricsMetadata(title = "Unknown", artist = "Unknown"),
-                    lines = emptyList()
+                    lines = emptyList(),
+                    rawContent = content,
+                    format = "ttml"
                 )
             }
         }
     }
-    
-    /**
-     * 旧版兼容方法，仅返回歌词行（不推荐在新代码中使用）
-     */
-    @Deprecated("Use parse(content): UnifiedLyrics instead")
-    fun parseLegacy(content: String): List<LyricLine> {
-        return parse(content).lines
-    }
-    
+
     private data class ParsedParagraph(
         val mainLine: LyricLine?,
         val bgLine: LyricLine?,
@@ -134,7 +131,7 @@ object TTMLParser {
                 parseParagraph(pElement)?.let { parsedParagraphs.add(it) }
             }
         } catch (e: Exception) {
-            Timber.e("[TTMLParser] Failed to parse TTML document structure", e)
+                Timber.e("[TTMLParser] Failed to parse TTML document structure $e")
             return UnifiedLyrics(
                 metadata = LyricsMetadata(title = "Unknown", artist = "Unknown"),
                 lines = emptyList()
@@ -211,7 +208,7 @@ object TTMLParser {
                 rawXmlMetadata = rawXmlMetadata
             )
         } catch (e: Exception) {
-            Timber.w("[TTMLParser] Failed to parse metadata", e)
+                Timber.w("[TTMLParser] Failed to parse metadata $e")
             LyricsMetadata(title = "Unknown", artist = "Unknown")
         }
         
@@ -257,7 +254,7 @@ object TTMLParser {
             val mainLine = if (mainText.isNotEmpty()) {
                 val mainStart = buffer.mainWords.firstOrNull()?.startTime ?: startTime
                 val mainEndRaw = buffer.mainWords.lastOrNull()?.endTime ?: endTime
-                val mainEnd = maxOf(mainStart, mainEndRaw)
+                val mainEnd = maxOf(mainStart + 1, mainEndRaw) // 确保持续时间至少为 1ms
                 LyricLine(
                     startTime = mainStart,
                     endTime = mainEnd,
@@ -274,7 +271,7 @@ object TTMLParser {
             val bgLine = if (bgText.isNotEmpty()) {
                 val bgStart = buffer.bgWords.firstOrNull()?.startTime ?: startTime
                 val bgEndRaw = buffer.bgWords.lastOrNull()?.endTime ?: endTime
-                val bgEnd = maxOf(bgStart, bgEndRaw)
+                val bgEnd = maxOf(bgStart + 1, bgEndRaw) // 确保持续时间至少为 1ms
                 Timber.d("[BG-LYRICS-DEBUG] Creating BG line: text='$bgText' translation='${buffer.bgTranslation}' roman='${buffer.bgTransliteration}'")
                 LyricLine(
                     startTime = bgStart,
@@ -296,7 +293,7 @@ object TTMLParser {
                 ParsedParagraph(mainLine = mainLine, bgLine = bgLine, agent = agent)
             }
         } catch (e: Exception) {
-            Timber.w("[TTMLParser] Failed to parse paragraph", e)
+                Timber.w("[TTMLParser] Failed to parse paragraph $e")
             null
         }
     }
@@ -383,7 +380,7 @@ object TTMLParser {
                                     LyricWord(
                                         word = cleanBackgroundText(bgText),
                                         startTime = begin,
-                                        endTime = end
+                                        endTime = maxOf(begin + 1, end) // 确保持续时间至少为 1ms
                                     )
                                 )
                             }
@@ -400,7 +397,7 @@ object TTMLParser {
                                     val word = LyricWord(
                                         word = if (inBackground) cleanBackgroundText(text) else text,
                                         startTime = begin,
-                                        endTime = end
+                                        endTime = maxOf(begin + 1, end) // 确保持续时间至少为 1ms，防止 JS 侧计算 NaN
                                     )
                                     if (inBackground) {
                                         buffer.bgWords.add(word)
@@ -647,7 +644,7 @@ object TTMLParser {
             Timber.d("[SongStructure] 📊 Metadata parsing complete: total ${structures.size} structures")
                     
         } catch (e: Exception) {
-            Timber.e("[SongStructure] ❌ Error parsing metadata", e)
+                Timber.e("[SongStructure] ❌ Error parsing metadata $e")
         }
                 
         return structures
@@ -776,7 +773,7 @@ object TTMLParser {
         val totalSeconds = millis / 1000
         val minutes = totalSeconds / 60
         val seconds = totalSeconds % 60
-        return String.format("%d:%02d", minutes, seconds)
+        return String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
     }
         
     /**
@@ -819,7 +816,7 @@ object TTMLParser {
 
             (hours * 3600 + minutes * 60 + seconds) * 1000 + millis
         } catch (e: Exception) {
-            Timber.e("[TTMLParser] Failed to parse time string: $timeStr", e)
+            Timber.e("[TTMLParser] Failed to parse time string: $timeStr $e")
             0L
         }
     }

@@ -112,7 +112,7 @@ object KrcParser {
                     auxLineIndex += 1
                 }
             } catch (e: Exception) {
-                Timber.e("[KrcParser] Failed to parse KRC line $index: $trimmed", e)
+                Timber.e("[KrcParser] Failed to parse KRC line $index: $trimmed $e")
             }
         }
         
@@ -158,7 +158,7 @@ object KrcParser {
                 romanizations = romanizations
             )
         } catch (e: Exception) {
-            Timber.w("[KrcParser] Failed to parse KRC [language] auxiliary data", e)
+            Timber.w("[KrcParser] Failed to parse KRC [language] auxiliary data $e")
             KrcAuxiliaryData()
         }
     }
@@ -187,7 +187,7 @@ object KrcParser {
             
             // 绝对时间 = 行起始时间 + 音节偏移时间
             val syllableStartMs = lineStartMs + offsetMs
-            val syllableEndMs = syllableStartMs + durationMs
+            val syllableEndMs = syllableStartMs + maxOf(1L, durationMs) // 确保持续时间至少为 1ms，防止 JS 侧计算 NaN
             
             // KRC 音节文本里的空格是可见语义（尤其英文单词间分隔），不能 trim 掉。
             val normalizedWordText = normalizeWordText(text, words)
@@ -216,7 +216,7 @@ object KrcParser {
                     LyricWord(
                         word = plainText,
                         startTime = lineStartMs,
-                        endTime = lineEndMs
+                        endTime = maxOf(lineStartMs + 1, lineEndMs) // 确保持续时间至少为 1ms
                     )
                 )
             }
@@ -226,7 +226,7 @@ object KrcParser {
 
         return LyricLine(
             startTime = lineStartMs,
-            endTime = lineEndMs,
+            endTime = maxOf(lineStartMs + 1, lineEndMs), // 确保持续时间至少为 1ms
             // KRC 行文本保持原始可见空格，不做 trim。
             text = fullText,
             words = words
@@ -251,25 +251,5 @@ object KrcParser {
 
         return rawText
     }
-    
-    /**
-     * 检查是否是元数据行
-     * @deprecated 使用 MetadataStripper.isMetadataLine() 代替
-     */
-    @Deprecated("Use MetadataStripper.isMetadataLine()", ReplaceWith("MetadataStripper.isMetadataLine(line)"))
-    private fun isMetadataLine(line: String): Boolean {
-        // 保留旧实现以确保向后兼容
-        return line.startsWith("[language:") ||
-               line.startsWith("[id:") ||
-               line.startsWith("[hash:") ||
-               line.startsWith("[total:") ||
-               line.startsWith("[qq:") ||
-               line.startsWith("[offset:") ||
-               line.startsWith("[sign:") ||
-               line.startsWith("[ti:") ||
-               line.startsWith("[ar:") ||
-               line.startsWith("[al:") ||
-               line.startsWith("[by:") ||
-               line.startsWith("[kana:") // phonetic metadata often appears in decrypted KRC
-    }
+
 }

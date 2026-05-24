@@ -30,109 +30,123 @@ plugins {
     kotlin("plugin.compose")
 }
 
-//abstract class BuildFrontendTask @Inject constructor(
-//    private val execOperations: ExecOperations
-//) : DefaultTask() {
-//
-//    // ==================== 任务输入输出配置 ====================
-//
-//    /**
-//     * 前端源代码目录（增量构建的输入）
-//     *
-//     * Gradle 会监控这个目录的变化，只有文件变化时才执行任务
-//     * PathSensitivity.RELATIVE: 只关心相对路径，不关心绝对路径
-//     */
-//    @get:InputDirectory
-//    @get:PathSensitive(PathSensitivity.RELATIVE)
-//    abstract val frontendSrcDir: DirectoryProperty
-//
-//    /**
-//     * 输出目录（用于 up-to-date 检查）
-//     *
-//     * Gradle 会比较输出目录的时间戳，判断是否需要重新执行任务
-//     */
-//    @get:OutputDirectory
-//    abstract val outputDir: DirectoryProperty
-//
-//    /**
-//     * 根项目目录（内部使用，不参与 up-to-date 检查）
-//     *
-//     * @Internal: 标记为内部属性，不影响任务状态
-//     */
-//    @get:Internal
-//    abstract val rootProjectDir: DirectoryProperty
-//
-//    init {
-//        // 任务分组：在 Gradle 任务列表中归类到 "frontend" 组
-//        group = "frontend"
-//        // 任务描述：在 gradle tasks 命令中显示的说明
-//        description = "Build frontend assets using pnpm"
-//    }
-//
-//    /**
-//     * 执行前端构建的核心逻辑
-//     *
-//     * 这个函数会在每次执行 buildFrontend 任务时被调用。
-//     * 它会根据操作系统选择合适的构建命令。
-//     */
-//    @TaskAction
-//    fun buildFrontend() {
-//        // Step 1: 获取项目根目录和前端目录路径
-//        val rootDir = rootProjectDir.get().asFile
-//        val frontendDir = File(rootDir, "frontend")
-//        val scriptsDir = File(rootDir, "scripts")
-//        // 检测操作系统（Windows 需要特殊处理）
-//        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
-//
-//        // Step 2: 检查前端目录是否存在，不存在则跳过构建
-//        if (!frontendDir.exists()) {
-//            logger.warn("Frontend directory not found, skipping build")
-//            return
-//        }
-//
-//        logger.info("Building frontend in ${frontendDir.absolutePath}")
-//
-//        // Step 3: 根据操作系统选择构建命令
-//        val command = if (isWindows) {
-//            // Windows: 使用 PowerShell 执行构建脚本
-//            listOf("powershell", "-ExecutionPolicy", "Bypass", "-File",
-//                File(scriptsDir, "build-android.ps1").absolutePath)
-//        } else {
-//            // Linux/macOS: 直接使用 pnpm 命令
-//            listOf("pnpm", "run", "build:android")
-//        }
-//
-//        // Step 4: 执行构建命令
-//        execOperations.exec {
-//            // 设置工作目录为 frontend 目录
-//            workingDir(frontendDir)
-//            // 执行命令
-//            commandLine(command)
-//        }
-//    }
-//}
-//
-//// ============================================================================
-//// 注册并配置 buildFrontend 任务
-//// ============================================================================
-//val buildFrontendProvider = tasks.register("buildFrontend", BuildFrontendTask::class.java) {
-//    // 只设置前端源码目录为输入 - 这是我们要监控变化的内容
-//    frontendSrcDir.set(File(rootProject.projectDir, "frontend/src"))
-//
-//    // 设置输出目录用于 up-to-date 检查
-//    outputDir.set(File(rootProject.projectDir, "app/src/main/assets/amll"))
-//
-//    // 设置根项目目录供任务执行时使用
-//    rootProjectDir.set(rootProject.layout.projectDirectory)
-//}
-//
-//// ============================================================================
-//// 构建依赖关系：在 preBuild 之前先执行 buildFrontend
-//// ============================================================================
-//// preBuild 是 Android 构建的标准前置任务，在它之前先构建前端资源
-//tasks.named("preBuild") {
-//    dependsOn(buildFrontendProvider)
-//}
+abstract class BuildFrontendTask @Inject constructor(
+    private val execOperations: ExecOperations
+) : DefaultTask() {
+
+    // ==================== 任务输入输出配置 ====================
+
+    /**
+     * 前端源代码目录（增量构建的输入）
+     *
+     * Gradle 会监控这个目录的变化，只有文件变化时才执行任务
+     * PathSensitivity.RELATIVE: 只关心相对路径，不关心绝对路径
+     */
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val frontendSrcDir: DirectoryProperty
+
+    /**
+     * 输出目录（用于 up-to-date 检查）
+     *
+     * Gradle 会比较输出目录的时间戳，判断是否需要重新执行任务
+     */
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    /**
+     * 根项目目录（内部使用，不参与 up-to-date 检查）
+     *
+     * @Internal: 标记为内部属性，不影响任务状态
+     */
+    @get:Internal
+    abstract val rootProjectDir: DirectoryProperty
+
+    init {
+        // 任务分组：在 Gradle 任务列表中归类到 "frontend" 组
+        group = "frontend"
+        // 任务描述：在 gradle tasks 命令中显示的说明
+        description = "Build frontend assets using npm"
+    }
+
+    /**
+     * 执行前端构建的核心逻辑
+     *
+     * 这个函数会在每次执行 buildFrontend 任务时被调用。
+     * 它会根据操作系统选择合适的构建命令。
+     */
+    @TaskAction
+    fun buildFrontend() {
+        val rootDir = rootProjectDir.get().asFile
+        val frontendDir = File(rootDir, "frontend")
+        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+
+        if (!frontendDir.exists()) {
+            logger.warn("Frontend directory not found, skipping build")
+            return
+        }
+
+        // Step 1: 执行 npm install (确保依赖存在)
+        val installCommand = if (isWindows) listOf("cmd", "/c", "npm install") else listOf("npm", "install")
+        execOperations.exec {
+            workingDir(frontendDir)
+            commandLine(installCommand)
+            // 忽略安装错误，有时某些可选依赖失败不影响构建
+            isIgnoreExitValue = true
+        }
+
+        // Step 2: 执行构建命令
+        logger.info("Building frontend in ${frontendDir.absolutePath}")
+        val buildCommand = if (isWindows) listOf("cmd", "/c", "npm run build:android") else listOf("npm", "run", "build:android")
+
+        execOperations.exec {
+            workingDir(frontendDir)
+            commandLine(buildCommand)
+        }
+
+        // Step 3: 将构建产物从 frontend/dist 同步到 app/src/main/assets/amll
+        val distDir = File(frontendDir, "dist")
+        val assetsDir = outputDir.get().asFile
+
+        if (distDir.exists()) {
+            assetsDir.deleteRecursively()
+            assetsDir.mkdirs()
+            distDir.copyRecursively(assetsDir, overwrite = true)
+            
+            // 同时复制 index.html (Vite lib 模式不会自动复制它)
+            val sourceIndex = File(frontendDir, "index.html")
+            if (sourceIndex.exists()) {
+                sourceIndex.copyTo(File(assetsDir, "index.html"), overwrite = true)
+            }
+
+            logger.info("Successfully synced frontend build to assets")
+        } else {
+            throw GradleException("Frontend build failed: dist directory not found at ${distDir.absolutePath}")
+        }
+    }
+}
+
+// ============================================================================
+// 注册并配置 buildFrontend 任务
+// ============================================================================
+val buildFrontendProvider = tasks.register("buildFrontend", BuildFrontendTask::class.java) {
+    // 只设置前端源码目录为输入 - 这是我们要监控变化的内容
+    frontendSrcDir.set(File(rootProject.projectDir, "frontend/src"))
+
+    // 设置输出目录用于 up-to-date 检查
+    outputDir.set(File(rootProject.projectDir, "app/src/main/assets/amll"))
+
+    // 设置根项目目录供任务执行时使用
+    rootProjectDir.set(rootProject.layout.projectDirectory)
+}
+
+// ============================================================================
+// 构建依赖关系：在 preBuild 之前先执行 buildFrontend
+// ============================================================================
+// preBuild 是 Android 构建的标准前置任务，在它之前先构建前端资源
+tasks.named("preBuild") {
+    dependsOn(buildFrontendProvider)
+}
 
 
 

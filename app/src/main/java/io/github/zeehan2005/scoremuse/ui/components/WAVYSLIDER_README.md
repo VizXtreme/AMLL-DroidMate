@@ -96,7 +96,6 @@ fun SliderWithCallbackExample() {
 ### WavySlider
 
 ```kotlin
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun WavySlider(
     value: Float,

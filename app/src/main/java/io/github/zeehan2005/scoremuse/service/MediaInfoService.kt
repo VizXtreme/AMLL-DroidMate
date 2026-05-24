@@ -41,7 +41,7 @@ class MediaInfoService(private val context: Context) {
     private val mediaSessionManager: MediaSessionManager? = try {
         context.getSystemService(Context.MEDIA_SESSION_SERVICE) as? MediaSessionManager
     } catch (e: Exception) {
-        Timber.e("[MediaInfoService] Failed to get MediaSessionManager", e)
+        Timber.e("[MediaInfoService] Failed to get MediaSessionManager $e")
         null
     }
 
@@ -151,10 +151,6 @@ class MediaInfoService(private val context: Context) {
                     if (shouldUpdateBasicInfo(oldMusic, updatedMusic)) {
                         _nowPlayingMusic.value = updatedMusic
                         finalAlbumArtUri != currentAlbumArtUri
-                    } else {
-                        if (shouldLogVerbose()) {
-
-                        }
                     }
                 }
             } else {
@@ -167,7 +163,7 @@ class MediaInfoService(private val context: Context) {
             Timber.e("[MediaInfoService] Permission denied to access media sessions")
             updateMediaInfoViaContentResolver()
         } catch (e: Exception) {
-            Timber.e("[MediaInfoService] Error updating media info", e)
+            Timber.e("[MediaInfoService] Error updating media info $e")
         }
     }
 
@@ -200,7 +196,7 @@ class MediaInfoService(private val context: Context) {
             // 实际应用可能需要使用 MediaStore 或其他方式
             Timber.i("[MediaInfoService] Attempting to get media info via ContentResolver")
         } catch (e: Exception) {
-            Timber.e("[MediaInfoService] Error getting media info via ContentResolver", e)
+            Timber.e("[MediaInfoService] Error getting media info via ContentResolver $e")
         }
     }
 
@@ -229,7 +225,7 @@ class MediaInfoService(private val context: Context) {
                 cacheKey = cacheKey
             )
         } catch (e: Exception) {
-            Timber.e("[AlbumArtExtractor] Failed to process album art bitmap", e)
+            Timber.e("[AlbumArtExtractor] Failed to process album art bitmap $e")
             null
         }
     }
@@ -270,7 +266,7 @@ class MediaInfoService(private val context: Context) {
                 cacheKey = cacheKey
             )
         } catch (e: Exception) {
-            Timber.e("[AlbumArtExtractor] Failed to process album art", e)
+            Timber.e("[AlbumArtExtractor] Failed to process album art $e")
             null
         }
     }
@@ -298,7 +294,7 @@ class MediaInfoService(private val context: Context) {
             }
 
             // 缩放图片至最大 512x512，减少内存占用
-            val scaledBitmap = resizeBitmap(bitmap, 512)
+            val scaledBitmap = resizeBitmap(bitmap)
 
             FileOutputStream(file).use { out ->
                 // 压缩质量从 90 降至 75，显著减少文件大小
@@ -311,7 +307,7 @@ class MediaInfoService(private val context: Context) {
             albumArtCache[cacheKey] = uri
             uri
         } catch (e: Exception) {
-            Timber.e("[AlbumArtExtractor] Failed to save album art to cache", e)
+            Timber.e("[AlbumArtExtractor] Failed to save album art to cache $e")
             null
         }
     }
@@ -319,12 +315,12 @@ class MediaInfoService(private val context: Context) {
     /**
      * 缩放 Bitmap 到目标尺寸
      */
-    private fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
-        if (bitmap.width <= maxSize && bitmap.height <= maxSize) {
+    private fun resizeBitmap(bitmap: Bitmap): Bitmap {
+        if (bitmap.width <= 512 && bitmap.height <= 512) {
             return bitmap
         }
 
-        val ratio = minOf(maxSize.toFloat() / bitmap.width, maxSize.toFloat() / bitmap.height)
+        val ratio = minOf(512.toFloat() / bitmap.width, 512.toFloat() / bitmap.height)
         val newWidth = (bitmap.width * ratio).toInt()
         val newHeight = (bitmap.height * ratio).toInt()
 
@@ -388,19 +384,7 @@ class MediaInfoService(private val context: Context) {
         currentController?.transportControls?.rewind()
         Timber.i("[PlaybackControl] Rewind command sent") 
     }
-    
-    fun setVolume(volume: Double) {
-        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
-        val maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
-        val targetVolume = (volume * maxVolume).toInt().coerceIn(0, maxVolume)
-        audioManager.setStreamVolume(
-            android.media.AudioManager.STREAM_MUSIC,
-            targetVolume,
-            0  // 不显示音量 UI
-        )
-        Timber.i("[PlaybackControl] Volume set to: $volume (system level: $targetVolume/$maxVolume)")
-    }
-    
+
     /**
      * 判断是否应该发送 verbose 日志（最多每 2 秒一次）
      */

@@ -66,7 +66,7 @@ object EnhancedLrcParser {
             try {
                 parseSingleLine(trimmed, contentLines, index)?.let { lines.add(it) }
             } catch (e: Exception) {    
-                Timber.e("[EnhancedLrcParser] Failed to parse Enhanced LRC line $index: $trimmed", e)
+                Timber.e("[EnhancedLrcParser] Failed to parse Enhanced LRC line $index: $trimmed $e")
             }
         }
         
@@ -152,21 +152,21 @@ object EnhancedLrcParser {
         for (i in words.indices) {
             if (i < words.size - 1) {
                 // 当前词的结束时间是下一个词的开始时间
-                words[i] = words[i].copy(endTime = words[i + 1].startTime)
+                words[i] = words[i].copy(endTime = maxOf(words[i].startTime + 1, words[i + 1].startTime))
             } else {
                 // 最后一个词的结束时间
                 val nextLineStartMs = findNextLineStartTime(allLines, lineNumber)
                 words[i] = words[i].copy(
-                    endTime = nextLineStartMs ?: (words[i].startTime + 1000)
+                    endTime = maxOf(words[i].startTime + 1, nextLineStartMs ?: (words[i].startTime + 1000))
                 )
             }
         }
         
-        val lineEndMs = words.lastOrNull()?.startTime ?: (lineStartMs + 2000)
+        val lineEndMs = words.lastOrNull()?.endTime ?: (lineStartMs + 2000)
         
         return LyricLine(
             startTime = lineStartMs,
-            endTime = lineEndMs,
+            endTime = maxOf(lineStartMs + 1, lineEndMs),
             text = fullText.trim(),
             words = words
         )

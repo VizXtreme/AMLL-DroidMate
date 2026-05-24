@@ -20,7 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -85,7 +84,6 @@ class LyricOffsetSettingsActivity : BaseComposeActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
     val context = LocalContext.current
@@ -148,7 +146,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
     Scaffold(
-        modifier = Modifier.Companion.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
                 title = { Text("歌词时间轴偏移") },
@@ -193,7 +191,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.Companion
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -209,7 +207,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                     Column(
-                        modifier = Modifier.Companion.padding(12.dp),
+                        modifier = Modifier.padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
@@ -250,7 +248,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                     Column(
-                        modifier = Modifier.Companion.padding(12.dp),
+                        modifier = Modifier.padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
@@ -285,7 +283,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
             }
 
             item {
-                Spacer(modifier = Modifier.Companion.height(40.dp))
+                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }
@@ -300,26 +298,26 @@ private fun CapsuleOffsetControl(
     onSave: () -> Unit
 ) {
     Card(
-        modifier = Modifier.Companion.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = RoundedCornerShape(50)
     ) {
         Row(
-            modifier = Modifier.Companion
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Companion.CenterVertically
+            verticalAlignment = Alignment.CenterVertically
         ) {
             // Left arrow button
             Box(
-                modifier = Modifier.Companion
+                modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
             ) {
                 IconButton(
                     onClick = onDecrease,
-                    modifier = Modifier.Companion.align(Alignment.Companion.CenterStart)
+                    modifier = Modifier.align(Alignment.CenterStart)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -333,9 +331,9 @@ private fun CapsuleOffsetControl(
             OutlinedTextField(
                 value = offsetValue,
                 onValueChange = onOffsetChange,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Companion.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
-                modifier = Modifier.Companion
+                modifier = Modifier
                     .weight(2f)
                     .padding(horizontal = 4.dp),
                 placeholder = { Text("0") },
@@ -347,16 +345,16 @@ private fun CapsuleOffsetControl(
 
             // Right arrow button (flipped left arrow)
             Box(
-                modifier = Modifier.Companion
+                modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
             ) {
                 IconButton(
                     onClick = onIncrease,
-                    modifier = Modifier.Companion.align(Alignment.Companion.CenterEnd)
+                    modifier = Modifier.align(Alignment.CenterEnd)
                 ) {
                     Icon(
-                        modifier = Modifier.Companion.graphicsLayer {
+                        modifier = Modifier.graphicsLayer {
                             scaleX = -1f // Flip horizontally
                         },
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -371,7 +369,7 @@ private fun CapsuleOffsetControl(
     // Save button below the capsule
     Button(
         onClick = onSave,
-        modifier = Modifier.Companion
+        modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp)
     ) {

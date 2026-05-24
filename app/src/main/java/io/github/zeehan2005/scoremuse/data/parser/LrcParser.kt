@@ -116,7 +116,8 @@ object LrcParser {
             val group = sorted.subList(i, groupEndIndex)
             
             // 估算结束时间：使用下一行的开始时间
-            val endMsOriginal = sorted.getOrNull(groupEndIndex)?.timestampMs?.coerceAtLeast(startMsOriginal)
+            // 确保持续时间至少为 1ms，防止 JS 侧计算 NaN
+            val endMsOriginal = sorted.getOrNull(groupEndIndex)?.timestampMs?.let { maxOf(startMsOriginal + 1, it) }
                 ?: (startMsOriginal + DEFAULT_LAST_LRC_LINE_DURATION_MS)  // 最后一行使用默认持续时间
             val endMs = endMsOriginal + offsetMs
 

@@ -1,6 +1,5 @@
 package io.github.zeehan2005.scoremuse.data.parser.global
 
-import dev.amll.droidmate.data.converter.TTMLConverter
 import io.github.zeehan2005.scoremuse.data.parser.EnhancedLrcParser
 import io.github.zeehan2005.scoremuse.data.parser.KrcParser
 import io.github.zeehan2005.scoremuse.data.parser.LrcParser
@@ -166,50 +165,50 @@ object UnifiedLyricsParser {
                     Timber.d("[UnifiedLyricsParser] LRC parsed ${parsed.size} lines")
                     parsed
                 }
-                TTML -> {
-                    // TTML 格式使用专用解析器
-                    Timber.d("[UnifiedLyricsParser] Parsing TTML format")
+                SCOREMUSE_XML, TTML -> {
+                    // TTML 和 ScoreMuse XML 格式使用专用解析器
+                    Timber.d("[UnifiedLyricsParser] Parsing $format format")
                     
                     // 诊断输入内容是否包含歌曲结构标签
                     val hasItunesSongPart = normalizedContent.contains("itunes:songPart") || normalizedContent.contains("itunes:song-part")
                     val hasItunesLabel = normalizedContent.contains("itunes:label")
                     val hasBodyDiv = normalizedContent.contains("<body") && normalizedContent.contains("<div")
                     
-                    Timber.d("[SongStructure] TTML input diagnosis: hasItunesSongPart=$hasItunesSongPart, hasItunesLabel=$hasItunesLabel,BodyDiv=$hasBodyDiv")
-                    Timber.d("[UnifiedLyricsParser] TTML input contains x-bg=${normalizedContent.contains("ttm:role=\"x-bg\"")}, x-translation=${normalizedContent.contains("ttm:role=\"x-translation\"")}, length=${normalizedContent.length}")
+                    Timber.d("[SongStructure] $format input diagnosis: hasItunesSongPart=$hasItunesSongPart, hasItunesLabel=$hasItunesLabel,BodyDiv=$hasBodyDiv")
+                    Timber.d("[UnifiedLyricsParser] $format input contains x-bg=${normalizedContent.contains("ttm:role=\"x-bg\"")}, x-translation=${normalizedContent.contains("ttm:role=\"x-translation\"")}, length=${normalizedContent.length}")
                     
-                    val UnifiedLyrics = TTMLParser.parse(normalizedContent)
+                    val unifiedLyrics = TTMLParser.parse(normalizedContent)
                     
                     // 诊断解析结果
-                    val songStructures = UnifiedLyrics.metadata.songStructures
+                    val songStructures = unifiedLyrics.metadata.songStructures
                     if (!songStructures.isNullOrEmpty()) {
-                        Timber.d("[SongStructure] Parsed ${songStructures.size} structures from TTML metadata")
+                        Timber.d("[SongStructure] Parsed ${songStructures.size} structures from $format metadata")
                         songStructures.forEachIndexed { index, structure ->
                             Timber.d("[SongStructure] [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms")
                         }
                     } else {
-                        Timber.i("[SongStructure] No song structures found in TTML metadata")
+                        Timber.i("[SongStructure] No song structures found in $format metadata")
                         Timber.d("[SongStructure] Input preview: ${normalizedContent.take(500)}...")
                     }
                     
-                    Timber.d("[UnifiedLyricsParser] TTML parsed summary: ${summarizeBgLines(UnifiedLyrics.lines)}")
+                    Timber.d("[UnifiedLyricsParser] $format parsed summary: ${summarizeBgLines(unifiedLyrics.lines)}")
                     
                     // TTML 格式的歌曲结构已经在 TTMLParser 中解析完成，直接返回完整的 UnifiedLyrics 对象
                     // 不需要再走下面的统一处理流程
                     return if (processMetadata) {
                         // 如果开启元数据处理，检查是否有歌曲结构
-                        val structures = UnifiedLyrics.metadata.songStructures
+                        val structures = unifiedLyrics.metadata.songStructures
                         if (!structures.isNullOrEmpty()) {
-                            Timber.d("[SongStructure] Parsed ${structures.size} structures from TTML metadata")
+                            Timber.d("[SongStructure] Parsed ${structures.size} structures from $format metadata")
                         } else {
                             Timber.i("[SongStructure] No structures found with processMetadata=true, fallback will be triggered")
                         }
                         // 直接使用 TTMLParser 返回的完整对象（包含元数据和歌曲结构）
-                        UnifiedLyrics
+                        unifiedLyrics
                     } else {
                         // 如果关闭元数据处理，返回不带结构的对象
-                        UnifiedLyrics.copy(
-                            metadata = UnifiedLyrics.metadata.copy(songStructures = null)
+                        unifiedLyrics.copy(
+                            metadata = unifiedLyrics.metadata.copy(songStructures = null)
                         )
                     }
                 }
@@ -219,8 +218,6 @@ object UnifiedLyricsParser {
                     Timber.d("[UnifiedLyricsParser] Plain text parsed ${parsed.size} lines")
                     parsed
                 }
-
-                SCOREMUSE_XML -> TODO()
             }
             
             if (lines.isEmpty()) {
@@ -264,10 +261,12 @@ object UnifiedLyricsParser {
                     source = "ScoreMuse (${format.displayName})",
                     songStructures = songStructures
                 ),
-                lines = sortedLines
+                lines = sortedLines,
+                rawContent = normalizedContent,
+                format = format.name.lowercase()
             )
         } catch (e: Exception) {
-            Timber.e("[UnifiedLyricsParser] Failed to parse lyrics", e)
+                Timber.e("[UnifiedLyricsParser] Failed to parse lyrics $e")
             null
         }
     }

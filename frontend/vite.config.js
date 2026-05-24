@@ -12,13 +12,18 @@
  */
 import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
+import wasm from "vite-plugin-wasm";
+import topLevelAwait from "vite-plugin-top-level-await";
 
 // 使用 defineConfig 定义配置，获得更好的 TypeScript 类型提示
 export default defineConfig({
   // ==================== 插件配置 ====================
   // 本工程在 frontend/src/main.tsx 使用的是 AMLL core API（无 React 挂载），
   // 因此移除 React 插件可以避免把 React 相关运行时打包进最终 bundle。
-  plugins: [],
+  plugins: [
+    wasm(),
+    topLevelAwait()
+  ],
   // ==================== 基础路径 ====================
   // 设置资源引用的基础路径为相对路径 './'
   // 这样在 Android WebView 中加载时可以正确找到资源
@@ -40,8 +45,7 @@ export default defineConfig({
     // 库模式配置：打包为独立的库文件
     lib: {
       entry: resolve(__dirname, 'src/main.tsx'),  // 入口文件
-      name: 'AMLLBundle',  // 全局变量名（在 HTML 中通过 window.AMLLBundle 访问）
-      formats: ['iife'],  // 输出格式：IIFE（立即执行函数表达式）
+      formats: ['es'],  // 改用 ES 模块格式以支持 Wasm 和 Top-level await
       fileName: () => 'amll.bundle.js',  // 输出文件名（固定为 amll.bundle.js）
     },
     // Ensure CommonJS packages (and local workspace packages) are processed

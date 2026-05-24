@@ -68,7 +68,7 @@ object KugouDecrypter {
             // Step 5: 转换为 UTF-8 字符串
             String(decompressed, Charsets.UTF_8)
         } catch (e: Exception) {
-            Timber.e("[KugouDecrypter] Failed to decrypt KRC lyrics", e)
+            Timber.e("[KugouDecrypter] Failed to decrypt KRC lyrics $e")
             null  // 解密失败返回 null
         }
     }
@@ -88,7 +88,7 @@ object KugouDecrypter {
             val inflater = InflaterInputStream(input)
             inflater.readBytes()
         } catch (e: Exception) {
-            Timber.e("[KugouDecrypter] Failed to decompress", e)
+            Timber.e("[KugouDecrypter] Failed to decompress $e")
             data  // 如果解压失败，返回原数据
         }
     }

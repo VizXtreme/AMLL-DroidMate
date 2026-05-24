@@ -2,48 +2,27 @@
  * AMLL React 前端主入口
  * 
  * 这个文件是嵌入到 Android 应用中的 Web 歌词界面的入口点。
- * 它使用 React 和 @applemusic-like-lyrics 库来渲染华丽的歌词效果。
+ * 它负责 UI 初始化、背景渲染以及与 Android 原生代码的桥接通信。
  * 
  * 主要功能：
- * - 与 Android 原生代码通过 WebView 桥接通信
- * - 接收音乐信息和歌词数据
- * - 渲染逐字高亮的歌词
- * - 支持背景视觉效果（音频可视化）
- * - 处理用户交互（点击、滑动等）
+ * - 初始化 AMLL Core 渲染器
+ * - 处理播放器实例和背景效果
+ * - 暴露全局 API 供 Android 调用
+ * - 处理 UI 补丁和布局适配
  */
-// Switched to core-only implementation (no React)
 import * as AMLLCore from '@applemusic-like-lyrics/core'
 import '@applemusic-like-lyrics/core/style.css'
+import './styles.css'
+import { logToAndroid } from './utils/bridge_utils'
+import {
+  LyricLine,
+  LyricsPayload,
+  processLyricsPayload
+} from './utils/lyricProcessor'
+
 // Ensure core module is accessible on window in all bundling scenarios
 ;(window as any).AMLLCore = AMLLCore
-
-// Android 特定的适配配置
-// 使用透明背景以便与 Android 原生 UI 融合
-
-interface WordEntry { word: string; startTime: number; endTime: number }
-
-interface LyricLine {
-  words: WordEntry[]
-  translatedLyric: string
-  romanLyric: string
-  startTime: number
-  endTime: number
-  isBG: boolean
-  isDuet: boolean
-}
-
-interface LyricsPayload {
-  lines?: Array<{
-    words?: Array<{ word?: string; startTime?: number; endTime?: number }>
-    text?: string
-    translatedLyric?: string
-    romanLyric?: string
-    startTime?: number
-    endTime?: number
-    isBG?: boolean
-    isDuet?: boolean
-  }>
-}
+console.log('[AMLL] core assigned to window.AMLLCore')
 
 let playerInstance: any = null
 let backgroundRender: any = null
@@ -52,13 +31,6 @@ let albumArtRetryCount = 0
 const MAX_ALBUM_ART_RETRIES = 3
 
 let pendingLyricOptions: any = {}
-
-let enableSpringValue = true
-let enableScaleValue = true
-let enableBlurValue = true
-let hidePassedLinesValue = false
-let wordFadeWidthValue = 0.5
-let fpsValue = 60
 
 declare global {
   interface Window {
@@ -87,74 +59,9 @@ declare global {
 
 /**
  * 应用 AMLL 库的补丁
- *
- * 由于 AMLL 库在某些情况下存在 mask-image 相关的问题，
- * 这个函数会在页面加载后立即应用 CSS 补丁，确保渐变效果正常显示。
- *
- * 主要修复：
- * - 为 CSS 变量设置安全默认值
- * - 防止 width 验证问题
- * - 确保蒙版效果正常工作
  */
 function applyAMLLPatch() {
-  logToAndroid('Applying AMLL patch for generateFadeGradient', 'info')
-
-  // 方法 1：通过 CSS 变量设置安全值
-  const style = document.createElement('style')
-  style.textContent = `
-    /* 确保 mask-image 相关 CSS 变量始终有安全默认值 */
-    :root {
-      --bright-mask-alpha: 1.0;
-      --dark-mask-alpha: 0.2;
-    }
-  `
-  document.head.appendChild(style)
-
-  logToAndroid('AMLL patch applied successfully', 'debug')
-}
-
-
-
-function logToAndroid(message: string, level: string = 'debug') {
-  if (window.Android?.log) {
-    try {
-      window.Android.log(message, level)
-    } catch (e) {
-      console.log(`[ANDROID] ${message}`)
-    }
-  } else {
-    console.log(`[${level.toUpperCase()}] ${message}`)
-  }
-}
-
-function normalizeLyricLines(lines: any[]): LyricLine[] {
-  if (!Array.isArray(lines)) return []
-
-  return lines.map((line) => {
-    const words = line.words?.map((w: any) => ({
-      word: String(w.word ?? ''),
-      startTime: Number(w.startTime ?? line.startTime ?? 0),
-      endTime: Number(w.endTime ?? line.endTime ?? line.startTime ?? 0),
-    })) || []
-
-    if (words.length === 0 && line.text) {
-      words.push({
-        word: line.text,
-        startTime: Number(line.startTime ?? 0),
-        endTime: Number(line.endTime ?? line.startTime ?? 0),
-      })
-    }
-
-    return {
-      words,
-      translatedLyric: String(line.translatedLyric ?? ''),
-      romanLyric: String(line.romanLyric ?? ''),
-      startTime: Number(line.startTime ?? 0),
-      endTime: Number(line.endTime ?? 0),
-      isBG: !!line.isBG,
-      isDuet: !!line.isDuet,
-    }
-  })
+  logToAndroid('AMLL CSS patch handled via styles.css', 'info')
 }
 
 function attachElementToRoot(root: HTMLElement, el: HTMLElement, zIndex: string) {
@@ -196,9 +103,6 @@ function createBackgroundRenderer(core: any, root: HTMLElement) {
   return null
 }
 
-// Core-based non-React application
-
-const PLAYER_BACKGROUND = 'transparent'
 const demoAlbumArt = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJyZ2JhKDAsMCwwLDAuMSkiLz48L3N2Zz4='
 
 let currentTime = 0
@@ -215,7 +119,6 @@ function attachCoreInstances(container: HTMLElement) {
       return
     }
 
-    // Try common export names for DOM lyric player
     const DomLyricPlayer = Core.DomLyricPlayer || Core.DOMLyricPlayer || Core.DomLyricPlayerClass || Core.LyricPlayer
     if (DomLyricPlayer) {
       try {
@@ -230,7 +133,6 @@ function attachCoreInstances(container: HTMLElement) {
 
     backgroundRender = createBackgroundRenderer(Core, container)
 
-    // Expose __amll references
     window.__amll = window.__amll || {}
     window.__amll.player = playerInstance
     window.__amll.backgroundRender = backgroundRender
@@ -240,12 +142,7 @@ function attachCoreInstances(container: HTMLElement) {
 }
 
 /**
- * Debug / fallback renderer
- *
- * When the bundled AMLL core does not create visible DOM nodes (for example the
- * renderer is canvas-based or failed to instantiate), this helper will create
- * a lightweight textual representation under #app so Chrome/WebTools can
- * inspect the lyrics during development and debugging.
+ * 调试 / 备用渲染器
  */
 function renderFallbackLyrics(root: HTMLElement | null, lines: LyricLine[]) {
   try {
@@ -254,7 +151,6 @@ function renderFallbackLyrics(root: HTMLElement | null, lines: LyricLine[]) {
     if (!container) {
       container = document.createElement('div')
       container.id = 'amll-debug-lyrics'
-      // keep pointer-events none so it won't intercept touches in production
       container.style.pointerEvents = 'none'
       container.style.position = 'absolute'
       container.style.left = '0'
@@ -264,7 +160,6 @@ function renderFallbackLyrics(root: HTMLElement | null, lines: LyricLine[]) {
       root.appendChild(container)
     }
 
-    // Clear and render simple lines
     container.innerHTML = ''
     lines.forEach((line, idx) => {
       const el = document.createElement('div')
@@ -330,10 +225,6 @@ function forceRebuildLyricsDom(reason: string = 'manual refresh') {
   }
 }
 
-// Initialize app when DOM is ready. Use explicit readiness check so that
-// if the bundle is executed after DOMContentLoaded (common in WebView / local
-// file loads), initialization still runs — otherwise #app may never get
-// created/mounted and look empty in DevTools.
 function initAMLL() {
   try {
     document.documentElement.style.background = 'transparent'
@@ -352,27 +243,15 @@ function initAMLL() {
 
     attachCoreInstances(root as HTMLElement)
 
-    // Fallback: if the core created a DOM element for the player but the
-    // element is not attached into our `root` (some renderers create an
-    // element but don't append it), append it and give it safe sizing so it
-    // becomes visible in WebView / DevTools. This helps when the core
-    // renderer is DOM-based but uses different attachment semantics.
     try {
       const p = (window.__amll && window.__amll.player) || playerInstance
       const el = p?.element || p?.rootElement || null
       if (el && el instanceof HTMLElement) {
         if (el.parentElement !== root) {
-          try {
-            // Make sure element has reasonable layout rules so it isn't 0x0
-            el.style.position = el.style.position || 'relative'
-            el.style.width = el.style.width || '100%'
-            el.style.height = el.style.height || '100%'
-            // Ensure it's appended to our root so DevTools shows content
-            root.appendChild(el)
-            logToAndroid('Appended player.element to #app as fallback', 'debug')
-          } catch (e) {
-            logToAndroid(`Failed to append player.element fallback: ${(e as Error).message}`, 'error')
-          }
+          el.style.position = el.style.position || 'relative'
+          el.style.width = el.style.width || '100%'
+          el.style.height = el.style.height || '100%'
+          root.appendChild(el)
         }
       }
     } catch (e) {
@@ -391,24 +270,20 @@ function initAMLL() {
   }
 }
 
-// If document is still loading, wait for DOMContentLoaded; otherwise run now.
 if (document.readyState === 'loading') {
   window.addEventListener('DOMContentLoaded', initAMLL)
 } else {
-  // DOM already parsed — schedule init on next tick to match event timing
   setTimeout(initAMLL, 0)
 }
 
-// Global API implementations (mirror previous behavior but call core instance methods when available)
-window.updateLyrics = function (payload: LyricsPayload) {
+// Global API implementations
+window.updateLyrics = async function (payload: LyricsPayload) {
   try {
-    const rawLines = Array.isArray(payload?.lines) ? payload.lines : []
-    const normalized = normalizeLyricLines(rawLines)
+    const normalized = await processLyricsPayload(payload)
     lyricLines = normalized
     logToAndroid(`updateLyrics: ${normalized.length} lines`, 'debug')
 
     if (playerInstance) {
-      // Try common method names
       if (playerInstance.setLyricLines) {
         playerInstance.setLyricLines(normalized)
       } else if (playerInstance.setLyrics) {
@@ -416,19 +291,15 @@ window.updateLyrics = function (payload: LyricsPayload) {
       } else if (playerInstance.updateLyrics) {
         playerInstance.updateLyrics(normalized)
       } else {
-        logToAndroid('playerInstance does not expose setLyricLines/setLyrics/updateLyrics', 'warn')
-        // Render fallback debug DOM so the #app element isn't empty in DevTools
-        const root = document.getElementById('app')
-        renderFallbackLyrics(root, normalized)
+        logToAndroid('playerInstance does not expose setLyricLines', 'warn')
+        renderFallbackLyrics(document.getElementById('app'), normalized)
       }
 
       requestAnimationFrame(() => {
         forceRebuildLyricsDom('updateLyrics')
       })
     } else {
-      // No player instance at all -> render fallback so the #app element isn't empty
-      const root = document.getElementById('app')
-      renderFallbackLyrics(root, normalized)
+      renderFallbackLyrics(document.getElementById('app'), normalized)
     }
   } catch (e) {
     logToAndroid(`updateLyrics error: ${(e as Error).message}`, 'error')
@@ -438,20 +309,14 @@ window.updateLyrics = function (payload: LyricsPayload) {
 window.updateTime = function (timeMs: number) {
   try {
     const t = Number(timeMs)
-    if (hasPlaybackState && !isPlaying) {
-      logToAndroid(`updateTime skipped while paused: ${Math.trunc(t)}`, 'debug')
-      return
-    }
+    if (hasPlaybackState && !isPlaying) return
     currentTime = t
     if (playerInstance) {
       if (playerInstance.setCurrentTime) {
         playerInstance.setCurrentTime(Math.trunc(t), false)
       } else if (playerInstance.seek) {
         playerInstance.seek(Math.trunc(t))
-      } else {
-        logToAndroid('playerInstance has no setCurrentTime/seek', 'debug')
       }
-
       if (typeof playerInstance.update === 'function') {
         playerInstance.update(Math.trunc(t))
       }
@@ -465,7 +330,6 @@ window.updateAlbumArt = async function (uri: string) {
   try {
     const isValidUri = uri && typeof uri === 'string' && uri.trim().length > 0
     if (!isValidUri) {
-      logToAndroid('updateAlbumArt: invalid uri, using placeholder', 'warn')
       albumUri = demoAlbumArt
       lastAlbumArt = ''
       return
@@ -475,7 +339,6 @@ window.updateAlbumArt = async function (uri: string) {
     if (uri.startsWith('file:')) {
       try {
         const response = await fetch(uri)
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
         const blob = await response.blob()
         const reader = new FileReader()
         finalUri = await new Promise<string>((resolve, reject) => {
@@ -491,10 +354,7 @@ window.updateAlbumArt = async function (uri: string) {
       }
     }
 
-    if (lastAlbumArt === uri) {
-      logToAndroid('Album art unchanged, skipping', 'debug')
-      return
-    }
+    if (lastAlbumArt === uri) return
 
     albumUri = finalUri || demoAlbumArt
     lastAlbumArt = uri
@@ -503,9 +363,8 @@ window.updateAlbumArt = async function (uri: string) {
     if (backgroundRender && backgroundRender.setAlbum) {
       try {
         await backgroundRender.setAlbum(albumUri)
-        logToAndroid('BackgroundRender setAlbum success', 'debug')
       } catch (err) {
-        logToAndroid(`BackgroundRender.setAlbum error: ${(err as Error).message}`, 'error')
+        logToAndroid(`setAlbum error: ${(err as Error).message}`, 'error')
         albumArtRetryCount++
         if (albumArtRetryCount < MAX_ALBUM_ART_RETRIES) {
           setTimeout(() => window.updateAlbumArt?.(uri), 500 * albumArtRetryCount)
@@ -520,7 +379,6 @@ window.updateAlbumArt = async function (uri: string) {
 window.setPaused = function (paused: boolean) {
   isPlaying = !paused
   hasPlaybackState = true
-  logToAndroid(`Playback ${paused ? 'paused' : 'resumed'}`, 'debug')
   try {
     if (!playerInstance) return
     if (paused && typeof playerInstance.pause === 'function') {
@@ -530,45 +388,23 @@ window.setPaused = function (paused: boolean) {
     } else if (!paused && typeof playerInstance.play === 'function') {
       playerInstance.play()
     }
-
-    if (!paused && typeof playerInstance.update === 'function') {
-      playerInstance.update(Math.trunc(currentTime))
-    }
   } catch (e) {
     logToAndroid(`setPaused error: ${(e as Error).message}`, 'error')
   }
 }
 
 window.configureLyricMotion = function (options: any) {
-  logToAndroid(`configureLyricMotion: ${JSON.stringify(options)}`, 'debug')
   pendingLyricOptions = { ...pendingLyricOptions, ...options }
   try {
     if (!playerInstance) return
     const lp = playerInstance
-
-    // Position Spring
-    if (lp.setLinePosYSpringParams) {
-      const posY = options.springPosY || { mass: 0.9, damping: 15.0, stiffness: 90.0 }
-      lp.setLinePosYSpringParams(posY)
-    }
-    if (options.enableSpring !== undefined && lp.setEnableSpring) {
-      lp.setEnableSpring(options.enableSpring)
-    }
-
-    // Scale Spring
-    if (lp.setLineScaleSpringParams) {
-      const scale = options.springScale || { mass: 2.0, damping: 25.0, stiffness: 100.0 }
-      lp.setLineScaleSpringParams(scale)
-    }
-    if (options.enableScale !== undefined && lp.setEnableScale) {
-      lp.setEnableScale(options.enableScale)
-    }
-
+    if (options.springPosY && lp.setLinePosYSpringParams) lp.setLinePosYSpringParams(options.springPosY)
+    if (options.enableSpring !== undefined && lp.setEnableSpring) lp.setEnableSpring(options.enableSpring)
+    if (options.springScale && lp.setLineScaleSpringParams) lp.setLineScaleSpringParams(options.springScale)
+    if (options.enableScale !== undefined && lp.setEnableScale) lp.setEnableScale(options.enableScale)
     if (options.enableBlur !== undefined && lp.setEnableBlur) lp.setEnableBlur(options.enableBlur)
     if (options.hidePassedLines !== undefined && lp.setHidePassedLines) lp.setHidePassedLines(options.hidePassedLines)
     if (options.wordFadeWidth !== undefined && lp.setWordFadeWidth) lp.setWordFadeWidth(options.wordFadeWidth)
-
-    // Trigger layout recalculation to apply changes
     if (lp.calcLayout) lp.calcLayout()
   } catch (e) {
     logToAndroid(`configureLyricMotion error: ${(e as Error).message}`, 'error')
@@ -576,7 +412,6 @@ window.configureLyricMotion = function (options: any) {
 }
 
 window.configureBackgroundEffect = function (options: any) {
-  logToAndroid(`configureBackgroundEffect: ${JSON.stringify(options)}`, 'debug')
   try {
     if (!backgroundRender) return
     if (options.flowSpeed !== undefined && backgroundRender.setFlowSpeed) backgroundRender.setFlowSpeed(options.flowSpeed)
@@ -590,27 +425,19 @@ window.configureBackgroundEffect = function (options: any) {
 }
 
 window.configureLyricBackground = function (options: any) {
-  logToAndroid(`configureLyricBackground: ${JSON.stringify(options)}`, 'debug')
   try {
-    // Handle renderer visibility
     const renderer = options.renderer
     const bgElement = backgroundRender?.getElement?.()
     if (bgElement) {
-      if (renderer === 'css-bg') {
-        bgElement.style.display = 'none'
-      } else {
-        bgElement.style.display = 'block'
-      }
+      bgElement.style.display = (renderer === 'css-bg') ? 'none' : 'block'
     }
 
-    // Apply other settings if applicable
     if (backgroundRender) {
       if (options.fps !== undefined && backgroundRender.setFPS) backgroundRender.setFPS(options.fps)
       if (options.renderScale !== undefined && backgroundRender.setRenderScale) backgroundRender.setRenderScale(options.renderScale)
       if (options.staticMode !== undefined && backgroundRender.setStaticMode) backgroundRender.setStaticMode(options.staticMode)
     }
 
-    // Apply CSS background if provided
     if (renderer === 'css-bg' && options.cssProperty) {
       document.body.style.background = options.cssProperty
     } else {
@@ -630,7 +457,6 @@ window.setLyricPlayerImplementation = function (implementation: string) {
 }
 
 window.setLyricSizePreset = function (preset: string) {
-  logToAndroid(`setLyricSizePreset: ${preset}`, 'debug')
   document.documentElement.style.setProperty('--amll-lp-font-size-preset', preset)
 }
 
@@ -654,6 +480,3 @@ window.setAdvanceLyricDynamicLyricTime = function (enabled: boolean) {
 window.rebuildLyricsDom = function (reason: string = 'manual refresh') {
   return forceRebuildLyricsDom(reason)
 }
-
-
-// End of file - core-only implementation does not export React App

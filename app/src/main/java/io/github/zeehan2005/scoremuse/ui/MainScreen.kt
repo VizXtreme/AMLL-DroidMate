@@ -13,6 +13,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -23,6 +24,10 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.indication
@@ -32,6 +37,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -51,12 +57,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -64,7 +70,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,6 +78,7 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -90,7 +96,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -100,6 +105,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -141,8 +147,6 @@ import timber.log.Timber
 import java.util.Locale
 import dev.amll.droidmate.components.AMLLLyricsView
 import dev.amll.droidmate.components.AMLLRenderMode
-import dev.amll.droidmate.global.AMLLSettings
-import dev.amll.droidmate.ui.settings.WsProtocolSettingsActivity
 import kotlin.collections.isNotEmpty
 import kotlin.collections.map
 import kotlin.jvm.java
@@ -170,7 +174,7 @@ fun getAppNameFromPackage(context: Context, packageName: String?): String? {
         val pm = context.packageManager
         val appInfo = pm.getApplicationInfo(packageName, 0)
         pm.getApplicationLabel(appInfo).toString()
-    } catch (e: PackageManager.NameNotFoundException) {
+    } catch (_: PackageManager.NameNotFoundException) {
         null
     }
 }
@@ -196,10 +200,8 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     else -> null
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
-    Trace.beginSection("Compose:MainScreen")
     val context = LocalContext.current
     val viewModel: MainViewModel = viewModel()
     val nowPlaying by viewModel.nowPlayingMusic.collectAsState()
@@ -210,10 +212,12 @@ fun MainScreen() {
     // derived background color used by both now playing card and dropdown menu
     // always use the darker alpha so light mode matches dark mode
     val cardBg = rippleColor.value.copy(alpha = 0.3f)
+    // 菜单背景：在容器表面色基础上叠加 15% 的主题色，保持不透明的同时跟随主题色变化
+    val menuBg = rippleColor.value.copy(alpha = 0.15f).compositeOver(MaterialTheme.colorScheme.surfaceContainerHigh)
     val lyrics by viewModel.lyrics.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val errorMessage by viewModel.errorMessage.collectAsState()
     val songStructures by viewModel.songStructures.collectAsState()
+    val isSongStructureBarEnabled by viewModel.isSongStructureBarEnabled.collectAsState()
     // 使用 derivedStateOf 优化状态计算，减少不必要的 recomposition
     val currentTime by remember {
         derivedStateOf {
@@ -243,26 +247,11 @@ fun MainScreen() {
                 rippleColor.value = initialPrimary
             }
 
-            // ✅ 当专辑图刷新时，也通过 WebSocket 发送到外部服务
-            if (AMLLSettings.isWebSocketProtocolEnabled(context)) {
-                try {
-                    viewModel.sendAlbumArtToWebSocket(uri)
-                    Timber.d("[MainScreen] Sent album art to WebSocket on refresh: $uri")
-                } catch (e: Exception) {
-                    Timber.e("[MainScreen] Failed to send album art to WebSocket: ${e.message}")
-                }
-            }
         } else {
             rippleColor.value = initialPrimary
         }
     }
     var isLyricsFullscreen by remember { mutableStateOf(false) }
-
-    val fullscreenOverlayAlpha by animateFloatAsState(
-        targetValue = if (isLyricsFullscreen) 1f else 0f,
-        animationSpec = tween(durationMillis = 220),
-        label = "fullscreenOverlayAlpha"
-    )
 
     var webViewReloadKey by remember { mutableIntStateOf(0) }
     var showMenu by remember { mutableStateOf(false) }
@@ -273,8 +262,24 @@ fun MainScreen() {
     var autoUpdateDialogUrl by remember { mutableStateOf<String?>(null) }
     var spinnerVisible by remember { mutableStateOf(false) }
 
+    // 全屏控制状态
+    var controlsVisible by remember { mutableStateOf(true) }
+    var hideControlsJob by remember { mutableStateOf<Job?>(null) }
+    val controlsAlpha by animateFloatAsState(
+        if (controlsVisible && isLyricsFullscreen) 1f else 0f,
+        label = "controlsAlpha"
+    )
+
     // 在 Composable 上下文中创建协程作用域，供回调函数使用
     val scope = rememberCoroutineScope()
+
+    fun resetHideTimer() {
+        hideControlsJob?.cancel()
+        if (isLyricsFullscreen) {
+            controlsVisible = true
+            hideControlsJob = scope.launch { delay(3000L); controlsVisible = false }
+        }
+    }
 
     AdaptiveStatusBarStyle(useDarkIcons = !isLyricsFullscreen && MaterialTheme.colorScheme.background.luminance() > 0.5f)
 
@@ -297,46 +302,7 @@ fun MainScreen() {
         }
     }
 
-    // WebSocket 连接状态 - 使用统一的状态监听器
-    val webSocketClient = remember { com.amll.droidmate.websocket.AMLLWebSocketClient.getInstance() }
-    val isWebSocketConnected by produceState(initialValue = webSocketClient.isConnected) {
-        value = webSocketClient.isConnected
-        
-        // 使用工厂函数创建简单的状态监听器
-        val listener = webSocketClient.createStateListener(
-            onStateChanged = { connected ->
-                value = connected
-            }
-        )
-        
-        webSocketClient.addListener(listener)
-    }
-    var websocketUrl by remember { mutableStateOf(AMLLSettings.getWebSocketProtocolAddress(context)) }
-    val isWebViewEnabled = AMLLSettings.isWebViewEnabled(context)
-    
-    // 监听上次 WebView 启用状态，用于检测变化并自动刷新
-    var lastWebViewEnabled by remember { mutableStateOf(isWebViewEnabled) }
-    
-    // 当 WebView 启用状态改变时自动刷新
-    LaunchedEffect(isWebViewEnabled) {
-        if (lastWebViewEnabled != isWebViewEnabled) {
-            Timber.d("[UI] WebView 启用状态改变：$lastWebViewEnabled -> $isWebViewEnabled")
-            lastWebViewEnabled = isWebViewEnabled
-            // 状态改变时自动刷新歌词和 WebView
-            viewModel.fetchLyrics()
-            webViewReloadKey++
-            Timber.d("[UI] 自动刷新完成，webViewReloadKey=$webViewReloadKey")
-        }
-    }
-    
-    // 首次进入 App 时自动连接 WebSocket
-    LaunchedEffect(Unit) {
-        if (AMLLSettings.isWebSocketProtocolEnabled(context)) {
-            val wsAddress = AMLLSettings.getWebSocketProtocolAddress(context)
-            Timber.d("[MainScreen] 首次启动，尝试连接 WebSocket: $wsAddress")
-            webSocketClient.connect(wsAddress)
-        }
-    }
+
 
     var showMatchBubble by remember { mutableStateOf(false) }
     LaunchedEffect(isLoading) {
@@ -387,8 +353,13 @@ fun MainScreen() {
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
+    // 动画数值：共用 Card 实例所需的过渡动画
+    val cardPaddingH by animateDpAsState(if (isLyricsFullscreen) 0.dp else 16.dp, label = "cardPaddingH")
+    val cardPaddingV by animateDpAsState(if (isLyricsFullscreen) 0.dp else 8.dp, label = "cardPaddingV")
+    val cardCorner by animateDpAsState(if (isLyricsFullscreen) 0.dp else 24.dp, label = "cardCorner")
+
     Scaffold(
-        modifier = Modifier.Companion
+        modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         topBar = {
@@ -405,7 +376,7 @@ fun MainScreen() {
                             val menuInteractionSource = remember { MutableInteractionSource() }
                             FilledIconButton(
                                 onClick = { showMenu = true },
-                                modifier = Modifier.Companion.indication(
+                                modifier = Modifier.indication(
                                     menuInteractionSource,
                                     ripple(color = rippleColor.value)
                                 ),
@@ -420,17 +391,17 @@ fun MainScreen() {
                             DropdownMenu(
                                 expanded = showMenu,
                                 onDismissRequest = { showMenu = false },
-                                // Use Material3 container tokens so the menu follows MD3 look
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(16.dp)
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(24.dp)
                             ) {
                                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
                                     DropdownMenuItem(
-                                        text = { Text("歌词管理") },
+                                        text = { Text("歌词管理", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface) },
                                         trailingIcon = {
                                             Icon(
                                                 Icons.AutoMirrored.Filled.TextSnippet,
-                                                contentDescription = null
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
                                             )
                                         },
                                         onClick = {
@@ -456,30 +427,30 @@ fun MainScreen() {
                                             }
                                             customLyricsLauncher.launch(intent)
                                             showMenu = false
-                                        }
+                                        },
+                                        colors = MenuDefaults.itemColors(
+                                            textColor = MaterialTheme.colorScheme.onSurface,
+                                            trailingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        )
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("刷新") },
+                                        text = { Text("刷新", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface) },
                                         trailingIcon = {
                                             Icon(
                                                 Icons.Default.Refresh,
-                                                contentDescription = null
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
                                             )
                                         },
                                         onClick = {
                                             scope.launch {
                                                 viewModel.fetchLyrics()
-                                                viewModel.refreshWebSocketConnection()
                                                 webViewReloadKey++
                                                 val currentUri = nowPlaying?.albumArtUri
                                                 if (!currentUri.isNullOrBlank()) {
                                                     try {
                                                         val colors = AlbumColorExtractor.extractColorsFromAlbumArt(context, currentUri, isDarkTheme)
                                                         rippleColor.value = colors?.primary ?: initialPrimary
-                                                        if (AMLLSettings.isWebSocketProtocolEnabled(context)) {
-                                                            viewModel.sendAlbumArtToWebSocket(currentUri)
-                                                            Timber.d("[MainScreen] Sent album art to WebSocket on manual refresh: $currentUri")
-                                                        }
                                                     } catch (_: Exception) {
                                                         rippleColor.value = initialPrimary
                                                     }
@@ -488,16 +459,21 @@ fun MainScreen() {
                                                 }
                                                 viewModel.refreshSongStructures()
                                                 showMenu = false
-                                                Timber.Forest.d("[UI] 刷新按钮被点击：webViewReloadKey=$webViewReloadKey")
+                                                Timber.d("[UI] 刷新按钮被点击：webViewReloadKey=$webViewReloadKey")
                                             }
-                                        }
+                                        },
+                                        colors = MenuDefaults.itemColors(
+                                            textColor = MaterialTheme.colorScheme.onSurface,
+                                            trailingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        )
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("设置") },
+                                        text = { Text("设置", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface) },
                                         trailingIcon = {
                                             Icon(
                                                 Icons.Default.Settings,
-                                                contentDescription = null
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
                                             )
                                         },
                                         onClick = {
@@ -507,7 +483,11 @@ fun MainScreen() {
                                                     SettingsActivity::class.java
                                                 )
                                             ); showMenu = false
-                                        }
+                                        },
+                                        colors = MenuDefaults.itemColors(
+                                            textColor = MaterialTheme.colorScheme.onSurface,
+                                            trailingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        )
                                     )
                                 }
                             }
@@ -518,316 +498,216 @@ fun MainScreen() {
                         scrolledContainerColor = MaterialTheme.colorScheme.background
                     ),
                     scrollBehavior = scrollBehavior,
-                    modifier = Modifier.Companion.statusBarsPadding()
+                    modifier = Modifier.statusBarsPadding()
                 )
             }
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.Companion.fillMaxSize().padding(innerPadding)) {
-            // no-op: menu is anchored in the AppBar actions
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 顶部间距：非全屏时避开状态栏和 TopAppBar
+            val topPadding = if (isLyricsFullscreen) 0.dp else innerPadding.calculateTopPadding()
+            Spacer(Modifier.height(topPadding))
 
             if (!notificationAccessGranted && !isLyricsFullscreen) {
                 PermissionStatusCard(
                     onOpenNotificationAccessSettings = { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
-                    modifier = Modifier.Companion.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
 
-            // WebSocket 状态指示器
-            if (AMLLSettings.isWebSocketProtocolEnabled(context) && !isLyricsFullscreen) {
-                val successGreen = Color(0xFF10B981)
-                val statusCardBg = if (isWebSocketConnected) {
-                    successGreen.copy(alpha = 0.2f)
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                }
-                
-                val connectedDotColor = successGreen
-                val disconnectedDotColor = MaterialTheme.colorScheme.onSurfaceVariant
-                val connectedTextColor = successGreen
-                val disconnectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = statusCardBg)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // 状态圆点
-                            Box(
-                                modifier = Modifier.size(8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                val dotColor = if (isWebSocketConnected) connectedDotColor else disconnectedDotColor
-                                androidx.compose.foundation.Canvas(modifier = Modifier.matchParentSize()) {
-                                    drawCircle(color = dotColor)
-                                }
-                            }
-                            
-                            Text(
-                                text = if (isWebSocketConnected) {
-                                    "WebSocket 已连接"
-                                } else {
-                                    "WebSocket 未连接"
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (isWebSocketConnected) connectedTextColor else disconnectedTextColor
-                            )
-                        }
-                        
-                        IconButton(onClick = { 
-                            context.startActivity(Intent(context, WsProtocolSettingsActivity::class.java))
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "WebSocket 设置",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (showOpenAppDialog) {
-                val sourceAppName =
-                    getAppNameFromPackage(context, nowPlaying?.packageName) ?: "播放源应用"
-                AlertDialog(
-                    onDismissRequest = { showOpenAppDialog = false },
-                    title = { Text("打开 $sourceAppName？") },
-                    text = { Text("您可进入设置调整点击卡片的默认行为。") },
-                    containerColor = MaterialTheme.colorScheme.background,
-                    confirmButton = {
-                        TextButton(onClick = {
-                            openSourceApp(context, nowPlaying?.packageName)
-                            showOpenAppDialog = false
-                        }) { Text("打开") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showOpenAppDialog = false }) { Text("忽略") }
-                    }
-                )
-            }
-
-            if (showAutoUpdateDialog) {
-                AlertDialog(
-                    onDismissRequest = { showAutoUpdateDialog = false },
-                    containerColor = MaterialTheme.colorScheme.background,
-                    title = { Text(autoUpdateDialogTitle) },
-                    text = { Text(autoUpdateDialogMessage) },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            autoUpdateDialogUrl?.let {
-                                context.startActivity(
-                                    Intent(
-                                        Intent.ACTION_VIEW,
-                                        it.toUri()
-                                    )
-                                )
-                            }
-                            showAutoUpdateDialog = false
-                        }) { Text("去更新") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = {
-                            AppSettings.setLastUpdateLaterAt(context, System.currentTimeMillis())
-                            showAutoUpdateDialog = false
-                        }) { Text("稍后") }
-                    }
-                )
-            }
-
+            // 统一的歌词 Card 实例
             val currentLyrics = lyrics
-            val shouldShowSpinner = isLoading
-            LaunchedEffect(shouldShowSpinner) {
-                if (shouldShowSpinner) {
-                    // wait a short time before actually showing the spinner; if loading
-                    // finishes quickly the mask never appears
-                    delay(300)
-                    spinnerVisible = true
-                } else {
-                    spinnerVisible = false
-                }
-            }
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = cardPaddingH, vertical = cardPaddingV)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(color = rippleColor.value)
+                    ) {
+                        if (!isLyricsFullscreen) {
+                            isLyricsFullscreen = true
+                        }
+                    },
+                shape = RoundedCornerShape(cardCorner),
+                colors = CardDefaults.cardColors(containerColor = Color.Black)
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    LyricsVisualLayer(
+                        nowPlaying = nowPlaying,
+                        lyrics = currentLyrics,
+                        currentTime = lyricTime,
+                        webViewReloadKey = webViewReloadKey,
+                        onLineSeek = {
+                            viewModel.seekTo(it)
+                            if (isLyricsFullscreen) resetHideTimer()
+                        },
+                        onFullscreenTap = {
+                            if (isLyricsFullscreen) {
+                                resetHideTimer()
+                            } else if (currentLyrics != null) {
+                                isLyricsFullscreen = true
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
 
-            if (!isLyricsFullscreen) {
-                Card(
-                    modifier = Modifier.Companion.fillMaxWidth().weight(1f)
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.Companion.Black)
-                ) {
-                    Box(modifier = Modifier.Companion.fillMaxSize()) {
-                        LyricsVisualLayer(
-                            nowPlaying = nowPlaying,
-                            lyrics = currentLyrics,
-                            currentTime = lyricTime,
-                            webViewReloadKey = webViewReloadKey,
-                            onLineSeek = { viewModel.seekTo(it) },
-                            // 改进：无歌词显示文案时禁止进入全屏
-                            onFullscreenTap = {
-                                if (currentLyrics != null) isLyricsFullscreen = true
-                            },
-                            modifier = Modifier.Companion.fillMaxSize()
-                        )
+                    // 占位提示
+                    if (currentLyrics == null && !spinnerVisible) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "选择歌词来显示",
+                                color = Color.White.copy(alpha = 0.8f),
+                                fontSize = 16.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
 
-                                                // WebView 已关闭提示 - 浮在歌词组件上方
-                        if (!isWebViewEnabled) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                    // 匹配气泡（仅在非全屏显示）
+                    if (!isLyricsFullscreen && showMatchBubble) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.9f))
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "正在匹配更优歌词",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontSize = 14.sp
+                            )
+                            Button(
+                                onClick = {
+                                    val intent = Intent(context, CustomLyricsActivity::class.java).apply {
+                                        putExtra(CustomLyricsActivity.EXTRA_TITLE, nowPlaying?.title ?: "")
+                                        putExtra(CustomLyricsActivity.EXTRA_ARTIST, nowPlaying?.artist ?: "")
+                                        putExtra(CustomLyricsActivity.EXTRA_PLAYBACK_SOURCE, getAppNameFromPackage(context, nowPlaying?.packageName) ?: "")
+                                    }
+                                    customLyricsLauncher.launch(intent)
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) { Text("自选歌词", fontSize = 14.sp) }
+                        }
+                    }
+
+                    // 全屏控制按钮
+                    if (isLyricsFullscreen) {
+                        IconButton(
+                            onClick = { isLyricsFullscreen = false },
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(top = 40.dp, start = 8.dp)
+                                .alpha(controlsAlpha)
+                        ) {
+                            Icon(
+                                Icons.Default.FullscreenExit,
+                                contentDescription = "退出全屏",
+                                tint = Color.White.copy(alpha = 0.9f)
+                            )
+                        }
+
+                        nowPlaying?.let { _ ->
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .alpha(controlsAlpha)
                             ) {
-                                Card(
-                                    modifier = Modifier.padding(32.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                    ),
-                                    shape = RoundedCornerShape(16.dp)
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(24.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.VisibilityOff,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(48.dp)
-                                        )
-                                        
-                                        Text(
-                                            text = "歌词组件已关闭",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        
-                                        IconButton(onClick = { 
-                                            context.startActivity(Intent(context, WsProtocolSettingsActivity::class.java))
-                                        }) {
-                                            Icon(
-                                                imageVector = Icons.Default.Settings,
-                                                contentDescription = "去设置",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
+                                // 在全屏模式下复用歌曲结构显示条
+                                if (isSongStructureBarEnabled && (songStructures.isNotEmpty() || isLoading)) {
+                                    if (isLoading) {
+                                        Box(modifier = Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) {
+                                            LoadingIndicator()
                                         }
+                                    } else {
+                                        SongStructureBar(
+                                            structures = songStructures,
+                                            currentTime = currentTime,
+                                            onSeekTo = { viewModel.seekTo(it); resetHideTimer() },
+                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                                        )
                                     }
                                 }
-                            }
-                        }
-
-                        // 占位提示：恢复消失的文案
-                        if (currentLyrics == null && !spinnerVisible) {
-                            Box(
-                                modifier = Modifier.Companion.fillMaxSize(),
-                                contentAlignment = Alignment.Companion.Center
-                            ) {
-                                Text(
-                                    text = "选择歌词来显示",
-                                    color = Color.Companion.White.copy(alpha = 0.8f),
-                                    fontSize = 16.sp,
-                                    textAlign = TextAlign.Companion.Center
-                                )
-                            }
-                        }
-
-                        if (showMatchBubble) {
-                            Row(
-                                modifier = Modifier.Companion.fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.9f))
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.Companion.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "正在匹配更优歌词",
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    fontSize = 14.sp
-                                )
-                                Button(
-                                    onClick = {
-                                        val intent = Intent(
-                                            context,
-                                            CustomLyricsActivity::class.java
-                                        ).apply {
-                                            putExtra(
-                                                CustomLyricsActivity.EXTRA_TITLE,
-                                                nowPlaying?.title ?: ""
-                                            )
-                                            putExtra(
-                                                CustomLyricsActivity.EXTRA_ARTIST,
-                                                nowPlaying?.artist ?: ""
-                                            )
-                                            putExtra(
-                                                CustomLyricsActivity.EXTRA_PLAYBACK_SOURCE,
-                                                getAppNameFromPackage(
-                                                    context,
-                                                    nowPlaying?.packageName
-                                                ) ?: ""
-                                            )
-                                        }
-                                        customLyricsLauncher.launch(intent)
+                                
+                                // 在全屏模式下复用播放卡片作为控制中心
+                                NowPlayingCard(
+                                    nowPlaying = nowPlaying,
+                                    context = context,
+                                    songStructures = songStructures,
+                                    onPlayPauseClick = { 
+                                        if (nowPlaying?.isPlaying == true) viewModel.pause() else viewModel.play()
+                                        resetHideTimer()
                                     },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = MaterialTheme.colorScheme.onPrimary
-                                    ),
-                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
-                                ) { Text("自选歌词", fontSize = 14.sp) }
+                                    onSkipPreviousClick = {
+                                        val currentPos = nowPlaying?.currentPosition ?: 0L
+                                        if (AppSettings.isSkipPreviousRewindsEnabled(context) && currentPos > 3000) viewModel.seekTo(0) else viewModel.skipToPrevious()
+                                        resetHideTimer()
+                                    },
+                                    onSkipNextClick = { viewModel.skipToNext(); resetHideTimer() },
+                                    onRewind = { viewModel.rewind(); resetHideTimer() },
+                                    onFastForward = { viewModel.fastForward(); resetHideTimer() },
+                                    onSeek = { viewModel.seekTo(it); resetHideTimer() },
+                                    onCardClick = {
+                                        when (AppSettings.getCardClickAction(context)) {
+                                            CardClickAction.DIRECT_OPEN -> openSourceApp(context, nowPlaying?.packageName)
+                                            CardClickAction.ASK -> showOpenAppDialog = true
+                                            else -> {}
+                                        }
+                                        resetHideTimer()
+                                    },
+                                    cardBg = cardBg,
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp)
+                                )
+                                Spacer(Modifier.height(32.dp))
                             }
                         }
+                    }
 
-                        if (spinnerVisible) Box(
-                            Modifier.Companion.fillMaxSize(),
-                            contentAlignment = Alignment.Companion.Center
-                        ) { LoadingIndicator() }
+                    if (spinnerVisible) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            LoadingIndicator()
+                        }
                     }
                 }
-            } else {
-                Spacer(Modifier.Companion.fillMaxWidth().weight(1f))
             }
 
-            // 歌曲结构显示条（仅在有歌词且非全屏时显示）
-            AnimatedVisibility(visible = !isLyricsFullscreen && (songStructures.isNotEmpty() || isLoading)) {
+            // 歌曲结构显示条
+            AnimatedVisibility(visible = !isLyricsFullscreen && isSongStructureBarEnabled && (songStructures.isNotEmpty() || isLoading)) {
                 if (isLoading) {
-                    Box(
-                        modifier = Modifier.Companion.fillMaxWidth().height(48.dp),
-                        contentAlignment = Alignment.Companion.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) {
                         LoadingIndicator()
                     }
                 } else {
                     SongStructureBar(
                         structures = songStructures,
                         currentTime = currentTime,
-                        onSeekTo = { time ->
-                            viewModel.seekTo(time)
-                            Timber.Forest.d("[SongStructure] 点击跳转至：${time}ms")
-                        },
-                        modifier = Modifier.Companion.fillMaxWidth()
+                        onSeekTo = { viewModel.seekTo(it) },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
 
+            // 底部播放卡片
             AnimatedVisibility(visible = !isLyricsFullscreen) {
                 NowPlayingCard(
                     nowPlaying = nowPlaying,
                     context = context,
-                    songStructures = songStructures,  // 传递歌曲结构
+                    songStructures = songStructures,
                     onPlayPauseClick = { if (nowPlaying?.isPlaying == true) viewModel.pause() else viewModel.play() },
                     onSkipPreviousClick = {
                         val currentPos = nowPlaying?.currentPosition ?: 0L
-                        if (AppSettings.isSkipPreviousRewindsEnabled(context) && currentPos > 3000) viewModel.seekTo(
-                            0
-                        ) else viewModel.skipToPrevious()
+                        if (AppSettings.isSkipPreviousRewindsEnabled(context) && currentPos > 3000) viewModel.seekTo(0) else viewModel.skipToPrevious()
                     },
                     onSkipNextClick = { viewModel.skipToNext() },
                     onRewind = { viewModel.rewind() },
@@ -835,73 +715,45 @@ fun MainScreen() {
                     onSeek = { viewModel.seekTo(it) },
                     onCardClick = {
                         when (AppSettings.getCardClickAction(context)) {
-                            CardClickAction.DIRECT_OPEN -> openSourceApp(
-                                context,
-                                nowPlaying?.packageName
-                            )
-
+                            CardClickAction.DIRECT_OPEN -> openSourceApp(context, nowPlaying?.packageName)
                             CardClickAction.ASK -> showOpenAppDialog = true
                             else -> {}
                         }
                     },
                     cardBg = cardBg,
-                    sliderColor = rippleColor.value,
-                    modifier = Modifier.Companion.fillMaxWidth().padding(16.dp)
+                    modifier = Modifier.fillMaxWidth().padding(16.dp)
                 )
             }
+
+            // 底部间距：非全屏时避开导航栏
+            val bottomPadding = if (isLyricsFullscreen) 0.dp else innerPadding.calculateBottomPadding()
+            Spacer(Modifier.height(bottomPadding))
         }
 
-        // 全屏显示：优化动画效果以提高性能
-        AnimatedVisibility(
-            visible = isLyricsFullscreen && (lyrics != null || spinnerVisible),
-            enter = fadeIn(tween(300)) + scaleIn(initialScale = 0.96f),
-            exit = fadeOut(tween(250)) + scaleOut(targetScale = 0.96f),
-            modifier = Modifier.Companion.fillMaxSize()
-        ) {
-            var controlsVisible by remember { mutableStateOf(true) }
-            var hideControlsJob by remember { mutableStateOf<Job?>(null) }
-            val innerScope = rememberCoroutineScope()
-            val controlsAlpha by animateFloatAsState(
-                if (controlsVisible) 1f else 0f,
-                label = "controlsAlpha"
-            )
-
-            fun resetHideTimer() {
-                hideControlsJob?.cancel()
-                controlsVisible = true
-                hideControlsJob = innerScope.launch { delay(3000L); controlsVisible = false }
-            }
-
+        // 全屏模式下的窗口管理逻辑
+        if (isLyricsFullscreen) {
             val localView = LocalView.current
-            // 缓存Activity和相关对象，避免每次重组都重新获取
             val activity = remember(localView) { localView.context.findActivity() }
             val window = remember(activity) { activity?.window }
             val insetsController = remember(window, localView) {
-                window?.let {
-                    WindowCompat.getInsetsController(
-                        it,
-                        localView
-                    )
-                }
+                window?.let { WindowCompat.getInsetsController(it, localView) }
             }
 
-            // 只在controlsVisible变化时执行窗口调整
             SideEffect {
                 if (activity == null || window == null || insetsController == null) return@SideEffect
-
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     window.attributes = window.attributes.apply {
-                        layoutInDisplayCutoutMode =
-                            if (controlsVisible) WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT else WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                        layoutInDisplayCutoutMode = if (controlsVisible)
+                            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+                        else
+                            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
                     }
                 }
-
                 if (controlsVisible) {
                     insetsController.show(WindowInsetsCompat.Type.systemBars())
                 } else {
                     insetsController.hide(WindowInsetsCompat.Type.systemBars())
-                    insetsController.systemBarsBehavior =
-                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 }
             }
 
@@ -914,175 +766,45 @@ fun MainScreen() {
                     insetsController.show(WindowInsetsCompat.Type.systemBars())
                 }
             }
-
             LaunchedEffect(Unit) { resetHideTimer() }
+        }
 
-            Box(
-                modifier = Modifier.Companion
-                    .fillMaxSize()
-                    .windowInsetsPadding(WindowInsets(0, 0, 0, 0))
-                    .background(Color.Companion.Black.copy(alpha = 0.35f * fullscreenOverlayAlpha))
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent(PointerEventPass.Final)
-                                if (event.changes.any { it.pressed || it.previousPressed }) {
-                                    resetHideTimer()
-                                }
-                            }
-                        }
-                    }
-            ) {
-                Card(
-                    modifier = Modifier.Companion.fillMaxSize(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.Companion.Black)
-                ) {
-                    LyricsVisualLayer(
-                        nowPlaying = nowPlaying,
-                        lyrics = lyrics,
-                        currentTime = lyricTime,
-                        webViewReloadKey = webViewReloadKey,
-                        onLineSeek = { viewModel.seekTo(it); resetHideTimer() },
-                        modifier = Modifier.Companion.fillMaxSize()
-                    )
+        // 对话框逻辑
+        if (showOpenAppDialog) {
+            val sourceAppName = getAppNameFromPackage(context, nowPlaying?.packageName) ?: "播放源应用"
+            AlertDialog(
+                onDismissRequest = { showOpenAppDialog = false },
+                title = { Text("打开 $sourceAppName？") },
+                text = { Text("您可进入设置调整点击卡片的默认行为。") },
+                containerColor = MaterialTheme.colorScheme.background,
+                confirmButton = {
+                    TextButton(onClick = { openSourceApp(context, nowPlaying?.packageName); showOpenAppDialog = false }) { Text("打开") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showOpenAppDialog = false }) { Text("忽略") }
                 }
+            )
+        }
 
-                if (spinnerVisible) Box(
-                    Modifier.Companion.fillMaxSize(),
-                    contentAlignment = Alignment.Companion.Center
-                ) { LoadingIndicator() }
-
-                IconButton(
-                    onClick = { isLyricsFullscreen = false },
-                    modifier = Modifier.Companion.align(Alignment.Companion.TopStart)
-                        .padding(top = 40.dp, start = 8.dp).alpha(controlsAlpha)
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "退出全屏",
-                        tint = Color.Companion.White.copy(alpha = 0.9f)
-                    )
+        if (showAutoUpdateDialog) {
+            AlertDialog(
+                onDismissRequest = { showAutoUpdateDialog = false },
+                containerColor = MaterialTheme.colorScheme.background,
+                title = { Text(autoUpdateDialogTitle) },
+                text = { Text(autoUpdateDialogMessage) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        autoUpdateDialogUrl?.let { context.startActivity(Intent(Intent.ACTION_VIEW, it.toUri())) }
+                        showAutoUpdateDialog = false
+                    }) { Text("去更新") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        AppSettings.setLastUpdateLaterAt(context, System.currentTimeMillis())
+                        showAutoUpdateDialog = false
+                    }) { Text("稍后") }
                 }
-
-                nowPlaying?.let { currentPlaying ->
-                    Row(
-                        modifier = Modifier.Companion.align(Alignment.Companion.BottomCenter)
-                            .fillMaxWidth().padding(bottom = 64.dp, start = 32.dp, end = 32.dp)
-                            .height(100.dp).alpha(controlsAlpha),
-                        verticalAlignment = Alignment.Companion.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceAround // 平衡按钮间距
-                    ) {
-                        val leftInteractionSource = remember { MutableInteractionSource() }
-                        Box(
-                            modifier = Modifier.Companion.weight(1f).fillMaxHeight()
-                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                                .indication(leftInteractionSource, ripple())
-                                .pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            if ((currentPlaying.currentPosition) > 3000L && AppSettings.isSkipPreviousRewindsEnabled(
-                                                    context
-                                                )
-                                            ) viewModel.seekTo(0L) else viewModel.skipToPrevious()
-                                            resetHideTimer()
-                                        },
-                                        onPress = { offset ->
-                                            val press = PressInteraction.Press(offset)
-                                            leftInteractionSource.tryEmit(press)
-                                            val job = innerScope.launch {
-                                                delay(500); while (true) {
-                                                viewModel.rewind(); delay(200)
-                                            }
-                                            }
-                                            try {
-                                                awaitPointerEventScope {
-                                                    waitForUpOrCancellation(); job.cancel(); leftInteractionSource.tryEmit(
-                                                    PressInteraction.Release(press)
-                                                )
-                                                }
-                                            } catch (e: Exception) {
-                                                job.cancel(); leftInteractionSource.tryEmit(
-                                                    PressInteraction.Cancel(press)
-                                                )
-                                            }
-                                            resetHideTimer()
-                                        }
-                                    )
-                                },
-                            contentAlignment = Alignment.Companion.Center
-                        ) {
-                            Icon(
-                                Icons.Default.FastRewind,
-                                null,
-                                Modifier.Companion.size(40.dp),
-                                Color.Companion.White.copy(0.9f)
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier.Companion.weight(1.5f).fillMaxHeight()
-                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = ripple(color = Color.Companion.White)
-                                ) {
-                                    if (currentPlaying.isPlaying) viewModel.pause() else viewModel.play()
-                                    resetHideTimer()
-                                },
-                            contentAlignment = Alignment.Companion.Center
-                        ) {
-                            Icon(
-                                if (currentPlaying.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                null,
-                                Modifier.Companion.size(64.dp),
-                                Color.Companion.White.copy(0.9f)
-                            )
-                        }
-
-                        val rightInteractionSource = remember { MutableInteractionSource() }
-                        Box(
-                            modifier = Modifier.Companion.weight(1f).fillMaxHeight()
-                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                                .indication(rightInteractionSource, ripple())
-                                .pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onTap = { viewModel.skipToNext(); resetHideTimer() },
-                                        onPress = { offset ->
-                                            val press = PressInteraction.Press(offset)
-                                            rightInteractionSource.tryEmit(press)
-                                            val job = innerScope.launch {
-                                                delay(500); while (true) {
-                                                viewModel.fastForward(); delay(200)
-                                            }
-                                            }
-                                            try {
-                                                awaitPointerEventScope {
-                                                    waitForUpOrCancellation(); job.cancel(); rightInteractionSource.tryEmit(
-                                                    PressInteraction.Release(press)
-                                                )
-                                                }
-                                            } catch (e: Exception) {
-                                                job.cancel(); rightInteractionSource.tryEmit(
-                                                    PressInteraction.Cancel(press)
-                                                )
-                                            }
-                                            resetHideTimer()
-                                        }
-                                    )
-                                },
-                            contentAlignment = Alignment.Companion.Center
-                        ) {
-                            Icon(
-                                Icons.Default.FastForward,
-                                null,
-                                Modifier.Companion.size(40.dp),
-                                Color.Companion.White.copy(0.9f)
-                            )
-                        }
-                    }
-                }
-            }
+            )
         }
     }
     Trace.endSection()
@@ -1091,7 +813,7 @@ fun MainScreen() {
 
 @Composable
 private fun LyricsVisualLayer(
-    modifier: Modifier = Modifier.Companion,
+    modifier: Modifier = Modifier,
     nowPlaying: NowPlayingMusic?,
     lyrics: UnifiedLyrics?,
     currentTime: Long,
@@ -1119,18 +841,28 @@ private fun LyricsVisualLayer(
                     }
                 }
             }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    awaitFirstDown(pass = PointerEventPass.Initial)
+                    val up = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                    if (up != null) {
+                        Timber.d("[LyricsVisualLayer] Tap detected in Initial pass, triggering onFullscreenTap")
+                        onFullscreenTap?.invoke()
+                    }
+                }
+            }
     ) {
         // 背景图和叠加效果
         if (nowPlaying?.albumArtUri != null) {
             AsyncImage(
                 model = nowPlaying.albumArtUri,
                 contentDescription = null,
-                contentScale = ContentScale.Companion.Crop,
-                modifier = Modifier.Companion.fillMaxSize().blur(28.dp).alpha(0.75f)
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize().blur(28.dp).alpha(0.75f)
             )
             // 添加主题色叠加效果
             Box(
-                modifier = Modifier.Companion.fillMaxSize()
+                modifier = Modifier.fillMaxSize()
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
             )
         }
@@ -1141,38 +873,23 @@ private fun LyricsVisualLayer(
                 AMLLLyricsView(
                     lyrics = lyrics,
                     currentTime = currentTime,
-                    musicId = nowPlaying?.packageName ?: "",
-                    musicName = nowPlaying?.title ?: "Unknown",
-                    albumName = nowPlaying?.album ?: "",
-                    artistName = nowPlaying?.artist ?: "Unknown",
-                    duration = nowPlaying?.duration ?: 0L,
                     albumArtUri = nowPlaying?.albumArtUri,
                     renderMode = AMLLRenderMode.DOM,
                     debugSource = "MainScreen",
+                    onLyricsClick = onFullscreenTap,
                     onLineSeek = onLineSeek,
                     isPlaying = nowPlaying?.isPlaying ?: false,
-                    modifier = Modifier.Companion.fillMaxSize()
+                    modifier = Modifier.fillMaxSize()
                 )
             }
-        }
-
-        // 全屏点击处理
-        if (onFullscreenTap != null) {
-            Box(
-                modifier = Modifier.Companion.fillMaxSize()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { onFullscreenTap() }
-            )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun NowPlayingCard(
-    modifier: Modifier = Modifier.Companion,
+    modifier: Modifier = Modifier,
     nowPlaying: NowPlayingMusic?,
     context: Context,
     songStructures: List<SongStructure> = emptyList(),
@@ -1184,14 +901,12 @@ fun NowPlayingCard(
     onSeek: (Long) -> Unit,
     onCardClick: () -> Unit,
     cardBg: Color = MaterialTheme.colorScheme.primaryContainer,
-    sliderColor: Color = MaterialTheme.colorScheme.primary,
 ) {
-    Trace.beginSection("Compose:NowPlayingCard")
     val scope = rememberCoroutineScope()
     var isSeeking by remember { mutableStateOf(false) }
 
     Card(
-        modifier = modifier.clickable { onCardClick() },
+        modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
@@ -1199,19 +914,19 @@ fun NowPlayingCard(
             contentColor = MaterialTheme.colorScheme.onSurface
         )
     ) {
-        Box(modifier = Modifier.Companion.fillMaxWidth()) {
+        Box(modifier = Modifier.fillMaxWidth()) {
             if (nowPlaying?.albumArtUri != null) {
                 AsyncImage(
                     model = nowPlaying.albumArtUri,
                     contentDescription = null,
-                    contentScale = ContentScale.Companion.Crop,
-                    modifier = Modifier.Companion
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
                         .matchParentSize()
                         .blur(40.dp)
                         .alpha(0.2f)
                 )
                 Box(
-                    modifier = Modifier.Companion
+                    modifier = Modifier
                         .matchParentSize()
                         .background(
                             brush = androidx.compose.ui.graphics.Brush.verticalGradient(
@@ -1225,92 +940,108 @@ fun NowPlayingCard(
             }
 
             if (nowPlaying != null) {
-                Column(Modifier.Companion.padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 20.dp)) {
-                    Row(
-                        modifier = Modifier.Companion.fillMaxWidth(),
-                        verticalAlignment = Alignment.Companion.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 20.dp)) {
+                    // 上半部分：歌曲信息区域（可点击打开应用）
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = ripple()
+                            ) { onCardClick() }
                     ) {
-                        Text(
-                            nowPlaying.album ?: "",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.Companion.weight(1f, fill = false)
-                        )
-                        val appName by remember(nowPlaying.packageName) {
-                            derivedStateOf { nowPlaying.packageName?.let { getAppNameFromPackage(context, it) } }
-                        }
-                        Text(
-                            appName ?: "",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Spacer(Modifier.Companion.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.Companion.fillMaxWidth(),
-                        verticalAlignment = Alignment.Companion.CenterVertically
-                    ) {
-                        AsyncImage(
-                            model = nowPlaying.albumArtUri,
-                            contentDescription = null,
-                            modifier = Modifier.Companion
-                                .size(76.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                        )
-                        Spacer(Modifier.Companion.width(16.dp))
-                        Column(modifier = Modifier.Companion.weight(1f)) {
-                            Text(
-                                nowPlaying.title,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Companion.Bold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Companion.Ellipsis,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                lineHeight = 24.sp
-                            )
-                            Text(
-                                nowPlaying.artist,
-                                style = MaterialTheme.typography.bodyMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Companion.Ellipsis,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
-                            )
-                        }
-                        
-                        IconButton(
-                            onClick = { onPlayPauseClick() },
-                            modifier = Modifier.Companion.size(56.dp)
-                                .background(MaterialTheme.colorScheme.primary, CircleShape),
-                            colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onPrimary)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(
-                                if (nowPlaying.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = null,
-                                modifier = Modifier.Companion.size(32.dp)
+                            Text(
+                                nowPlaying.album ?: "",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
                             )
+                            val appName by remember(nowPlaying.packageName) {
+                                derivedStateOf { nowPlaying.packageName?.let { getAppNameFromPackage(context, it) } }
+                            }
+                            Text(
+                                appName ?: "",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = nowPlaying.albumArtUri,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(76.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                            )
+                            Spacer(Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    nowPlaying.title,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    lineHeight = 24.sp
+                                )
+                                Text(
+                                    nowPlaying.artist,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = { onPlayPauseClick() },
+                                modifier = Modifier.size(56.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                                colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onPrimary)
+                            ) {
+                                Icon(
+                                    if (nowPlaying.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
                         }
                     }
 
-                    Spacer(Modifier.Companion.height(16.dp))
+                    Spacer(Modifier.height(16.dp))
 
-                    var draggedSliderValue by remember { mutableStateOf(nowPlaying.currentPosition.toFloat()) }
+                    var draggedSliderValue by remember { androidx.compose.runtime.mutableFloatStateOf(nowPlaying.currentPosition.toFloat()) }
                     val sliderValue by remember(nowPlaying, isSeeking) {
                         derivedStateOf { if (!isSeeking) nowPlaying.currentPosition.toFloat() else draggedSliderValue }
                     }
 
                     var isRemainingTimeMode by remember { mutableStateOf(AppSettings.isRemainingTimeMode(context)) }
 
+                    // 下半部分：进度控制区域（拦截卡片点击）
                     Row(
-                        modifier = Modifier.Companion.fillMaxWidth(),
-                        verticalAlignment = Alignment.Companion.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { /* 拦截点击以防止触发打开应用对话框 */ },
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         // 最外侧：倒退
@@ -1327,14 +1058,14 @@ fun NowPlayingCard(
                         Text(
                             formatTime(sliderValue.toLong()),
                             fontSize = 11.sp,
-                            modifier = Modifier.Companion.alpha(timeAlpha),
-                            fontWeight = if (isSeeking) FontWeight.Companion.Bold else FontWeight.Companion.Normal,
+                            modifier = Modifier.alpha(timeAlpha),
+                            fontWeight = if (isSeeking) FontWeight.Bold else FontWeight.Normal,
                             color = MaterialTheme.colorScheme.onPrimary,
                             maxLines = 1
                         )
 
                         // 增加左侧间距，避免较粗的 Active 进度条贴得太近
-                        Spacer(Modifier.Companion.width(6.dp))
+                        Spacer(Modifier.width(6.dp))
 
                         // 中间：进度条
                         WavySlider(
@@ -1352,7 +1083,7 @@ fun NowPlayingCard(
                                 .filter { it > 0 && it < nowPlaying.duration }
                                 .map { (it.toFloat() / nowPlaying.duration.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f) }
                                 .distinct(),
-                            modifier = Modifier.Companion.weight(1f),
+                            modifier = Modifier.weight(1f),
                             colors = WavySliderDefaults.colors(
                                 thumbColor = MaterialTheme.colorScheme.onPrimary,
                                 stepColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
@@ -1372,7 +1103,7 @@ fun NowPlayingCard(
                         Text(
                             rightTimeText,
                             fontSize = 11.sp,
-                            modifier = Modifier.Companion
+                            modifier = Modifier
                                 .alpha(timeAlpha)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
@@ -1411,7 +1142,7 @@ private fun MediaControlButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Box(
-        modifier = Modifier.Companion
+        modifier = Modifier
             .size(48.dp)
             .clip(CircleShape)
             .indication(interactionSource, ripple())
@@ -1434,28 +1165,28 @@ private fun MediaControlButton(
                                 job.cancel()
                                 interactionSource.tryEmit(PressInteraction.Release(press))
                             }
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             job.cancel()
                             interactionSource.tryEmit(PressInteraction.Cancel(press))
                         }
                     }
                 )
             },
-        contentAlignment = Alignment.Companion.Center
+        contentAlignment = Alignment.Center
     ) {
-        Icon(icon, null, modifier = Modifier.Companion.size(28.dp), tint = tint)
+        Icon(icon, null, modifier = Modifier.size(28.dp), tint = tint)
     }
 }
 
 
 @Composable
-fun PermissionStatusCard(onOpenNotificationAccessSettings: () -> Unit, modifier: Modifier = Modifier.Companion) {
+fun PermissionStatusCard(onOpenNotificationAccessSettings: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
     ) {
         Column(
-            Modifier.Companion.padding(12.dp),
+            Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
@@ -1470,7 +1201,7 @@ fun PermissionStatusCard(onOpenNotificationAccessSettings: () -> Unit, modifier:
             )
             Row(
                 horizontalArrangement = Arrangement.End,
-                modifier = Modifier.Companion.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Button(
                     onClick = onOpenNotificationAccessSettings,
@@ -1488,7 +1219,7 @@ fun PermissionStatusCard(onOpenNotificationAccessSettings: () -> Unit, modifier:
 private fun openSourceApp(context: Context, packageName: String?): Boolean {
     if (packageName.isNullOrBlank()) return false
     val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return false
-    return try { context.startActivity(launchIntent); true } catch (e: Exception) { false }
+    return try { context.startActivity(launchIntent); true } catch (_: Exception) { false }
 }
 
-fun formatTime(millis: Long): String = String.Companion.format(Locale.US, "%d:%02d", millis / 60000, (millis % 60000) / 1000)
+fun formatTime(millis: Long): String = String.format(Locale.ROOT, "%d:%02d", millis / 60000, (millis % 60000) / 1000)
