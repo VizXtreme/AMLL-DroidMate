@@ -85,8 +85,7 @@ object KugouDecrypter {
     private fun decompress(data: ByteArray): ByteArray {
         return try {
             val input = ByteArrayInputStream(data)
-            val inflater = InflaterInputStream(input)
-            inflater.readBytes()
+            InflaterInputStream(input).use { it.readBytes() }
         } catch (e: Exception) {
             Timber.e("[KugouDecrypter] Failed to decompress $e")
             data  // 如果解压失败，返回原数据

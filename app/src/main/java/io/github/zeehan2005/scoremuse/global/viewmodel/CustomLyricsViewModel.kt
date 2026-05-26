@@ -586,7 +586,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
 
 
     override fun onCleared() {
-        super.onCleared()
+        onCleared()
         httpClient.close()
     }
 }

@@ -47,14 +47,14 @@ object AMLLSettings {
     private const val KEY_AMLL_BACKGROUND_RENDER_SCALE = "amll_background_render_scale"  // 背景渲染倍率
     private const val KEY_AMLL_BACKGROUND_STATIC_MODE = "amll_background_static_mode"  // 背景静态模式
 
-    private const val KEY_WEBSOCKET_PROTOCOL_ADDRESS = "websocket_protocol_address"  // WebSocket 地址
-    private const val KEY_WEBSOCKET_PROTOCOL_ENABLED = "websocket_protocol_enabled"  // WebSocket 开关
-    private const val KEY_WEBVIEW_ENABLED = "webview_enabled"  // WebView 开关
-
-    // 默认值常量（非 AMLL 核心设置保留默认值）
-    private const val DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS = "ws://localhost:11444"  // 默认本地地址
-    private const val DEFAULT_WEBSOCKET_PROTOCOL_ENABLED = false  // 默认关闭
-    private const val DEFAULT_WEBVIEW_ENABLED = true  // 默认启用 WebView
+//    private const val KEY_WEBSOCKET_PROTOCOL_ADDRESS = "websocket_protocol_address"  // WebSocket 地址
+//    private const val KEY_WEBSOCKET_PROTOCOL_ENABLED = "websocket_protocol_enabled"  // WebSocket 开关
+//    private const val KEY_WEBVIEW_ENABLED = "webview_enabled"  // WebView 开关
+//
+//    // 默认值常量（非 AMLL 核心设置保留默认值）
+//    private const val DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS = "ws://localhost:11444"  // 默认本地地址
+//    private const val DEFAULT_WEBSOCKET_PROTOCOL_ENABLED = false  // 默认关闭
+//    private const val DEFAULT_WEBVIEW_ENABLED = true  // 默认启用 WebView
 
     /**
      * AMLL 自定义字体文件
@@ -93,9 +93,9 @@ object AMLLSettings {
         return if (p.contains(key)) p.getFloat(key) else null
     }
 
-    private fun getIntOrNull(context: Context, key: String): Int? {
+    private fun getIntOrNull(context: Context): Int? {
         val p = prefs(context)
-        return if (p.contains(key)) p.getInt(key) else null
+        return if (p.contains(KEY_AMLL_FONT_WEIGHT)) p.getInt(KEY_AMLL_FONT_WEIGHT) else null
     }
 
     private fun getStringOrNull(context: Context, key: String): String? {
@@ -280,7 +280,7 @@ object AMLLSettings {
      * @return 字重值，范围 0-1000，0 表示系统控制
      */
     fun getAmllFontWeight(context: Context): Int? =
-        getIntOrNull(context, KEY_AMLL_FONT_WEIGHT)
+        getIntOrNull(context)
 
     /**
      * 获取字符间距（等同于 CSS letter-spacing）
@@ -324,30 +324,4 @@ object AMLLSettings {
     fun isAmllBackgroundStaticModeEnabled(context: Context): Boolean? =
         getBooleanOrNull(context, KEY_AMLL_BACKGROUND_STATIC_MODE)
 
-    // === WebSocket 传递设置 ===
-    fun getWebSocketProtocolAddress(context: Context): String {
-        return prefs(context).getString(KEY_WEBSOCKET_PROTOCOL_ADDRESS, DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS)
-            ?: DEFAULT_WEBSOCKET_PROTOCOL_ADDRESS
-    }
-
-    fun setWebSocketProtocolAddress(context: Context, address: String) {
-        prefs(context).putString(KEY_WEBSOCKET_PROTOCOL_ADDRESS, address)
-    }
-
-    fun isWebSocketProtocolEnabled(context: Context): Boolean {
-        return prefs(context).getBoolean(KEY_WEBSOCKET_PROTOCOL_ENABLED, DEFAULT_WEBSOCKET_PROTOCOL_ENABLED)
-    }
-
-    fun setWebSocketProtocolEnabled(context: Context, enabled: Boolean) {
-        prefs(context).putBoolean(KEY_WEBSOCKET_PROTOCOL_ENABLED, enabled)
-    }
-
-    // === WebView 全局开关 ===
-    fun isWebViewEnabled(context: Context): Boolean {
-        return prefs(context).getBoolean(KEY_WEBVIEW_ENABLED, DEFAULT_WEBVIEW_ENABLED)
-    }
-
-    fun setWebViewEnabled(context: Context, enabled: Boolean) {
-        prefs(context).putBoolean(KEY_WEBVIEW_ENABLED, enabled)
-    }
 }

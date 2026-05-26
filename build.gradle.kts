@@ -25,11 +25,11 @@ plugins {
     
     // Kotlin 序列化插件：支持 Kotlin 数据类的 JSON/XML 序列化
     // version: Kotlin 编译器版本
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.20" apply false
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.21" apply false
     
     // Jetpack Compose 插件：支持使用 Kotlin 编写声明式 UI
     // version: Compose 编译器版本
-    id("org.jetbrains.kotlin.plugin.compose") version "2.3.20" apply false
+    id("org.jetbrains.kotlin.plugin.compose") version "2.3.21" apply false
 }
 
 

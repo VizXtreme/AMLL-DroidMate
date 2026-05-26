@@ -42,6 +42,14 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- 检查网络状态：判断是否联网，决定是否可以获取歌词 -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- ==================== 蓝牙权限 ==================== -->
+    <!-- 传统蓝牙权限（API 30 及以下） -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <!-- 现代蓝牙权限（Android 12+, API 31+） -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
     <!-- ==================== 通知权限 ==================== -->
     <!-- 发送通知：Android 13+ 需要显式请求通知权限 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

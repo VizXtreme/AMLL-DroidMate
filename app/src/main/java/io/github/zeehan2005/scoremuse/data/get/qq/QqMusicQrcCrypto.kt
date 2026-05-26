@@ -157,7 +157,12 @@ object QqMusicQrcCrypto {
         } catch (e: Exception) {
             Timber.i("[QqMusicQrcCrypto] Zlib decompression failed, retrying as raw deflate $e")
             // Some QQ QRC payloads appear to be raw DEFLATE without zlib headers.
-            InflaterInputStream(ByteArrayInputStream(data), Inflater(/* nowrap */ true)).use { it.readBytes() }
+            val inflater = Inflater(true)
+            try {
+                InflaterInputStream(ByteArrayInputStream(data), inflater).use { it.readBytes() }
+            } finally {
+                inflater.end()
+            }
         }
     }
 
@@ -194,7 +199,12 @@ object QqMusicQrcCrypto {
 
         // As a last resort, try decompress from the very start using raw deflate
         Timber.i("[QqMusicQrcCrypto] No valid zlib header found; falling back to raw deflate from start")
-        return InflaterInputStream(ByteArrayInputStream(data), Inflater(/* nowrap */ true)).use { it.readBytes() }
+        val inflater = Inflater(true)
+        return try {
+            InflaterInputStream(ByteArrayInputStream(data), inflater).use { it.readBytes() }
+        } finally {
+            inflater.end()
+        }
     }
 
     private class QqMusicCodec {

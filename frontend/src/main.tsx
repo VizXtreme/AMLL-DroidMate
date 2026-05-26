@@ -137,50 +137,6 @@ function createBackgroundRenderer(core: any, root: HTMLElement, selectedRenderer
 
 
 
-/**
- * 强制重构歌词 DOM 结构
- * 解决 WebView 在后台恢复或尺寸改变时可能出现的遮罩渲染错误或布局偏移
- */
-function forceRebuildLyricsDom(reason: string = 'manual refresh'): boolean {
-  try {
-    const p = state.player
-    if (!p) return false
-
-    const lineObjects = Array.isArray(p.currentLyricLineObjects) ? p.currentLyricLineObjects : []
-
-    // 如果当前没有行对象，尝试重新注入歌词
-    if (lineObjects.length === 0) {
-      if (typeof p.setLyricLines === 'function' && state.lyricLines.length > 0) {
-        p.setLyricLines(state.lyricLines, state.currentTime)
-        p.update?.(state.currentTime)
-        log(`forceRebuildLyricsDom: full rebuild (${reason})`, 'debug')
-        return true
-      }
-      return false
-    }
-
-    // 遍历所有行，调用重构方法
-    lineObjects.forEach(line => {
-      if (!line) return
-      line.rebuildElement?.()
-      // 更新遮罩图以确保逐词动画效果正确
-      if (line.markMaskImageDirty) {
-        line.markMaskImageDirty(reason)
-      } else if (line.updateMaskImageSync) {
-        line.updateMaskImageSync()
-      } else {
-        line.rebuildStyle?.()
-      }
-    })
-
-    p.update?.(state.currentTime)
-    log(`forceRebuildLyricsDom: rebuilt ${lineObjects.length} lines (${reason})`, 'debug')
-    return true
-  } catch (err) {
-    log(`forceRebuildLyricsDom error: ${(err as Error).message}`, 'error')
-    return false
-  }
-}
 
 /**
  * 初始化 AMLL 核心环境
@@ -200,7 +156,7 @@ function initAMLL() {
 
     const Core = AMLLCore as any
     // 获取播放器类（支持不同版本的命名习惯）
-    const DomLyricPlayer = Core.DomLyricPlayer || Core.DOMLyricPlayer || Core.LyricPlayer
+    const DomLyricPlayer = Core.DomLyricPlayer
 
     if (DomLyricPlayer) {
       try {
@@ -215,16 +171,24 @@ function initAMLL() {
       }
     }
 
-    // 默认不主动创建背景渲染器，由 Android 端通过 configureLyricBackground 按需初始化
-    // 这可以避免在已经有原生背景的情况下产生冗余的 Canvas 节点
-    // state.background = createBackgroundRenderer(Core, root as HTMLElement)
-
     // 暴露内部实例以便调试
     window.__amll = { player: state.player, backgroundRender: state.background }
 
-    // 如果初始化时已有歌词，立即渲染
+    // 启动持续更新循环，用于刷新帧和动画效果
+    let lastTime = performance.now()
+    const tick = (now: number) => {
+      const delta = now - lastTime
+      lastTime = now
+      state.player?.update?.(delta)
+      state.background?.update?.(delta)
+      requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+
+    // 如果初始化时已有歌词，执行一次完整的布局计算和渲染更新
     if (state.lyricLines.length > 0) {
-      requestAnimationFrame(() => forceRebuildLyricsDom('initAMLL'))
+      state.player?.calcLayout?.()
+      state.player?.update?.(0)
     }
 
     log('AMLL core WebView initialized', 'info')
@@ -258,8 +222,9 @@ window.updateLyrics = async (payload: LyricsPayload) => {
       const setter = p.setLyricLines || p.setLyrics || p.updateLyrics
       if (setter) {
         setter.call(p, normalized)
-        // 数据更新后请求下一帧重构 DOM
-        requestAnimationFrame(() => forceRebuildLyricsDom('updateLyrics'))
+        // 歌词更新后，重新计算布局并刷新显示帧
+        p.calcLayout?.()
+        p.update?.(0)
       } else {
         log('playerInstance does not expose lyric setter', 'warn')
       }
@@ -291,8 +256,8 @@ window.updateTime = (timeMs: number) => {
     } else if (p.seek) {
       p.seek(t)
     }
-    // 触发渲染更新
-    p.update?.(t)
+    // 调用 update(0) 强制渲染当前时间点的帧，但不推进时间
+    p.update?.(0)
   } catch (e) {
     log(`updateTime error: ${(e as Error).message}`, 'error')
   }
@@ -331,6 +296,7 @@ window.updateAlbumArt = async (uri: string) => {
     if (state.background?.setAlbum) {
       try {
         await state.background.setAlbum(state.albumUri)
+        state.background.update?.(0)
       } catch (err) {
         log(`setAlbum error: ${(err as Error).message}. `, 'warn')
       }
@@ -344,7 +310,11 @@ window.updateAlbumArt = async (uri: string) => {
  * 控制播放/暂停
  */
 window.setPaused = (paused: boolean) => {
-  state.isPlaying = !paused
+  const isPlaying = !paused
+  // 如果状态没有变化，则忽略（避免重复调用 pause/resume 产生的性能开销或逻辑抖动）
+  if (state.hasPlaybackState && state.isPlaying === isPlaying) return
+
+  state.isPlaying = isPlaying
   state.hasPlaybackState = true
   const p = state.player
   if (!p) return
@@ -353,8 +323,9 @@ window.setPaused = (paused: boolean) => {
     if (paused) {
       p.pause?.()
     } else {
-      ;(p.resume || p.play)?.call(p)
+      ;(p.resume)?.()
     }
+    p.update?.(0)
   } catch (e) {
     log(`setPaused error: ${(e as Error).message}`, 'error')
   }
@@ -378,7 +349,8 @@ window.configureLyricMotion = (options: any) => {
     if (enableBlur !== undefined && lp.setEnableBlur) lp.setEnableBlur(enableBlur)
     if (hidePassedLines !== undefined && lp.setHidePassedLines) lp.setHidePassedLines(hidePassedLines)
     if (wordFadeWidth !== undefined && lp.setWordFadeWidth) lp.setWordFadeWidth(wordFadeWidth)
-    lp.calcLayout?.() // 重新计算布局
+    lp.calcLayout?.()
+    lp.update?.(0) // 刷新布局修改后的显示
   } catch (e) {
     log(`configureLyricMotion error: ${(e as Error).message}`, 'error')
   }
@@ -397,6 +369,7 @@ window.configureBackgroundEffect = (options: any) => {
     if (options.lowFreqVolume !== undefined) bg.setLowFreqVolume?.(options.lowFreqVolume)
     if (options.fps !== undefined) bg.setFPS?.(options.fps)
     if (options.staticMode !== undefined) bg.setStaticMode?.(options.staticMode)
+    bg.update?.(0) // 立即应用背景参数变更并重绘
   } catch (e) {
     log(`configureBackgroundEffect error: ${(e as Error).message}`, 'error')
   }
@@ -425,6 +398,7 @@ window.configureLyricBackground = (options: any) => {
       if (fps !== undefined) state.background.setFPS?.(fps)
       if (renderScale !== undefined) state.background.setRenderScale?.(renderScale)
       if (staticMode !== undefined) state.background.setStaticMode?.(staticMode)
+      state.background.update?.(0)
     }
 
     document.body.style.background = (isCssBg && options.cssProperty) ? options.cssProperty : 'transparent'
@@ -448,4 +422,9 @@ window.setAdvanceLyricDynamicLyricTime = (enabled: boolean) => {
 // --- 其他占位或转发接口 ---
 window.setRenderMode = (mode: string) => log(`setRenderMode: ${mode}`, 'debug')
 window.setLyricPlayerImplementation = (imp: string) => log(`setLyricPlayerImplementation: ${imp}`, 'debug')
-window.rebuildLyricsDom = (reason?: string) => forceRebuildLyricsDom(reason)
+window.rebuildLyricsDom = (reason?: string) => {
+  log(`rebuildLyricsDom: ${reason}`, 'debug')
+  state.player?.calcLayout?.()
+  state.player?.update?.(0)
+  return true
+}

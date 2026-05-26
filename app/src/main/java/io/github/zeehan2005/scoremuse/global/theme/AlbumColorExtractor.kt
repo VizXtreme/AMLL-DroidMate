@@ -93,7 +93,7 @@ object AlbumColorExtractor {
             ?: primarySeed.adjustSaturation(0.5f)
 
         val tertiarySeed = palette.lightVibrantSwatch?.rgb?.let { Color(it) }
-            ?: primarySeed.rotateHue(60f)
+            ?: primarySeed.rotateHue()
 
         val neutralSeed = palette.darkMutedSwatch?.let { Color(it.rgb) }
             ?: palette.dominantSwatch?.let { Color(it.rgb).adjustSaturation(0.1f) }
@@ -180,10 +180,10 @@ internal fun Color.adjustSaturation(factor: Float): Color {
 /**
  * 旋转色相
  */
-internal fun Color.rotateHue(degrees: Float = 30f): Color {
+internal fun Color.rotateHue(): Color {
     val hsl = FloatArray(3)
     ColorUtils.colorToHSL(this.toArgb(), hsl)
-    hsl[0] = (hsl[0] + degrees) % 360f
+    hsl[0] = (hsl[0] + 60f) % 360f
     if (hsl[0] < 0) hsl[0] += 360f
     return Color(ColorUtils.HSLToColor(hsl))
 }

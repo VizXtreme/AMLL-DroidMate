@@ -14,18 +14,19 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@applemusic-like-lyrics/core": "^0.2.0",
-    "@applemusic-like-lyrics/lyric": "^0.1.0",
-    "@pixi/core": "^7.4.3",
-    "@pixi/utils": "^7.4.3",
-    "vite": "^7.3.1"
+    "@applemusic-like-lyrics/core": "latest",
+    "@applemusic-like-lyrics/lyric": "latest",
+    "@pixi/core": "latest",
+    "@pixi/utils": "latest",
+    "vite": "^6.0.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "terser": "^5.46.1",
-    "typescript": "^5.3.0",
-    "vite-plugin-top-level-await": "^1.4.1",
-    "vite-plugin-wasm": "^3.3.0"
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "terser": "latest",
+    "typescript": "latest",
+    "rollup": "^4.0.0",
+    "vite-plugin-top-level-await": "latest",
+    "vite-plugin-wasm": "latest"
   }
 }

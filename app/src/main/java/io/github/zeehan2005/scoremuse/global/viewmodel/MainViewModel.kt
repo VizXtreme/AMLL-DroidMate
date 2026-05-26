@@ -1,14 +1,13 @@
 package io.github.zeehan2005.scoremuse.global.viewmodel
 
-import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import androidx.annotation.VisibleForTesting
-import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.amll.droidmate.data.converter.TTMLConverter
@@ -50,6 +49,7 @@ import java.util.Locale
  */
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     
+    @SuppressLint("StaticFieldLeak")
     private val context: Context = application.applicationContext
 
     // ==================== HTTP Client & 仓库 ====================
@@ -143,10 +143,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         // listen for user dismissals. Android 13+ requires an explicit export flag
         // when registering receivers that aren't for system broadcasts.
-        context.registerReceiver(
+        ContextCompat.registerReceiver(
+            context,
             deleteReceiver,
             IntentFilter(LyricNotificationManager.ACTION_LYRIC_NOTIFICATION_DISMISSED),
-            Context.RECEIVER_NOT_EXPORTED
+            ContextCompat.RECEIVER_NOT_EXPORTED,
         )
     }
 
@@ -160,6 +161,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    @SuppressLint("MissingPermission")
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun updateLyricNotification(lyrics: UnifiedLyrics?, music: NowPlayingMusic?) {
         if (!AppSettings.isLyricNotificationEnabled(context)) {

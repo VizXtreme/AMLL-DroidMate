@@ -296,10 +296,18 @@ class MediaInfoService(private val context: Context) {
             // 缩放图片至最大 512x512，减少内存占用
             val scaledBitmap = resizeBitmap(bitmap)
 
-            FileOutputStream(file).use { out ->
-                // 压缩质量从 90 降至 75，显著减少文件大小
-                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, out)
-                scaledBitmap.recycle() // 及时释放内存
+            try {
+                FileOutputStream(file).use { out ->
+                    // 压缩质量从 90 降至 75，显著减少文件大小
+                    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, out)
+                }
+            } finally {
+                // 关键修复：仅在创建了新 Bitmap 时才调用 recycle()
+                // 如果图片本身小于 512px，resizeBitmap 会返回原始 bitmap，
+                // 此时不应 recycle，因为它可能仍被 MediaSession/Metadata 使用。
+                if (scaledBitmap !== bitmap) {
+                    scaledBitmap.recycle()
+                }
             }
 
             val uri = "file://${file.absolutePath}"

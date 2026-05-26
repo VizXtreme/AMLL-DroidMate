@@ -1,7 +1,5212 @@
-(function(){if(typeof document!=='undefined'){const style=document.createElement('style');style.innerText=".amll-lyric-player{width:100%;max-width:100%;height:100%;color:var(--amll-lp-color,white);contain:strict;mix-blend-mode:plus-lighter;font-size:var(--amll-lp-font-size,max(max(5vh,2.5vw),12px));overflow:hidden}@media screen and (max-width:768px){.amll-lyric-player{font-size:var(--amll-lp-font-size,max(8vw,12px))}}.amll-lyric-player.dom{--amll-lp-line-width-aspect:.8;--amll-lp-line-padding-x:1em;--amll-lp-bg-line-scale:.7;-webkit-user-select:none;user-select:none;box-sizing:content-box;z-index:1;line-height:1.2em}.amll-lyric-player.dom-slim{--amll-lp-line-width-aspect:.8;--amll-lp-line-padding-x:1em;--amll-lp-bg-line-scale:.7;-webkit-user-select:none;user-select:none;box-sizing:content-box;z-index:1;min-width:0;min-height:0;line-height:1.2em;overflow:hidden scroll}.amll-lyric-player.dom-slim::-webkit-scrollbar{opacity:0}.amll-lyric-player.dom-slim:hover::-webkit-scrollbar{opacity:1}.amll-lyric-player.dom-slim>*{content-visibility:auto;contain-intrinsic-size:100% 2em}@media screen and (max-width:768px){.amll-lyric-player{--amll-lp-line-width-aspect:1;--amll-lp-line-padding-x:0}}._lyricLine_ut4sn_6{backface-visibility:hidden;transform-origin:0;width:var(--amll-lp-width,100%);min-width:var(--amll-lp-width,100%);max-width:var(--amll-lp-width,100%);contain:content;will-change:transform;box-sizing:border-box;border-radius:.25em;width:100%;height:fit-content;padding:.5em 1em;transition:opacity .25s,filter .2s,background-color .25s,box-shadow .25s;position:absolute}@media screen and (max-width:500px){._lyricLine_ut4sn_6{padding-left:20px;padding-right:20px}}._lyricLine_ut4sn_6._dirty_ut4sn_34{opacity:0;visibility:hidden}._lyricLine_ut4sn_6:has(>*):hover{background-color:var(--amll-lp-hover-bg-color,#fff1)}._lyricLine_ut4sn_6:has(>*):active{background-color:var(--amll-lp-hover-bg-color,#ffffff05)}._lyricBgLine_ut4sn_50{opacity:.0001;font-size:max(calc(1em*var(--amll-lp-bg-line-scale,.7)),10px);padding:1vh calc(var(--amll-lp-line-padding-x,1em)/var(--amll-lp-bg-line-scale,.7));transition:opacity .25s,scale .5s,filter .2s,background-color .25s,box-shadow .25s}._lyricBgLine_ut4sn_50._active_ut4sn_62{opacity:.4;transition:opacity .5s .25s,scale 1.5s cubic-bezier(0,1,0,1) .25s,filter .2s,background-color .25s,box-shadow .25s}.amll-lyric-player:hover ._lyricLine_ut4sn_6{filter:unset!important}.amll-lyric-player._hasDuetLine_ut4sn_78 ._lyricLine_ut4sn_6:not(._lyricDuetLine_ut4sn_79){padding-right:15%}.amll-lyric-player._hasDuetLine_ut4sn_78 ._lyricDuetLine_ut4sn_79{padding-left:15%}.amll-lyric-player:not(.playing)>._lyricBgLine_ut4sn_50{opacity:.4}._lyricDuetLine_ut4sn_79{text-align:right;transform-origin:100%}._lyricMainLine_ut4sn_98{margin:-1em;padding:1em;transition:opacity .3s .1s}._lyricMainLine_ut4sn_98 span{display:inline-block}._lyricMainLine_ut4sn_98 ._romanWord_ut4sn_107{font-size:.5em;line-height:1em}._lyricMainLine_ut4sn_98>span,._lyricMainLine_ut4sn_98 span._emphasizeWrapper_ut4sn_113{white-space:pre-wrap;will-change:transform;margin:-1em;padding:1em;display:inline-block}:is(._lyricMainLine_ut4sn_98>span,._lyricMainLine_ut4sn_98 span._emphasizeWrapper_ut4sn_113)._emphasize_ut4sn_113,:is(._lyricMainLine_ut4sn_98>span,._lyricMainLine_ut4sn_98 span._emphasizeWrapper_ut4sn_113) span._emphasize_ut4sn_113{backface-visibility:hidden;margin:-1em;padding:1em}:is(:is(._lyricMainLine_ut4sn_98>span,._lyricMainLine_ut4sn_98 span._emphasizeWrapper_ut4sn_113)._emphasize_ut4sn_113,:is(._lyricMainLine_ut4sn_98>span,._lyricMainLine_ut4sn_98 span._emphasizeWrapper_ut4sn_113) span._emphasize_ut4sn_113)>span{will-change:transform;backface-visibility:hidden;margin:-1em;padding:1em}._lyricSubLine_ut4sn_136{opacity:.3;font-size:max(.5em,10px);line-height:1.5em;transition:opacity .2s .25s}._disableSpring_ut4sn_143>*{transition:filter .25s,transform .5s,background-color .25s,box-shadow .25s}._interludeDots_ut4sn_151{transform-origin:50%;opacity:0;gap:.25em;width:fit-content;height:clamp(.5em,1vh,3em);padding:2.5% .75em;transition:opacity .25s;display:flex;position:absolute;left:0}._interludeDots_ut4sn_151._enabled_ut4sn_163{opacity:1}._interludeDots_ut4sn_151>*{aspect-ratio:1;background-color:var(--amll-lp-color,white);border-radius:50%;width:clamp(.5em,1vh,3em);height:clamp(.5em,1vh,3em);margin-right:4px;display:inline-block}._interludeDots_ut4sn_151._duet_ut4sn_177{transform-origin:50%;right:0}@supports (mix-blend-mode:plus-lighter){._lyricSubLine_ut4sn_136{opacity:.3}}._tmpDisableTransition_ut4sn_189{transition:none!important}._lyricLine_1jop6_6{width:var(--amll-lp-width,100%);min-width:var(--amll-lp-width,100%);max-width:var(--amll-lp-width,100%);contain:content;box-sizing:border-box;border-radius:.25em;width:100%;height:fit-content;padding:2vh 1em;transition:opacity .25s,filter .2s,background-color .25s,box-shadow .25s}._lyricLine_1jop6_6:has(>*):hover{background-color:var(--amll-lp-hover-bg-color,#fff1)}._lyricLine_1jop6_6:has(>*):active{background-color:var(--amll-lp-hover-bg-color,#ffffff05)}._lyricBgLine_1jop6_36{opacity:0;font-size:max(calc(1em*var(--amll-lp-bg-line-scale,.7)),10px);padding:1vh calc(var(--amll-lp-line-padding-x,1em)/var(--amll-lp-bg-line-scale,.7));transition:opacity .25s,scale .5s,filter .2s,background-color .25s,box-shadow .25s}._lyricBgLine_1jop6_36._active_1jop6_49{opacity:.4;transition:opacity .5s .25s,scale 1.5s cubic-bezier(0,1,0,1) .25s,filter .2s,background-color .25s,box-shadow .25s}.amll-lyric-player:hover ._lyricLine_1jop6_6{filter:unset!important}.amll-lyric-player._hasDuetLine_1jop6_65 ._lyricLine_1jop6_6:not(._lyricDuetLine_1jop6_66){padding-right:15%}.amll-lyric-player._hasDuetLine_1jop6_65 ._lyricDuetLine_1jop6_66{padding-left:15%}._lyricDuetLine_1jop6_66{text-align:right;transform-origin:100%}._lyricMainLine_1jop6_80{contain:content paint;transition:opacity .3s .1s}._lyricMainLine_1jop6_80 span{white-space:pre;display:inline-block}._lyricSubLine_1jop6_90{opacity:.3;font-size:max(.5em,10px);line-height:1.5em;transition:opacity .2s .25s}._interludeDots_1jop6_97{transform-origin:50%;opacity:0;gap:.25em;width:fit-content;height:clamp(.5em,1vh,3em);padding:2.5% .75em;transition:opacity .25s;display:flex;left:0}._interludeDots_1jop6_97._enabled_1jop6_108{opacity:1}._interludeDots_1jop6_97>*{aspect-ratio:1;background-color:var(--amll-lp-color,white);border-radius:50%;width:clamp(.5em,1vh,3em);height:clamp(.5em,1vh,3em);margin-right:4px;display:inline-block}._interludeDots_1jop6_97._duet_1jop6_122{transform-origin:50%;right:0}@supports (mix-blend-mode:plus-lighter){._lyricSubLine_1jop6_90{opacity:.3}}._tmpDisableTransition_1jop6_134{transition:none!important}\n/* ============================================================================\r\n   AMLL Android 核心兼容性补丁\r\n   ============================================================================ */\r\n\r\n/* ==================== 根元素适配 ==================== */\r\nhtml, body {\r\n  margin: 0 !important;\r\n  padding: 0 !important;\r\n  width: 100%;\r\n  height: 100%;\r\n  background: transparent;\r\n  overflow: hidden;\r\n  -webkit-font-smoothing: antialiased;\r\n}\r\n\r\n#app {\r\n  width: 100%;\r\n  height: 100%;\r\n  position: relative;\r\n}\r\n\r\n/* ==================== 兼容性修复 ==================== */\r\n\r\n/* 强制启用硬件加速，防止滚动动画掉帧 */\r\n.amll-lp-line {\r\n  transform: translateZ(0);\r\n  -webkit-transform: translateZ(0);\r\n  will-change: transform, opacity;\r\n\r\n/* ==================== 滚动条隐藏 ==================== */\r\n::-webkit-scrollbar {\r\n  width: 0;\r\n  height: 0;\r\n}\r\n\n";document.head.appendChild(style);}})();
+(function(){if(typeof document!=='undefined'){const style=document.createElement('style');style.innerText=".amll-lyric-player {\n  width: 100%;\n  max-width: 100%;\n  height: 100%;\n  color: var(--amll-lp-color, white);\n  contain: strict;\n  mix-blend-mode: plus-lighter;\n  font-size: var(--amll-lp-font-size, max(max(5vh, 2.5vw), 12px));\n  overflow: hidden;\n\n  @media screen and (width <= 768px) {\n    font-size: var(--amll-lp-font-size, max(8vw, 12px));\n  }\n\n  &.dom {\n    --amll-lp-line-width-aspect: .8;\n    --amll-lp-line-padding-x: 1em;\n    --amll-lp-bg-line-scale: .7;\n    user-select: none;\n    box-sizing: content-box;\n    z-index: 1;\n    line-height: 1.2;\n  }\n}\n\n@media screen and (width <= 768px) {\n  .amll-lyric-player {\n    --amll-lp-line-width-aspect: 1;\n    --amll-lp-line-padding-x: 0;\n  }\n}\n.FmKaba_lyricLineWrapper {\n  will-change: transform, opacity, filter;\n  flex-direction: column;\n  align-items: flex-start;\n  width: 100%;\n  transition: opacity .4s, filter .4s;\n  display: flex;\n  position: absolute;\n  top: 0;\n  left: 0;\n}\n\n.FmKaba_lyricLine {\n  box-sizing: border-box;\n  width: var(--amll-lp-width, 100%);\n  min-width: var(--amll-lp-width, 100%);\n  max-width: var(--amll-lp-width, 100%);\n  contain: content;\n  backface-visibility: hidden;\n  transform-origin: 0;\n  will-change: transform;\n  border-radius: .25em;\n  height: fit-content;\n  padding: .5em 1em;\n  transition: background-color .25s, box-shadow .25s;\n  position: relative;\n\n  @media screen and (width <= 500px) {\n    padding-left: 20px;\n    padding-right: 20px;\n  }\n\n  &.FmKaba_dirty {\n    opacity: 0;\n    visibility: hidden;\n  }\n\n  &:has( > *):hover {\n    background-color: var(--amll-lp-hover-bg-color, #fff1);\n  }\n\n  &:has( > *):active {\n    background-color: var(--amll-lp-hover-bg-color, #ffffff05);\n  }\n}\n\n.FmKaba_lyricDuetLine {\n  text-align: right;\n  transform-origin: 100%;\n}\n\n.FmKaba_lyricMainLine {\n  margin: -1em;\n  padding: 1em;\n  transition: opacity .3s .1s;\n\n  & span {\n    text-align: start;\n    vertical-align: bottom;\n    display: inline-block;\n  }\n\n  & .FmKaba_romanWord {\n    padding-inline-end: .3em;\n    font-size: .5em;\n    line-height: 1em;\n    display: flex;\n  }\n\n  & .FmKaba_rubyWord {\n    justify-content: center;\n    min-height: 1em;\n    font-size: .5em;\n    line-height: 1em;\n    display: flex;\n  }\n\n  & .FmKaba_wordWithRuby {\n    vertical-align: bottom;\n    flex-direction: column;\n    align-items: center;\n    display: inline-flex;\n  }\n\n  & .FmKaba_wordBody {\n    flex-direction: column;\n    align-items: center;\n    display: flex;\n  }\n\n  & > span, & span.FmKaba_emphasizeWrapper {\n    white-space: pre-wrap;\n    vertical-align: bottom;\n    will-change: transform;\n    margin: -1em;\n    padding: 1em;\n    display: inline-block;\n\n    &.FmKaba_emphasize, & span.FmKaba_emphasize {\n      backface-visibility: hidden;\n      margin: -1em;\n      padding: 1em;\n\n      & > span {\n        will-change: transform;\n        backface-visibility: hidden;\n        margin: -1em;\n        padding: 1em;\n      }\n    }\n  }\n}\n\n.FmKaba_lyricBgLine {\n  opacity: .4;\n  padding: 1vh\n\t\tcalc(var(--amll-lp-line-padding-x, 1em) / var(--amll-lp-bg-line-scale, .7));\n  font-size: max(calc(1em * var(--amll-lp-bg-line-scale, .7)), 10px);\n  transition: background-color .25s, box-shadow .25s;\n\n  & .FmKaba_lyricMainLine {\n    padding: 1.2em 1em;\n  }\n\n  &.FmKaba_active {\n    opacity: .4;\n    transition: background-color .25s, box-shadow .25s;\n  }\n}\n\n.FmKaba_lyricSubLine {\n  opacity: .3;\n  font-size: max(.5em, 10px);\n  line-height: 1.5em;\n  transition: opacity .2s .25s;\n\n  @supports (mix-blend-mode: plus-lighter) {\n    opacity: .3;\n  }\n}\n\n.FmKaba_bottomLine {\n  cursor: default;\n  padding-top: 0;\n  padding-bottom: 0;\n  line-height: 1.8em;\n\n  &:empty {\n    height: 0;\n    margin: 0;\n    padding: 0;\n    display: none;\n  }\n}\n\n.FmKaba_bgWrapper {\n  z-index: -1;\n  align-items: inherit;\n  visibility: visible;\n  pointer-events: auto;\n  opacity: 0;\n  width: 100%;\n  transform-origin: var(--lyric-line-padding-x) top;\n  flex-direction: column;\n  transition: opacity .3s;\n  display: flex;\n  position: absolute;\n  top: 100%;\n  left: 0;\n}\n\n.FmKaba_bgWrapperTop {\n  transform-origin: var(--lyric-line-padding-x) bottom;\n  margin-top: -999px;\n  position: relative;\n  top: auto;\n  bottom: auto;\n}\n\n.FmKaba_bgWrapperActive {\n  opacity: 1;\n  position: relative;\n  top: auto;\n  bottom: auto;\n}\n\n.FmKaba_bgWrapperHidden {\n  visibility: hidden;\n  pointer-events: none;\n}\n\n.FmKaba_interludeDots {\n  opacity: 0;\n  transform-origin: center;\n  gap: .25em;\n  width: fit-content;\n  height: clamp(.5em, 1vh, 3em);\n  padding: 2.5% .75em;\n  transition: opacity .25s;\n  display: flex;\n  position: absolute;\n  left: 0;\n\n  &.FmKaba_enabled {\n    opacity: 1;\n  }\n\n  & > * {\n    background-color: var(--amll-lp-color, white);\n    aspect-ratio: 1;\n    border-radius: 50%;\n    width: clamp(.5em, 1vh, 3em);\n    height: clamp(.5em, 1vh, 3em);\n    margin-right: 4px;\n    display: inline-block;\n  }\n\n  &.FmKaba_duet {\n    transform-origin: center;\n    right: 0;\n  }\n}\n\n.FmKaba_disableSpring > *, .FmKaba_disableSpring .FmKaba_lyricLine {\n  transition: filter .25s, transform .5s, background-color .25s, box-shadow .25s;\n}\n\n.FmKaba_tmpDisableTransition {\n  transition: none !important;\n}\n\n.amll-lyric-player {\n  --lyric-line-padding-x: 1em;\n\n  @media screen and (width <= 500px) {\n    --lyric-line-padding-x: 20px;\n  }\n\n  &:hover .FmKaba_lyricLine, &:hover .FmKaba_lyricLineWrapper {\n    filter: unset !important;\n  }\n\n  &.FmKaba_hasDuetLine {\n    & .FmKaba_lyricLine:not(.FmKaba_lyricDuetLine) {\n      padding-right: 15%;\n    }\n\n    & .FmKaba_lyricDuetLine {\n      padding-left: 15%;\n    }\n\n    & .FmKaba_lyricLineWrapper:has(.FmKaba_lyricDuetLine) {\n      align-items: flex-end;\n\n      & .FmKaba_bgWrapper {\n        transform-origin: calc(100% - var(--lyric-line-padding-x)) top;\n      }\n\n      & .FmKaba_bgWrapperTop {\n        transform-origin: calc(100% - var(--lyric-line-padding-x)) bottom;\n      }\n    }\n  }\n\n  &:not(.FmKaba_playing) .FmKaba_bgWrapper {\n    opacity: 1;\n    position: relative;\n    top: auto;\n    bottom: auto;\n  }\n}\n/* ============================================================================\r\n   AMLL Android 核心兼容性补丁\r\n   ============================================================================ */\r\n\r\n/* ==================== 根元素适配 ==================== */\r\nhtml, body {\r\n  margin: 0 !important;\r\n  padding: 0 !important;\r\n  width: 100%;\r\n  height: 100%;\r\n  background: transparent;\r\n  overflow: hidden;\r\n  -webkit-font-smoothing: antialiased;\r\n}\r\n\r\n#app {\r\n  width: 100%;\r\n  height: 100%;\r\n  position: relative;\r\n}\r\n\r\n/* ==================== 兼容性修复 ==================== */\r\n\r\n/* 强制启用硬件加速，防止滚动动画掉帧 */\r\n.amll-lp-line {\r\n  transform: translateZ(0);\r\n  -webkit-transform: translateZ(0);\r\n  will-change: transform, opacity;\r\n\r\n/* ==================== 滚动条隐藏 ==================== */\r\n::-webkit-scrollbar {\r\n  width: 0;\r\n  height: 0;\r\n}\r\n\n";document.head.appendChild(style);}})();
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+var _a;
+const EPSILON = 1e-6;
+const IDENTITY_4X4 = new Float32Array([
+  1,
+  0,
+  0,
+  0,
+  0,
+  1,
+  0,
+  0,
+  0,
+  0,
+  1,
+  0,
+  0,
+  0,
+  0,
+  1
+]);
+const _Mat4 = class _Mat4 extends Float32Array {
+  /**
+   * Create a {@link Mat4}.
+   */
+  constructor(...values) {
+    switch (values.length) {
+      case 16:
+        super(values);
+        break;
+      case 2:
+        super(values[0], values[1], 16);
+        break;
+      case 1:
+        const v2 = values[0];
+        if (typeof v2 === "number") {
+          super([
+            v2,
+            v2,
+            v2,
+            v2,
+            v2,
+            v2,
+            v2,
+            v2,
+            v2,
+            v2,
+            v2,
+            v2,
+            v2,
+            v2,
+            v2,
+            v2
+          ]);
+        } else {
+          super(v2, 0, 16);
+        }
+        break;
+      default:
+        super(IDENTITY_4X4);
+        break;
+    }
+  }
+  //============
+  // Attributes
+  //============
+  /**
+   * A string representation of `this`
+   * Equivalent to `Mat4.str(this);`
+   */
+  get str() {
+    return _Mat4.str(this);
+  }
+  //===================
+  // Instance methods
+  //===================
+  /**
+   * Copy the values from another {@link Mat4} into `this`.
+   *
+   * @param a the source vector
+   * @returns `this`
+   */
+  copy(a2) {
+    this.set(a2);
+    return this;
+  }
+  /**
+   * Set `this` to the identity matrix
+   * Equivalent to Mat4.identity(this)
+   *
+   * @returns `this`
+   */
+  identity() {
+    this.set(IDENTITY_4X4);
+    return this;
+  }
+  /**
+   * Multiplies this {@link Mat4} against another one
+   * Equivalent to `Mat4.multiply(this, this, b);`
+   *
+   * @param out - The receiving Matrix
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns `this`
+   */
+  multiply(b2) {
+    return _Mat4.multiply(this, this, b2);
+  }
+  /**
+   * Alias for {@link Mat4.multiply}
+   */
+  mul(b2) {
+    return this;
+  }
+  /**
+   * Transpose this {@link Mat4}
+   * Equivalent to `Mat4.transpose(this, this);`
+   *
+   * @returns `this`
+   */
+  transpose() {
+    return _Mat4.transpose(this, this);
+  }
+  /**
+   * Inverts this {@link Mat4}
+   * Equivalent to `Mat4.invert(this, this);`
+   *
+   * @returns `this`
+   */
+  invert() {
+    return _Mat4.invert(this, this);
+  }
+  /**
+   * Translate this {@link Mat4} by the given vector
+   * Equivalent to `Mat4.translate(this, this, v);`
+   *
+   * @param v - The {@link Vec3} to translate by
+   * @returns `this`
+   */
+  translate(v2) {
+    return _Mat4.translate(this, this, v2);
+  }
+  /**
+   * Rotates this {@link Mat4} by the given angle around the given axis
+   * Equivalent to `Mat4.rotate(this, this, rad, axis);`
+   *
+   * @param rad - the angle to rotate the matrix by
+   * @param axis - the axis to rotate around
+   * @returns `out`
+   */
+  rotate(rad, axis) {
+    return _Mat4.rotate(this, this, rad, axis);
+  }
+  /**
+   * Scales this {@link Mat4} by the dimensions in the given vec3 not using vectorization
+   * Equivalent to `Mat4.scale(this, this, v);`
+   *
+   * @param v - The {@link Vec3} to scale the matrix by
+   * @returns `this`
+   */
+  scale(v2) {
+    return _Mat4.scale(this, this, v2);
+  }
+  /**
+   * Rotates this {@link Mat4} by the given angle around the X axis
+   * Equivalent to `Mat4.rotateX(this, this, rad);`
+   *
+   * @param rad - the angle to rotate the matrix by
+   * @returns `this`
+   */
+  rotateX(rad) {
+    return _Mat4.rotateX(this, this, rad);
+  }
+  /**
+   * Rotates this {@link Mat4} by the given angle around the Y axis
+   * Equivalent to `Mat4.rotateY(this, this, rad);`
+   *
+   * @param rad - the angle to rotate the matrix by
+   * @returns `this`
+   */
+  rotateY(rad) {
+    return _Mat4.rotateY(this, this, rad);
+  }
+  /**
+   * Rotates this {@link Mat4} by the given angle around the Z axis
+   * Equivalent to `Mat4.rotateZ(this, this, rad);`
+   *
+   * @param rad - the angle to rotate the matrix by
+   * @returns `this`
+   */
+  rotateZ(rad) {
+    return _Mat4.rotateZ(this, this, rad);
+  }
+  /**
+   * Generates a perspective projection matrix with the given bounds.
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
+   * which matches WebGL/OpenGL's clip volume.
+   * Passing null/undefined/no value for far will generate infinite projection matrix.
+   * Equivalent to `Mat4.perspectiveNO(this, fovy, aspect, near, far);`
+   *
+   * @param fovy - Vertical field of view in radians
+   * @param aspect - Aspect ratio. typically viewport width/height
+   * @param near - Near bound of the frustum
+   * @param far - Far bound of the frustum, can be null or Infinity
+   * @returns `this`
+   */
+  perspectiveNO(fovy, aspect, near, far) {
+    return _Mat4.perspectiveNO(this, fovy, aspect, near, far);
+  }
+  /**
+   * Generates a perspective projection matrix suitable for WebGPU with the given bounds.
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [0, 1],
+   * which matches WebGPU/Vulkan/DirectX/Metal's clip volume.
+   * Passing null/undefined/no value for far will generate infinite projection matrix.
+   * Equivalent to `Mat4.perspectiveZO(this, fovy, aspect, near, far);`
+   *
+   * @param fovy - Vertical field of view in radians
+   * @param aspect - Aspect ratio. typically viewport width/height
+   * @param near - Near bound of the frustum
+   * @param far - Far bound of the frustum, can be null or Infinity
+   * @returns `this`
+   */
+  perspectiveZO(fovy, aspect, near, far) {
+    return _Mat4.perspectiveZO(this, fovy, aspect, near, far);
+  }
+  /**
+   * Generates a orthogonal projection matrix with the given bounds.
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
+   * which matches WebGL/OpenGL's clip volume.
+   * Equivalent to `Mat4.orthoNO(this, left, right, bottom, top, near, far);`
+   *
+   * @param left - Left bound of the frustum
+   * @param right - Right bound of the frustum
+   * @param bottom - Bottom bound of the frustum
+   * @param top - Top bound of the frustum
+   * @param near - Near bound of the frustum
+   * @param far - Far bound of the frustum
+   * @returns `this`
+   */
+  orthoNO(left, right, bottom, top, near, far) {
+    return _Mat4.orthoNO(this, left, right, bottom, top, near, far);
+  }
+  /**
+   * Generates a orthogonal projection matrix with the given bounds.
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [0, 1],
+   * which matches WebGPU/Vulkan/DirectX/Metal's clip volume.
+   * Equivalent to `Mat4.orthoZO(this, left, right, bottom, top, near, far);`
+   *
+   * @param left - Left bound of the frustum
+   * @param right - Right bound of the frustum
+   * @param bottom - Bottom bound of the frustum
+   * @param top - Top bound of the frustum
+   * @param near - Near bound of the frustum
+   * @param far - Far bound of the frustum
+   * @returns `this`
+   */
+  orthoZO(left, right, bottom, top, near, far) {
+    return _Mat4.orthoZO(this, left, right, bottom, top, near, far);
+  }
+  //================
+  // Static methods
+  //================
+  /**
+   * Creates a new, identity {@link Mat4}
+   * @category Static
+   *
+   * @returns A new {@link Mat4}
+   */
+  static create() {
+    return new _Mat4();
+  }
+  /**
+   * Creates a new {@link Mat4} initialized with values from an existing matrix
+   * @category Static
+   *
+   * @param a - Matrix to clone
+   * @returns A new {@link Mat4}
+   */
+  static clone(a2) {
+    return new _Mat4(a2);
+  }
+  /**
+   * Copy the values from one {@link Mat4} to another
+   * @category Static
+   *
+   * @param out - The receiving Matrix
+   * @param a - Matrix to copy
+   * @returns `out`
+   */
+  static copy(out, a2) {
+    out[0] = a2[0];
+    out[1] = a2[1];
+    out[2] = a2[2];
+    out[3] = a2[3];
+    out[4] = a2[4];
+    out[5] = a2[5];
+    out[6] = a2[6];
+    out[7] = a2[7];
+    out[8] = a2[8];
+    out[9] = a2[9];
+    out[10] = a2[10];
+    out[11] = a2[11];
+    out[12] = a2[12];
+    out[13] = a2[13];
+    out[14] = a2[14];
+    out[15] = a2[15];
+    return out;
+  }
+  /**
+   * Create a new mat4 with the given values
+   * @category Static
+   *
+   * @param values - Matrix components
+   * @returns A new {@link Mat4}
+   */
+  static fromValues(...values) {
+    return new _Mat4(...values);
+  }
+  /**
+   * Set the components of a mat4 to the given values
+   * @category Static
+   *
+   * @param out - The receiving matrix
+   * @param values - Matrix components
+   * @returns `out`
+   */
+  static set(out, ...values) {
+    out[0] = values[0];
+    out[1] = values[1];
+    out[2] = values[2];
+    out[3] = values[3];
+    out[4] = values[4];
+    out[5] = values[5];
+    out[6] = values[6];
+    out[7] = values[7];
+    out[8] = values[8];
+    out[9] = values[9];
+    out[10] = values[10];
+    out[11] = values[11];
+    out[12] = values[12];
+    out[13] = values[13];
+    out[14] = values[14];
+    out[15] = values[15];
+    return out;
+  }
+  /**
+   * Set a {@link Mat4} to the identity matrix
+   * @category Static
+   *
+   * @param out - The receiving Matrix
+   * @returns `out`
+   */
+  static identity(out) {
+    out[0] = 1;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = 1;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 1;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Transpose the values of a {@link Mat4}
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the source matrix
+   * @returns `out`
+   */
+  static transpose(out, a2) {
+    if (out === a2) {
+      const a01 = a2[1], a02 = a2[2], a03 = a2[3];
+      const a12 = a2[6], a13 = a2[7];
+      const a23 = a2[11];
+      out[1] = a2[4];
+      out[2] = a2[8];
+      out[3] = a2[12];
+      out[4] = a01;
+      out[6] = a2[9];
+      out[7] = a2[13];
+      out[8] = a02;
+      out[9] = a12;
+      out[11] = a2[14];
+      out[12] = a03;
+      out[13] = a13;
+      out[14] = a23;
+    } else {
+      out[0] = a2[0];
+      out[1] = a2[4];
+      out[2] = a2[8];
+      out[3] = a2[12];
+      out[4] = a2[1];
+      out[5] = a2[5];
+      out[6] = a2[9];
+      out[7] = a2[13];
+      out[8] = a2[2];
+      out[9] = a2[6];
+      out[10] = a2[10];
+      out[11] = a2[14];
+      out[12] = a2[3];
+      out[13] = a2[7];
+      out[14] = a2[11];
+      out[15] = a2[15];
+    }
+    return out;
+  }
+  /**
+   * Inverts a {@link Mat4}
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the source matrix
+   * @returns `out` or `null` if the matrix is not invertable
+   */
+  static invert(out, a2) {
+    const a00 = a2[0], a01 = a2[1], a02 = a2[2], a03 = a2[3];
+    const a10 = a2[4], a11 = a2[5], a12 = a2[6], a13 = a2[7];
+    const a20 = a2[8], a21 = a2[9], a22 = a2[10], a23 = a2[11];
+    const a30 = a2[12], a31 = a2[13], a32 = a2[14], a33 = a2[15];
+    const b00 = a00 * a11 - a01 * a10;
+    const b01 = a00 * a12 - a02 * a10;
+    const b02 = a00 * a13 - a03 * a10;
+    const b03 = a01 * a12 - a02 * a11;
+    const b04 = a01 * a13 - a03 * a11;
+    const b05 = a02 * a13 - a03 * a12;
+    const b06 = a20 * a31 - a21 * a30;
+    const b07 = a20 * a32 - a22 * a30;
+    const b08 = a20 * a33 - a23 * a30;
+    const b09 = a21 * a32 - a22 * a31;
+    const b10 = a21 * a33 - a23 * a31;
+    const b11 = a22 * a33 - a23 * a32;
+    let det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+    if (!det) {
+      return null;
+    }
+    det = 1 / det;
+    out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
+    out[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
+    out[2] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
+    out[3] = (a22 * b04 - a21 * b05 - a23 * b03) * det;
+    out[4] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
+    out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
+    out[6] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
+    out[7] = (a20 * b05 - a22 * b02 + a23 * b01) * det;
+    out[8] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
+    out[9] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
+    out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
+    out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
+    out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
+    out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
+    out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
+    out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
+    return out;
+  }
+  /**
+   * Calculates the adjugate of a {@link Mat4}
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the source matrix
+   * @returns `out`
+   */
+  static adjoint(out, a2) {
+    const a00 = a2[0], a01 = a2[1], a02 = a2[2], a03 = a2[3];
+    const a10 = a2[4], a11 = a2[5], a12 = a2[6], a13 = a2[7];
+    const a20 = a2[8], a21 = a2[9], a22 = a2[10], a23 = a2[11];
+    const a30 = a2[12], a31 = a2[13], a32 = a2[14], a33 = a2[15];
+    const b00 = a00 * a11 - a01 * a10;
+    const b01 = a00 * a12 - a02 * a10;
+    const b02 = a00 * a13 - a03 * a10;
+    const b03 = a01 * a12 - a02 * a11;
+    const b04 = a01 * a13 - a03 * a11;
+    const b05 = a02 * a13 - a03 * a12;
+    const b06 = a20 * a31 - a21 * a30;
+    const b07 = a20 * a32 - a22 * a30;
+    const b08 = a20 * a33 - a23 * a30;
+    const b09 = a21 * a32 - a22 * a31;
+    const b10 = a21 * a33 - a23 * a31;
+    const b11 = a22 * a33 - a23 * a32;
+    out[0] = a11 * b11 - a12 * b10 + a13 * b09;
+    out[1] = a02 * b10 - a01 * b11 - a03 * b09;
+    out[2] = a31 * b05 - a32 * b04 + a33 * b03;
+    out[3] = a22 * b04 - a21 * b05 - a23 * b03;
+    out[4] = a12 * b08 - a10 * b11 - a13 * b07;
+    out[5] = a00 * b11 - a02 * b08 + a03 * b07;
+    out[6] = a32 * b02 - a30 * b05 - a33 * b01;
+    out[7] = a20 * b05 - a22 * b02 + a23 * b01;
+    out[8] = a10 * b10 - a11 * b08 + a13 * b06;
+    out[9] = a01 * b08 - a00 * b10 - a03 * b06;
+    out[10] = a30 * b04 - a31 * b02 + a33 * b00;
+    out[11] = a21 * b02 - a20 * b04 - a23 * b00;
+    out[12] = a11 * b07 - a10 * b09 - a12 * b06;
+    out[13] = a00 * b09 - a01 * b07 + a02 * b06;
+    out[14] = a31 * b01 - a30 * b03 - a32 * b00;
+    out[15] = a20 * b03 - a21 * b01 + a22 * b00;
+    return out;
+  }
+  /**
+   * Calculates the determinant of a {@link Mat4}
+   * @category Static
+   *
+   * @param a - the source matrix
+   * @returns determinant of a
+   */
+  static determinant(a2) {
+    const a00 = a2[0], a01 = a2[1], a02 = a2[2], a03 = a2[3];
+    const a10 = a2[4], a11 = a2[5], a12 = a2[6], a13 = a2[7];
+    const a20 = a2[8], a21 = a2[9], a22 = a2[10], a23 = a2[11];
+    const a30 = a2[12], a31 = a2[13], a32 = a2[14], a33 = a2[15];
+    const b0 = a00 * a11 - a01 * a10;
+    const b1 = a00 * a12 - a02 * a10;
+    const b2 = a01 * a12 - a02 * a11;
+    const b3 = a20 * a31 - a21 * a30;
+    const b4 = a20 * a32 - a22 * a30;
+    const b5 = a21 * a32 - a22 * a31;
+    const b6 = a00 * b5 - a01 * b4 + a02 * b3;
+    const b7 = a10 * b5 - a11 * b4 + a12 * b3;
+    const b8 = a20 * b2 - a21 * b1 + a22 * b0;
+    const b9 = a30 * b2 - a31 * b1 + a32 * b0;
+    return a13 * b6 - a03 * b7 + a33 * b8 - a23 * b9;
+  }
+  /**
+   * Multiplies two {@link Mat4}s
+   * @category Static
+   *
+   * @param out - The receiving Matrix
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns `out`
+   */
+  static multiply(out, a2, b2) {
+    const a00 = a2[0];
+    const a01 = a2[1];
+    const a02 = a2[2];
+    const a03 = a2[3];
+    const a10 = a2[4];
+    const a11 = a2[5];
+    const a12 = a2[6];
+    const a13 = a2[7];
+    const a20 = a2[8];
+    const a21 = a2[9];
+    const a22 = a2[10];
+    const a23 = a2[11];
+    const a30 = a2[12];
+    const a31 = a2[13];
+    const a32 = a2[14];
+    const a33 = a2[15];
+    let b0 = b2[0];
+    let b1 = b2[1];
+    let b22 = b2[2];
+    let b3 = b2[3];
+    out[0] = b0 * a00 + b1 * a10 + b22 * a20 + b3 * a30;
+    out[1] = b0 * a01 + b1 * a11 + b22 * a21 + b3 * a31;
+    out[2] = b0 * a02 + b1 * a12 + b22 * a22 + b3 * a32;
+    out[3] = b0 * a03 + b1 * a13 + b22 * a23 + b3 * a33;
+    b0 = b2[4];
+    b1 = b2[5];
+    b22 = b2[6];
+    b3 = b2[7];
+    out[4] = b0 * a00 + b1 * a10 + b22 * a20 + b3 * a30;
+    out[5] = b0 * a01 + b1 * a11 + b22 * a21 + b3 * a31;
+    out[6] = b0 * a02 + b1 * a12 + b22 * a22 + b3 * a32;
+    out[7] = b0 * a03 + b1 * a13 + b22 * a23 + b3 * a33;
+    b0 = b2[8];
+    b1 = b2[9];
+    b22 = b2[10];
+    b3 = b2[11];
+    out[8] = b0 * a00 + b1 * a10 + b22 * a20 + b3 * a30;
+    out[9] = b0 * a01 + b1 * a11 + b22 * a21 + b3 * a31;
+    out[10] = b0 * a02 + b1 * a12 + b22 * a22 + b3 * a32;
+    out[11] = b0 * a03 + b1 * a13 + b22 * a23 + b3 * a33;
+    b0 = b2[12];
+    b1 = b2[13];
+    b22 = b2[14];
+    b3 = b2[15];
+    out[12] = b0 * a00 + b1 * a10 + b22 * a20 + b3 * a30;
+    out[13] = b0 * a01 + b1 * a11 + b22 * a21 + b3 * a31;
+    out[14] = b0 * a02 + b1 * a12 + b22 * a22 + b3 * a32;
+    out[15] = b0 * a03 + b1 * a13 + b22 * a23 + b3 * a33;
+    return out;
+  }
+  /**
+   * Alias for {@link Mat4.multiply}
+   * @category Static
+   */
+  static mul(out, a2, b2) {
+    return out;
+  }
+  /**
+   * Translate a {@link Mat4} by the given vector
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the matrix to translate
+   * @param v - vector to translate by
+   * @returns `out`
+   */
+  static translate(out, a2, v2) {
+    const x2 = v2[0];
+    const y2 = v2[1];
+    const z = v2[2];
+    if (a2 === out) {
+      out[12] = a2[0] * x2 + a2[4] * y2 + a2[8] * z + a2[12];
+      out[13] = a2[1] * x2 + a2[5] * y2 + a2[9] * z + a2[13];
+      out[14] = a2[2] * x2 + a2[6] * y2 + a2[10] * z + a2[14];
+      out[15] = a2[3] * x2 + a2[7] * y2 + a2[11] * z + a2[15];
+    } else {
+      const a00 = a2[0];
+      const a01 = a2[1];
+      const a02 = a2[2];
+      const a03 = a2[3];
+      const a10 = a2[4];
+      const a11 = a2[5];
+      const a12 = a2[6];
+      const a13 = a2[7];
+      const a20 = a2[8];
+      const a21 = a2[9];
+      const a22 = a2[10];
+      const a23 = a2[11];
+      out[0] = a00;
+      out[1] = a01;
+      out[2] = a02;
+      out[3] = a03;
+      out[4] = a10;
+      out[5] = a11;
+      out[6] = a12;
+      out[7] = a13;
+      out[8] = a20;
+      out[9] = a21;
+      out[10] = a22;
+      out[11] = a23;
+      out[12] = a00 * x2 + a10 * y2 + a20 * z + a2[12];
+      out[13] = a01 * x2 + a11 * y2 + a21 * z + a2[13];
+      out[14] = a02 * x2 + a12 * y2 + a22 * z + a2[14];
+      out[15] = a03 * x2 + a13 * y2 + a23 * z + a2[15];
+    }
+    return out;
+  }
+  /**
+   * Scales the {@link Mat4} by the dimensions in the given {@link Vec3} not using vectorization
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the matrix to scale
+   * @param v - the {@link Vec3} to scale the matrix by
+   * @returns `out`
+   **/
+  static scale(out, a2, v2) {
+    const x2 = v2[0];
+    const y2 = v2[1];
+    const z = v2[2];
+    out[0] = a2[0] * x2;
+    out[1] = a2[1] * x2;
+    out[2] = a2[2] * x2;
+    out[3] = a2[3] * x2;
+    out[4] = a2[4] * y2;
+    out[5] = a2[5] * y2;
+    out[6] = a2[6] * y2;
+    out[7] = a2[7] * y2;
+    out[8] = a2[8] * z;
+    out[9] = a2[9] * z;
+    out[10] = a2[10] * z;
+    out[11] = a2[11] * z;
+    out[12] = a2[12];
+    out[13] = a2[13];
+    out[14] = a2[14];
+    out[15] = a2[15];
+    return out;
+  }
+  /**
+   * Rotates a {@link Mat4} by the given angle around the given axis
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the matrix to rotate
+   * @param rad - the angle to rotate the matrix by
+   * @param axis - the axis to rotate around
+   * @returns `out` or `null` if axis has a length of 0
+   */
+  static rotate(out, a2, rad, axis) {
+    let x2 = axis[0];
+    let y2 = axis[1];
+    let z = axis[2];
+    let len = Math.sqrt(x2 * x2 + y2 * y2 + z * z);
+    if (len < EPSILON) {
+      return null;
+    }
+    len = 1 / len;
+    x2 *= len;
+    y2 *= len;
+    z *= len;
+    const s2 = Math.sin(rad);
+    const c2 = Math.cos(rad);
+    const t2 = 1 - c2;
+    const a00 = a2[0];
+    const a01 = a2[1];
+    const a02 = a2[2];
+    const a03 = a2[3];
+    const a10 = a2[4];
+    const a11 = a2[5];
+    const a12 = a2[6];
+    const a13 = a2[7];
+    const a20 = a2[8];
+    const a21 = a2[9];
+    const a22 = a2[10];
+    const a23 = a2[11];
+    const b00 = x2 * x2 * t2 + c2;
+    const b01 = y2 * x2 * t2 + z * s2;
+    const b02 = z * x2 * t2 - y2 * s2;
+    const b10 = x2 * y2 * t2 - z * s2;
+    const b11 = y2 * y2 * t2 + c2;
+    const b12 = z * y2 * t2 + x2 * s2;
+    const b20 = x2 * z * t2 + y2 * s2;
+    const b21 = y2 * z * t2 - x2 * s2;
+    const b22 = z * z * t2 + c2;
+    out[0] = a00 * b00 + a10 * b01 + a20 * b02;
+    out[1] = a01 * b00 + a11 * b01 + a21 * b02;
+    out[2] = a02 * b00 + a12 * b01 + a22 * b02;
+    out[3] = a03 * b00 + a13 * b01 + a23 * b02;
+    out[4] = a00 * b10 + a10 * b11 + a20 * b12;
+    out[5] = a01 * b10 + a11 * b11 + a21 * b12;
+    out[6] = a02 * b10 + a12 * b11 + a22 * b12;
+    out[7] = a03 * b10 + a13 * b11 + a23 * b12;
+    out[8] = a00 * b20 + a10 * b21 + a20 * b22;
+    out[9] = a01 * b20 + a11 * b21 + a21 * b22;
+    out[10] = a02 * b20 + a12 * b21 + a22 * b22;
+    out[11] = a03 * b20 + a13 * b21 + a23 * b22;
+    if (a2 !== out) {
+      out[12] = a2[12];
+      out[13] = a2[13];
+      out[14] = a2[14];
+      out[15] = a2[15];
+    }
+    return out;
+  }
+  /**
+   * Rotates a matrix by the given angle around the X axis
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the matrix to rotate
+   * @param rad - the angle to rotate the matrix by
+   * @returns `out`
+   */
+  static rotateX(out, a2, rad) {
+    let s2 = Math.sin(rad);
+    let c2 = Math.cos(rad);
+    let a10 = a2[4];
+    let a11 = a2[5];
+    let a12 = a2[6];
+    let a13 = a2[7];
+    let a20 = a2[8];
+    let a21 = a2[9];
+    let a22 = a2[10];
+    let a23 = a2[11];
+    if (a2 !== out) {
+      out[0] = a2[0];
+      out[1] = a2[1];
+      out[2] = a2[2];
+      out[3] = a2[3];
+      out[12] = a2[12];
+      out[13] = a2[13];
+      out[14] = a2[14];
+      out[15] = a2[15];
+    }
+    out[4] = a10 * c2 + a20 * s2;
+    out[5] = a11 * c2 + a21 * s2;
+    out[6] = a12 * c2 + a22 * s2;
+    out[7] = a13 * c2 + a23 * s2;
+    out[8] = a20 * c2 - a10 * s2;
+    out[9] = a21 * c2 - a11 * s2;
+    out[10] = a22 * c2 - a12 * s2;
+    out[11] = a23 * c2 - a13 * s2;
+    return out;
+  }
+  /**
+   * Rotates a matrix by the given angle around the Y axis
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the matrix to rotate
+   * @param rad - the angle to rotate the matrix by
+   * @returns `out`
+   */
+  static rotateY(out, a2, rad) {
+    let s2 = Math.sin(rad);
+    let c2 = Math.cos(rad);
+    let a00 = a2[0];
+    let a01 = a2[1];
+    let a02 = a2[2];
+    let a03 = a2[3];
+    let a20 = a2[8];
+    let a21 = a2[9];
+    let a22 = a2[10];
+    let a23 = a2[11];
+    if (a2 !== out) {
+      out[4] = a2[4];
+      out[5] = a2[5];
+      out[6] = a2[6];
+      out[7] = a2[7];
+      out[12] = a2[12];
+      out[13] = a2[13];
+      out[14] = a2[14];
+      out[15] = a2[15];
+    }
+    out[0] = a00 * c2 - a20 * s2;
+    out[1] = a01 * c2 - a21 * s2;
+    out[2] = a02 * c2 - a22 * s2;
+    out[3] = a03 * c2 - a23 * s2;
+    out[8] = a00 * s2 + a20 * c2;
+    out[9] = a01 * s2 + a21 * c2;
+    out[10] = a02 * s2 + a22 * c2;
+    out[11] = a03 * s2 + a23 * c2;
+    return out;
+  }
+  /**
+   * Rotates a matrix by the given angle around the Z axis
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the matrix to rotate
+   * @param rad - the angle to rotate the matrix by
+   * @returns `out`
+   */
+  static rotateZ(out, a2, rad) {
+    let s2 = Math.sin(rad);
+    let c2 = Math.cos(rad);
+    let a00 = a2[0];
+    let a01 = a2[1];
+    let a02 = a2[2];
+    let a03 = a2[3];
+    let a10 = a2[4];
+    let a11 = a2[5];
+    let a12 = a2[6];
+    let a13 = a2[7];
+    if (a2 !== out) {
+      out[8] = a2[8];
+      out[9] = a2[9];
+      out[10] = a2[10];
+      out[11] = a2[11];
+      out[12] = a2[12];
+      out[13] = a2[13];
+      out[14] = a2[14];
+      out[15] = a2[15];
+    }
+    out[0] = a00 * c2 + a10 * s2;
+    out[1] = a01 * c2 + a11 * s2;
+    out[2] = a02 * c2 + a12 * s2;
+    out[3] = a03 * c2 + a13 * s2;
+    out[4] = a10 * c2 - a00 * s2;
+    out[5] = a11 * c2 - a01 * s2;
+    out[6] = a12 * c2 - a02 * s2;
+    out[7] = a13 * c2 - a03 * s2;
+    return out;
+  }
+  /**
+   * Creates a {@link Mat4} from a vector translation
+   * This is equivalent to (but much faster than):
+   *
+   *     mat4.identity(dest);
+   *     mat4.translate(dest, dest, vec);
+   * @category Static
+   *
+   * @param out - {@link Mat4} receiving operation result
+   * @param v - Translation vector
+   * @returns `out`
+   */
+  static fromTranslation(out, v2) {
+    out[0] = 1;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = 1;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 1;
+    out[11] = 0;
+    out[12] = v2[0];
+    out[13] = v2[1];
+    out[14] = v2[2];
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Creates a {@link Mat4} from a vector scaling
+   * This is equivalent to (but much faster than):
+   *
+   *     mat4.identity(dest);
+   *     mat4.scale(dest, dest, vec);
+   * @category Static
+   *
+   * @param out - {@link Mat4} receiving operation result
+   * @param v - Scaling vector
+   * @returns `out`
+   */
+  static fromScaling(out, v2) {
+    out[0] = v2[0];
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = v2[1];
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = v2[2];
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Creates a {@link Mat4} from a given angle around a given axis
+   * This is equivalent to (but much faster than):
+   *
+   *     mat4.identity(dest);
+   *     mat4.rotate(dest, dest, rad, axis);
+   * @category Static
+   *
+   * @param out - {@link Mat4} receiving operation result
+   * @param rad - the angle to rotate the matrix by
+   * @param axis - the axis to rotate around
+   * @returns `out` or `null` if `axis` has a length of 0
+   */
+  static fromRotation(out, rad, axis) {
+    let x2 = axis[0];
+    let y2 = axis[1];
+    let z = axis[2];
+    let len = Math.sqrt(x2 * x2 + y2 * y2 + z * z);
+    if (len < EPSILON) {
+      return null;
+    }
+    len = 1 / len;
+    x2 *= len;
+    y2 *= len;
+    z *= len;
+    const s2 = Math.sin(rad);
+    const c2 = Math.cos(rad);
+    const t2 = 1 - c2;
+    out[0] = x2 * x2 * t2 + c2;
+    out[1] = y2 * x2 * t2 + z * s2;
+    out[2] = z * x2 * t2 - y2 * s2;
+    out[3] = 0;
+    out[4] = x2 * y2 * t2 - z * s2;
+    out[5] = y2 * y2 * t2 + c2;
+    out[6] = z * y2 * t2 + x2 * s2;
+    out[7] = 0;
+    out[8] = x2 * z * t2 + y2 * s2;
+    out[9] = y2 * z * t2 - x2 * s2;
+    out[10] = z * z * t2 + c2;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Creates a matrix from the given angle around the X axis
+   * This is equivalent to (but much faster than):
+   *
+   *     mat4.identity(dest);
+   *     mat4.rotateX(dest, dest, rad);
+   * @category Static
+   *
+   * @param out - mat4 receiving operation result
+   * @param rad - the angle to rotate the matrix by
+   * @returns `out`
+   */
+  static fromXRotation(out, rad) {
+    let s2 = Math.sin(rad);
+    let c2 = Math.cos(rad);
+    out[0] = 1;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = c2;
+    out[6] = s2;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = -s2;
+    out[10] = c2;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Creates a matrix from the given angle around the Y axis
+   * This is equivalent to (but much faster than):
+   *
+   *     mat4.identity(dest);
+   *     mat4.rotateY(dest, dest, rad);
+   * @category Static
+   *
+   * @param out - mat4 receiving operation result
+   * @param rad - the angle to rotate the matrix by
+   * @returns `out`
+   */
+  static fromYRotation(out, rad) {
+    let s2 = Math.sin(rad);
+    let c2 = Math.cos(rad);
+    out[0] = c2;
+    out[1] = 0;
+    out[2] = -s2;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = 1;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = s2;
+    out[9] = 0;
+    out[10] = c2;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Creates a matrix from the given angle around the Z axis
+   * This is equivalent to (but much faster than):
+   *
+   *     mat4.identity(dest);
+   *     mat4.rotateZ(dest, dest, rad);
+   * @category Static
+   *
+   * @param out - mat4 receiving operation result
+   * @param rad - the angle to rotate the matrix by
+   * @returns `out`
+   */
+  static fromZRotation(out, rad) {
+    const s2 = Math.sin(rad);
+    const c2 = Math.cos(rad);
+    out[0] = c2;
+    out[1] = s2;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = -s2;
+    out[5] = c2;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 1;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Creates a matrix from a quaternion rotation and vector translation
+   * This is equivalent to (but much faster than):
+   *
+   *     mat4.identity(dest);
+   *     mat4.translate(dest, vec);
+   *     let quatMat = mat4.create();
+   *     quat4.toMat4(quat, quatMat);
+   *     mat4.multiply(dest, quatMat);
+   * @category Static
+   *
+   * @param out - mat4 receiving operation result
+   * @param q - Rotation quaternion
+   * @param v - Translation vector
+   * @returns `out`
+   */
+  static fromRotationTranslation(out, q, v2) {
+    const x2 = q[0];
+    const y2 = q[1];
+    const z = q[2];
+    const w2 = q[3];
+    const x22 = x2 + x2;
+    const y22 = y2 + y2;
+    const z2 = z + z;
+    const xx = x2 * x22;
+    const xy = x2 * y22;
+    const xz = x2 * z2;
+    const yy = y2 * y22;
+    const yz = y2 * z2;
+    const zz = z * z2;
+    const wx = w2 * x22;
+    const wy = w2 * y22;
+    const wz = w2 * z2;
+    out[0] = 1 - (yy + zz);
+    out[1] = xy + wz;
+    out[2] = xz - wy;
+    out[3] = 0;
+    out[4] = xy - wz;
+    out[5] = 1 - (xx + zz);
+    out[6] = yz + wx;
+    out[7] = 0;
+    out[8] = xz + wy;
+    out[9] = yz - wx;
+    out[10] = 1 - (xx + yy);
+    out[11] = 0;
+    out[12] = v2[0];
+    out[13] = v2[1];
+    out[14] = v2[2];
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Sets a {@link Mat4} from a {@link Quat2}.
+   * @category Static
+   *
+   * @param out - Matrix
+   * @param a - Dual Quaternion
+   * @returns `out`
+   */
+  static fromQuat2(out, a2) {
+    const bx = -a2[0];
+    const by = -a2[1];
+    const bz = -a2[2];
+    const bw = a2[3];
+    const ax = a2[4];
+    const ay = a2[5];
+    const az = a2[6];
+    const aw = a2[7];
+    let magnitude = bx * bx + by * by + bz * bz + bw * bw;
+    if (magnitude > 0) {
+      tmpVec3[0] = (ax * bw + aw * bx + ay * bz - az * by) * 2 / magnitude;
+      tmpVec3[1] = (ay * bw + aw * by + az * bx - ax * bz) * 2 / magnitude;
+      tmpVec3[2] = (az * bw + aw * bz + ax * by - ay * bx) * 2 / magnitude;
+    } else {
+      tmpVec3[0] = (ax * bw + aw * bx + ay * bz - az * by) * 2;
+      tmpVec3[1] = (ay * bw + aw * by + az * bx - ax * bz) * 2;
+      tmpVec3[2] = (az * bw + aw * bz + ax * by - ay * bx) * 2;
+    }
+    _Mat4.fromRotationTranslation(out, a2, tmpVec3);
+    return out;
+  }
+  /**
+   * Calculates a {@link Mat4} normal matrix (transpose inverse) from a {@link Mat4}
+   * @category Static
+   *
+   * @param out - Matrix receiving operation result
+   * @param a - Mat4 to derive the normal matrix from
+   * @returns `out` or `null` if the matrix is not invertable
+   */
+  static normalFromMat4(out, a2) {
+    const a00 = a2[0];
+    const a01 = a2[1];
+    const a02 = a2[2];
+    const a03 = a2[3];
+    const a10 = a2[4];
+    const a11 = a2[5];
+    const a12 = a2[6];
+    const a13 = a2[7];
+    const a20 = a2[8];
+    const a21 = a2[9];
+    const a22 = a2[10];
+    const a23 = a2[11];
+    const a30 = a2[12];
+    const a31 = a2[13];
+    const a32 = a2[14];
+    const a33 = a2[15];
+    const b00 = a00 * a11 - a01 * a10;
+    const b01 = a00 * a12 - a02 * a10;
+    const b02 = a00 * a13 - a03 * a10;
+    const b03 = a01 * a12 - a02 * a11;
+    const b04 = a01 * a13 - a03 * a11;
+    const b05 = a02 * a13 - a03 * a12;
+    const b06 = a20 * a31 - a21 * a30;
+    const b07 = a20 * a32 - a22 * a30;
+    const b08 = a20 * a33 - a23 * a30;
+    const b09 = a21 * a32 - a22 * a31;
+    const b10 = a21 * a33 - a23 * a31;
+    const b11 = a22 * a33 - a23 * a32;
+    let det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+    if (!det) {
+      return null;
+    }
+    det = 1 / det;
+    out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
+    out[1] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
+    out[2] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
+    out[3] = 0;
+    out[4] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
+    out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
+    out[6] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
+    out[7] = 0;
+    out[8] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
+    out[9] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
+    out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Calculates a {@link Mat4} normal matrix (transpose inverse) from a {@link Mat4}
+   * This version omits the calculation of the constant factor (1/determinant), so
+   * any normals transformed with it will need to be renormalized.
+   * From https://stackoverflow.com/a/27616419/25968
+   * @category Static
+   *
+   * @param out - Matrix receiving operation result
+   * @param a - Mat4 to derive the normal matrix from
+   * @returns `out`
+   */
+  static normalFromMat4Fast(out, a2) {
+    const ax = a2[0];
+    const ay = a2[1];
+    const az = a2[2];
+    const bx = a2[4];
+    const by = a2[5];
+    const bz = a2[6];
+    const cx = a2[8];
+    const cy = a2[9];
+    const cz = a2[10];
+    out[0] = by * cz - cz * cy;
+    out[1] = bz * cx - cx * cz;
+    out[2] = bx * cy - cy * cx;
+    out[3] = 0;
+    out[4] = cy * az - cz * ay;
+    out[5] = cz * ax - cx * az;
+    out[6] = cx * ay - cy * ax;
+    out[7] = 0;
+    out[8] = ay * bz - az * by;
+    out[9] = az * bx - ax * bz;
+    out[10] = ax * by - ay * bx;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Returns the translation vector component of a transformation
+   * matrix. If a matrix is built with fromRotationTranslation,
+   * the returned vector will be the same as the translation vector
+   * originally supplied.
+   * @category Static
+   *
+   * @param  {vec3} out Vector to receive translation component
+   * @param  {ReadonlyMat4} mat Matrix to be decomposed (input)
+   * @return {vec3} out
+   */
+  static getTranslation(out, mat) {
+    out[0] = mat[12];
+    out[1] = mat[13];
+    out[2] = mat[14];
+    return out;
+  }
+  /**
+   * Returns the scaling factor component of a transformation
+   * matrix. If a matrix is built with fromRotationTranslationScale
+   * with a normalized Quaternion parameter, the returned vector will be
+   * the same as the scaling vector
+   * originally supplied.
+   * @category Static
+   *
+   * @param  {vec3} out Vector to receive scaling factor component
+   * @param  {ReadonlyMat4} mat Matrix to be decomposed (input)
+   * @return {vec3} out
+   */
+  static getScaling(out, mat) {
+    const m11 = mat[0];
+    const m12 = mat[1];
+    const m13 = mat[2];
+    const m21 = mat[4];
+    const m22 = mat[5];
+    const m23 = mat[6];
+    const m31 = mat[8];
+    const m32 = mat[9];
+    const m33 = mat[10];
+    out[0] = Math.sqrt(m11 * m11 + m12 * m12 + m13 * m13);
+    out[1] = Math.sqrt(m21 * m21 + m22 * m22 + m23 * m23);
+    out[2] = Math.sqrt(m31 * m31 + m32 * m32 + m33 * m33);
+    return out;
+  }
+  /**
+   * Returns a quaternion representing the rotational component
+   * of a transformation matrix. If a matrix is built with
+   * fromRotationTranslation, the returned quaternion will be the
+   * same as the quaternion originally supplied.
+   * @category Static
+   *
+   * @param out - Quaternion to receive the rotation component
+   * @param mat - Matrix to be decomposed (input)
+   * @return `out`
+   */
+  static getRotation(out, mat) {
+    _Mat4.getScaling(tmpVec3, mat);
+    const is1 = 1 / tmpVec3[0];
+    const is2 = 1 / tmpVec3[1];
+    const is3 = 1 / tmpVec3[2];
+    const sm11 = mat[0] * is1;
+    const sm12 = mat[1] * is2;
+    const sm13 = mat[2] * is3;
+    const sm21 = mat[4] * is1;
+    const sm22 = mat[5] * is2;
+    const sm23 = mat[6] * is3;
+    const sm31 = mat[8] * is1;
+    const sm32 = mat[9] * is2;
+    const sm33 = mat[10] * is3;
+    const trace = sm11 + sm22 + sm33;
+    let S2 = 0;
+    if (trace > 0) {
+      S2 = Math.sqrt(trace + 1) * 2;
+      out[3] = 0.25 * S2;
+      out[0] = (sm23 - sm32) / S2;
+      out[1] = (sm31 - sm13) / S2;
+      out[2] = (sm12 - sm21) / S2;
+    } else if (sm11 > sm22 && sm11 > sm33) {
+      S2 = Math.sqrt(1 + sm11 - sm22 - sm33) * 2;
+      out[3] = (sm23 - sm32) / S2;
+      out[0] = 0.25 * S2;
+      out[1] = (sm12 + sm21) / S2;
+      out[2] = (sm31 + sm13) / S2;
+    } else if (sm22 > sm33) {
+      S2 = Math.sqrt(1 + sm22 - sm11 - sm33) * 2;
+      out[3] = (sm31 - sm13) / S2;
+      out[0] = (sm12 + sm21) / S2;
+      out[1] = 0.25 * S2;
+      out[2] = (sm23 + sm32) / S2;
+    } else {
+      S2 = Math.sqrt(1 + sm33 - sm11 - sm22) * 2;
+      out[3] = (sm12 - sm21) / S2;
+      out[0] = (sm31 + sm13) / S2;
+      out[1] = (sm23 + sm32) / S2;
+      out[2] = 0.25 * S2;
+    }
+    return out;
+  }
+  /**
+   * Decomposes a transformation matrix into its rotation, translation
+   * and scale components. Returns only the rotation component
+   * @category Static
+   *
+   * @param out_r - Quaternion to receive the rotation component
+   * @param out_t - Vector to receive the translation vector
+   * @param out_s - Vector to receive the scaling factor
+   * @param mat - Matrix to be decomposed (input)
+   * @returns `out_r`
+   */
+  static decompose(out_r, out_t, out_s, mat) {
+    out_t[0] = mat[12];
+    out_t[1] = mat[13];
+    out_t[2] = mat[14];
+    const m11 = mat[0];
+    const m12 = mat[1];
+    const m13 = mat[2];
+    const m21 = mat[4];
+    const m22 = mat[5];
+    const m23 = mat[6];
+    const m31 = mat[8];
+    const m32 = mat[9];
+    const m33 = mat[10];
+    out_s[0] = Math.sqrt(m11 * m11 + m12 * m12 + m13 * m13);
+    out_s[1] = Math.sqrt(m21 * m21 + m22 * m22 + m23 * m23);
+    out_s[2] = Math.sqrt(m31 * m31 + m32 * m32 + m33 * m33);
+    const is1 = 1 / out_s[0];
+    const is2 = 1 / out_s[1];
+    const is3 = 1 / out_s[2];
+    const sm11 = m11 * is1;
+    const sm12 = m12 * is2;
+    const sm13 = m13 * is3;
+    const sm21 = m21 * is1;
+    const sm22 = m22 * is2;
+    const sm23 = m23 * is3;
+    const sm31 = m31 * is1;
+    const sm32 = m32 * is2;
+    const sm33 = m33 * is3;
+    const trace = sm11 + sm22 + sm33;
+    let S2 = 0;
+    if (trace > 0) {
+      S2 = Math.sqrt(trace + 1) * 2;
+      out_r[3] = 0.25 * S2;
+      out_r[0] = (sm23 - sm32) / S2;
+      out_r[1] = (sm31 - sm13) / S2;
+      out_r[2] = (sm12 - sm21) / S2;
+    } else if (sm11 > sm22 && sm11 > sm33) {
+      S2 = Math.sqrt(1 + sm11 - sm22 - sm33) * 2;
+      out_r[3] = (sm23 - sm32) / S2;
+      out_r[0] = 0.25 * S2;
+      out_r[1] = (sm12 + sm21) / S2;
+      out_r[2] = (sm31 + sm13) / S2;
+    } else if (sm22 > sm33) {
+      S2 = Math.sqrt(1 + sm22 - sm11 - sm33) * 2;
+      out_r[3] = (sm31 - sm13) / S2;
+      out_r[0] = (sm12 + sm21) / S2;
+      out_r[1] = 0.25 * S2;
+      out_r[2] = (sm23 + sm32) / S2;
+    } else {
+      S2 = Math.sqrt(1 + sm33 - sm11 - sm22) * 2;
+      out_r[3] = (sm12 - sm21) / S2;
+      out_r[0] = (sm31 + sm13) / S2;
+      out_r[1] = (sm23 + sm32) / S2;
+      out_r[2] = 0.25 * S2;
+    }
+    return out_r;
+  }
+  /**
+   * Creates a matrix from a quaternion rotation, vector translation and vector scale
+   * This is equivalent to (but much faster than):
+   *
+   *     mat4.identity(dest);
+   *     mat4.translate(dest, vec);
+   *     let quatMat = mat4.create();
+   *     quat4.toMat4(quat, quatMat);
+   *     mat4.multiply(dest, quatMat);
+   *     mat4.scale(dest, scale);
+   * @category Static
+   *
+   * @param out - mat4 receiving operation result
+   * @param q - Rotation quaternion
+   * @param v - Translation vector
+   * @param s - Scaling vector
+   * @returns `out`
+   */
+  static fromRotationTranslationScale(out, q, v2, s2) {
+    const x2 = q[0];
+    const y2 = q[1];
+    const z = q[2];
+    const w2 = q[3];
+    const x22 = x2 + x2;
+    const y22 = y2 + y2;
+    const z2 = z + z;
+    const xx = x2 * x22;
+    const xy = x2 * y22;
+    const xz = x2 * z2;
+    const yy = y2 * y22;
+    const yz = y2 * z2;
+    const zz = z * z2;
+    const wx = w2 * x22;
+    const wy = w2 * y22;
+    const wz = w2 * z2;
+    const sx = s2[0];
+    const sy = s2[1];
+    const sz = s2[2];
+    out[0] = (1 - (yy + zz)) * sx;
+    out[1] = (xy + wz) * sx;
+    out[2] = (xz - wy) * sx;
+    out[3] = 0;
+    out[4] = (xy - wz) * sy;
+    out[5] = (1 - (xx + zz)) * sy;
+    out[6] = (yz + wx) * sy;
+    out[7] = 0;
+    out[8] = (xz + wy) * sz;
+    out[9] = (yz - wx) * sz;
+    out[10] = (1 - (xx + yy)) * sz;
+    out[11] = 0;
+    out[12] = v2[0];
+    out[13] = v2[1];
+    out[14] = v2[2];
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Creates a matrix from a quaternion rotation, vector translation and vector scale, rotating and scaling around the given origin
+   * This is equivalent to (but much faster than):
+   *
+   *     mat4.identity(dest);
+   *     mat4.translate(dest, vec);
+   *     mat4.translate(dest, origin);
+   *     let quatMat = mat4.create();
+   *     quat4.toMat4(quat, quatMat);
+   *     mat4.multiply(dest, quatMat);
+   *     mat4.scale(dest, scale)
+   *     mat4.translate(dest, negativeOrigin);
+   * @category Static
+   *
+   * @param out - mat4 receiving operation result
+   * @param q - Rotation quaternion
+   * @param v - Translation vector
+   * @param s - Scaling vector
+   * @param o - The origin vector around which to scale and rotate
+   * @returns `out`
+   */
+  static fromRotationTranslationScaleOrigin(out, q, v2, s2, o2) {
+    const x2 = q[0];
+    const y2 = q[1];
+    const z = q[2];
+    const w2 = q[3];
+    const x22 = x2 + x2;
+    const y22 = y2 + y2;
+    const z2 = z + z;
+    const xx = x2 * x22;
+    const xy = x2 * y22;
+    const xz = x2 * z2;
+    const yy = y2 * y22;
+    const yz = y2 * z2;
+    const zz = z * z2;
+    const wx = w2 * x22;
+    const wy = w2 * y22;
+    const wz = w2 * z2;
+    const sx = s2[0];
+    const sy = s2[1];
+    const sz = s2[2];
+    const ox = o2[0];
+    const oy = o2[1];
+    const oz = o2[2];
+    const out0 = (1 - (yy + zz)) * sx;
+    const out1 = (xy + wz) * sx;
+    const out2 = (xz - wy) * sx;
+    const out4 = (xy - wz) * sy;
+    const out5 = (1 - (xx + zz)) * sy;
+    const out6 = (yz + wx) * sy;
+    const out8 = (xz + wy) * sz;
+    const out9 = (yz - wx) * sz;
+    const out10 = (1 - (xx + yy)) * sz;
+    out[0] = out0;
+    out[1] = out1;
+    out[2] = out2;
+    out[3] = 0;
+    out[4] = out4;
+    out[5] = out5;
+    out[6] = out6;
+    out[7] = 0;
+    out[8] = out8;
+    out[9] = out9;
+    out[10] = out10;
+    out[11] = 0;
+    out[12] = v2[0] + ox - (out0 * ox + out4 * oy + out8 * oz);
+    out[13] = v2[1] + oy - (out1 * ox + out5 * oy + out9 * oz);
+    out[14] = v2[2] + oz - (out2 * ox + out6 * oy + out10 * oz);
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Calculates a 4x4 matrix from the given quaternion
+   * @category Static
+   *
+   * @param out - mat4 receiving operation result
+   * @param q - Quaternion to create matrix from
+   * @returns `out`
+   */
+  static fromQuat(out, q) {
+    const x2 = q[0];
+    const y2 = q[1];
+    const z = q[2];
+    const w2 = q[3];
+    const x22 = x2 + x2;
+    const y22 = y2 + y2;
+    const z2 = z + z;
+    const xx = x2 * x22;
+    const yx = y2 * x22;
+    const yy = y2 * y22;
+    const zx = z * x22;
+    const zy = z * y22;
+    const zz = z * z2;
+    const wx = w2 * x22;
+    const wy = w2 * y22;
+    const wz = w2 * z2;
+    out[0] = 1 - yy - zz;
+    out[1] = yx + wz;
+    out[2] = zx - wy;
+    out[3] = 0;
+    out[4] = yx - wz;
+    out[5] = 1 - xx - zz;
+    out[6] = zy + wx;
+    out[7] = 0;
+    out[8] = zx + wy;
+    out[9] = zy - wx;
+    out[10] = 1 - xx - yy;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Generates a frustum matrix with the given bounds
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
+   * which matches WebGL/OpenGL's clip volume.
+   * Passing null/undefined/no value for far will generate infinite projection matrix.
+   * @category Static
+   *
+   * @param out - mat4 frustum matrix will be written into
+   * @param left - Left bound of the frustum
+   * @param right - Right bound of the frustum
+   * @param bottom - Bottom bound of the frustum
+   * @param top - Top bound of the frustum
+   * @param near - Near bound of the frustum
+   * @param far -  Far bound of the frustum, can be null or Infinity
+   * @returns `out`
+   */
+  static frustumNO(out, left, right, bottom, top, near, far = Infinity) {
+    const rl = 1 / (right - left);
+    const tb = 1 / (top - bottom);
+    out[0] = near * 2 * rl;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = near * 2 * tb;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = (right + left) * rl;
+    out[9] = (top + bottom) * tb;
+    out[11] = -1;
+    out[12] = 0;
+    out[13] = 0;
+    out[15] = 0;
+    if (far != null && far !== Infinity) {
+      const nf = 1 / (near - far);
+      out[10] = (far + near) * nf;
+      out[14] = 2 * far * near * nf;
+    } else {
+      out[10] = -1;
+      out[14] = -2 * near;
+    }
+    return out;
+  }
+  /**
+   * Alias for {@link Mat4.frustumNO}
+   * @category Static
+   * @deprecated Use {@link Mat4.frustumNO} or {@link Mat4.frustumZO} explicitly
+   */
+  static frustum(out, left, right, bottom, top, near, far = Infinity) {
+    return out;
+  }
+  /**
+   * Generates a frustum matrix with the given bounds
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [0, 1],
+   * which matches WebGPU/Vulkan/DirectX/Metal's clip volume.
+   * Passing null/undefined/no value for far will generate infinite projection matrix.
+   * @category Static
+   *
+   * @param out - mat4 frustum matrix will be written into
+   * @param left - Left bound of the frustum
+   * @param right - Right bound of the frustum
+   * @param bottom - Bottom bound of the frustum
+   * @param top - Top bound of the frustum
+   * @param near - Near bound of the frustum
+   * @param far - Far bound of the frustum, can be null or Infinity
+   * @returns `out`
+   */
+  static frustumZO(out, left, right, bottom, top, near, far = Infinity) {
+    const rl = 1 / (right - left);
+    const tb = 1 / (top - bottom);
+    out[0] = near * 2 * rl;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = near * 2 * tb;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = (right + left) * rl;
+    out[9] = (top + bottom) * tb;
+    out[11] = -1;
+    out[12] = 0;
+    out[13] = 0;
+    out[15] = 0;
+    if (far != null && far !== Infinity) {
+      const nf = 1 / (near - far);
+      out[10] = far * nf;
+      out[14] = far * near * nf;
+    } else {
+      out[10] = -1;
+      out[14] = -near;
+    }
+    return out;
+  }
+  /**
+   * Generates a perspective projection matrix with the given bounds.
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
+   * which matches WebGL/OpenGL's clip volume.
+   * Passing null/undefined/no value for far will generate infinite projection matrix.
+   * @category Static
+   *
+   * @param out - mat4 frustum matrix will be written into
+   * @param fovy - Vertical field of view in radians
+   * @param aspect - Aspect ratio. typically viewport width/height
+   * @param near - Near bound of the frustum
+   * @param far - Far bound of the frustum, can be null or Infinity
+   * @returns `out`
+   */
+  static perspectiveNO(out, fovy, aspect, near, far = Infinity) {
+    const f2 = 1 / Math.tan(fovy / 2);
+    out[0] = f2 / aspect;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = f2;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[11] = -1;
+    out[12] = 0;
+    out[13] = 0;
+    out[15] = 0;
+    if (far != null && far !== Infinity) {
+      const nf = 1 / (near - far);
+      out[10] = (far + near) * nf;
+      out[14] = 2 * far * near * nf;
+    } else {
+      out[10] = -1;
+      out[14] = -2 * near;
+    }
+    return out;
+  }
+  /**
+   * Alias for {@link Mat4.perspectiveNO}
+   * @category Static
+   * @deprecated Use {@link Mat4.perspectiveNO} or {@link Mat4.perspectiveZO} explicitly
+   */
+  static perspective(out, fovy, aspect, near, far = Infinity) {
+    return out;
+  }
+  /**
+   * Generates a perspective projection matrix suitable for WebGPU with the given bounds.
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [0, 1],
+   * which matches WebGPU/Vulkan/DirectX/Metal's clip volume.
+   * Passing null/undefined/no value for far will generate infinite projection matrix.
+   * @category Static
+   *
+   * @param out - mat4 frustum matrix will be written into
+   * @param fovy - Vertical field of view in radians
+   * @param aspect - Aspect ratio. typically viewport width/height
+   * @param near - Near bound of the frustum
+   * @param far - Far bound of the frustum, can be null or Infinity
+   * @returns `out`
+   */
+  static perspectiveZO(out, fovy, aspect, near, far = Infinity) {
+    const f2 = 1 / Math.tan(fovy / 2);
+    out[0] = f2 / aspect;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = f2;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[11] = -1;
+    out[12] = 0;
+    out[13] = 0;
+    out[15] = 0;
+    if (far != null && far !== Infinity) {
+      const nf = 1 / (near - far);
+      out[10] = far * nf;
+      out[14] = far * near * nf;
+    } else {
+      out[10] = -1;
+      out[14] = -near;
+    }
+    return out;
+  }
+  /**
+   * Generates a perspective projection matrix with the given field of view.
+   * This is primarily useful for generating projection matrices to be used
+   * with the still experiemental WebVR API.
+   * @category Static
+   *
+   * @param out - mat4 frustum matrix will be written into
+   * @param fov - Object containing the following values: upDegrees, downDegrees, leftDegrees, rightDegrees
+   * @param near - Near bound of the frustum
+   * @param far - Far bound of the frustum
+   * @returns `out`
+   * @deprecated
+   */
+  static perspectiveFromFieldOfView(out, fov, near, far) {
+    const upTan = Math.tan(fov.upDegrees * Math.PI / 180);
+    const downTan = Math.tan(fov.downDegrees * Math.PI / 180);
+    const leftTan = Math.tan(fov.leftDegrees * Math.PI / 180);
+    const rightTan = Math.tan(fov.rightDegrees * Math.PI / 180);
+    const xScale = 2 / (leftTan + rightTan);
+    const yScale = 2 / (upTan + downTan);
+    out[0] = xScale;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = yScale;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = -((leftTan - rightTan) * xScale * 0.5);
+    out[9] = (upTan - downTan) * yScale * 0.5;
+    out[10] = far / (near - far);
+    out[11] = -1;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = far * near / (near - far);
+    out[15] = 0;
+    return out;
+  }
+  /**
+   * Generates a orthogonal projection matrix with the given bounds.
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
+   * which matches WebGL/OpenGL's clip volume.
+   * @category Static
+   *
+   * @param out - mat4 frustum matrix will be written into
+   * @param left - Left bound of the frustum
+   * @param right - Right bound of the frustum
+   * @param bottom - Bottom bound of the frustum
+   * @param top - Top bound of the frustum
+   * @param near - Near bound of the frustum
+   * @param far - Far bound of the frustum
+   * @returns `out`
+   */
+  static orthoNO(out, left, right, bottom, top, near, far) {
+    const lr = 1 / (left - right);
+    const bt = 1 / (bottom - top);
+    const nf = 1 / (near - far);
+    out[0] = -2 * lr;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = -2 * bt;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 2 * nf;
+    out[11] = 0;
+    out[12] = (left + right) * lr;
+    out[13] = (top + bottom) * bt;
+    out[14] = (far + near) * nf;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Alias for {@link Mat4.orthoNO}
+   * @category Static
+   * @deprecated Use {@link Mat4.orthoNO} or {@link Mat4.orthoZO} explicitly
+   */
+  static ortho(out, left, right, bottom, top, near, far) {
+    return out;
+  }
+  /**
+   * Generates a orthogonal projection matrix with the given bounds.
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [0, 1],
+   * which matches WebGPU/Vulkan/DirectX/Metal's clip volume.
+   * @category Static
+   *
+   * @param out - mat4 frustum matrix will be written into
+   * @param left - Left bound of the frustum
+   * @param right - Right bound of the frustum
+   * @param bottom - Bottom bound of the frustum
+   * @param top - Top bound of the frustum
+   * @param near - Near bound of the frustum
+   * @param far - Far bound of the frustum
+   * @returns `out`
+   */
+  static orthoZO(out, left, right, bottom, top, near, far) {
+    const lr = 1 / (left - right);
+    const bt = 1 / (bottom - top);
+    const nf = 1 / (near - far);
+    out[0] = -2 * lr;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = -2 * bt;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = nf;
+    out[11] = 0;
+    out[12] = (left + right) * lr;
+    out[13] = (top + bottom) * bt;
+    out[14] = near * nf;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Generates a look-at matrix with the given eye position, focal point, and up axis.
+   * If you want a matrix that actually makes an object look at another object, you should use targetTo instead.
+   * @category Static
+   *
+   * @param out - mat4 frustum matrix will be written into
+   * @param eye - Position of the viewer
+   * @param center - Point the viewer is looking at
+   * @param up - vec3 pointing up
+   * @returns `out`
+   */
+  static lookAt(out, eye, center, up) {
+    const eyex = eye[0];
+    const eyey = eye[1];
+    const eyez = eye[2];
+    const upx = up[0];
+    const upy = up[1];
+    const upz = up[2];
+    const centerx = center[0];
+    const centery = center[1];
+    const centerz = center[2];
+    if (Math.abs(eyex - centerx) < EPSILON && Math.abs(eyey - centery) < EPSILON && Math.abs(eyez - centerz) < EPSILON) {
+      return _Mat4.identity(out);
+    }
+    let z0 = eyex - centerx;
+    let z1 = eyey - centery;
+    let z2 = eyez - centerz;
+    let len = 1 / Math.sqrt(z0 * z0 + z1 * z1 + z2 * z2);
+    z0 *= len;
+    z1 *= len;
+    z2 *= len;
+    let x0 = upy * z2 - upz * z1;
+    let x1 = upz * z0 - upx * z2;
+    let x2 = upx * z1 - upy * z0;
+    len = Math.sqrt(x0 * x0 + x1 * x1 + x2 * x2);
+    if (!len) {
+      x0 = 0;
+      x1 = 0;
+      x2 = 0;
+    } else {
+      len = 1 / len;
+      x0 *= len;
+      x1 *= len;
+      x2 *= len;
+    }
+    let y0 = z1 * x2 - z2 * x1;
+    let y1 = z2 * x0 - z0 * x2;
+    let y2 = z0 * x1 - z1 * x0;
+    len = Math.sqrt(y0 * y0 + y1 * y1 + y2 * y2);
+    if (!len) {
+      y0 = 0;
+      y1 = 0;
+      y2 = 0;
+    } else {
+      len = 1 / len;
+      y0 *= len;
+      y1 *= len;
+      y2 *= len;
+    }
+    out[0] = x0;
+    out[1] = y0;
+    out[2] = z0;
+    out[3] = 0;
+    out[4] = x1;
+    out[5] = y1;
+    out[6] = z1;
+    out[7] = 0;
+    out[8] = x2;
+    out[9] = y2;
+    out[10] = z2;
+    out[11] = 0;
+    out[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
+    out[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
+    out[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Generates a matrix that makes something look at something else.
+   * @category Static
+   *
+   * @param out - mat4 frustum matrix will be written into
+   * @param eye - Position of the viewer
+   * @param target - Point the viewer is looking at
+   * @param up - vec3 pointing up
+   * @returns `out`
+   */
+  static targetTo(out, eye, target, up) {
+    const eyex = eye[0];
+    const eyey = eye[1];
+    const eyez = eye[2];
+    const upx = up[0];
+    const upy = up[1];
+    const upz = up[2];
+    let z0 = eyex - target[0];
+    let z1 = eyey - target[1];
+    let z2 = eyez - target[2];
+    let len = z0 * z0 + z1 * z1 + z2 * z2;
+    if (len > 0) {
+      len = 1 / Math.sqrt(len);
+      z0 *= len;
+      z1 *= len;
+      z2 *= len;
+    }
+    let x0 = upy * z2 - upz * z1;
+    let x1 = upz * z0 - upx * z2;
+    let x2 = upx * z1 - upy * z0;
+    len = x0 * x0 + x1 * x1 + x2 * x2;
+    if (len > 0) {
+      len = 1 / Math.sqrt(len);
+      x0 *= len;
+      x1 *= len;
+      x2 *= len;
+    }
+    out[0] = x0;
+    out[1] = x1;
+    out[2] = x2;
+    out[3] = 0;
+    out[4] = z1 * x2 - z2 * x1;
+    out[5] = z2 * x0 - z0 * x2;
+    out[6] = z0 * x1 - z1 * x0;
+    out[7] = 0;
+    out[8] = z0;
+    out[9] = z1;
+    out[10] = z2;
+    out[11] = 0;
+    out[12] = eyex;
+    out[13] = eyey;
+    out[14] = eyez;
+    out[15] = 1;
+    return out;
+  }
+  /**
+   * Returns Frobenius norm of a {@link Mat4}
+   * @category Static
+   *
+   * @param a - the matrix to calculate Frobenius norm of
+   * @returns Frobenius norm
+   */
+  static frob(a2) {
+    return Math.sqrt(a2[0] * a2[0] + a2[1] * a2[1] + a2[2] * a2[2] + a2[3] * a2[3] + a2[4] * a2[4] + a2[5] * a2[5] + a2[6] * a2[6] + a2[7] * a2[7] + a2[8] * a2[8] + a2[9] * a2[9] + a2[10] * a2[10] + a2[11] * a2[11] + a2[12] * a2[12] + a2[13] * a2[13] + a2[14] * a2[14] + a2[15] * a2[15]);
+  }
+  /**
+   * Adds two {@link Mat4}'s
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static add(out, a2, b2) {
+    out[0] = a2[0] + b2[0];
+    out[1] = a2[1] + b2[1];
+    out[2] = a2[2] + b2[2];
+    out[3] = a2[3] + b2[3];
+    out[4] = a2[4] + b2[4];
+    out[5] = a2[5] + b2[5];
+    out[6] = a2[6] + b2[6];
+    out[7] = a2[7] + b2[7];
+    out[8] = a2[8] + b2[8];
+    out[9] = a2[9] + b2[9];
+    out[10] = a2[10] + b2[10];
+    out[11] = a2[11] + b2[11];
+    out[12] = a2[12] + b2[12];
+    out[13] = a2[13] + b2[13];
+    out[14] = a2[14] + b2[14];
+    out[15] = a2[15] + b2[15];
+    return out;
+  }
+  /**
+   * Subtracts matrix b from matrix a
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static subtract(out, a2, b2) {
+    out[0] = a2[0] - b2[0];
+    out[1] = a2[1] - b2[1];
+    out[2] = a2[2] - b2[2];
+    out[3] = a2[3] - b2[3];
+    out[4] = a2[4] - b2[4];
+    out[5] = a2[5] - b2[5];
+    out[6] = a2[6] - b2[6];
+    out[7] = a2[7] - b2[7];
+    out[8] = a2[8] - b2[8];
+    out[9] = a2[9] - b2[9];
+    out[10] = a2[10] - b2[10];
+    out[11] = a2[11] - b2[11];
+    out[12] = a2[12] - b2[12];
+    out[13] = a2[13] - b2[13];
+    out[14] = a2[14] - b2[14];
+    out[15] = a2[15] - b2[15];
+    return out;
+  }
+  /**
+   * Alias for {@link Mat4.subtract}
+   * @category Static
+   */
+  static sub(out, a2, b2) {
+    return out;
+  }
+  /**
+   * Multiply each element of the matrix by a scalar.
+   * @category Static
+   *
+   * @param out - the receiving matrix
+   * @param a - the matrix to scale
+   * @param b - amount to scale the matrix's elements by
+   * @returns `out`
+   */
+  static multiplyScalar(out, a2, b2) {
+    out[0] = a2[0] * b2;
+    out[1] = a2[1] * b2;
+    out[2] = a2[2] * b2;
+    out[3] = a2[3] * b2;
+    out[4] = a2[4] * b2;
+    out[5] = a2[5] * b2;
+    out[6] = a2[6] * b2;
+    out[7] = a2[7] * b2;
+    out[8] = a2[8] * b2;
+    out[9] = a2[9] * b2;
+    out[10] = a2[10] * b2;
+    out[11] = a2[11] * b2;
+    out[12] = a2[12] * b2;
+    out[13] = a2[13] * b2;
+    out[14] = a2[14] * b2;
+    out[15] = a2[15] * b2;
+    return out;
+  }
+  /**
+   * Adds two mat4's after multiplying each element of the second operand by a scalar value.
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @param scale - the amount to scale b's elements by before adding
+   * @returns `out`
+   */
+  static multiplyScalarAndAdd(out, a2, b2, scale) {
+    out[0] = a2[0] + b2[0] * scale;
+    out[1] = a2[1] + b2[1] * scale;
+    out[2] = a2[2] + b2[2] * scale;
+    out[3] = a2[3] + b2[3] * scale;
+    out[4] = a2[4] + b2[4] * scale;
+    out[5] = a2[5] + b2[5] * scale;
+    out[6] = a2[6] + b2[6] * scale;
+    out[7] = a2[7] + b2[7] * scale;
+    out[8] = a2[8] + b2[8] * scale;
+    out[9] = a2[9] + b2[9] * scale;
+    out[10] = a2[10] + b2[10] * scale;
+    out[11] = a2[11] + b2[11] * scale;
+    out[12] = a2[12] + b2[12] * scale;
+    out[13] = a2[13] + b2[13] * scale;
+    out[14] = a2[14] + b2[14] * scale;
+    out[15] = a2[15] + b2[15] * scale;
+    return out;
+  }
+  /**
+   * Returns whether or not two {@link Mat4}s have exactly the same elements in the same position (when compared with ===)
+   * @category Static
+   *
+   * @param a - The first matrix.
+   * @param b - The second matrix.
+   * @returns True if the matrices are equal, false otherwise.
+   */
+  static exactEquals(a2, b2) {
+    return a2[0] === b2[0] && a2[1] === b2[1] && a2[2] === b2[2] && a2[3] === b2[3] && a2[4] === b2[4] && a2[5] === b2[5] && a2[6] === b2[6] && a2[7] === b2[7] && a2[8] === b2[8] && a2[9] === b2[9] && a2[10] === b2[10] && a2[11] === b2[11] && a2[12] === b2[12] && a2[13] === b2[13] && a2[14] === b2[14] && a2[15] === b2[15];
+  }
+  /**
+   * Returns whether or not two {@link Mat4}s have approximately the same elements in the same position.
+   * @category Static
+   *
+   * @param a - The first matrix.
+   * @param b - The second matrix.
+   * @returns True if the matrices are equal, false otherwise.
+   */
+  static equals(a2, b2) {
+    const a0 = a2[0];
+    const a1 = a2[1];
+    const a22 = a2[2];
+    const a3 = a2[3];
+    const a4 = a2[4];
+    const a5 = a2[5];
+    const a6 = a2[6];
+    const a7 = a2[7];
+    const a8 = a2[8];
+    const a9 = a2[9];
+    const a10 = a2[10];
+    const a11 = a2[11];
+    const a12 = a2[12];
+    const a13 = a2[13];
+    const a14 = a2[14];
+    const a15 = a2[15];
+    const b0 = b2[0];
+    const b1 = b2[1];
+    const b22 = b2[2];
+    const b3 = b2[3];
+    const b4 = b2[4];
+    const b5 = b2[5];
+    const b6 = b2[6];
+    const b7 = b2[7];
+    const b8 = b2[8];
+    const b9 = b2[9];
+    const b10 = b2[10];
+    const b11 = b2[11];
+    const b12 = b2[12];
+    const b13 = b2[13];
+    const b14 = b2[14];
+    const b15 = b2[15];
+    return Math.abs(a0 - b0) <= EPSILON * Math.max(1, Math.abs(a0), Math.abs(b0)) && Math.abs(a1 - b1) <= EPSILON * Math.max(1, Math.abs(a1), Math.abs(b1)) && Math.abs(a22 - b22) <= EPSILON * Math.max(1, Math.abs(a22), Math.abs(b22)) && Math.abs(a3 - b3) <= EPSILON * Math.max(1, Math.abs(a3), Math.abs(b3)) && Math.abs(a4 - b4) <= EPSILON * Math.max(1, Math.abs(a4), Math.abs(b4)) && Math.abs(a5 - b5) <= EPSILON * Math.max(1, Math.abs(a5), Math.abs(b5)) && Math.abs(a6 - b6) <= EPSILON * Math.max(1, Math.abs(a6), Math.abs(b6)) && Math.abs(a7 - b7) <= EPSILON * Math.max(1, Math.abs(a7), Math.abs(b7)) && Math.abs(a8 - b8) <= EPSILON * Math.max(1, Math.abs(a8), Math.abs(b8)) && Math.abs(a9 - b9) <= EPSILON * Math.max(1, Math.abs(a9), Math.abs(b9)) && Math.abs(a10 - b10) <= EPSILON * Math.max(1, Math.abs(a10), Math.abs(b10)) && Math.abs(a11 - b11) <= EPSILON * Math.max(1, Math.abs(a11), Math.abs(b11)) && Math.abs(a12 - b12) <= EPSILON * Math.max(1, Math.abs(a12), Math.abs(b12)) && Math.abs(a13 - b13) <= EPSILON * Math.max(1, Math.abs(a13), Math.abs(b13)) && Math.abs(a14 - b14) <= EPSILON * Math.max(1, Math.abs(a14), Math.abs(b14)) && Math.abs(a15 - b15) <= EPSILON * Math.max(1, Math.abs(a15), Math.abs(b15));
+  }
+  /**
+   * Returns a string representation of a {@link Mat4}
+   * @category Static
+   *
+   * @param a - matrix to represent as a string
+   * @returns string representation of the matrix
+   */
+  static str(a2) {
+    return `Mat4(${a2.join(", ")})`;
+  }
+};
+/**
+ * The number of bytes in a {@link Mat4}.
+ */
+__publicField(_Mat4, "BYTE_LENGTH", 16 * Float32Array.BYTES_PER_ELEMENT);
+let Mat4 = _Mat4;
+const tmpVec3 = new Float32Array(3);
+Mat4.prototype.mul = Mat4.prototype.multiply;
+Mat4.sub = Mat4.subtract;
+Mat4.mul = Mat4.multiply;
+Mat4.frustum = Mat4.frustumNO;
+Mat4.perspective = Mat4.perspectiveNO;
+Mat4.ortho = Mat4.orthoNO;
+const _Vec3 = class _Vec3 extends Float32Array {
+  /**
+  * Create a {@link Vec3}.
+  */
+  constructor(...values) {
+    switch (values.length) {
+      case 3:
+        super(values);
+        break;
+      case 2:
+        super(values[0], values[1], 3);
+        break;
+      case 1: {
+        const v2 = values[0];
+        if (typeof v2 === "number") {
+          super([v2, v2, v2]);
+        } else {
+          super(v2, 0, 3);
+        }
+        break;
+      }
+      default:
+        super(3);
+        break;
+    }
+  }
+  //============
+  // Attributes
+  //============
+  // Getters and setters to make component access read better.
+  // These are likely to be a little bit slower than direct array access.
+  /**
+   * The x component of the vector. Equivalent to `this[0];`
+   * @category Vector components
+   */
+  get x() {
+    return this[0];
+  }
+  set x(value) {
+    this[0] = value;
+  }
+  /**
+   * The y component of the vector. Equivalent to `this[1];`
+   * @category Vector components
+   */
+  get y() {
+    return this[1];
+  }
+  set y(value) {
+    this[1] = value;
+  }
+  /**
+   * The z component of the vector. Equivalent to `this[2];`
+   * @category Vector components
+   */
+  get z() {
+    return this[2];
+  }
+  set z(value) {
+    this[2] = value;
+  }
+  // Alternate set of getters and setters in case this is being used to define
+  // a color.
+  /**
+   * The r component of the vector. Equivalent to `this[0];`
+   * @category Color components
+   */
+  get r() {
+    return this[0];
+  }
+  set r(value) {
+    this[0] = value;
+  }
+  /**
+   * The g component of the vector. Equivalent to `this[1];`
+   * @category Color components
+   */
+  get g() {
+    return this[1];
+  }
+  set g(value) {
+    this[1] = value;
+  }
+  /**
+   * The b component of the vector. Equivalent to `this[2];`
+   * @category Color components
+   */
+  get b() {
+    return this[2];
+  }
+  set b(value) {
+    this[2] = value;
+  }
+  /**
+   * The magnitude (length) of this.
+   * Equivalent to `Vec3.magnitude(this);`
+   *
+   * Magnitude is used because the `length` attribute is already defined by
+   * TypedArrays to mean the number of elements in the array.
+   */
+  get magnitude() {
+    const x2 = this[0];
+    const y2 = this[1];
+    const z = this[2];
+    return Math.sqrt(x2 * x2 + y2 * y2 + z * z);
+  }
+  /**
+   * Alias for {@link Vec3.magnitude}
+   */
+  get mag() {
+    return this.magnitude;
+  }
+  /**
+   * The squared magnitude (length) of `this`.
+   * Equivalent to `Vec3.squaredMagnitude(this);`
+   */
+  get squaredMagnitude() {
+    const x2 = this[0];
+    const y2 = this[1];
+    const z = this[2];
+    return x2 * x2 + y2 * y2 + z * z;
+  }
+  /**
+   * Alias for {@link Vec3.squaredMagnitude}
+   */
+  get sqrMag() {
+    return this.squaredMagnitude;
+  }
+  /**
+   * A string representation of `this`
+   * Equivalent to `Vec3.str(this);`
+   */
+  get str() {
+    return _Vec3.str(this);
+  }
+  //===================
+  // Instances methods
+  //===================
+  /**
+   * Copy the values from another {@link Vec3} into `this`.
+   *
+   * @param a the source vector
+   * @returns `this`
+   */
+  copy(a2) {
+    this.set(a2);
+    return this;
+  }
+  /**
+   * Adds a {@link Vec3} to `this`.
+   * Equivalent to `Vec3.add(this, this, b);`
+   *
+   * @param b - The vector to add to `this`
+   * @returns `this`
+   */
+  add(b2) {
+    this[0] += b2[0];
+    this[1] += b2[1];
+    this[2] += b2[2];
+    return this;
+  }
+  /**
+   * Subtracts a {@link Vec3} from `this`.
+   * Equivalent to `Vec3.subtract(this, this, b);`
+   *
+   * @param b - The vector to subtract from `this`
+   * @returns `this`
+   */
+  subtract(b2) {
+    this[0] -= b2[0];
+    this[1] -= b2[1];
+    this[2] -= b2[2];
+    return this;
+  }
+  /**
+   * Alias for {@link Vec3.subtract}
+   */
+  sub(b2) {
+    return this;
+  }
+  /**
+   * Multiplies `this` by a {@link Vec3}.
+   * Equivalent to `Vec3.multiply(this, this, b);`
+   *
+   * @param b - The vector to multiply `this` by
+   * @returns `this`
+   */
+  multiply(b2) {
+    this[0] *= b2[0];
+    this[1] *= b2[1];
+    this[2] *= b2[2];
+    return this;
+  }
+  /**
+   * Alias for {@link Vec3.multiply}
+   */
+  mul(b2) {
+    return this;
+  }
+  /**
+   * Divides `this` by a {@link Vec3}.
+   * Equivalent to `Vec3.divide(this, this, b);`
+   *
+   * @param b - The vector to divide `this` by
+   * @returns `this`
+   */
+  divide(b2) {
+    this[0] /= b2[0];
+    this[1] /= b2[1];
+    this[2] /= b2[2];
+    return this;
+  }
+  /**
+   * Alias for {@link Vec3.divide}
+   */
+  div(b2) {
+    return this;
+  }
+  /**
+   * Scales `this` by a scalar number.
+   * Equivalent to `Vec3.scale(this, this, b);`
+   *
+   * @param b - Amount to scale `this` by
+   * @returns `this`
+   */
+  scale(b2) {
+    this[0] *= b2;
+    this[1] *= b2;
+    this[2] *= b2;
+    return this;
+  }
+  /**
+   * Calculates `this` scaled by a scalar value then adds the result to `this`.
+   * Equivalent to `Vec3.scaleAndAdd(this, this, b, scale);`
+   *
+   * @param b - The vector to add to `this`
+   * @param scale - The amount to scale `b` by before adding
+   * @returns `this`
+   */
+  scaleAndAdd(b2, scale) {
+    this[0] += b2[0] * scale;
+    this[1] += b2[1] * scale;
+    this[2] += b2[2] * scale;
+    return this;
+  }
+  /**
+   * Calculates the euclidian distance between another {@link Vec3} and `this`.
+   * Equivalent to `Vec3.distance(this, b);`
+   *
+   * @param b - The vector to calculate the distance to
+   * @returns Distance between `this` and `b`
+   */
+  distance(b2) {
+    return _Vec3.distance(this, b2);
+  }
+  /**
+   * Alias for {@link Vec3.distance}
+   */
+  dist(b2) {
+    return 0;
+  }
+  /**
+   * Calculates the squared euclidian distance between another {@link Vec3} and `this`.
+   * Equivalent to `Vec3.squaredDistance(this, b);`
+   *
+   * @param b The vector to calculate the squared distance to
+   * @returns Squared distance between `this` and `b`
+   */
+  squaredDistance(b2) {
+    return _Vec3.squaredDistance(this, b2);
+  }
+  /**
+   * Alias for {@link Vec3.squaredDistance}
+   */
+  sqrDist(b2) {
+    return 0;
+  }
+  /**
+   * Negates the components of `this`.
+   * Equivalent to `Vec3.negate(this, this);`
+   *
+   * @returns `this`
+   */
+  negate() {
+    this[0] *= -1;
+    this[1] *= -1;
+    this[2] *= -1;
+    return this;
+  }
+  /**
+   * Inverts the components of `this`.
+   * Equivalent to `Vec3.inverse(this, this);`
+   *
+   * @returns `this`
+   */
+  invert() {
+    this[0] = 1 / this[0];
+    this[1] = 1 / this[1];
+    this[2] = 1 / this[2];
+    return this;
+  }
+  /**
+   * Sets each component of `this` to it's absolute value.
+   * Equivalent to `Vec3.abs(this, this);`
+   *
+   * @returns `this`
+   */
+  abs() {
+    this[0] = Math.abs(this[0]);
+    this[1] = Math.abs(this[1]);
+    this[2] = Math.abs(this[2]);
+    return this;
+  }
+  /**
+   * Calculates the dot product of this and another {@link Vec3}.
+   * Equivalent to `Vec3.dot(this, b);`
+   *
+   * @param b - The second operand
+   * @returns Dot product of `this` and `b`
+   */
+  dot(b2) {
+    return this[0] * b2[0] + this[1] * b2[1] + this[2] * b2[2];
+  }
+  /**
+   * Normalize `this`.
+   * Equivalent to `Vec3.normalize(this, this);`
+   *
+   * @returns `this`
+   */
+  normalize() {
+    return _Vec3.normalize(this, this);
+  }
+  //================
+  // Static methods
+  //================
+  /**
+   * Creates a new, empty vec3
+   * @category Static
+   *
+   * @returns a new 3D vector
+   */
+  static create() {
+    return new _Vec3();
+  }
+  /**
+   * Creates a new vec3 initialized with values from an existing vector
+   * @category Static
+   *
+   * @param a - vector to clone
+   * @returns a new 3D vector
+   */
+  static clone(a2) {
+    return new _Vec3(a2);
+  }
+  /**
+   * Calculates the magnitude (length) of a {@link Vec3}
+   * @category Static
+   *
+   * @param a - Vector to calculate magnitude of
+   * @returns Magnitude of a
+   */
+  static magnitude(a2) {
+    let x2 = a2[0];
+    let y2 = a2[1];
+    let z = a2[2];
+    return Math.sqrt(x2 * x2 + y2 * y2 + z * z);
+  }
+  /**
+   * Alias for {@link Vec3.magnitude}
+   * @category Static
+   */
+  static mag(a2) {
+    return 0;
+  }
+  /**
+   * Alias for {@link Vec3.magnitude}
+   * @category Static
+   * @deprecated Use {@link Vec3.magnitude} to avoid conflicts with builtin `length` methods/attribs
+   *
+   * @param a - vector to calculate length of
+   * @returns length of a
+   */
+  // @ts-ignore: Length conflicts with Function.length
+  static length(a2) {
+    return 0;
+  }
+  /**
+   * Alias for {@link Vec3.magnitude}
+   * @category Static
+   * @deprecated Use {@link Vec3.mag}
+   */
+  static len(a2) {
+    return 0;
+  }
+  /**
+   * Creates a new vec3 initialized with the given values
+   * @category Static
+   *
+   * @param x - X component
+   * @param y - Y component
+   * @param z - Z component
+   * @returns a new 3D vector
+   */
+  static fromValues(x2, y2, z) {
+    return new _Vec3(x2, y2, z);
+  }
+  /**
+   * Copy the values from one vec3 to another
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the source vector
+   * @returns `out`
+   */
+  static copy(out, a2) {
+    out[0] = a2[0];
+    out[1] = a2[1];
+    out[2] = a2[2];
+    return out;
+  }
+  /**
+   * Set the components of a vec3 to the given values
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param x - X component
+   * @param y - Y component
+   * @param z - Z component
+   * @returns `out`
+   */
+  static set(out, x2, y2, z) {
+    out[0] = x2;
+    out[1] = y2;
+    out[2] = z;
+    return out;
+  }
+  /**
+   * Adds two {@link Vec3}s
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns `out`
+   */
+  static add(out, a2, b2) {
+    out[0] = a2[0] + b2[0];
+    out[1] = a2[1] + b2[1];
+    out[2] = a2[2] + b2[2];
+    return out;
+  }
+  /**
+   * Subtracts vector b from vector a
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static subtract(out, a2, b2) {
+    out[0] = a2[0] - b2[0];
+    out[1] = a2[1] - b2[1];
+    out[2] = a2[2] - b2[2];
+    return out;
+  }
+  /**
+   * Alias for {@link Vec3.subtract}
+   * @category Static
+   */
+  static sub(out, a2, b2) {
+    return [0, 0, 0];
+  }
+  /**
+   * Multiplies two vec3's
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static multiply(out, a2, b2) {
+    out[0] = a2[0] * b2[0];
+    out[1] = a2[1] * b2[1];
+    out[2] = a2[2] * b2[2];
+    return out;
+  }
+  /**
+   * Alias for {@link Vec3.multiply}
+   * @category Static
+   */
+  static mul(out, a2, b2) {
+    return [0, 0, 0];
+  }
+  /**
+   * Divides two vec3's
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static divide(out, a2, b2) {
+    out[0] = a2[0] / b2[0];
+    out[1] = a2[1] / b2[1];
+    out[2] = a2[2] / b2[2];
+    return out;
+  }
+  /**
+   * Alias for {@link Vec3.divide}
+   * @category Static
+   */
+  static div(out, a2, b2) {
+    return [0, 0, 0];
+  }
+  /**
+   * Math.ceil the components of a vec3
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to ceil
+   * @returns `out`
+   */
+  static ceil(out, a2) {
+    out[0] = Math.ceil(a2[0]);
+    out[1] = Math.ceil(a2[1]);
+    out[2] = Math.ceil(a2[2]);
+    return out;
+  }
+  /**
+   * Math.floor the components of a vec3
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to floor
+   * @returns `out`
+   */
+  static floor(out, a2) {
+    out[0] = Math.floor(a2[0]);
+    out[1] = Math.floor(a2[1]);
+    out[2] = Math.floor(a2[2]);
+    return out;
+  }
+  /**
+   * Returns the minimum of two vec3's
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static min(out, a2, b2) {
+    out[0] = Math.min(a2[0], b2[0]);
+    out[1] = Math.min(a2[1], b2[1]);
+    out[2] = Math.min(a2[2], b2[2]);
+    return out;
+  }
+  /**
+   * Returns the maximum of two vec3's
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static max(out, a2, b2) {
+    out[0] = Math.max(a2[0], b2[0]);
+    out[1] = Math.max(a2[1], b2[1]);
+    out[2] = Math.max(a2[2], b2[2]);
+    return out;
+  }
+  /**
+   * symmetric round the components of a vec3
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to round
+   * @returns `out`
+   */
+  /*static round(out: Vec3Like, a: Readonly<Vec3Like>): Vec3Like {
+    out[0] = glMatrix.round(a[0]);
+    out[1] = glMatrix.round(a[1]);
+    out[2] = glMatrix.round(a[2]);
+    return out;
+  }*/
+  /**
+   * Scales a vec3 by a scalar number
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the vector to scale
+   * @param scale - amount to scale the vector by
+   * @returns `out`
+   */
+  static scale(out, a2, scale) {
+    out[0] = a2[0] * scale;
+    out[1] = a2[1] * scale;
+    out[2] = a2[2] * scale;
+    return out;
+  }
+  /**
+   * Adds two vec3's after scaling the second operand by a scalar value
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @param scale - the amount to scale b by before adding
+   * @returns `out`
+   */
+  static scaleAndAdd(out, a2, b2, scale) {
+    out[0] = a2[0] + b2[0] * scale;
+    out[1] = a2[1] + b2[1] * scale;
+    out[2] = a2[2] + b2[2] * scale;
+    return out;
+  }
+  /**
+   * Calculates the euclidian distance between two vec3's
+   * @category Static
+   *
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns distance between a and b
+   */
+  static distance(a2, b2) {
+    const x2 = b2[0] - a2[0];
+    const y2 = b2[1] - a2[1];
+    const z = b2[2] - a2[2];
+    return Math.sqrt(x2 * x2 + y2 * y2 + z * z);
+  }
+  /**
+   * Alias for {@link Vec3.distance}
+   */
+  static dist(a2, b2) {
+    return 0;
+  }
+  /**
+   * Calculates the squared euclidian distance between two vec3's
+   * @category Static
+   *
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns squared distance between a and b
+   */
+  static squaredDistance(a2, b2) {
+    const x2 = b2[0] - a2[0];
+    const y2 = b2[1] - a2[1];
+    const z = b2[2] - a2[2];
+    return x2 * x2 + y2 * y2 + z * z;
+  }
+  /**
+   * Alias for {@link Vec3.squaredDistance}
+   */
+  static sqrDist(a2, b2) {
+    return 0;
+  }
+  /**
+   * Calculates the squared length of a vec3
+   * @category Static
+   *
+   * @param a - vector to calculate squared length of
+   * @returns squared length of a
+   */
+  static squaredLength(a2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    const z = a2[2];
+    return x2 * x2 + y2 * y2 + z * z;
+  }
+  /**
+   * Alias for {@link Vec3.squaredLength}
+   */
+  static sqrLen(a2, b2) {
+    return 0;
+  }
+  /**
+   * Negates the components of a vec3
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to negate
+   * @returns `out`
+   */
+  static negate(out, a2) {
+    out[0] = -a2[0];
+    out[1] = -a2[1];
+    out[2] = -a2[2];
+    return out;
+  }
+  /**
+   * Returns the inverse of the components of a vec3
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to invert
+   * @returns `out`
+   */
+  static inverse(out, a2) {
+    out[0] = 1 / a2[0];
+    out[1] = 1 / a2[1];
+    out[2] = 1 / a2[2];
+    return out;
+  }
+  /**
+   * Returns the absolute value of the components of a {@link Vec3}
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - Vector to compute the absolute values of
+   * @returns `out`
+   */
+  static abs(out, a2) {
+    out[0] = Math.abs(a2[0]);
+    out[1] = Math.abs(a2[1]);
+    out[2] = Math.abs(a2[2]);
+    return out;
+  }
+  /**
+   * Normalize a vec3
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to normalize
+   * @returns `out`
+   */
+  static normalize(out, a2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    const z = a2[2];
+    let len = x2 * x2 + y2 * y2 + z * z;
+    if (len > 0) {
+      len = 1 / Math.sqrt(len);
+    }
+    out[0] = a2[0] * len;
+    out[1] = a2[1] * len;
+    out[2] = a2[2] * len;
+    return out;
+  }
+  /**
+   * Calculates the dot product of two vec3's
+   * @category Static
+   *
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns dot product of a and b
+   */
+  static dot(a2, b2) {
+    return a2[0] * b2[0] + a2[1] * b2[1] + a2[2] * b2[2];
+  }
+  /**
+   * Computes the cross product of two vec3's
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static cross(out, a2, b2) {
+    const ax = a2[0], ay = a2[1], az = a2[2];
+    const bx = b2[0], by = b2[1], bz = b2[2];
+    out[0] = ay * bz - az * by;
+    out[1] = az * bx - ax * bz;
+    out[2] = ax * by - ay * bx;
+    return out;
+  }
+  /**
+   * Performs a linear interpolation between two vec3's
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @param t - interpolation amount, in the range [0-1], between the two inputs
+   * @returns `out`
+   */
+  static lerp(out, a2, b2, t2) {
+    const ax = a2[0];
+    const ay = a2[1];
+    const az = a2[2];
+    out[0] = ax + t2 * (b2[0] - ax);
+    out[1] = ay + t2 * (b2[1] - ay);
+    out[2] = az + t2 * (b2[2] - az);
+    return out;
+  }
+  /**
+   * Performs a spherical linear interpolation between two vec3's
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @param t - interpolation amount, in the range [0-1], between the two inputs
+   * @returns `out`
+   */
+  static slerp(out, a2, b2, t2) {
+    const angle = Math.acos(Math.min(Math.max(_Vec3.dot(a2, b2), -1), 1));
+    const sinTotal = Math.sin(angle);
+    const ratioA = Math.sin((1 - t2) * angle) / sinTotal;
+    const ratioB = Math.sin(t2 * angle) / sinTotal;
+    out[0] = ratioA * a2[0] + ratioB * b2[0];
+    out[1] = ratioA * a2[1] + ratioB * b2[1];
+    out[2] = ratioA * a2[2] + ratioB * b2[2];
+    return out;
+  }
+  /**
+   * Performs a hermite interpolation with two control points
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @param c - the third operand
+   * @param d - the fourth operand
+   * @param t - interpolation amount, in the range [0-1], between the two inputs
+   * @returns `out`
+   */
+  static hermite(out, a2, b2, c2, d2, t2) {
+    const factorTimes2 = t2 * t2;
+    const factor1 = factorTimes2 * (2 * t2 - 3) + 1;
+    const factor2 = factorTimes2 * (t2 - 2) + t2;
+    const factor3 = factorTimes2 * (t2 - 1);
+    const factor4 = factorTimes2 * (3 - 2 * t2);
+    out[0] = a2[0] * factor1 + b2[0] * factor2 + c2[0] * factor3 + d2[0] * factor4;
+    out[1] = a2[1] * factor1 + b2[1] * factor2 + c2[1] * factor3 + d2[1] * factor4;
+    out[2] = a2[2] * factor1 + b2[2] * factor2 + c2[2] * factor3 + d2[2] * factor4;
+    return out;
+  }
+  /**
+   * Performs a bezier interpolation with two control points
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @param c - the third operand
+   * @param d - the fourth operand
+   * @param t - interpolation amount, in the range [0-1], between the two inputs
+   * @returns `out`
+   */
+  static bezier(out, a2, b2, c2, d2, t2) {
+    const inverseFactor = 1 - t2;
+    const inverseFactorTimesTwo = inverseFactor * inverseFactor;
+    const factorTimes2 = t2 * t2;
+    const factor1 = inverseFactorTimesTwo * inverseFactor;
+    const factor2 = 3 * t2 * inverseFactorTimesTwo;
+    const factor3 = 3 * factorTimes2 * inverseFactor;
+    const factor4 = factorTimes2 * t2;
+    out[0] = a2[0] * factor1 + b2[0] * factor2 + c2[0] * factor3 + d2[0] * factor4;
+    out[1] = a2[1] * factor1 + b2[1] * factor2 + c2[1] * factor3 + d2[1] * factor4;
+    out[2] = a2[2] * factor1 + b2[2] * factor2 + c2[2] * factor3 + d2[2] * factor4;
+    return out;
+  }
+  /**
+   * Generates a random vector with the given scale
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param {Number} [scale] Length of the resulting vector. If omitted, a unit vector will be returned
+   * @returns `out`
+   */
+  /*static random(out: Vec3Like, scale) {
+      scale = scale === undefined ? 1.0 : scale;
+  
+      let r = glMatrix.RANDOM() * 2.0 * Math.PI;
+      let z = glMatrix.RANDOM() * 2.0 - 1.0;
+      let zScale = Math.sqrt(1.0 - z * z) * scale;
+  
+      out[0] = Math.cos(r) * zScale;
+      out[1] = Math.sin(r) * zScale;
+      out[2] = z * scale;
+      return out;
+    }*/
+  /**
+   * Transforms the vec3 with a mat4.
+   * 4th vector component is implicitly '1'
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the vector to transform
+   * @param m - matrix to transform with
+   * @returns `out`
+   */
+  static transformMat4(out, a2, m2) {
+    const x2 = a2[0], y2 = a2[1], z = a2[2];
+    const w2 = m2[3] * x2 + m2[7] * y2 + m2[11] * z + m2[15] || 1;
+    out[0] = (m2[0] * x2 + m2[4] * y2 + m2[8] * z + m2[12]) / w2;
+    out[1] = (m2[1] * x2 + m2[5] * y2 + m2[9] * z + m2[13]) / w2;
+    out[2] = (m2[2] * x2 + m2[6] * y2 + m2[10] * z + m2[14]) / w2;
+    return out;
+  }
+  /**
+   * Transforms the vec3 with a mat3.
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the vector to transform
+   * @param m - the 3x3 matrix to transform with
+   * @returns `out`
+   */
+  static transformMat3(out, a2, m2) {
+    let x2 = a2[0], y2 = a2[1], z = a2[2];
+    out[0] = x2 * m2[0] + y2 * m2[3] + z * m2[6];
+    out[1] = x2 * m2[1] + y2 * m2[4] + z * m2[7];
+    out[2] = x2 * m2[2] + y2 * m2[5] + z * m2[8];
+    return out;
+  }
+  /**
+   * Transforms the vec3 with a quat
+   * Can also be used for dual quaternions. (Multiply it with the real part)
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the vector to transform
+   * @param q - quaternion to transform with
+   * @returns `out`
+   */
+  static transformQuat(out, a2, q) {
+    const qx = q[0];
+    const qy = q[1];
+    const qz = q[2];
+    const w2 = q[3] * 2;
+    const x2 = a2[0];
+    const y2 = a2[1];
+    const z = a2[2];
+    const uvx = qy * z - qz * y2;
+    const uvy = qz * x2 - qx * z;
+    const uvz = qx * y2 - qy * x2;
+    const uuvx = (qy * uvz - qz * uvy) * 2;
+    const uuvy = (qz * uvx - qx * uvz) * 2;
+    const uuvz = (qx * uvy - qy * uvx) * 2;
+    out[0] = x2 + uvx * w2 + uuvx;
+    out[1] = y2 + uvy * w2 + uuvy;
+    out[2] = z + uvz * w2 + uuvz;
+    return out;
+  }
+  /**
+   * Rotate a 3D vector around the x-axis
+   * @param out - The receiving vec3
+   * @param a - The vec3 point to rotate
+   * @param b - The origin of the rotation
+   * @param rad - The angle of rotation in radians
+   * @returns `out`
+   */
+  static rotateX(out, a2, b2, rad) {
+    const by = b2[1];
+    const bz = b2[2];
+    const py = a2[1] - by;
+    const pz = a2[2] - bz;
+    out[0] = a2[0];
+    out[1] = py * Math.cos(rad) - pz * Math.sin(rad) + by;
+    out[2] = py * Math.sin(rad) + pz * Math.cos(rad) + bz;
+    return out;
+  }
+  /**
+   * Rotate a 3D vector around the y-axis
+   * @param out - The receiving vec3
+   * @param a - The vec3 point to rotate
+   * @param b - The origin of the rotation
+   * @param rad - The angle of rotation in radians
+   * @returns `out`
+   */
+  static rotateY(out, a2, b2, rad) {
+    const bx = b2[0];
+    const bz = b2[2];
+    const px = a2[0] - bx;
+    const pz = a2[2] - bz;
+    out[0] = pz * Math.sin(rad) + px * Math.cos(rad) + bx;
+    out[1] = a2[1];
+    out[2] = pz * Math.cos(rad) - px * Math.sin(rad) + bz;
+    return out;
+  }
+  /**
+   * Rotate a 3D vector around the z-axis
+   * @param out - The receiving vec3
+   * @param a - The vec3 point to rotate
+   * @param b - The origin of the rotation
+   * @param rad - The angle of rotation in radians
+   * @returns `out`
+   */
+  static rotateZ(out, a2, b2, rad) {
+    const bx = b2[0];
+    const by = b2[1];
+    const px = a2[0] - bx;
+    const py = a2[1] - by;
+    out[0] = px * Math.cos(rad) - py * Math.sin(rad) + bx;
+    out[1] = px * Math.sin(rad) + py * Math.cos(rad) + by;
+    out[2] = b2[2];
+    return out;
+  }
+  /**
+   * Get the angle between two 3D vectors
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns The angle in radians
+   */
+  static angle(a2, b2) {
+    const ax = a2[0];
+    const ay = a2[1];
+    const az = a2[2];
+    const bx = b2[0];
+    const by = b2[1];
+    const bz = b2[2];
+    const mag = Math.sqrt((ax * ax + ay * ay + az * az) * (bx * bx + by * by + bz * bz));
+    const cosine = mag && _Vec3.dot(a2, b2) / mag;
+    return Math.acos(Math.min(Math.max(cosine, -1), 1));
+  }
+  /**
+   * Set the components of a vec3 to zero
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @returns `out`
+   */
+  static zero(out) {
+    out[0] = 0;
+    out[1] = 0;
+    out[2] = 0;
+    return out;
+  }
+  /**
+   * Returns a string representation of a vector
+   * @category Static
+   *
+   * @param a - vector to represent as a string
+   * @returns string representation of the vector
+   */
+  static str(a2) {
+    return `Vec3(${a2.join(", ")})`;
+  }
+  /**
+   * Returns whether or not the vectors have exactly the same elements in the same position (when compared with ===)
+   * @category Static
+   *
+   * @param a - The first vector.
+   * @param b - The second vector.
+   * @returns True if the vectors are equal, false otherwise.
+   */
+  static exactEquals(a2, b2) {
+    return a2[0] === b2[0] && a2[1] === b2[1] && a2[2] === b2[2];
+  }
+  /**
+   * Returns whether or not the vectors have approximately the same elements in the same position.
+   * @category Static
+   *
+   * @param a - The first vector.
+   * @param b - The second vector.
+   * @returns True if the vectors are equal, false otherwise.
+   */
+  static equals(a2, b2) {
+    const a0 = a2[0];
+    const a1 = a2[1];
+    const a22 = a2[2];
+    const b0 = b2[0];
+    const b1 = b2[1];
+    const b22 = b2[2];
+    return Math.abs(a0 - b0) <= EPSILON * Math.max(1, Math.abs(a0), Math.abs(b0)) && Math.abs(a1 - b1) <= EPSILON * Math.max(1, Math.abs(a1), Math.abs(b1)) && Math.abs(a22 - b22) <= EPSILON * Math.max(1, Math.abs(a22), Math.abs(b22));
+  }
+};
+/**
+* The number of bytes in a {@link Vec3}.
+*/
+__publicField(_Vec3, "BYTE_LENGTH", 3 * Float32Array.BYTES_PER_ELEMENT);
+let Vec3 = _Vec3;
+Vec3.prototype.sub = Vec3.prototype.subtract;
+Vec3.prototype.mul = Vec3.prototype.multiply;
+Vec3.prototype.div = Vec3.prototype.divide;
+Vec3.prototype.dist = Vec3.prototype.distance;
+Vec3.prototype.sqrDist = Vec3.prototype.squaredDistance;
+Vec3.sub = Vec3.subtract;
+Vec3.mul = Vec3.multiply;
+Vec3.div = Vec3.divide;
+Vec3.dist = Vec3.distance;
+Vec3.sqrDist = Vec3.squaredDistance;
+Vec3.sqrLen = Vec3.squaredLength;
+Vec3.mag = Vec3.magnitude;
+Vec3.length = Vec3.magnitude;
+Vec3.len = Vec3.magnitude;
+const _Vec4 = class _Vec4 extends Float32Array {
+  /**
+   * Create a {@link Vec4}.
+   */
+  constructor(...values) {
+    switch (values.length) {
+      case 4:
+        super(values);
+        break;
+      case 2:
+        super(values[0], values[1], 4);
+        break;
+      case 1: {
+        const v2 = values[0];
+        if (typeof v2 === "number") {
+          super([v2, v2, v2, v2]);
+        } else {
+          super(v2, 0, 4);
+        }
+        break;
+      }
+      default:
+        super(4);
+        break;
+    }
+  }
+  //============
+  // Attributes
+  //============
+  // Getters and setters to make component access read better.
+  // These are likely to be a little bit slower than direct array access.
+  /**
+   * The x component of the vector. Equivalent to `this[0];`
+   * @category Vector components
+   */
+  get x() {
+    return this[0];
+  }
+  set x(value) {
+    this[0] = value;
+  }
+  /**
+   * The y component of the vector. Equivalent to `this[1];`
+   * @category Vector components
+   */
+  get y() {
+    return this[1];
+  }
+  set y(value) {
+    this[1] = value;
+  }
+  /**
+   * The z component of the vector. Equivalent to `this[2];`
+   * @category Vector components
+   */
+  get z() {
+    return this[2];
+  }
+  set z(value) {
+    this[2] = value;
+  }
+  /**
+   * The w component of the vector. Equivalent to `this[3];`
+   * @category Vector components
+   */
+  get w() {
+    return this[3];
+  }
+  set w(value) {
+    this[3] = value;
+  }
+  // Alternate set of getters and setters in case this is being used to define
+  // a color.
+  /**
+   * The r component of the vector. Equivalent to `this[0];`
+   * @category Color components
+   */
+  get r() {
+    return this[0];
+  }
+  set r(value) {
+    this[0] = value;
+  }
+  /**
+   * The g component of the vector. Equivalent to `this[1];`
+   * @category Color components
+   */
+  get g() {
+    return this[1];
+  }
+  set g(value) {
+    this[1] = value;
+  }
+  /**
+   * The b component of the vector. Equivalent to `this[2];`
+   * @category Color components
+   */
+  get b() {
+    return this[2];
+  }
+  set b(value) {
+    this[2] = value;
+  }
+  /**
+   * The a component of the vector. Equivalent to `this[3];`
+   * @category Color components
+   */
+  get a() {
+    return this[3];
+  }
+  set a(value) {
+    this[3] = value;
+  }
+  /**
+   * The magnitude (length) of this.
+   * Equivalent to `Vec4.magnitude(this);`
+   *
+   * Magnitude is used because the `length` attribute is already defined by
+   * TypedArrays to mean the number of elements in the array.
+   */
+  get magnitude() {
+    const x2 = this[0];
+    const y2 = this[1];
+    const z = this[2];
+    const w2 = this[3];
+    return Math.sqrt(x2 * x2 + y2 * y2 + z * z + w2 * w2);
+  }
+  /**
+   * Alias for {@link Vec4.magnitude}
+   */
+  get mag() {
+    return this.magnitude;
+  }
+  /**
+   * A string representation of `this`
+   * Equivalent to `Vec4.str(this);`
+   */
+  get str() {
+    return _Vec4.str(this);
+  }
+  //===================
+  // Instances methods
+  //===================
+  /**
+   * Copy the values from another {@link Vec4} into `this`.
+   *
+   * @param a the source vector
+   * @returns `this`
+   */
+  copy(a2) {
+    super.set(a2);
+    return this;
+  }
+  /**
+   * Adds a {@link Vec4} to `this`.
+   * Equivalent to `Vec4.add(this, this, b);`
+   *
+   * @param b - The vector to add to `this`
+   * @returns `this`
+   */
+  add(b2) {
+    this[0] += b2[0];
+    this[1] += b2[1];
+    this[2] += b2[2];
+    this[3] += b2[3];
+    return this;
+  }
+  /**
+   * Subtracts a {@link Vec4} from `this`.
+   * Equivalent to `Vec4.subtract(this, this, b);`
+   *
+   * @param b - The vector to subtract from `this`
+   * @returns `this`
+   */
+  subtract(b2) {
+    this[0] -= b2[0];
+    this[1] -= b2[1];
+    this[2] -= b2[2];
+    this[3] -= b2[3];
+    return this;
+  }
+  /**
+   * Alias for {@link Vec4.subtract}
+   */
+  sub(b2) {
+    return this;
+  }
+  /**
+   * Multiplies `this` by a {@link Vec4}.
+   * Equivalent to `Vec4.multiply(this, this, b);`
+   *
+   * @param b - The vector to multiply `this` by
+   * @returns `this`
+   */
+  multiply(b2) {
+    this[0] *= b2[0];
+    this[1] *= b2[1];
+    this[2] *= b2[2];
+    this[3] *= b2[3];
+    return this;
+  }
+  /**
+   * Alias for {@link Vec4.multiply}
+   */
+  mul(b2) {
+    return this;
+  }
+  /**
+   * Divides `this` by a {@link Vec4}.
+   * Equivalent to `Vec4.divide(this, this, b);`
+   *
+   * @param b - The vector to divide `this` by
+   * @returns `this`
+   */
+  divide(b2) {
+    this[0] /= b2[0];
+    this[1] /= b2[1];
+    this[2] /= b2[2];
+    this[3] /= b2[3];
+    return this;
+  }
+  /**
+   * Alias for {@link Vec4.divide}
+   */
+  div(b2) {
+    return this;
+  }
+  /**
+   * Scales `this` by a scalar number.
+   * Equivalent to `Vec4.scale(this, this, b);`
+   *
+   * @param b - Amount to scale `this` by
+   * @returns `this`
+   */
+  scale(b2) {
+    this[0] *= b2;
+    this[1] *= b2;
+    this[2] *= b2;
+    this[3] *= b2;
+    return this;
+  }
+  /**
+   * Calculates `this` scaled by a scalar value then adds the result to `this`.
+   * Equivalent to `Vec4.scaleAndAdd(this, this, b, scale);`
+   *
+   * @param b - The vector to add to `this`
+   * @param scale - The amount to scale `b` by before adding
+   * @returns `this`
+   */
+  scaleAndAdd(b2, scale) {
+    this[0] += b2[0] * scale;
+    this[1] += b2[1] * scale;
+    this[2] += b2[2] * scale;
+    this[3] += b2[3] * scale;
+    return this;
+  }
+  /**
+   * Calculates the euclidian distance between another {@link Vec4} and `this`.
+   * Equivalent to `Vec4.distance(this, b);`
+   *
+   * @param b - The vector to calculate the distance to
+   * @returns Distance between `this` and `b`
+   */
+  distance(b2) {
+    return _Vec4.distance(this, b2);
+  }
+  /**
+   * Alias for {@link Vec4.distance}
+   */
+  dist(b2) {
+    return 0;
+  }
+  /**
+   * Calculates the squared euclidian distance between another {@link Vec4} and `this`.
+   * Equivalent to `Vec4.squaredDistance(this, b);`
+   *
+   * @param b The vector to calculate the squared distance to
+   * @returns Squared distance between `this` and `b`
+   */
+  squaredDistance(b2) {
+    return _Vec4.squaredDistance(this, b2);
+  }
+  /**
+   * Alias for {@link Vec4.squaredDistance}
+   */
+  sqrDist(b2) {
+    return 0;
+  }
+  /**
+   * Negates the components of `this`.
+   * Equivalent to `Vec4.negate(this, this);`
+   *
+   * @returns `this`
+   */
+  negate() {
+    this[0] *= -1;
+    this[1] *= -1;
+    this[2] *= -1;
+    this[3] *= -1;
+    return this;
+  }
+  /**
+   * Inverts the components of `this`.
+   * Equivalent to `Vec4.inverse(this, this);`
+   *
+   * @returns `this`
+   */
+  invert() {
+    this[0] = 1 / this[0];
+    this[1] = 1 / this[1];
+    this[2] = 1 / this[2];
+    this[3] = 1 / this[3];
+    return this;
+  }
+  /**
+   * Sets each component of `this` to it's absolute value.
+   * Equivalent to `Vec4.abs(this, this);`
+   *
+   * @returns `this`
+   */
+  abs() {
+    this[0] = Math.abs(this[0]);
+    this[1] = Math.abs(this[1]);
+    this[2] = Math.abs(this[2]);
+    this[3] = Math.abs(this[3]);
+    return this;
+  }
+  /**
+   * Calculates the dot product of this and another {@link Vec4}.
+   * Equivalent to `Vec4.dot(this, b);`
+   *
+   * @param b - The second operand
+   * @returns Dot product of `this` and `b`
+   */
+  dot(b2) {
+    return this[0] * b2[0] + this[1] * b2[1] + this[2] * b2[2] + this[3] * b2[3];
+  }
+  /**
+   * Normalize `this`.
+   * Equivalent to `Vec4.normalize(this, this);`
+   *
+   * @returns `this`
+   */
+  normalize() {
+    return _Vec4.normalize(this, this);
+  }
+  //===================
+  // Static methods
+  //===================
+  /**
+   * Creates a new, empty {@link Vec4}
+   * @category Static
+   *
+   * @returns a new 4D vector
+   */
+  static create() {
+    return new _Vec4();
+  }
+  /**
+   * Creates a new {@link Vec4} initialized with values from an existing vector
+   * @category Static
+   *
+   * @param a - vector to clone
+   * @returns a new 4D vector
+   */
+  static clone(a2) {
+    return new _Vec4(a2);
+  }
+  /**
+   * Creates a new {@link Vec4} initialized with the given values
+   * @category Static
+   *
+   * @param x - X component
+   * @param y - Y component
+   * @param z - Z component
+   * @param w - W component
+   * @returns a new 4D vector
+   */
+  static fromValues(x2, y2, z, w2) {
+    return new _Vec4(x2, y2, z, w2);
+  }
+  /**
+   * Copy the values from one {@link Vec4} to another
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the source vector
+   * @returns `out`
+   */
+  static copy(out, a2) {
+    out[0] = a2[0];
+    out[1] = a2[1];
+    out[2] = a2[2];
+    out[3] = a2[3];
+    return out;
+  }
+  /**
+   * Set the components of a {@link Vec4} to the given values
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param x - X component
+   * @param y - Y component
+   * @param z - Z component
+   * @param w - W component
+   * @returns `out`
+   */
+  static set(out, x2, y2, z, w2) {
+    out[0] = x2;
+    out[1] = y2;
+    out[2] = z;
+    out[3] = w2;
+    return out;
+  }
+  /**
+   * Adds two {@link Vec4}s
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns `out`
+   */
+  static add(out, a2, b2) {
+    out[0] = a2[0] + b2[0];
+    out[1] = a2[1] + b2[1];
+    out[2] = a2[2] + b2[2];
+    out[3] = a2[3] + b2[3];
+    return out;
+  }
+  /**
+   * Subtracts vector b from vector a
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static subtract(out, a2, b2) {
+    out[0] = a2[0] - b2[0];
+    out[1] = a2[1] - b2[1];
+    out[2] = a2[2] - b2[2];
+    out[3] = a2[3] - b2[3];
+    return out;
+  }
+  /**
+   * Alias for {@link Vec4.subtract}
+   * @category Static
+   */
+  static sub(out, a2, b2) {
+    return out;
+  }
+  /**
+   * Multiplies two {@link Vec4}'s
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static multiply(out, a2, b2) {
+    out[0] = a2[0] * b2[0];
+    out[1] = a2[1] * b2[1];
+    out[2] = a2[2] * b2[2];
+    out[3] = a2[3] * b2[3];
+    return out;
+  }
+  /**
+   * Alias for {@link Vec4.multiply}
+   * @category Static
+   */
+  static mul(out, a2, b2) {
+    return out;
+  }
+  /**
+   * Divides two {@link Vec4}'s
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static divide(out, a2, b2) {
+    out[0] = a2[0] / b2[0];
+    out[1] = a2[1] / b2[1];
+    out[2] = a2[2] / b2[2];
+    out[3] = a2[3] / b2[3];
+    return out;
+  }
+  /**
+   * Alias for {@link Vec4.divide}
+   * @category Static
+   */
+  static div(out, a2, b2) {
+    return out;
+  }
+  /**
+   * Math.ceil the components of a {@link Vec4}
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to ceil
+   * @returns `out`
+   */
+  static ceil(out, a2) {
+    out[0] = Math.ceil(a2[0]);
+    out[1] = Math.ceil(a2[1]);
+    out[2] = Math.ceil(a2[2]);
+    out[3] = Math.ceil(a2[3]);
+    return out;
+  }
+  /**
+   * Math.floor the components of a {@link Vec4}
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to floor
+   * @returns `out`
+   */
+  static floor(out, a2) {
+    out[0] = Math.floor(a2[0]);
+    out[1] = Math.floor(a2[1]);
+    out[2] = Math.floor(a2[2]);
+    out[3] = Math.floor(a2[3]);
+    return out;
+  }
+  /**
+   * Returns the minimum of two {@link Vec4}'s
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static min(out, a2, b2) {
+    out[0] = Math.min(a2[0], b2[0]);
+    out[1] = Math.min(a2[1], b2[1]);
+    out[2] = Math.min(a2[2], b2[2]);
+    out[3] = Math.min(a2[3], b2[3]);
+    return out;
+  }
+  /**
+   * Returns the maximum of two {@link Vec4}'s
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns `out`
+   */
+  static max(out, a2, b2) {
+    out[0] = Math.max(a2[0], b2[0]);
+    out[1] = Math.max(a2[1], b2[1]);
+    out[2] = Math.max(a2[2], b2[2]);
+    out[3] = Math.max(a2[3], b2[3]);
+    return out;
+  }
+  /**
+   * Math.round the components of a {@link Vec4}
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to round
+   * @returns `out`
+   */
+  static round(out, a2) {
+    out[0] = Math.round(a2[0]);
+    out[1] = Math.round(a2[1]);
+    out[2] = Math.round(a2[2]);
+    out[3] = Math.round(a2[3]);
+    return out;
+  }
+  /**
+   * Scales a {@link Vec4} by a scalar number
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the vector to scale
+   * @param scale - amount to scale the vector by
+   * @returns `out`
+   */
+  static scale(out, a2, scale) {
+    out[0] = a2[0] * scale;
+    out[1] = a2[1] * scale;
+    out[2] = a2[2] * scale;
+    out[3] = a2[3] * scale;
+    return out;
+  }
+  /**
+   * Adds two {@link Vec4}'s after scaling the second operand by a scalar value
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @param scale - the amount to scale b by before adding
+   * @returns `out`
+   */
+  static scaleAndAdd(out, a2, b2, scale) {
+    out[0] = a2[0] + b2[0] * scale;
+    out[1] = a2[1] + b2[1] * scale;
+    out[2] = a2[2] + b2[2] * scale;
+    out[3] = a2[3] + b2[3] * scale;
+    return out;
+  }
+  /**
+   * Calculates the euclidian distance between two {@link Vec4}'s
+   * @category Static
+   *
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns distance between a and b
+   */
+  static distance(a2, b2) {
+    const x2 = b2[0] - a2[0];
+    const y2 = b2[1] - a2[1];
+    const z = b2[2] - a2[2];
+    const w2 = b2[3] - a2[3];
+    return Math.hypot(x2, y2, z, w2);
+  }
+  /**
+   * Alias for {@link Vec4.distance}
+   * @category Static
+   */
+  static dist(a2, b2) {
+    return 0;
+  }
+  /**
+   * Calculates the squared euclidian distance between two {@link Vec4}'s
+   * @category Static
+   *
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns squared distance between a and b
+   */
+  static squaredDistance(a2, b2) {
+    const x2 = b2[0] - a2[0];
+    const y2 = b2[1] - a2[1];
+    const z = b2[2] - a2[2];
+    const w2 = b2[3] - a2[3];
+    return x2 * x2 + y2 * y2 + z * z + w2 * w2;
+  }
+  /**
+   * Alias for {@link Vec4.squaredDistance}
+   * @category Static
+   */
+  static sqrDist(a2, b2) {
+    return 0;
+  }
+  /**
+   * Calculates the magnitude (length) of a {@link Vec4}
+   * @category Static
+   *
+   * @param a - vector to calculate length of
+   * @returns length of `a`
+   */
+  static magnitude(a2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    const z = a2[2];
+    const w2 = a2[3];
+    return Math.sqrt(x2 * x2 + y2 * y2 + z * z + w2 * w2);
+  }
+  /**
+   * Alias for {@link Vec4.magnitude}
+   * @category Static
+   */
+  static mag(a2) {
+    return 0;
+  }
+  /**
+   * Alias for {@link Vec4.magnitude}
+   * @category Static
+   * @deprecated Use {@link Vec4.magnitude} to avoid conflicts with builtin `length` methods/attribs
+   */
+  // @ts-ignore: Length conflicts with Function.length
+  static length(a2) {
+    return 0;
+  }
+  /**
+   * Alias for {@link Vec4.magnitude}
+   * @category Static
+   * @deprecated Use {@link Vec4.mag}
+   */
+  static len(a2) {
+    return 0;
+  }
+  /**
+   * Calculates the squared length of a {@link Vec4}
+   * @category Static
+   *
+   * @param a - vector to calculate squared length of
+   * @returns squared length of a
+   */
+  static squaredLength(a2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    const z = a2[2];
+    const w2 = a2[3];
+    return x2 * x2 + y2 * y2 + z * z + w2 * w2;
+  }
+  /**
+   * Alias for {@link Vec4.squaredLength}
+   * @category Static
+   */
+  static sqrLen(a2) {
+    return 0;
+  }
+  /**
+   * Negates the components of a {@link Vec4}
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to negate
+   * @returns `out`
+   */
+  static negate(out, a2) {
+    out[0] = -a2[0];
+    out[1] = -a2[1];
+    out[2] = -a2[2];
+    out[3] = -a2[3];
+    return out;
+  }
+  /**
+   * Returns the inverse of the components of a {@link Vec4}
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to invert
+   * @returns `out`
+   */
+  static inverse(out, a2) {
+    out[0] = 1 / a2[0];
+    out[1] = 1 / a2[1];
+    out[2] = 1 / a2[2];
+    out[3] = 1 / a2[3];
+    return out;
+  }
+  /**
+   * Returns the absolute value of the components of a {@link Vec4}
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - Vector to compute the absolute values of
+   * @returns `out`
+   */
+  static abs(out, a2) {
+    out[0] = Math.abs(a2[0]);
+    out[1] = Math.abs(a2[1]);
+    out[2] = Math.abs(a2[2]);
+    out[3] = Math.abs(a2[3]);
+    return out;
+  }
+  /**
+   * Normalize a {@link Vec4}
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - vector to normalize
+   * @returns `out`
+   */
+  static normalize(out, a2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    const z = a2[2];
+    const w2 = a2[3];
+    let len = x2 * x2 + y2 * y2 + z * z + w2 * w2;
+    if (len > 0) {
+      len = 1 / Math.sqrt(len);
+    }
+    out[0] = x2 * len;
+    out[1] = y2 * len;
+    out[2] = z * len;
+    out[3] = w2 * len;
+    return out;
+  }
+  /**
+   * Calculates the dot product of two {@link Vec4}'s
+   * @category Static
+   *
+   * @param a - the first operand
+   * @param b - the second operand
+   * @returns dot product of a and b
+   */
+  static dot(a2, b2) {
+    return a2[0] * b2[0] + a2[1] * b2[1] + a2[2] * b2[2] + a2[3] * b2[3];
+  }
+  /**
+   * Returns the cross-product of three vectors in a 4-dimensional space
+   * @category Static
+   *
+   * @param out the receiving vector
+   * @param u - the first vector
+   * @param v - the second vector
+   * @param w - the third vector
+   * @returns result
+   */
+  static cross(out, u2, v2, w2) {
+    const a2 = v2[0] * w2[1] - v2[1] * w2[0];
+    const b2 = v2[0] * w2[2] - v2[2] * w2[0];
+    const c2 = v2[0] * w2[3] - v2[3] * w2[0];
+    const d2 = v2[1] * w2[2] - v2[2] * w2[1];
+    const e2 = v2[1] * w2[3] - v2[3] * w2[1];
+    const f2 = v2[2] * w2[3] - v2[3] * w2[2];
+    const g2 = u2[0];
+    const h2 = u2[1];
+    const i2 = u2[2];
+    const j2 = u2[3];
+    out[0] = h2 * f2 - i2 * e2 + j2 * d2;
+    out[1] = -(g2 * f2) + i2 * c2 - j2 * b2;
+    out[2] = g2 * e2 - h2 * c2 + j2 * a2;
+    out[3] = -(g2 * d2) + h2 * b2 - i2 * a2;
+    return out;
+  }
+  /**
+   * Performs a linear interpolation between two {@link Vec4}'s
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the first operand
+   * @param b - the second operand
+   * @param t - interpolation amount, in the range [0-1], between the two inputs
+   * @returns `out`
+   */
+  static lerp(out, a2, b2, t2) {
+    const ax = a2[0];
+    const ay = a2[1];
+    const az = a2[2];
+    const aw = a2[3];
+    out[0] = ax + t2 * (b2[0] - ax);
+    out[1] = ay + t2 * (b2[1] - ay);
+    out[2] = az + t2 * (b2[2] - az);
+    out[3] = aw + t2 * (b2[3] - aw);
+    return out;
+  }
+  /**
+   * Generates a random vector with the given scale
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param [scale] - Length of the resulting vector. If ommitted, a unit vector will be returned
+   * @returns `out`
+   */
+  /*static random(out: Vec4Like, scale): Vec4Like {
+      scale = scale || 1.0;
+  
+      // Marsaglia, George. Choosing a Point from the Surface of a
+      // Sphere. Ann. Math. Statist. 43 (1972), no. 2, 645--646.
+      // http://projecteuclid.org/euclid.aoms/1177692644;
+      var v1, v2, v3, v4;
+      var s1, s2;
+      do {
+        v1 = glMatrix.RANDOM() * 2 - 1;
+        v2 = glMatrix.RANDOM() * 2 - 1;
+        s1 = v1 * v1 + v2 * v2;
+      } while (s1 >= 1);
+      do {
+        v3 = glMatrix.RANDOM() * 2 - 1;
+        v4 = glMatrix.RANDOM() * 2 - 1;
+        s2 = v3 * v3 + v4 * v4;
+      } while (s2 >= 1);
+  
+      var d = Math.sqrt((1 - s1) / s2);
+      out[0] = scale * v1;
+      out[1] = scale * v2;
+      out[2] = scale * v3 * d;
+      out[3] = scale * v4 * d;
+      return out;
+    }*/
+  /**
+   * Transforms the {@link Vec4} with a {@link Mat4}.
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the vector to transform
+   * @param m - matrix to transform with
+   * @returns `out`
+   */
+  static transformMat4(out, a2, m2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    const z = a2[2];
+    const w2 = a2[3];
+    out[0] = m2[0] * x2 + m2[4] * y2 + m2[8] * z + m2[12] * w2;
+    out[1] = m2[1] * x2 + m2[5] * y2 + m2[9] * z + m2[13] * w2;
+    out[2] = m2[2] * x2 + m2[6] * y2 + m2[10] * z + m2[14] * w2;
+    out[3] = m2[3] * x2 + m2[7] * y2 + m2[11] * z + m2[15] * w2;
+    return out;
+  }
+  /**
+   * Transforms the {@link Vec4} with a {@link Quat}
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - the vector to transform
+   * @param q - quaternion to transform with
+   * @returns `out`
+   */
+  static transformQuat(out, a2, q) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    const z = a2[2];
+    const qx = q[0];
+    const qy = q[1];
+    const qz = q[2];
+    const qw = q[3];
+    const ix = qw * x2 + qy * z - qz * y2;
+    const iy = qw * y2 + qz * x2 - qx * z;
+    const iz = qw * z + qx * y2 - qy * x2;
+    const iw = -qx * x2 - qy * y2 - qz * z;
+    out[0] = ix * qw + iw * -qx + iy * -qz - iz * -qy;
+    out[1] = iy * qw + iw * -qy + iz * -qx - ix * -qz;
+    out[2] = iz * qw + iw * -qz + ix * -qy - iy * -qx;
+    out[3] = a2[3];
+    return out;
+  }
+  /**
+   * Set the components of a {@link Vec4} to zero
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @returns `out`
+   */
+  static zero(out) {
+    out[0] = 0;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    return out;
+  }
+  /**
+   * Returns a string representation of a {@link Vec4}
+   * @category Static
+   *
+   * @param a - vector to represent as a string
+   * @returns string representation of the vector
+   */
+  static str(a2) {
+    return `Vec4(${a2.join(", ")})`;
+  }
+  /**
+   * Returns whether or not the vectors have exactly the same elements in the same position (when compared with ===)
+   * @category Static
+   *
+   * @param a - The first vector.
+   * @param b - The second vector.
+   * @returns True if the vectors are equal, false otherwise.
+   */
+  static exactEquals(a2, b2) {
+    return a2[0] === b2[0] && a2[1] === b2[1] && a2[2] === b2[2] && a2[3] === b2[3];
+  }
+  /**
+   * Returns whether or not the vectors have approximately the same elements in the same position.
+   * @category Static
+   *
+   * @param a - The first vector.
+   * @param b - The second vector.
+   * @returns True if the vectors are equal, false otherwise.
+   */
+  static equals(a2, b2) {
+    const a0 = a2[0];
+    const a1 = a2[1];
+    const a22 = a2[2];
+    const a3 = a2[3];
+    const b0 = b2[0];
+    const b1 = b2[1];
+    const b22 = b2[2];
+    const b3 = b2[3];
+    return Math.abs(a0 - b0) <= EPSILON * Math.max(1, Math.abs(a0), Math.abs(b0)) && Math.abs(a1 - b1) <= EPSILON * Math.max(1, Math.abs(a1), Math.abs(b1)) && Math.abs(a22 - b22) <= EPSILON * Math.max(1, Math.abs(a22), Math.abs(b22)) && Math.abs(a3 - b3) <= EPSILON * Math.max(1, Math.abs(a3), Math.abs(b3));
+  }
+};
+/**
+ * The number of bytes in a {@link Vec4}.
+ */
+__publicField(_Vec4, "BYTE_LENGTH", 4 * Float32Array.BYTES_PER_ELEMENT);
+let Vec4 = _Vec4;
+Vec4.prototype.sub = Vec4.prototype.subtract;
+Vec4.prototype.mul = Vec4.prototype.multiply;
+Vec4.prototype.div = Vec4.prototype.divide;
+Vec4.prototype.dist = Vec4.prototype.distance;
+Vec4.prototype.sqrDist = Vec4.prototype.squaredDistance;
+Vec4.sub = Vec4.subtract;
+Vec4.mul = Vec4.multiply;
+Vec4.div = Vec4.divide;
+Vec4.dist = Vec4.distance;
+Vec4.sqrDist = Vec4.squaredDistance;
+Vec4.sqrLen = Vec4.squaredLength;
+Vec4.mag = Vec4.magnitude;
+Vec4.length = Vec4.magnitude;
+Vec4.len = Vec4.magnitude;
+const _Vec2 = class _Vec2 extends Float32Array {
+  /**
+   * Create a {@link Vec2}.
+   */
+  constructor(...values) {
+    switch (values.length) {
+      case 2: {
+        const v2 = values[0];
+        if (typeof v2 === "number") {
+          super([v2, values[1]]);
+        } else {
+          super(v2, values[1], 2);
+        }
+        break;
+      }
+      case 1: {
+        const v2 = values[0];
+        if (typeof v2 === "number") {
+          super([v2, v2]);
+        } else {
+          super(v2, 0, 2);
+        }
+        break;
+      }
+      default:
+        super(2);
+        break;
+    }
+  }
+  //============
+  // Attributes
+  //============
+  // Getters and setters to make component access read better.
+  // These are likely to be a little bit slower than direct array access.
+  /**
+   * The x component of the vector. Equivalent to `this[0];`
+   * @category Vector components
+   */
+  get x() {
+    return this[0];
+  }
+  set x(value) {
+    this[0] = value;
+  }
+  /**
+   * The y component of the vector. Equivalent to `this[1];`
+   * @category Vector components
+   */
+  get y() {
+    return this[1];
+  }
+  set y(value) {
+    this[1] = value;
+  }
+  // Alternate set of getters and setters in case this is being used to define
+  // a color.
+  /**
+   * The r component of the vector. Equivalent to `this[0];`
+   * @category Color components
+   */
+  get r() {
+    return this[0];
+  }
+  set r(value) {
+    this[0] = value;
+  }
+  /**
+   * The g component of the vector. Equivalent to `this[1];`
+   * @category Color components
+   */
+  get g() {
+    return this[1];
+  }
+  set g(value) {
+    this[1] = value;
+  }
+  /**
+   * The magnitude (length) of this.
+   * Equivalent to `Vec2.magnitude(this);`
+   *
+   * Magnitude is used because the `length` attribute is already defined by
+   * TypedArrays to mean the number of elements in the array.
+   */
+  get magnitude() {
+    return Math.hypot(this[0], this[1]);
+  }
+  /**
+   * Alias for {@link Vec2.magnitude}
+   */
+  get mag() {
+    return this.magnitude;
+  }
+  /**
+   * The squared magnitude (length) of `this`.
+   * Equivalent to `Vec2.squaredMagnitude(this);`
+   */
+  get squaredMagnitude() {
+    const x2 = this[0];
+    const y2 = this[1];
+    return x2 * x2 + y2 * y2;
+  }
+  /**
+   * Alias for {@link Vec2.squaredMagnitude}
+   */
+  get sqrMag() {
+    return this.squaredMagnitude;
+  }
+  /**
+   * A string representation of `this`
+   * Equivalent to `Vec2.str(this);`
+   */
+  get str() {
+    return _Vec2.str(this);
+  }
+  //===================
+  // Instances methods
+  //===================
+  /**
+   * Copy the values from another {@link Vec2} into `this`.
+   *
+   * @param a the source vector
+   * @returns `this`
+   */
+  copy(a2) {
+    this.set(a2);
+    return this;
+  }
+  // Instead of zero(), use a.fill(0) for instances;
+  /**
+   * Adds a {@link Vec2} to `this`.
+   * Equivalent to `Vec2.add(this, this, b);`
+   *
+   * @param b - The vector to add to `this`
+   * @returns `this`
+   */
+  add(b2) {
+    this[0] += b2[0];
+    this[1] += b2[1];
+    return this;
+  }
+  /**
+   * Subtracts a {@link Vec2} from `this`.
+   * Equivalent to `Vec2.subtract(this, this, b);`
+   *
+   * @param b - The vector to subtract from `this`
+   * @returns `this`
+   */
+  subtract(b2) {
+    this[0] -= b2[0];
+    this[1] -= b2[1];
+    return this;
+  }
+  /**
+   * Alias for {@link Vec2.subtract}
+   */
+  sub(b2) {
+    return this;
+  }
+  /**
+   * Multiplies `this` by a {@link Vec2}.
+   * Equivalent to `Vec2.multiply(this, this, b);`
+   *
+   * @param b - The vector to multiply `this` by
+   * @returns `this`
+   */
+  multiply(b2) {
+    this[0] *= b2[0];
+    this[1] *= b2[1];
+    return this;
+  }
+  /**
+   * Alias for {@link Vec2.multiply}
+   */
+  mul(b2) {
+    return this;
+  }
+  /**
+   * Divides `this` by a {@link Vec2}.
+   * Equivalent to `Vec2.divide(this, this, b);`
+   *
+   * @param b - The vector to divide `this` by
+   * @returns {Vec2} `this`
+   */
+  divide(b2) {
+    this[0] /= b2[0];
+    this[1] /= b2[1];
+    return this;
+  }
+  /**
+   * Alias for {@link Vec2.divide}
+   */
+  div(b2) {
+    return this;
+  }
+  /**
+   * Scales `this` by a scalar number.
+   * Equivalent to `Vec2.scale(this, this, b);`
+   *
+   * @param b - Amount to scale `this` by
+   * @returns `this`
+   */
+  scale(b2) {
+    this[0] *= b2;
+    this[1] *= b2;
+    return this;
+  }
+  /**
+   * Calculates `this` scaled by a scalar value then adds the result to `this`.
+   * Equivalent to `Vec2.scaleAndAdd(this, this, b, scale);`
+   *
+   * @param b - The vector to add to `this`
+   * @param scale - The amount to scale `b` by before adding
+   * @returns `this`
+   */
+  scaleAndAdd(b2, scale) {
+    this[0] += b2[0] * scale;
+    this[1] += b2[1] * scale;
+    return this;
+  }
+  /**
+   * Calculates the euclidian distance between another {@link Vec2} and `this`.
+   * Equivalent to `Vec2.distance(this, b);`
+   *
+   * @param b - The vector to calculate the distance to
+   * @returns Distance between `this` and `b`
+   */
+  distance(b2) {
+    return _Vec2.distance(this, b2);
+  }
+  /**
+   * Alias for {@link Vec2.distance}
+   */
+  dist(b2) {
+    return 0;
+  }
+  /**
+   * Calculates the squared euclidian distance between another {@link Vec2} and `this`.
+   * Equivalent to `Vec2.squaredDistance(this, b);`
+   *
+   * @param b The vector to calculate the squared distance to
+   * @returns Squared distance between `this` and `b`
+   */
+  squaredDistance(b2) {
+    return _Vec2.squaredDistance(this, b2);
+  }
+  /**
+   * Alias for {@link Vec2.squaredDistance}
+   */
+  sqrDist(b2) {
+    return 0;
+  }
+  /**
+   * Negates the components of `this`.
+   * Equivalent to `Vec2.negate(this, this);`
+   *
+   * @returns `this`
+   */
+  negate() {
+    this[0] *= -1;
+    this[1] *= -1;
+    return this;
+  }
+  /**
+   * Inverts the components of `this`.
+   * Equivalent to `Vec2.inverse(this, this);`
+   *
+   * @returns `this`
+   */
+  invert() {
+    this[0] = 1 / this[0];
+    this[1] = 1 / this[1];
+    return this;
+  }
+  /**
+   * Sets each component of `this` to it's absolute value.
+   * Equivalent to `Vec2.abs(this, this);`
+   *
+   * @returns `this`
+   */
+  abs() {
+    this[0] = Math.abs(this[0]);
+    this[1] = Math.abs(this[1]);
+    return this;
+  }
+  /**
+   * Calculates the dot product of this and another {@link Vec2}.
+   * Equivalent to `Vec2.dot(this, b);`
+   *
+   * @param b - The second operand
+   * @returns Dot product of `this` and `b`
+   */
+  dot(b2) {
+    return this[0] * b2[0] + this[1] * b2[1];
+  }
+  /**
+   * Normalize `this`.
+   * Equivalent to `Vec2.normalize(this, this);`
+   *
+   * @returns `this`
+   */
+  normalize() {
+    return _Vec2.normalize(this, this);
+  }
+  //================
+  // Static methods
+  //================
+  /**
+   * Creates a new, empty {@link Vec2}
+   * @category Static
+   *
+   * @returns A new 2D vector
+   */
+  static create() {
+    return new _Vec2();
+  }
+  /**
+   * Creates a new {@link Vec2} initialized with values from an existing vector
+   * @category Static
+   *
+   * @param a - Vector to clone
+   * @returns A new 2D vector
+   */
+  static clone(a2) {
+    return new _Vec2(a2);
+  }
+  /**
+   * Creates a new {@link Vec2} initialized with the given values
+   * @category Static
+   *
+   * @param x - X component
+   * @param y - Y component
+   * @returns A new 2D vector
+   */
+  static fromValues(x2, y2) {
+    return new _Vec2(x2, y2);
+  }
+  /**
+   * Copy the values from one {@link Vec2} to another
+   * @category Static
+   *
+   * @param out - the receiving vector
+   * @param a - The source vector
+   * @returns `out`
+   */
+  static copy(out, a2) {
+    out[0] = a2[0];
+    out[1] = a2[1];
+    return out;
+  }
+  /**
+   * Set the components of a {@link Vec2} to the given values
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param x - X component
+   * @param y - Y component
+   * @returns `out`
+   */
+  static set(out, x2, y2) {
+    out[0] = x2;
+    out[1] = y2;
+    return out;
+  }
+  /**
+   * Adds two {@link Vec2}s
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns `out`
+   */
+  static add(out, a2, b2) {
+    out[0] = a2[0] + b2[0];
+    out[1] = a2[1] + b2[1];
+    return out;
+  }
+  /**
+   * Subtracts vector b from vector a
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns `out`
+   */
+  static subtract(out, a2, b2) {
+    out[0] = a2[0] - b2[0];
+    out[1] = a2[1] - b2[1];
+    return out;
+  }
+  /**
+   * Alias for {@link Vec2.subtract}
+   * @category Static
+   */
+  static sub(out, a2, b2) {
+    return [0, 0];
+  }
+  /**
+   * Multiplies two {@link Vec2}s
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns `out`
+   */
+  static multiply(out, a2, b2) {
+    out[0] = a2[0] * b2[0];
+    out[1] = a2[1] * b2[1];
+    return out;
+  }
+  /**
+   * Alias for {@link Vec2.multiply}
+   * @category Static
+   */
+  static mul(out, a2, b2) {
+    return [0, 0];
+  }
+  /**
+   * Divides two {@link Vec2}s
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns `out`
+   */
+  static divide(out, a2, b2) {
+    out[0] = a2[0] / b2[0];
+    out[1] = a2[1] / b2[1];
+    return out;
+  }
+  /**
+   * Alias for {@link Vec2.divide}
+   * @category Static
+   */
+  static div(out, a2, b2) {
+    return [0, 0];
+  }
+  /**
+   * Math.ceil the components of a {@link Vec2}
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - Vector to ceil
+   * @returns `out`
+   */
+  static ceil(out, a2) {
+    out[0] = Math.ceil(a2[0]);
+    out[1] = Math.ceil(a2[1]);
+    return out;
+  }
+  /**
+   * Math.floor the components of a {@link Vec2}
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - Vector to floor
+   * @returns `out`
+   */
+  static floor(out, a2) {
+    out[0] = Math.floor(a2[0]);
+    out[1] = Math.floor(a2[1]);
+    return out;
+  }
+  /**
+   * Returns the minimum of two {@link Vec2}s
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns `out`
+   */
+  static min(out, a2, b2) {
+    out[0] = Math.min(a2[0], b2[0]);
+    out[1] = Math.min(a2[1], b2[1]);
+    return out;
+  }
+  /**
+   * Returns the maximum of two {@link Vec2}s
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns `out`
+   */
+  static max(out, a2, b2) {
+    out[0] = Math.max(a2[0], b2[0]);
+    out[1] = Math.max(a2[1], b2[1]);
+    return out;
+  }
+  /**
+   * Math.round the components of a {@link Vec2}
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - Vector to round
+   * @returns `out`
+   */
+  static round(out, a2) {
+    out[0] = Math.round(a2[0]);
+    out[1] = Math.round(a2[1]);
+    return out;
+  }
+  /**
+   * Scales a {@link Vec2} by a scalar number
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The vector to scale
+   * @param b - Amount to scale the vector by
+   * @returns `out`
+   */
+  static scale(out, a2, b2) {
+    out[0] = a2[0] * b2;
+    out[1] = a2[1] * b2;
+    return out;
+  }
+  /**
+   * Adds two Vec2's after scaling the second operand by a scalar value
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The first operand
+   * @param b - The second operand
+   * @param scale - The amount to scale b by before adding
+   * @returns `out`
+   */
+  static scaleAndAdd(out, a2, b2, scale) {
+    out[0] = a2[0] + b2[0] * scale;
+    out[1] = a2[1] + b2[1] * scale;
+    return out;
+  }
+  /**
+   * Calculates the euclidian distance between two {@link Vec2}s
+   * @category Static
+   *
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns distance between `a` and `b`
+   */
+  static distance(a2, b2) {
+    return Math.hypot(b2[0] - a2[0], b2[1] - a2[1]);
+  }
+  /**
+   * Alias for {@link Vec2.distance}
+   * @category Static
+   */
+  static dist(a2, b2) {
+    return 0;
+  }
+  /**
+   * Calculates the squared euclidian distance between two {@link Vec2}s
+   * @category Static
+   *
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns Squared distance between `a` and `b`
+   */
+  static squaredDistance(a2, b2) {
+    const x2 = b2[0] - a2[0];
+    const y2 = b2[1] - a2[1];
+    return x2 * x2 + y2 * y2;
+  }
+  /**
+   * Alias for {@link Vec2.distance}
+   * @category Static
+   */
+  static sqrDist(a2, b2) {
+    return 0;
+  }
+  /**
+   * Calculates the magnitude (length) of a {@link Vec2}
+   * @category Static
+   *
+   * @param a - Vector to calculate magnitude of
+   * @returns Magnitude of a
+   */
+  static magnitude(a2) {
+    let x2 = a2[0];
+    let y2 = a2[1];
+    return Math.sqrt(x2 * x2 + y2 * y2);
+  }
+  /**
+   * Alias for {@link Vec2.magnitude}
+   * @category Static
+   */
+  static mag(a2) {
+    return 0;
+  }
+  /**
+   * Alias for {@link Vec2.magnitude}
+   * @category Static
+   * @deprecated Use {@link Vec2.magnitude} to avoid conflicts with builtin `length` methods/attribs
+   *
+   * @param a - vector to calculate length of
+   * @returns length of a
+   */
+  // @ts-ignore: Length conflicts with Function.length
+  static length(a2) {
+    return 0;
+  }
+  /**
+   * Alias for {@link Vec2.magnitude}
+   * @category Static
+   * @deprecated Use {@link Vec2.mag}
+   */
+  static len(a2) {
+    return 0;
+  }
+  /**
+   * Calculates the squared length of a {@link Vec2}
+   * @category Static
+   *
+   * @param a - Vector to calculate squared length of
+   * @returns Squared length of a
+   */
+  static squaredLength(a2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    return x2 * x2 + y2 * y2;
+  }
+  /**
+   * Alias for {@link Vec2.squaredLength}
+   */
+  static sqrLen(a2, b2) {
+    return 0;
+  }
+  /**
+   * Negates the components of a {@link Vec2}
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - Vector to negate
+   * @returns `out`
+   */
+  static negate(out, a2) {
+    out[0] = -a2[0];
+    out[1] = -a2[1];
+    return out;
+  }
+  /**
+   * Returns the inverse of the components of a {@link Vec2}
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - Vector to invert
+   * @returns `out`
+   */
+  static inverse(out, a2) {
+    out[0] = 1 / a2[0];
+    out[1] = 1 / a2[1];
+    return out;
+  }
+  /**
+   * Returns the absolute value of the components of a {@link Vec2}
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - Vector to compute the absolute values of
+   * @returns `out`
+   */
+  static abs(out, a2) {
+    out[0] = Math.abs(a2[0]);
+    out[1] = Math.abs(a2[1]);
+    return out;
+  }
+  /**
+   * Normalize a {@link Vec2}
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - Vector to normalize
+   * @returns `out`
+   */
+  static normalize(out, a2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    let len = x2 * x2 + y2 * y2;
+    if (len > 0) {
+      len = 1 / Math.sqrt(len);
+    }
+    out[0] = a2[0] * len;
+    out[1] = a2[1] * len;
+    return out;
+  }
+  /**
+   * Calculates the dot product of two {@link Vec2}s
+   * @category Static
+   *
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns Dot product of `a` and `b`
+   */
+  static dot(a2, b2) {
+    return a2[0] * b2[0] + a2[1] * b2[1];
+  }
+  /**
+   * Computes the cross product of two {@link Vec2}s
+   * Note that the cross product must by definition produce a 3D vector.
+   * For this reason there is also not instance equivalent for this function.
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns `out`
+   */
+  static cross(out, a2, b2) {
+    const z = a2[0] * b2[1] - a2[1] * b2[0];
+    out[0] = out[1] = 0;
+    out[2] = z;
+    return out;
+  }
+  /**
+   * Performs a linear interpolation between two {@link Vec2}s
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @param a - The first operand
+   * @param b - The second operand
+   * @param t - Interpolation amount, in the range [0-1], between the two inputs
+   * @returns `out`
+   */
+  static lerp(out, a2, b2, t2) {
+    const ax = a2[0];
+    const ay = a2[1];
+    out[0] = ax + t2 * (b2[0] - ax);
+    out[1] = ay + t2 * (b2[1] - ay);
+    return out;
+  }
+  /**
+   * Transforms the {@link Vec2} with a {@link Mat2}
+   *
+   * @param out - The receiving vector
+   * @param a - The vector to transform
+   * @param m - Matrix to transform with
+   * @returns `out`
+   */
+  static transformMat2(out, a2, m2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    out[0] = m2[0] * x2 + m2[2] * y2;
+    out[1] = m2[1] * x2 + m2[3] * y2;
+    return out;
+  }
+  /**
+   * Transforms the {@link Vec2} with a {@link Mat2d}
+   *
+   * @param out - The receiving vector
+   * @param a - The vector to transform
+   * @param m - Matrix to transform with
+   * @returns `out`
+   */
+  static transformMat2d(out, a2, m2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    out[0] = m2[0] * x2 + m2[2] * y2 + m2[4];
+    out[1] = m2[1] * x2 + m2[3] * y2 + m2[5];
+    return out;
+  }
+  /**
+   * Transforms the {@link Vec2} with a {@link Mat3}
+   * 3rd vector component is implicitly '1'
+   *
+   * @param out - The receiving vector
+   * @param a - The vector to transform
+   * @param m - Matrix to transform with
+   * @returns `out`
+   */
+  static transformMat3(out, a2, m2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    out[0] = m2[0] * x2 + m2[3] * y2 + m2[6];
+    out[1] = m2[1] * x2 + m2[4] * y2 + m2[7];
+    return out;
+  }
+  /**
+   * Transforms the {@link Vec2} with a {@link Mat4}
+   * 3rd vector component is implicitly '0'
+   * 4th vector component is implicitly '1'
+   *
+   * @param out - The receiving vector
+   * @param a - The vector to transform
+   * @param m - Matrix to transform with
+   * @returns `out`
+   */
+  static transformMat4(out, a2, m2) {
+    const x2 = a2[0];
+    const y2 = a2[1];
+    out[0] = m2[0] * x2 + m2[4] * y2 + m2[12];
+    out[1] = m2[1] * x2 + m2[5] * y2 + m2[13];
+    return out;
+  }
+  /**
+   * Rotate a 2D vector
+   * @category Static
+   *
+   * @param out - The receiving {@link Vec2}
+   * @param a - The {@link Vec2} point to rotate
+   * @param b - The origin of the rotation
+   * @param rad - The angle of rotation in radians
+   * @returns `out`
+   */
+  static rotate(out, a2, b2, rad) {
+    const p0 = a2[0] - b2[0];
+    const p1 = a2[1] - b2[1];
+    const sinC = Math.sin(rad);
+    const cosC = Math.cos(rad);
+    out[0] = p0 * cosC - p1 * sinC + b2[0];
+    out[1] = p0 * sinC + p1 * cosC + b2[1];
+    return out;
+  }
+  /**
+   * Get the angle between two 2D vectors
+   * @category Static
+   *
+   * @param a - The first operand
+   * @param b - The second operand
+   * @returns The angle in radians
+   */
+  static angle(a2, b2) {
+    const x1 = a2[0];
+    const y1 = a2[1];
+    const x2 = b2[0];
+    const y2 = b2[1];
+    const mag = Math.sqrt(x1 * x1 + y1 * y1) * Math.sqrt(x2 * x2 + y2 * y2);
+    const cosine = mag && (x1 * x2 + y1 * y2) / mag;
+    return Math.acos(Math.min(Math.max(cosine, -1), 1));
+  }
+  /**
+   * Set the components of a {@link Vec2} to zero
+   * @category Static
+   *
+   * @param out - The receiving vector
+   * @returns `out`
+   */
+  static zero(out) {
+    out[0] = 0;
+    out[1] = 0;
+    return out;
+  }
+  /**
+   * Returns whether or not the vectors have exactly the same elements in the same position (when compared with ===)
+   * @category Static
+   *
+   * @param a - The first vector.
+   * @param b - The second vector.
+   * @returns `true` if the vectors components are ===, `false` otherwise.
+   */
+  static exactEquals(a2, b2) {
+    return a2[0] === b2[0] && a2[1] === b2[1];
+  }
+  /**
+   * Returns whether or not the vectors have approximately the same elements in the same position.
+   * @category Static
+   *
+   * @param a - The first vector.
+   * @param b - The second vector.
+   * @returns `true` if the vectors are approximately equal, `false` otherwise.
+   */
+  static equals(a2, b2) {
+    const a0 = a2[0];
+    const a1 = a2[1];
+    const b0 = b2[0];
+    const b1 = b2[1];
+    return Math.abs(a0 - b0) <= EPSILON * Math.max(1, Math.abs(a0), Math.abs(b0)) && Math.abs(a1 - b1) <= EPSILON * Math.max(1, Math.abs(a1), Math.abs(b1));
+  }
+  /**
+   * Returns a string representation of a vector
+   * @category Static
+   *
+   * @param a - Vector to represent as a string
+   * @returns String representation of the vector
+   */
+  static str(a2) {
+    return `Vec2(${a2.join(", ")})`;
+  }
+};
+/**
+ * The number of bytes in a {@link Vec2}.
+ */
+__publicField(_Vec2, "BYTE_LENGTH", 2 * Float32Array.BYTES_PER_ELEMENT);
+let Vec2 = _Vec2;
+Vec2.prototype.sub = Vec2.prototype.subtract;
+Vec2.prototype.mul = Vec2.prototype.multiply;
+Vec2.prototype.div = Vec2.prototype.divide;
+Vec2.prototype.dist = Vec2.prototype.distance;
+Vec2.prototype.sqrDist = Vec2.prototype.squaredDistance;
+Vec2.sub = Vec2.subtract;
+Vec2.mul = Vec2.multiply;
+Vec2.div = Vec2.divide;
+Vec2.dist = Vec2.distance;
+Vec2.sqrDist = Vec2.squaredDistance;
+Vec2.sqrLen = Vec2.squaredLength;
+Vec2.mag = Vec2.magnitude;
+Vec2.length = Vec2.magnitude;
+Vec2.len = Vec2.magnitude;
 var ENV = /* @__PURE__ */ ((ENV2) => (ENV2[ENV2.WEBGL_LEGACY = 0] = "WEBGL_LEGACY", ENV2[ENV2.WEBGL = 1] = "WEBGL", ENV2[ENV2.WEBGL2 = 2] = "WEBGL2", ENV2))(ENV || {}), RENDERER_TYPE = /* @__PURE__ */ ((RENDERER_TYPE2) => (RENDERER_TYPE2[RENDERER_TYPE2.UNKNOWN = 0] = "UNKNOWN", RENDERER_TYPE2[RENDERER_TYPE2.WEBGL = 1] = "WEBGL", RENDERER_TYPE2[RENDERER_TYPE2.CANVAS = 2] = "CANVAS", RENDERER_TYPE2))(RENDERER_TYPE || {}), BUFFER_BITS = /* @__PURE__ */ ((BUFFER_BITS2) => (BUFFER_BITS2[BUFFER_BITS2.COLOR = 16384] = "COLOR", BUFFER_BITS2[BUFFER_BITS2.DEPTH = 256] = "DEPTH", BUFFER_BITS2[BUFFER_BITS2.STENCIL = 1024] = "STENCIL", BUFFER_BITS2))(BUFFER_BITS || {}), BLEND_MODES = /* @__PURE__ */ ((BLEND_MODES2) => (BLEND_MODES2[BLEND_MODES2.NORMAL = 0] = "NORMAL", BLEND_MODES2[BLEND_MODES2.ADD = 1] = "ADD", BLEND_MODES2[BLEND_MODES2.MULTIPLY = 2] = "MULTIPLY", BLEND_MODES2[BLEND_MODES2.SCREEN = 3] = "SCREEN", BLEND_MODES2[BLEND_MODES2.OVERLAY = 4] = "OVERLAY", BLEND_MODES2[BLEND_MODES2.DARKEN = 5] = "DARKEN", BLEND_MODES2[BLEND_MODES2.LIGHTEN = 6] = "LIGHTEN", BLEND_MODES2[BLEND_MODES2.COLOR_DODGE = 7] = "COLOR_DODGE", BLEND_MODES2[BLEND_MODES2.COLOR_BURN = 8] = "COLOR_BURN", BLEND_MODES2[BLEND_MODES2.HARD_LIGHT = 9] = "HARD_LIGHT", BLEND_MODES2[BLEND_MODES2.SOFT_LIGHT = 10] = "SOFT_LIGHT", BLEND_MODES2[BLEND_MODES2.DIFFERENCE = 11] = "DIFFERENCE", BLEND_MODES2[BLEND_MODES2.EXCLUSION = 12] = "EXCLUSION", BLEND_MODES2[BLEND_MODES2.HUE = 13] = "HUE", BLEND_MODES2[BLEND_MODES2.SATURATION = 14] = "SATURATION", BLEND_MODES2[BLEND_MODES2.COLOR = 15] = "COLOR", BLEND_MODES2[BLEND_MODES2.LUMINOSITY = 16] = "LUMINOSITY", BLEND_MODES2[BLEND_MODES2.NORMAL_NPM = 17] = "NORMAL_NPM", BLEND_MODES2[BLEND_MODES2.ADD_NPM = 18] = "ADD_NPM", BLEND_MODES2[BLEND_MODES2.SCREEN_NPM = 19] = "SCREEN_NPM", BLEND_MODES2[BLEND_MODES2.NONE = 20] = "NONE", BLEND_MODES2[BLEND_MODES2.SRC_OVER = 0] = "SRC_OVER", BLEND_MODES2[BLEND_MODES2.SRC_IN = 21] = "SRC_IN", BLEND_MODES2[BLEND_MODES2.SRC_OUT = 22] = "SRC_OUT", BLEND_MODES2[BLEND_MODES2.SRC_ATOP = 23] = "SRC_ATOP", BLEND_MODES2[BLEND_MODES2.DST_OVER = 24] = "DST_OVER", BLEND_MODES2[BLEND_MODES2.DST_IN = 25] = "DST_IN", BLEND_MODES2[BLEND_MODES2.DST_OUT = 26] = "DST_OUT", BLEND_MODES2[BLEND_MODES2.DST_ATOP = 27] = "DST_ATOP", BLEND_MODES2[BLEND_MODES2.ERASE = 26] = "ERASE", BLEND_MODES2[BLEND_MODES2.SUBTRACT = 28] = "SUBTRACT", BLEND_MODES2[BLEND_MODES2.XOR = 29] = "XOR", BLEND_MODES2))(BLEND_MODES || {}), DRAW_MODES = /* @__PURE__ */ ((DRAW_MODES2) => (DRAW_MODES2[DRAW_MODES2.POINTS = 0] = "POINTS", DRAW_MODES2[DRAW_MODES2.LINES = 1] = "LINES", DRAW_MODES2[DRAW_MODES2.LINE_LOOP = 2] = "LINE_LOOP", DRAW_MODES2[DRAW_MODES2.LINE_STRIP = 3] = "LINE_STRIP", DRAW_MODES2[DRAW_MODES2.TRIANGLES = 4] = "TRIANGLES", DRAW_MODES2[DRAW_MODES2.TRIANGLE_STRIP = 5] = "TRIANGLE_STRIP", DRAW_MODES2[DRAW_MODES2.TRIANGLE_FAN = 6] = "TRIANGLE_FAN", DRAW_MODES2))(DRAW_MODES || {}), FORMATS = /* @__PURE__ */ ((FORMATS2) => (FORMATS2[FORMATS2.RGBA = 6408] = "RGBA", FORMATS2[FORMATS2.RGB = 6407] = "RGB", FORMATS2[FORMATS2.RG = 33319] = "RG", FORMATS2[FORMATS2.RED = 6403] = "RED", FORMATS2[FORMATS2.RGBA_INTEGER = 36249] = "RGBA_INTEGER", FORMATS2[FORMATS2.RGB_INTEGER = 36248] = "RGB_INTEGER", FORMATS2[FORMATS2.RG_INTEGER = 33320] = "RG_INTEGER", FORMATS2[FORMATS2.RED_INTEGER = 36244] = "RED_INTEGER", FORMATS2[FORMATS2.ALPHA = 6406] = "ALPHA", FORMATS2[FORMATS2.LUMINANCE = 6409] = "LUMINANCE", FORMATS2[FORMATS2.LUMINANCE_ALPHA = 6410] = "LUMINANCE_ALPHA", FORMATS2[FORMATS2.DEPTH_COMPONENT = 6402] = "DEPTH_COMPONENT", FORMATS2[FORMATS2.DEPTH_STENCIL = 34041] = "DEPTH_STENCIL", FORMATS2))(FORMATS || {}), TARGETS = /* @__PURE__ */ ((TARGETS2) => (TARGETS2[TARGETS2.TEXTURE_2D = 3553] = "TEXTURE_2D", TARGETS2[TARGETS2.TEXTURE_CUBE_MAP = 34067] = "TEXTURE_CUBE_MAP", TARGETS2[TARGETS2.TEXTURE_2D_ARRAY = 35866] = "TEXTURE_2D_ARRAY", TARGETS2[TARGETS2.TEXTURE_CUBE_MAP_POSITIVE_X = 34069] = "TEXTURE_CUBE_MAP_POSITIVE_X", TARGETS2[TARGETS2.TEXTURE_CUBE_MAP_NEGATIVE_X = 34070] = "TEXTURE_CUBE_MAP_NEGATIVE_X", TARGETS2[TARGETS2.TEXTURE_CUBE_MAP_POSITIVE_Y = 34071] = "TEXTURE_CUBE_MAP_POSITIVE_Y", TARGETS2[TARGETS2.TEXTURE_CUBE_MAP_NEGATIVE_Y = 34072] = "TEXTURE_CUBE_MAP_NEGATIVE_Y", TARGETS2[TARGETS2.TEXTURE_CUBE_MAP_POSITIVE_Z = 34073] = "TEXTURE_CUBE_MAP_POSITIVE_Z", TARGETS2[TARGETS2.TEXTURE_CUBE_MAP_NEGATIVE_Z = 34074] = "TEXTURE_CUBE_MAP_NEGATIVE_Z", TARGETS2))(TARGETS || {}), TYPES = /* @__PURE__ */ ((TYPES2) => (TYPES2[TYPES2.UNSIGNED_BYTE = 5121] = "UNSIGNED_BYTE", TYPES2[TYPES2.UNSIGNED_SHORT = 5123] = "UNSIGNED_SHORT", TYPES2[TYPES2.UNSIGNED_SHORT_5_6_5 = 33635] = "UNSIGNED_SHORT_5_6_5", TYPES2[TYPES2.UNSIGNED_SHORT_4_4_4_4 = 32819] = "UNSIGNED_SHORT_4_4_4_4", TYPES2[TYPES2.UNSIGNED_SHORT_5_5_5_1 = 32820] = "UNSIGNED_SHORT_5_5_5_1", TYPES2[TYPES2.UNSIGNED_INT = 5125] = "UNSIGNED_INT", TYPES2[TYPES2.UNSIGNED_INT_10F_11F_11F_REV = 35899] = "UNSIGNED_INT_10F_11F_11F_REV", TYPES2[TYPES2.UNSIGNED_INT_2_10_10_10_REV = 33640] = "UNSIGNED_INT_2_10_10_10_REV", TYPES2[TYPES2.UNSIGNED_INT_24_8 = 34042] = "UNSIGNED_INT_24_8", TYPES2[TYPES2.UNSIGNED_INT_5_9_9_9_REV = 35902] = "UNSIGNED_INT_5_9_9_9_REV", TYPES2[TYPES2.BYTE = 5120] = "BYTE", TYPES2[TYPES2.SHORT = 5122] = "SHORT", TYPES2[TYPES2.INT = 5124] = "INT", TYPES2[TYPES2.FLOAT = 5126] = "FLOAT", TYPES2[TYPES2.FLOAT_32_UNSIGNED_INT_24_8_REV = 36269] = "FLOAT_32_UNSIGNED_INT_24_8_REV", TYPES2[TYPES2.HALF_FLOAT = 36193] = "HALF_FLOAT", TYPES2))(TYPES || {}), SAMPLER_TYPES = /* @__PURE__ */ ((SAMPLER_TYPES2) => (SAMPLER_TYPES2[SAMPLER_TYPES2.FLOAT = 0] = "FLOAT", SAMPLER_TYPES2[SAMPLER_TYPES2.INT = 1] = "INT", SAMPLER_TYPES2[SAMPLER_TYPES2.UINT = 2] = "UINT", SAMPLER_TYPES2))(SAMPLER_TYPES || {}), SCALE_MODES = /* @__PURE__ */ ((SCALE_MODES2) => (SCALE_MODES2[SCALE_MODES2.NEAREST = 0] = "NEAREST", SCALE_MODES2[SCALE_MODES2.LINEAR = 1] = "LINEAR", SCALE_MODES2))(SCALE_MODES || {}), WRAP_MODES = /* @__PURE__ */ ((WRAP_MODES2) => (WRAP_MODES2[WRAP_MODES2.CLAMP = 33071] = "CLAMP", WRAP_MODES2[WRAP_MODES2.REPEAT = 10497] = "REPEAT", WRAP_MODES2[WRAP_MODES2.MIRRORED_REPEAT = 33648] = "MIRRORED_REPEAT", WRAP_MODES2))(WRAP_MODES || {}), MIPMAP_MODES = /* @__PURE__ */ ((MIPMAP_MODES2) => (MIPMAP_MODES2[MIPMAP_MODES2.OFF = 0] = "OFF", MIPMAP_MODES2[MIPMAP_MODES2.POW2 = 1] = "POW2", MIPMAP_MODES2[MIPMAP_MODES2.ON = 2] = "ON", MIPMAP_MODES2[MIPMAP_MODES2.ON_MANUAL = 3] = "ON_MANUAL", MIPMAP_MODES2))(MIPMAP_MODES || {}), ALPHA_MODES = /* @__PURE__ */ ((ALPHA_MODES2) => (ALPHA_MODES2[ALPHA_MODES2.NPM = 0] = "NPM", ALPHA_MODES2[ALPHA_MODES2.UNPACK = 1] = "UNPACK", ALPHA_MODES2[ALPHA_MODES2.PMA = 2] = "PMA", ALPHA_MODES2[ALPHA_MODES2.NO_PREMULTIPLIED_ALPHA = 0] = "NO_PREMULTIPLIED_ALPHA", ALPHA_MODES2[ALPHA_MODES2.PREMULTIPLY_ON_UPLOAD = 1] = "PREMULTIPLY_ON_UPLOAD", ALPHA_MODES2[ALPHA_MODES2.PREMULTIPLIED_ALPHA = 2] = "PREMULTIPLIED_ALPHA", ALPHA_MODES2))(ALPHA_MODES || {}), CLEAR_MODES = /* @__PURE__ */ ((CLEAR_MODES2) => (CLEAR_MODES2[CLEAR_MODES2.NO = 0] = "NO", CLEAR_MODES2[CLEAR_MODES2.YES = 1] = "YES", CLEAR_MODES2[CLEAR_MODES2.AUTO = 2] = "AUTO", CLEAR_MODES2[CLEAR_MODES2.BLEND = 0] = "BLEND", CLEAR_MODES2[CLEAR_MODES2.CLEAR = 1] = "CLEAR", CLEAR_MODES2[CLEAR_MODES2.BLIT = 2] = "BLIT", CLEAR_MODES2))(CLEAR_MODES || {}), GC_MODES = /* @__PURE__ */ ((GC_MODES2) => (GC_MODES2[GC_MODES2.AUTO = 0] = "AUTO", GC_MODES2[GC_MODES2.MANUAL = 1] = "MANUAL", GC_MODES2))(GC_MODES || {}), PRECISION = /* @__PURE__ */ ((PRECISION2) => (PRECISION2.LOW = "lowp", PRECISION2.MEDIUM = "mediump", PRECISION2.HIGH = "highp", PRECISION2))(PRECISION || {}), MASK_TYPES = /* @__PURE__ */ ((MASK_TYPES2) => (MASK_TYPES2[MASK_TYPES2.NONE = 0] = "NONE", MASK_TYPES2[MASK_TYPES2.SCISSOR = 1] = "SCISSOR", MASK_TYPES2[MASK_TYPES2.STENCIL = 2] = "STENCIL", MASK_TYPES2[MASK_TYPES2.SPRITE = 3] = "SPRITE", MASK_TYPES2[MASK_TYPES2.COLOR = 4] = "COLOR", MASK_TYPES2))(MASK_TYPES || {}), MSAA_QUALITY = /* @__PURE__ */ ((MSAA_QUALITY2) => (MSAA_QUALITY2[MSAA_QUALITY2.NONE = 0] = "NONE", MSAA_QUALITY2[MSAA_QUALITY2.LOW = 2] = "LOW", MSAA_QUALITY2[MSAA_QUALITY2.MEDIUM = 4] = "MEDIUM", MSAA_QUALITY2[MSAA_QUALITY2.HIGH = 8] = "HIGH", MSAA_QUALITY2))(MSAA_QUALITY || {}), BUFFER_TYPE = /* @__PURE__ */ ((BUFFER_TYPE2) => (BUFFER_TYPE2[BUFFER_TYPE2.ELEMENT_ARRAY_BUFFER = 34963] = "ELEMENT_ARRAY_BUFFER", BUFFER_TYPE2[BUFFER_TYPE2.ARRAY_BUFFER = 34962] = "ARRAY_BUFFER", BUFFER_TYPE2[BUFFER_TYPE2.UNIFORM_BUFFER = 35345] = "UNIFORM_BUFFER", BUFFER_TYPE2))(BUFFER_TYPE || {});
 const BrowserAdapter = {
   /**
@@ -170,12 +5375,7 @@ function getAugmentedNamespace(n2) {
   var f2 = n2.default;
   if (typeof f2 == "function") {
     var a2 = function a22() {
-      var isInstance = false;
-      try {
-        isInstance = this instanceof a22;
-      } catch {
-      }
-      if (isInstance) {
+      if (this instanceof a22) {
         return Reflect.construct(f2, arguments, this.constructor);
       }
       return f2.apply(this, arguments);
@@ -245,10 +5445,10 @@ function requireEventemitter3() {
       var evt = prefix ? prefix + event : event, handlers = this._events[evt];
       if (!handlers) return [];
       if (handlers.fn) return [handlers.fn];
-      for (var i2 = 0, l2 = handlers.length, ee2 = new Array(l2); i2 < l2; i2++) {
-        ee2[i2] = handlers[i2].fn;
+      for (var i2 = 0, l2 = handlers.length, ee = new Array(l2); i2 < l2; i2++) {
+        ee[i2] = handlers[i2].fn;
       }
-      return ee2;
+      return ee;
     };
     EventEmitter2.prototype.listenerCount = function listenerCount(event) {
       var evt = prefix ? prefix + event : event, listeners = this._events[evt];
@@ -589,7 +5789,7 @@ function requireEarcut() {
     sortLinked(p2);
   }
   function sortLinked(list) {
-    var i2, p2, q2, e2, tail, numMerges, pSize, qSize, inSize = 1;
+    var i2, p2, q, e2, tail, numMerges, pSize, qSize, inSize = 1;
     do {
       p2 = list;
       list = null;
@@ -597,22 +5797,22 @@ function requireEarcut() {
       numMerges = 0;
       while (p2) {
         numMerges++;
-        q2 = p2;
+        q = p2;
         pSize = 0;
         for (i2 = 0; i2 < inSize; i2++) {
           pSize++;
-          q2 = q2.nextZ;
-          if (!q2) break;
+          q = q.nextZ;
+          if (!q) break;
         }
         qSize = inSize;
-        while (pSize > 0 || qSize > 0 && q2) {
-          if (pSize !== 0 && (qSize === 0 || !q2 || p2.z <= q2.z)) {
+        while (pSize > 0 || qSize > 0 && q) {
+          if (pSize !== 0 && (qSize === 0 || !q || p2.z <= q.z)) {
             e2 = p2;
             p2 = p2.nextZ;
             pSize--;
           } else {
-            e2 = q2;
-            q2 = q2.nextZ;
+            e2 = q;
+            q = q.nextZ;
             qSize--;
           }
           if (tail) tail.nextZ = e2;
@@ -620,7 +5820,7 @@ function requireEarcut() {
           e2.prevZ = tail;
           tail = e2;
         }
-        p2 = q2;
+        p2 = q;
       }
       tail.nextZ = null;
       inSize *= 2;
@@ -657,8 +5857,8 @@ function requireEarcut() {
     (area(a2.prev, a2, b2.prev) || area(a2, b2.prev, b2)) || // does not create opposite-facing sectors
     equals(a2, b2) && area(a2.prev, a2, a2.next) > 0 && area(b2.prev, b2, b2.next) > 0);
   }
-  function area(p2, q2, r2) {
-    return (q2.y - p2.y) * (r2.x - q2.x) - (q2.x - p2.x) * (r2.y - q2.y);
+  function area(p2, q, r2) {
+    return (q.y - p2.y) * (r2.x - q.x) - (q.x - p2.x) * (r2.y - q.y);
   }
   function equals(p1, p2) {
     return p1.x === p2.x && p1.y === p2.y;
@@ -675,8 +5875,8 @@ function requireEarcut() {
     if (o4 === 0 && onSegment(p2, q1, q2)) return true;
     return false;
   }
-  function onSegment(p2, q2, r2) {
-    return q2.x <= Math.max(p2.x, r2.x) && q2.x >= Math.min(p2.x, r2.x) && q2.y <= Math.max(p2.y, r2.y) && q2.y >= Math.min(p2.y, r2.y);
+  function onSegment(p2, q, r2) {
+    return q.x <= Math.max(p2.x, r2.x) && q.x >= Math.min(p2.x, r2.x) && q.y <= Math.max(p2.y, r2.y) && q.y >= Math.min(p2.y, r2.y);
   }
   function sign2(num) {
     return num > 0 ? 1 : num < 0 ? -1 : 0;
@@ -702,7 +5902,7 @@ function requireEarcut() {
     return inside;
   }
   function splitPolygon(a2, b2) {
-    var a22 = new Node(a2.i, a2.x, a2.y), b22 = new Node(b2.i, b2.x, b2.y), an = a2.next, bp = b2.prev;
+    var a22 = new Node2(a2.i, a2.x, a2.y), b22 = new Node2(b2.i, b2.x, b2.y), an = a2.next, bp = b2.prev;
     a2.next = b2;
     b2.prev = a2;
     a22.next = an;
@@ -714,7 +5914,7 @@ function requireEarcut() {
     return b22;
   }
   function insertNode(i2, x2, y2, last) {
-    var p2 = new Node(i2, x2, y2);
+    var p2 = new Node2(i2, x2, y2);
     if (!last) {
       p2.prev = p2;
       p2.next = p2;
@@ -732,7 +5932,7 @@ function requireEarcut() {
     if (p2.prevZ) p2.prevZ.nextZ = p2.nextZ;
     if (p2.nextZ) p2.nextZ.prevZ = p2.prevZ;
   }
-  function Node(i2, x2, y2) {
+  function Node2(i2, x2, y2) {
     this.i = i2;
     this.x = x2;
     this.y = y2;
@@ -797,9 +5997,9 @@ var hasRequiredPunycode;
 function requirePunycode() {
   if (hasRequiredPunycode) return punycode$1.exports;
   hasRequiredPunycode = 1;
-  (function(module, exports$1) {
+  (function(module, exports) {
     (function(root) {
-      var freeExports = exports$1 && !exports$1.nodeType && exports$1;
+      var freeExports = exports && !exports.nodeType && exports;
       var freeModule = module && !module.nodeType && module;
       var freeGlobal = typeof globalThis == "object" && globalThis;
       if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal || freeGlobal.self === freeGlobal) {
@@ -931,7 +6131,7 @@ function requirePunycode() {
         return ucs2encode(output);
       }
       function encode(input) {
-        var n2, delta, handledCPCount, basicLength, bias, j2, m2, q2, k2, t2, currentValue, output = [], inputLength, handledCPCountPlusOne, baseMinusT, qMinusT;
+        var n2, delta, handledCPCount, basicLength, bias, j2, m2, q, k2, t2, currentValue, output = [], inputLength, handledCPCountPlusOne, baseMinusT, qMinusT;
         input = ucs2decode(input);
         inputLength = input.length;
         n2 = initialN;
@@ -966,19 +6166,19 @@ function requirePunycode() {
               error("overflow");
             }
             if (currentValue == n2) {
-              for (q2 = delta, k2 = base; ; k2 += base) {
+              for (q = delta, k2 = base; ; k2 += base) {
                 t2 = k2 <= bias ? tMin : k2 >= bias + tMax ? tMax : k2 - bias;
-                if (q2 < t2) {
+                if (q < t2) {
                   break;
                 }
-                qMinusT = q2 - t2;
+                qMinusT = q - t2;
                 baseMinusT = base - t2;
                 output.push(
                   stringFromCharCode(digitToBasic(t2 + qMinusT % baseMinusT, 0))
                 );
-                q2 = floor2(qMinusT / baseMinusT);
+                q = floor2(qMinusT / baseMinusT);
               }
-              output.push(stringFromCharCode(digitToBasic(q2, 0)));
+              output.push(stringFromCharCode(digitToBasic(q, 0)));
               bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
               delta = 0;
               ++handledCPCount;
@@ -1089,8 +6289,8 @@ function requireObjectInspect() {
   var hasShammedSymbols = typeof Symbol === "function" && typeof Symbol.iterator === "object";
   var toStringTag = typeof Symbol === "function" && Symbol.toStringTag && (typeof Symbol.toStringTag === hasShammedSymbols ? "object" : "symbol") ? Symbol.toStringTag : null;
   var isEnumerable = Object.prototype.propertyIsEnumerable;
-  var gPO = (typeof Reflect === "function" ? Reflect.getPrototypeOf : Object.getPrototypeOf) || ([].__proto__ === Array.prototype ? function(O2) {
-    return O2.__proto__;
+  var gPO = (typeof Reflect === "function" ? Reflect.getPrototypeOf : Object.getPrototypeOf) || ([].__proto__ === Array.prototype ? function(O) {
+    return O.__proto__;
   } : null);
   function addNumericSeparator(num, str) {
     if (num === Infinity || num === -Infinity || num !== num || num && num > -1e3 && num < 1e3 || $test.call(/e/, str)) {
@@ -1193,8 +6393,8 @@ function requireObjectInspect() {
     }
     if (typeof obj === "function" && !isRegExp(obj)) {
       var name = nameOf(obj);
-      var keys = arrObjKeys(obj, inspect);
-      return "[Function" + (name ? ": " + name : " (anonymous)") + "]" + (keys.length > 0 ? " { " + $join.call(keys, ", ") + " }" : "");
+      var keys2 = arrObjKeys(obj, inspect);
+      return "[Function" + (name ? ": " + name : " (anonymous)") + "]" + (keys2.length > 0 ? " { " + $join.call(keys2, ", ") + " }" : "");
     }
     if (isSymbol(obj)) {
       var symString = hasShammedSymbols ? $replace.call(String(obj), /^(Symbol\(.*\))_[^)]*$/, "$1") : symToString.call(obj);
@@ -1217,11 +6417,11 @@ function requireObjectInspect() {
       if (obj.length === 0) {
         return "[]";
       }
-      var xs2 = arrObjKeys(obj, inspect);
-      if (indent && !singleLineValues(xs2)) {
-        return "[" + indentedJoin(xs2, indent) + "]";
+      var xs = arrObjKeys(obj, inspect);
+      if (indent && !singleLineValues(xs)) {
+        return "[" + indentedJoin(xs, indent) + "]";
       }
-      return "[ " + $join.call(xs2, ", ") + " ]";
+      return "[ " + $join.call(xs, ", ") + " ]";
     }
     if (isError(obj)) {
       var parts = arrObjKeys(obj, inspect);
@@ -1286,19 +6486,19 @@ function requireObjectInspect() {
       return "{ [object globalThis] }";
     }
     if (!isDate(obj) && !isRegExp(obj)) {
-      var ys2 = arrObjKeys(obj, inspect);
+      var ys = arrObjKeys(obj, inspect);
       var isPlainObject = gPO ? gPO(obj) === Object.prototype : obj instanceof Object || obj.constructor === Object;
       var protoTag = obj instanceof Object ? "" : "null prototype";
       var stringTag = !isPlainObject && toStringTag && Object(obj) === obj && toStringTag in obj ? $slice.call(toStr(obj), 8, -1) : protoTag ? "Object" : "";
       var constructorTag = isPlainObject || typeof obj.constructor !== "function" ? "" : obj.constructor.name ? obj.constructor.name + " " : "";
       var tag = constructorTag + (stringTag || protoTag ? "[" + $join.call($concat.call([], stringTag || [], protoTag || []), ": ") + "] " : "");
-      if (ys2.length === 0) {
+      if (ys.length === 0) {
         return tag + "{}";
       }
       if (indent) {
-        return tag + "{" + indentedJoin(ys2, indent) + "}";
+        return tag + "{" + indentedJoin(ys, indent) + "}";
       }
-      return tag + "{ " + $join.call(ys2, ", ") + " }";
+      return tag + "{ " + $join.call(ys, ", ") + " }";
     }
     return String(obj);
   };
@@ -1381,12 +6581,12 @@ function requireObjectInspect() {
     }
     return null;
   }
-  function indexOf(xs2, x2) {
-    if (xs2.indexOf) {
-      return xs2.indexOf(x2);
+  function indexOf(xs, x2) {
+    if (xs.indexOf) {
+      return xs.indexOf(x2);
     }
-    for (var i2 = 0, l2 = xs2.length; i2 < l2; i2++) {
-      if (xs2[i2] === x2) {
+    for (var i2 = 0, l2 = xs.length; i2 < l2; i2++) {
+      if (xs[i2] === x2) {
         return i2;
       }
     }
@@ -1511,9 +6711,9 @@ function requireObjectInspect() {
     var joinedEntries = indent ? indentedJoin(entries, indent) : $join.call(entries, ", ");
     return type2 + " (" + size + ") {" + joinedEntries + "}";
   }
-  function singleLineValues(xs2) {
-    for (var i2 = 0; i2 < xs2.length; i2++) {
-      if (indexOf(xs2[i2], "\n") >= 0) {
+  function singleLineValues(xs) {
+    for (var i2 = 0; i2 < xs.length; i2++) {
+      if (indexOf(xs[i2], "\n") >= 0) {
         return false;
       }
     }
@@ -1533,20 +6733,20 @@ function requireObjectInspect() {
       prev: $join.call(Array(depth + 1), baseIndent)
     };
   }
-  function indentedJoin(xs2, indent) {
-    if (xs2.length === 0) {
+  function indentedJoin(xs, indent) {
+    if (xs.length === 0) {
       return "";
     }
     var lineJoiner = "\n" + indent.prev + indent.base;
-    return lineJoiner + $join.call(xs2, "," + lineJoiner) + "\n" + indent.prev;
+    return lineJoiner + $join.call(xs, "," + lineJoiner) + "\n" + indent.prev;
   }
   function arrObjKeys(obj, inspect) {
     var isArr = isArray(obj);
-    var xs2 = [];
+    var xs = [];
     if (isArr) {
-      xs2.length = obj.length;
+      xs.length = obj.length;
       for (var i2 = 0; i2 < obj.length; i2++) {
-        xs2[i2] = has(obj, i2) ? inspect(obj[i2], obj) : "";
+        xs[i2] = has(obj, i2) ? inspect(obj[i2], obj) : "";
       }
     }
     var syms = typeof gOPS === "function" ? gOPS(obj) : [];
@@ -1567,19 +6767,19 @@ function requireObjectInspect() {
       if (hasShammedSymbols && symMap["$" + key] instanceof Symbol) {
         continue;
       } else if ($test.call(/[^\w$]/, key)) {
-        xs2.push(inspect(key, obj) + ": " + inspect(obj[key], obj));
+        xs.push(inspect(key, obj) + ": " + inspect(obj[key], obj));
       } else {
-        xs2.push(key + ": " + inspect(obj[key], obj));
+        xs.push(key + ": " + inspect(obj[key], obj));
       }
     }
     if (typeof gOPS === "function") {
       for (var j2 = 0; j2 < syms.length; j2++) {
         if (isEnumerable.call(obj, syms[j2])) {
-          xs2.push("[" + inspect(syms[j2]) + "]: " + inspect(obj[syms[j2]], obj));
+          xs.push("[" + inspect(syms[j2]) + "]: " + inspect(obj[syms[j2]], obj));
         }
       }
     }
-    return xs2;
+    return xs;
   }
   return objectInspect;
 }
@@ -1646,9 +6846,8 @@ function requireSideChannelList() {
         }
       },
       "delete": function(key) {
-        var root = $o && $o.next;
         var deletedNode = listDelete($o, key);
-        if (deletedNode && root && root === deletedNode) {
+        if (deletedNode && $o && !$o.next) {
           $o = void 0;
         }
         return !!deletedNode;
@@ -1858,7 +7057,7 @@ function requireShams() {
       return true;
     }
     var obj = {};
-    var sym = /* @__PURE__ */ Symbol("test");
+    var sym = Symbol("test");
     var symObj = Object(sym);
     if (typeof sym === "string") {
       return false;
@@ -1917,7 +7116,7 @@ function requireHasSymbols() {
     if (typeof origSymbol("foo") !== "symbol") {
       return false;
     }
-    if (typeof /* @__PURE__ */ Symbol("bar") !== "symbol") {
+    if (typeof Symbol("bar") !== "symbol") {
       return false;
     }
     return hasSymbolSham();
@@ -2118,15 +7317,15 @@ function requireGetProto() {
   var reflectGetProto = requireReflect_getPrototypeOf();
   var originalGetProto = requireObject_getPrototypeOf();
   var getDunderProto = /* @__PURE__ */ requireGet();
-  getProto = reflectGetProto ? function getProto2(O2) {
-    return reflectGetProto(O2);
-  } : originalGetProto ? function getProto2(O2) {
-    if (!O2 || typeof O2 !== "object" && typeof O2 !== "function") {
+  getProto = reflectGetProto ? function getProto2(O) {
+    return reflectGetProto(O);
+  } : originalGetProto ? function getProto2(O) {
+    if (!O || typeof O !== "object" && typeof O !== "function") {
       throw new TypeError("getProto: not an object");
     }
-    return originalGetProto(O2);
-  } : getDunderProto ? function getProto2(O2) {
-    return getDunderProto(O2);
+    return originalGetProto(O);
+  } : getDunderProto ? function getProto2(O) {
+    return getDunderProto(O);
   } : null;
   return getProto;
 }
@@ -2891,9 +8090,9 @@ function requireUtils() {
     for (var i2 = 0; i2 < queue.length; ++i2) {
       var item = queue[i2];
       var obj = item.obj[item.prop];
-      var keys = Object.keys(obj);
-      for (var j2 = 0; j2 < keys.length; ++j2) {
-        var key = keys[j2];
+      var keys2 = Object.keys(obj);
+      for (var j2 = 0; j2 < keys2.length; ++j2) {
+        var key = keys2[j2];
         var val = obj[key];
         if (typeof val === "object" && val !== null && refs.indexOf(val) === -1) {
           queue[queue.length] = { obj, prop: key };
@@ -3041,7 +8240,7 @@ function requireStringify() {
     }
     if (obj === null) {
       if (strictNullHandling) {
-        return encoder && !encodeValuesOnly ? encoder(prefix, defaults.encoder, charset, "key", format) : prefix;
+        return formatter(encoder && !encodeValuesOnly ? encoder(prefix, defaults.encoder, charset, "key", format) : prefix);
       }
       obj = "";
     }
@@ -3059,14 +8258,16 @@ function requireStringify() {
     var objKeys;
     if (generateArrayPrefix === "comma" && isArray(obj)) {
       if (encodeValuesOnly && encoder) {
-        obj = utils2.maybeMap(obj, encoder);
+        obj = utils2.maybeMap(obj, function(v2) {
+          return v2 == null ? v2 : encoder(v2);
+        });
       }
       objKeys = [{ value: obj.length > 0 ? obj.join(",") || null : void 0 }];
     } else if (isArray(filter)) {
       objKeys = filter;
     } else {
-      var keys = Object.keys(obj);
-      objKeys = sort ? keys.sort(sort) : keys;
+      var keys2 = Object.keys(obj);
+      objKeys = sort ? keys2.sort(sort) : keys2;
     }
     var encodedPrefix = encodeDotInKeys ? String(prefix).replace(/\./g, "%2E") : String(prefix);
     var adjustedPrefix = commaRoundTrip && isArray(obj) && obj.length === 1 ? encodedPrefix + "[]" : encodedPrefix;
@@ -3182,7 +8383,7 @@ function requireStringify() {
       filter = options.filter;
       objKeys = filter;
     }
-    var keys = [];
+    var keys2 = [];
     if (typeof obj !== "object" || obj === null) {
       return "";
     }
@@ -3197,11 +8398,14 @@ function requireStringify() {
     var sideChannel2 = getSideChannel();
     for (var i2 = 0; i2 < objKeys.length; ++i2) {
       var key = objKeys[i2];
+      if (typeof key === "undefined" || key === null) {
+        continue;
+      }
       var value = obj[key];
       if (options.skipNulls && value === null) {
         continue;
       }
-      pushToArray(keys, stringify(
+      pushToArray(keys2, stringify(
         value,
         key,
         generateArrayPrefix,
@@ -3222,13 +8426,13 @@ function requireStringify() {
         sideChannel2
       ));
     }
-    var joined = keys.join(options.delimiter);
+    var joined = keys2.join(options.delimiter);
     var prefix = options.addQueryPrefix === true ? "?" : "";
     if (options.charsetSentinel) {
       if (options.charset === "iso-8859-1") {
-        prefix += "utf8=%26%2310003%3B&";
+        prefix += "utf8=%26%2310003%3B" + options.delimiter;
       } else {
-        prefix += "utf8=%E2%9C%93&";
+        prefix += "utf8=%E2%9C%93" + options.delimiter;
       }
     }
     return joined.length > 0 ? prefix + joined : "";
@@ -3290,9 +8494,9 @@ function requireParse() {
     var limit = options.parameterLimit === Infinity ? void 0 : options.parameterLimit;
     var parts = cleanStr.split(
       options.delimiter,
-      options.throwOnLimitExceeded ? limit + 1 : limit
+      options.throwOnLimitExceeded && typeof limit !== "undefined" ? limit + 1 : limit
     );
-    if (options.throwOnLimitExceeded && parts.length > limit) {
+    if (options.throwOnLimitExceeded && typeof limit !== "undefined" && parts.length > limit) {
       throw new RangeError("Parameter limit exceeded. Only " + limit + " parameter" + (limit === 1 ? "" : "s") + " allowed.");
     }
     var skipIndex = -1;
@@ -3411,8 +8615,8 @@ function requireParse() {
     }
     return leaf;
   };
-  var splitKeyIntoSegments = function splitKeyIntoSegments2(givenKey, options) {
-    var key = options.allowDots ? givenKey.replace(/\.([^.[]+)/g, "[$1]") : givenKey;
+  var splitKeyIntoSegments = function splitKeyIntoSegments2(originalKey, options) {
+    var key = options.allowDots ? originalKey.replace(/\.([^.[]+)/g, "[$1]") : originalKey;
     if (options.depth <= 0) {
       if (!options.plainObjects && has.call(Object.prototype, key)) {
         if (!options.allowPrototypes) {
@@ -3421,47 +8625,66 @@ function requireParse() {
       }
       return [key];
     }
-    var brackets = /(\[[^[\]]*])/;
-    var child = /(\[[^[\]]*])/g;
-    var segment = brackets.exec(key);
-    var parent = segment ? key.slice(0, segment.index) : key;
-    var keys = [];
+    var segments = [];
+    var first = key.indexOf("[");
+    var parent = first >= 0 ? key.slice(0, first) : key;
     if (parent) {
       if (!options.plainObjects && has.call(Object.prototype, parent)) {
         if (!options.allowPrototypes) {
           return;
         }
       }
-      keys[keys.length] = parent;
+      segments[segments.length] = parent;
     }
-    var i2 = 0;
-    while ((segment = child.exec(key)) !== null && i2 < options.depth) {
-      i2 += 1;
-      var segmentContent = segment[1].slice(1, -1);
-      if (!options.plainObjects && has.call(Object.prototype, segmentContent)) {
-        if (!options.allowPrototypes) {
-          return;
+    var n2 = key.length;
+    var open = first;
+    var collected = 0;
+    while (open >= 0 && collected < options.depth) {
+      var level = 1;
+      var i2 = open + 1;
+      var close = -1;
+      while (i2 < n2 && close < 0) {
+        var cu = key.charCodeAt(i2);
+        if (cu === 91) {
+          level += 1;
+        } else if (cu === 93) {
+          level -= 1;
+          if (level === 0) {
+            close = i2;
+          }
         }
+        i2 += 1;
       }
-      keys[keys.length] = segment[1];
+      if (close < 0) {
+        segments[segments.length] = "[" + key.slice(open) + "]";
+        return segments;
+      }
+      var seg = key.slice(open, close + 1);
+      var content = seg.slice(1, -1);
+      if (!options.plainObjects && has.call(Object.prototype, content) && !options.allowPrototypes) {
+        return;
+      }
+      segments[segments.length] = seg;
+      collected += 1;
+      open = key.indexOf("[", close + 1);
     }
-    if (segment) {
+    if (open >= 0) {
       if (options.strictDepth === true) {
         throw new RangeError("Input depth exceeded depth option of " + options.depth + " and strictDepth is true");
       }
-      keys[keys.length] = "[" + key.slice(segment.index) + "]";
+      segments[segments.length] = "[" + key.slice(open) + "]";
     }
-    return keys;
+    return segments;
   };
   var parseKeys = function parseQueryStringKeys(givenKey, val, options, valuesParsed) {
     if (!givenKey) {
       return;
     }
-    var keys = splitKeyIntoSegments(givenKey, options);
-    if (!keys) {
+    var keys2 = splitKeyIntoSegments(givenKey, options);
+    if (!keys2) {
       return;
     }
-    return parseObject(keys, val, options, valuesParsed);
+    return parseObject(keys2, val, options, valuesParsed);
   };
   var normalizeParseOptions = function normalizeParseOptions2(opts) {
     if (!opts) {
@@ -3521,9 +8744,9 @@ function requireParse() {
     }
     var tempObj = typeof str === "string" ? parseValues(str, options) : str;
     var obj = options.plainObjects ? { __proto__: null } : {};
-    var keys = Object.keys(tempObj);
-    for (var i2 = 0; i2 < keys.length; ++i2) {
-      var key = keys[i2];
+    var keys2 = Object.keys(tempObj);
+    for (var i2 = 0; i2 < keys2.length; ++i2) {
+      var key = keys2[i2];
       var newObj = parseKeys(key, tempObj[key], options, typeof str === "string");
       obj = utils2.merge(obj, newObj, options);
     }
@@ -3751,15 +8974,15 @@ function requireUrl() {
     }
     if (!unsafeProtocol[lowerProto]) {
       for (var i2 = 0, l2 = autoEscape.length; i2 < l2; i2++) {
-        var ae2 = autoEscape[i2];
-        if (rest.indexOf(ae2) === -1) {
+        var ae = autoEscape[i2];
+        if (rest.indexOf(ae) === -1) {
           continue;
         }
-        var esc = encodeURIComponent(ae2);
-        if (esc === ae2) {
-          esc = escape(ae2);
+        var esc = encodeURIComponent(ae);
+        if (esc === ae) {
+          esc = escape(ae);
         }
-        rest = rest.split(ae2).join(esc);
+        rest = rest.split(ae).join(esc);
       }
     }
     var hash = rest.indexOf("#");
@@ -3894,9 +9117,9 @@ function requireUrl() {
     }
     if (relative.protocol && relative.protocol !== result.protocol) {
       if (!slashedProtocol[relative.protocol]) {
-        var keys = Object.keys(relative);
-        for (var v2 = 0; v2 < keys.length; v2++) {
-          var k2 = keys[v2];
+        var keys2 = Object.keys(relative);
+        for (var v2 = 0; v2 < keys2.length; v2++) {
+          var k2 = keys2[v2];
           result[k2] = relative[k2];
         }
         result.href = result.format();
@@ -4104,7 +9327,7 @@ Deprecated since v${version}`), console.warn(stack))), warnings[message] = true;
 let supported;
 function isWebGLSupported() {
   return typeof supported > "u" && (supported = (function() {
-    var _a;
+    var _a2;
     const contextOptions = {
       stencil: true,
       failIfMajorPerformanceCaveat: settings.FAIL_IF_MAJOR_PERFORMANCE_CAVEAT
@@ -4114,7 +9337,7 @@ function isWebGLSupported() {
         return false;
       const canvas = settings.ADAPTER.createCanvas();
       let gl = canvas.getContext("webgl", contextOptions) || canvas.getContext("experimental-webgl", contextOptions);
-      const success = !!((_a = gl == null ? void 0 : gl.getContextAttributes()) == null ? void 0 : _a.stencil);
+      const success = !!((_a2 = gl == null ? void 0 : gl.getContextAttributes()) == null ? void 0 : _a2.stencil);
       if (gl) {
         const loseContext = gl.getExtension("WEBGL_lose_context");
         loseContext && loseContext.loseContext();
@@ -4158,14 +9381,14 @@ var r = { grad: 0.9, turn: 360, rad: 360 / (2 * Math.PI) }, t$1 = function(r2) {
 }, c = function(r2) {
   return { h: (t2 = h(r2)).h, s: (u2 = (200 - (n2 = t2.s)) * (e2 = t2.v) / 100) > 0 && u2 < 200 ? n2 * e2 / 100 / (u2 <= 100 ? u2 : 200 - u2) * 100 : 0, l: u2 / 2, a: t2.a };
   var t2, n2, e2, u2;
-}, l = /^hsla?\(\s*([+-]?\d*\.?\d+)(deg|rad|grad|turn)?\s*,\s*([+-]?\d*\.?\d+)%\s*,\s*([+-]?\d*\.?\d+)%\s*(?:,\s*([+-]?\d*\.?\d+)(%)?\s*)?\)$/i, p = /^hsla?\(\s*([+-]?\d*\.?\d+)(deg|rad|grad|turn)?\s+([+-]?\d*\.?\d+)%\s+([+-]?\d*\.?\d+)%\s*(?:\/\s*([+-]?\d*\.?\d+)(%)?\s*)?\)$/i, v = /^rgba?\(\s*([+-]?\d*\.?\d+)(%)?\s*,\s*([+-]?\d*\.?\d+)(%)?\s*,\s*([+-]?\d*\.?\d+)(%)?\s*(?:,\s*([+-]?\d*\.?\d+)(%)?\s*)?\)$/i, m = /^rgba?\(\s*([+-]?\d*\.?\d+)(%)?\s+([+-]?\d*\.?\d+)(%)?\s+([+-]?\d*\.?\d+)(%)?\s*(?:\/\s*([+-]?\d*\.?\d+)(%)?\s*)?\)$/i, y = { string: [[function(r2) {
+}, l = /^hsla?\(\s*([+-]?\d*\.?\d+)(deg|rad|grad|turn)?\s*,\s*([+-]?\d*\.?\d+)%\s*,\s*([+-]?\d*\.?\d+)%\s*(?:,\s*([+-]?\d*\.?\d+)(%)?\s*)?\)$/i, p$1 = /^hsla?\(\s*([+-]?\d*\.?\d+)(deg|rad|grad|turn)?\s+([+-]?\d*\.?\d+)%\s+([+-]?\d*\.?\d+)%\s*(?:\/\s*([+-]?\d*\.?\d+)(%)?\s*)?\)$/i, v = /^rgba?\(\s*([+-]?\d*\.?\d+)(%)?\s*,\s*([+-]?\d*\.?\d+)(%)?\s*,\s*([+-]?\d*\.?\d+)(%)?\s*(?:,\s*([+-]?\d*\.?\d+)(%)?\s*)?\)$/i, m = /^rgba?\(\s*([+-]?\d*\.?\d+)(%)?\s+([+-]?\d*\.?\d+)(%)?\s+([+-]?\d*\.?\d+)(%)?\s*(?:\/\s*([+-]?\d*\.?\d+)(%)?\s*)?\)$/i, y = { string: [[function(r2) {
   var t2 = i.exec(r2);
   return t2 ? (r2 = t2[1]).length <= 4 ? { r: parseInt(r2[0] + r2[0], 16), g: parseInt(r2[1] + r2[1], 16), b: parseInt(r2[2] + r2[2], 16), a: 4 === r2.length ? n$1(parseInt(r2[3] + r2[3], 16) / 255, 2) : 1 } : 6 === r2.length || 8 === r2.length ? { r: parseInt(r2.substr(0, 2), 16), g: parseInt(r2.substr(2, 2), 16), b: parseInt(r2.substr(4, 2), 16), a: 8 === r2.length ? n$1(parseInt(r2.substr(6, 2), 16) / 255, 2) : 1 } : null : null;
 }, "hex"], [function(r2) {
   var t2 = v.exec(r2) || m.exec(r2);
   return t2 ? t2[2] !== t2[4] || t2[4] !== t2[6] ? null : a({ r: Number(t2[1]) / (t2[2] ? 100 / 255 : 1), g: Number(t2[3]) / (t2[4] ? 100 / 255 : 1), b: Number(t2[5]) / (t2[6] ? 100 / 255 : 1), a: void 0 === t2[7] ? 1 : Number(t2[7]) / (t2[8] ? 100 : 1) }) : null;
 }, "rgb"], [function(t2) {
-  var n2 = l.exec(t2) || p.exec(t2);
+  var n2 = l.exec(t2) || p$1.exec(t2);
   if (!n2) return null;
   var e2, u2, a2 = g({ h: (e2 = n2[1], u2 = n2[2], void 0 === u2 && (u2 = "deg"), Number(e2) * (r[u2] || 1)), s: Number(n2[3]), l: Number(n2[4]), a: void 0 === n2[5] ? 1 : Number(n2[5]) / (n2[6] ? 100 : 1) });
   return f(a2);
@@ -4184,14 +9407,14 @@ var r = { grad: 0.9, turn: 360, rad: 360 / (2 * Math.PI) }, t$1 = function(r2) {
     return { h: u$1(r3.h), s: e(r3.s, 0, 100), v: e(r3.v, 0, 100), a: e(r3.a) };
   })({ h: Number(n2), s: Number(a2), v: Number(o2), a: Number(s2) });
   return b(h2);
-}, "hsv"]] }, N$1 = function(r2, t2) {
+}, "hsv"]] }, N = function(r2, t2) {
   for (var n2 = 0; n2 < t2.length; n2++) {
     var e2 = t2[n2][0](r2);
     if (e2) return [e2, t2[n2][1]];
   }
   return [null, void 0];
 }, x = function(r2) {
-  return "string" == typeof r2 ? N$1(r2.trim(), y.string) : "object" == typeof r2 && null !== r2 ? N$1(r2, y.object) : [null, void 0];
+  return "string" == typeof r2 ? N(r2.trim(), y.string) : "object" == typeof r2 && null !== r2 ? N(r2, y.object) : [null, void 0];
 }, M = function(r2, t2) {
   var n2 = c(r2);
   return { h: n2.h, s: e(n2.s + 100 * t2, 0, 100), l: n2.l, a: n2.a };
@@ -4254,9 +9477,9 @@ var r = { grad: 0.9, turn: 360, rad: 360 / (2 * Math.PI) }, t$1 = function(r2) {
   }, r2;
 })(), w = function(r2) {
   return r2 instanceof j ? r2 : new j(r2);
-}, S$1 = [], k = function(r2) {
+}, S = [], k = function(r2) {
   r2.forEach(function(r3) {
-    S$1.indexOf(r3) < 0 && (r3(j, y), S$1.push(r3));
+    S.indexOf(r3) < 0 && (r3(j, y), S.push(r3));
   });
 };
 function namesPlugin(e2, f2) {
@@ -4609,8 +9832,8 @@ function determineCrossOrigin(url2, loc = globalThis.location) {
   return parsedUrl.hostname !== loc.hostname || parsedUrl.port !== loc.port || parsedUrl.protocol !== loc.protocol ? "anonymous" : "";
 }
 function getResolutionOfUrl(url2, defaultValue2 = 1) {
-  var _a;
-  const resolution = (_a = settings.RETINA_PREFIX) == null ? void 0 : _a.exec(url2);
+  var _a2;
+  const resolution = (_a2 = settings.RETINA_PREFIX) == null ? void 0 : _a2.exec(url2);
   return resolution ? parseFloat(resolution[1]) : defaultValue2;
 }
 var ExtensionType = /* @__PURE__ */ ((ExtensionType2) => (ExtensionType2.Renderer = "renderer", ExtensionType2.Application = "application", ExtensionType2.RendererSystem = "renderer-webgl-system", ExtensionType2.RendererPlugin = "renderer-webgl-plugin", ExtensionType2.CanvasRendererSystem = "renderer-canvas-system", ExtensionType2.CanvasRendererPlugin = "renderer-canvas-plugin", ExtensionType2.Asset = "asset", ExtensionType2.LoadParser = "load-parser", ExtensionType2.ResolveParser = "resolve-parser", ExtensionType2.CacheParser = "cache-parser", ExtensionType2.DetectionParser = "detection-parser", ExtensionType2))(ExtensionType || {});
@@ -4640,8 +9863,8 @@ const normalizeExtension = (ext) => {
   remove(...extensions2) {
     return extensions2.map(normalizeExtension).forEach((ext) => {
       ext.type.forEach((type2) => {
-        var _a, _b;
-        return (_b = (_a = this._removeHandlers)[type2]) == null ? void 0 : _b.call(_a, ext);
+        var _a2, _b;
+        return (_b = (_a2 = this._removeHandlers)[type2]) == null ? void 0 : _b.call(_a2, ext);
       });
     }), this;
   },
@@ -4653,9 +9876,9 @@ const normalizeExtension = (ext) => {
   add(...extensions2) {
     return extensions2.map(normalizeExtension).forEach((ext) => {
       ext.type.forEach((type2) => {
-        var _a, _b;
+        var _a2, _b;
         const handlers = this._addHandlers, queue = this._queue;
-        handlers[type2] ? (_a = handlers[type2]) == null ? void 0 : _a.call(handlers, ext) : (queue[type2] = queue[type2] || [], (_b = queue[type2]) == null ? void 0 : _b.push(ext));
+        handlers[type2] ? (_a2 = handlers[type2]) == null ? void 0 : _a2.call(handlers, ext) : (queue[type2] = queue[type2] || [], (_b = queue[type2]) == null ? void 0 : _b.push(ext));
       });
     }), this;
   },
@@ -4667,13 +9890,13 @@ const normalizeExtension = (ext) => {
    * @returns {PIXI.extensions} For chaining.
    */
   handle(type2, onAdd, onRemove) {
-    var _a;
+    var _a2;
     const addHandlers = this._addHandlers, removeHandlers = this._removeHandlers;
     if (addHandlers[type2] || removeHandlers[type2])
       throw new Error(`Extension type ${type2} already has a handler`);
     addHandlers[type2] = onAdd, removeHandlers[type2] = onRemove;
     const queue = this._queue;
-    return queue[type2] && ((_a = queue[type2]) == null ? void 0 : _a.forEach((ext) => onAdd(ext)), delete queue[type2]), this;
+    return queue[type2] && ((_a2 = queue[type2]) == null ? void 0 : _a2.forEach((ext) => onAdd(ext)), delete queue[type2]), this;
   },
   /**
    * Handle a type, but using a map by `name` property.
@@ -5900,17 +11123,17 @@ class Rectangle {
     const x0 = this.left, x1 = this.right, y0 = this.top, y1 = this.bottom;
     if (x1 <= x0 || y1 <= y0)
       return false;
-    const lt2 = tempPoints$1[0].set(other.left, other.top), lb = tempPoints$1[1].set(other.left, other.bottom), rt2 = tempPoints$1[2].set(other.right, other.top), rb = tempPoints$1[3].set(other.right, other.bottom);
-    if (rt2.x <= lt2.x || lb.y <= lt2.y)
+    const lt = tempPoints$1[0].set(other.left, other.top), lb = tempPoints$1[1].set(other.left, other.bottom), rt = tempPoints$1[2].set(other.right, other.top), rb = tempPoints$1[3].set(other.right, other.bottom);
+    if (rt.x <= lt.x || lb.y <= lt.y)
       return false;
     const s2 = Math.sign(transform.a * transform.d - transform.b * transform.c);
-    if (s2 === 0 || (transform.apply(lt2, lt2), transform.apply(lb, lb), transform.apply(rt2, rt2), transform.apply(rb, rb), Math.max(lt2.x, lb.x, rt2.x, rb.x) <= x0 || Math.min(lt2.x, lb.x, rt2.x, rb.x) >= x1 || Math.max(lt2.y, lb.y, rt2.y, rb.y) <= y0 || Math.min(lt2.y, lb.y, rt2.y, rb.y) >= y1))
+    if (s2 === 0 || (transform.apply(lt, lt), transform.apply(lb, lb), transform.apply(rt, rt), transform.apply(rb, rb), Math.max(lt.x, lb.x, rt.x, rb.x) <= x0 || Math.min(lt.x, lb.x, rt.x, rb.x) >= x1 || Math.max(lt.y, lb.y, rt.y, rb.y) <= y0 || Math.min(lt.y, lb.y, rt.y, rb.y) >= y1))
       return false;
-    const nx = s2 * (lb.y - lt2.y), ny = s2 * (lt2.x - lb.x), n00 = nx * x0 + ny * y0, n10 = nx * x1 + ny * y0, n01 = nx * x0 + ny * y1, n11 = nx * x1 + ny * y1;
-    if (Math.max(n00, n10, n01, n11) <= nx * lt2.x + ny * lt2.y || Math.min(n00, n10, n01, n11) >= nx * rb.x + ny * rb.y)
+    const nx = s2 * (lb.y - lt.y), ny = s2 * (lt.x - lb.x), n00 = nx * x0 + ny * y0, n10 = nx * x1 + ny * y0, n01 = nx * x0 + ny * y1, n11 = nx * x1 + ny * y1;
+    if (Math.max(n00, n10, n01, n11) <= nx * lt.x + ny * lt.y || Math.min(n00, n10, n01, n11) >= nx * rb.x + ny * rb.y)
       return false;
-    const mx = s2 * (lt2.y - rt2.y), my = s2 * (rt2.x - lt2.x), m00 = mx * x0 + my * y0, m10 = mx * x1 + my * y0, m01 = mx * x0 + my * y1, m11 = mx * x1 + my * y1;
-    return !(Math.max(m00, m10, m01, m11) <= mx * lt2.x + my * lt2.y || Math.min(m00, m10, m01, m11) >= mx * rb.x + my * rb.y);
+    const mx = s2 * (lt.y - rt.y), my = s2 * (rt.x - lt.x), m00 = mx * x0 + my * y0, m10 = mx * x1 + my * y0, m01 = mx * x0 + my * y1, m11 = mx * x1 + my * y1;
+    return !(Math.max(m00, m10, m01, m11) <= mx * lt.x + my * lt.y || Math.min(m00, m10, m01, m11) >= mx * rb.x + my * rb.y);
   }
   /**
    * Pads the rectangle making it grow in all directions.
@@ -6443,18 +11666,18 @@ const _Transform = class {
   }
   /** Updates the local transformation matrix. */
   updateLocalTransform() {
-    const lt2 = this.localTransform;
-    this._localID !== this._currentLocalID && (lt2.a = this._cx * this.scale.x, lt2.b = this._sx * this.scale.x, lt2.c = this._cy * this.scale.y, lt2.d = this._sy * this.scale.y, lt2.tx = this.position.x - (this.pivot.x * lt2.a + this.pivot.y * lt2.c), lt2.ty = this.position.y - (this.pivot.x * lt2.b + this.pivot.y * lt2.d), this._currentLocalID = this._localID, this._parentID = -1);
+    const lt = this.localTransform;
+    this._localID !== this._currentLocalID && (lt.a = this._cx * this.scale.x, lt.b = this._sx * this.scale.x, lt.c = this._cy * this.scale.y, lt.d = this._sy * this.scale.y, lt.tx = this.position.x - (this.pivot.x * lt.a + this.pivot.y * lt.c), lt.ty = this.position.y - (this.pivot.x * lt.b + this.pivot.y * lt.d), this._currentLocalID = this._localID, this._parentID = -1);
   }
   /**
    * Updates the local and the world transformation matrices.
    * @param parentTransform - The parent transform
    */
   updateTransform(parentTransform) {
-    const lt2 = this.localTransform;
-    if (this._localID !== this._currentLocalID && (lt2.a = this._cx * this.scale.x, lt2.b = this._sx * this.scale.x, lt2.c = this._cy * this.scale.y, lt2.d = this._sy * this.scale.y, lt2.tx = this.position.x - (this.pivot.x * lt2.a + this.pivot.y * lt2.c), lt2.ty = this.position.y - (this.pivot.x * lt2.b + this.pivot.y * lt2.d), this._currentLocalID = this._localID, this._parentID = -1), this._parentID !== parentTransform._worldID) {
-      const pt2 = parentTransform.worldTransform, wt2 = this.worldTransform;
-      wt2.a = lt2.a * pt2.a + lt2.b * pt2.c, wt2.b = lt2.a * pt2.b + lt2.b * pt2.d, wt2.c = lt2.c * pt2.a + lt2.d * pt2.c, wt2.d = lt2.c * pt2.b + lt2.d * pt2.d, wt2.tx = lt2.tx * pt2.a + lt2.ty * pt2.c + pt2.tx, wt2.ty = lt2.tx * pt2.b + lt2.ty * pt2.d + pt2.ty, this._parentID = parentTransform._worldID, this._worldID++;
+    const lt = this.localTransform;
+    if (this._localID !== this._currentLocalID && (lt.a = this._cx * this.scale.x, lt.b = this._sx * this.scale.x, lt.c = this._cy * this.scale.y, lt.d = this._sy * this.scale.y, lt.tx = this.position.x - (this.pivot.x * lt.a + this.pivot.y * lt.c), lt.ty = this.position.y - (this.pivot.x * lt.b + this.pivot.y * lt.d), this._currentLocalID = this._localID, this._parentID = -1), this._parentID !== parentTransform._worldID) {
+      const pt = parentTransform.worldTransform, wt = this.worldTransform;
+      wt.a = lt.a * pt.a + lt.b * pt.c, wt.b = lt.a * pt.b + lt.b * pt.d, wt.c = lt.c * pt.a + lt.d * pt.c, wt.d = lt.c * pt.b + lt.d * pt.d, wt.tx = lt.tx * pt.a + lt.ty * pt.c + pt.tx, wt.ty = lt.tx * pt.b + lt.ty * pt.d + pt.ty, this._parentID = parentTransform._worldID, this._worldID++;
     }
   }
   /**
@@ -6944,7 +12167,7 @@ const GLSL_TO_SINGLE_SETTERS_CACHED = {
   sampler2DArray: "gl.uniform1iv(location, v)"
 };
 function generateUniformsSync(group, uniformData) {
-  var _a;
+  var _a2;
   const funcFragments = [`
         var v = null;
         var cv = null;
@@ -6955,7 +12178,7 @@ function generateUniformsSync(group, uniformData) {
   for (const i2 in group.uniforms) {
     const data = uniformData[i2];
     if (!data) {
-      ((_a = group.uniforms[i2]) == null ? void 0 : _a.group) === true && (group.uniforms[i2].ubo ? funcFragments.push(`
+      ((_a2 = group.uniforms[i2]) == null ? void 0 : _a2.group) === true && (group.uniforms[i2].ubo ? funcFragments.push(`
                         renderer.shader.syncUniformBufferGroup(uv.${i2}, '${i2}');
                     `) : funcFragments.push(`
                         renderer.shader.syncUniformGroup(uv.${i2}, syncData);
@@ -8445,12 +13668,12 @@ class Texture extends EventEmitter {
    * @returns - The new texture
    */
   clone() {
-    var _a;
+    var _a2;
     const clonedFrame = this._frame.clone(), clonedOrig = this._frame === this.orig ? clonedFrame : this.orig.clone(), clonedTexture = new Texture(
       this.baseTexture,
       !this.noFrame && clonedFrame,
       clonedOrig,
-      (_a = this.trim) == null ? void 0 : _a.clone(),
+      (_a2 = this.trim) == null ? void 0 : _a2.clone(),
       this.rotate,
       this.defaultAnchor,
       this.defaultBorders
@@ -9073,9 +14296,9 @@ class FilterSystem {
    * @param rect - second param
    */
   transformAABB(matrix, rect) {
-    const lt2 = tempPoints[0], lb = tempPoints[1], rt2 = tempPoints[2], rb = tempPoints[3];
-    lt2.set(rect.left, rect.top), lb.set(rect.left, rect.bottom), rt2.set(rect.right, rect.top), rb.set(rect.right, rect.bottom), matrix.apply(lt2, lt2), matrix.apply(lb, lb), matrix.apply(rt2, rt2), matrix.apply(rb, rb);
-    const x0 = Math.min(lt2.x, lb.x, rt2.x, rb.x), y0 = Math.min(lt2.y, lb.y, rt2.y, rb.y), x1 = Math.max(lt2.x, lb.x, rt2.x, rb.x), y1 = Math.max(lt2.y, lb.y, rt2.y, rb.y);
+    const lt = tempPoints[0], lb = tempPoints[1], rt = tempPoints[2], rb = tempPoints[3];
+    lt.set(rect.left, rect.top), lb.set(rect.left, rect.bottom), rt.set(rect.right, rect.top), rb.set(rect.right, rect.bottom), matrix.apply(lt, lt), matrix.apply(lb, lb), matrix.apply(rt, rt), matrix.apply(rb, rb);
+    const x0 = Math.min(lt.x, lb.x, rt.x, rb.x), y0 = Math.min(lt.y, lb.y, rt.y, rb.y), x1 = Math.max(lt.x, lb.x, rt.x, rb.x), y1 = Math.max(lt.y, lb.y, rt.y, rb.y);
     rect.x = x0, rect.y = y0, rect.width = x1 - x0, rect.height = y1 - y0;
   }
   roundFrame(frame, resolution, bindingSourceFrame, bindingDestinationFrame, transform) {
@@ -9501,11 +14724,11 @@ class GeometrySystem {
    * @param [contextLost=false] - If context was lost, we suppress deleteVertexArray
    */
   disposeGeometry(geometry, contextLost) {
-    var _a;
+    var _a2;
     if (!this.managedGeometries[geometry.id])
       return;
     delete this.managedGeometries[geometry.id];
-    const vaos = geometry.glVertexArrayObjects[this.CONTEXT_UID], gl = this.gl, buffers = geometry.buffers, bufferSystem = (_a = this.renderer) == null ? void 0 : _a.buffer;
+    const vaos = geometry.glVertexArrayObjects[this.CONTEXT_UID], gl = this.gl, buffers = geometry.buffers, bufferSystem = (_a2 = this.renderer) == null ? void 0 : _a2.buffer;
     if (geometry.disposeRunner.remove(this), !!vaos) {
       if (bufferSystem)
         for (let i2 = 0; i2 < buffers.length; i2++) {
@@ -10214,8 +15437,8 @@ class RenderTextureSystem {
     this.renderer = renderer, this.defaultMaskStack = [], this.current = null, this.sourceFrame = new Rectangle(), this.destinationFrame = new Rectangle(), this.viewportFrame = new Rectangle();
   }
   contextChange() {
-    var _a;
-    const attributes = (_a = this.renderer) == null ? void 0 : _a.gl.getContextAttributes();
+    var _a2;
+    const attributes = (_a2 = this.renderer) == null ? void 0 : _a2.gl.getContextAttributes();
     this._rendererPremultipliedAlpha = !!(attributes && attributes.alpha && attributes.premultipliedAlpha);
   }
   /**
@@ -10264,7 +15487,7 @@ RenderTextureSystem.extension = {
   name: "renderTexture"
 };
 extensions.add(RenderTextureSystem);
-class GLProgram {
+let GLProgram$1 = class GLProgram {
   /**
    * Makes a new Pixi program.
    * @param program - webgl program
@@ -10277,7 +15500,7 @@ class GLProgram {
   destroy() {
     this.uniformData = null, this.uniformGroups = null, this.uniformDirtyGroups = null, this.uniformBufferBindings = null, this.program = null;
   }
-}
+};
 function getAttributeData(program, gl) {
   const attributes = {}, totalAttributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
   for (let i2 = 0; i2 < totalAttributes; i2++) {
@@ -10310,19 +15533,19 @@ function getUniformData(program, gl) {
   return uniforms;
 }
 function generateProgram(gl, program) {
-  var _a;
+  var _a2;
   const glVertShader = compileShader(gl, gl.VERTEX_SHADER, program.vertexSrc), glFragShader = compileShader(gl, gl.FRAGMENT_SHADER, program.fragmentSrc), webGLProgram = gl.createProgram();
   gl.attachShader(webGLProgram, glVertShader), gl.attachShader(webGLProgram, glFragShader);
-  const transformFeedbackVaryings = (_a = program.extra) == null ? void 0 : _a.transformFeedbackVaryings;
+  const transformFeedbackVaryings = (_a2 = program.extra) == null ? void 0 : _a2.transformFeedbackVaryings;
   if (transformFeedbackVaryings && (typeof gl.transformFeedbackVaryings != "function" ? console.warn("TransformFeedback is not supported but TransformFeedbackVaryings are given.") : gl.transformFeedbackVaryings(
     webGLProgram,
     transformFeedbackVaryings.names,
     transformFeedbackVaryings.bufferMode === "separate" ? gl.SEPARATE_ATTRIBS : gl.INTERLEAVED_ATTRIBS
   )), gl.linkProgram(webGLProgram), gl.getProgramParameter(webGLProgram, gl.LINK_STATUS) || logProgramError(gl, webGLProgram, glVertShader, glFragShader), program.attributeData = getAttributeData(webGLProgram, gl), program.uniformData = getUniformData(webGLProgram, gl), !/^[ \t]*#[ \t]*version[ \t]+300[ \t]+es[ \t]*$/m.test(program.vertexSrc)) {
-    const keys = Object.keys(program.attributeData);
-    keys.sort((a2, b2) => a2 > b2 ? 1 : -1);
-    for (let i2 = 0; i2 < keys.length; i2++)
-      program.attributeData[keys[i2]].location = i2, gl.bindAttribLocation(webGLProgram, i2, keys[i2]);
+    const keys2 = Object.keys(program.attributeData);
+    keys2.sort((a2, b2) => a2 > b2 ? 1 : -1);
+    for (let i2 = 0; i2 < keys2.length; i2++)
+      program.attributeData[keys2[i2]].location = i2, gl.bindAttribLocation(webGLProgram, i2, keys2[i2]);
     gl.linkProgram(webGLProgram);
   }
   gl.deleteShader(glVertShader), gl.deleteShader(glFragShader);
@@ -10334,7 +15557,7 @@ function generateProgram(gl, program) {
       value: defaultValue(data.type, data.size)
     };
   }
-  return new GLProgram(webGLProgram, uniformData);
+  return new GLProgram$1(webGLProgram, uniformData);
 }
 function uboUpdate(_ud, _uv, _renderer, _syncData, buffer) {
   _renderer.buffer.update(buffer);
@@ -10975,11 +16198,11 @@ _TextureGCSystem.extension = {
 };
 let TextureGCSystem = _TextureGCSystem;
 extensions.add(TextureGCSystem);
-class GLTexture {
+let GLTexture$1 = class GLTexture {
   constructor(texture) {
     this.texture = texture, this.width = -1, this.height = -1, this.dirtyId = -1, this.dirtyStyleId = -1, this.mipmap = false, this.wrapMode = 33071, this.type = TYPES.UNSIGNED_BYTE, this.internalFormat = FORMATS.RGBA, this.samplerType = 0;
   }
-}
+};
 function mapInternalFormatToSamplerType(gl) {
   let table;
   return "WebGL2RenderingContext" in globalThis && gl instanceof globalThis.WebGL2RenderingContext ? table = {
@@ -11177,8 +16400,8 @@ class TextureSystem {
     for (let i2 = 0; i2 < maxTextures; i2++)
       this.boundTextures[i2] = null;
     this.emptyTextures = {};
-    const emptyTexture2D = new GLTexture(gl.createTexture());
-    gl.bindTexture(gl.TEXTURE_2D, emptyTexture2D.texture), gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4)), this.emptyTextures[gl.TEXTURE_2D] = emptyTexture2D, this.emptyTextures[gl.TEXTURE_CUBE_MAP] = new GLTexture(gl.createTexture()), gl.bindTexture(gl.TEXTURE_CUBE_MAP, this.emptyTextures[gl.TEXTURE_CUBE_MAP].texture);
+    const emptyTexture2D = new GLTexture$1(gl.createTexture());
+    gl.bindTexture(gl.TEXTURE_2D, emptyTexture2D.texture), gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4)), this.emptyTextures[gl.TEXTURE_2D] = emptyTexture2D, this.emptyTextures[gl.TEXTURE_CUBE_MAP] = new GLTexture$1(gl.createTexture()), gl.bindTexture(gl.TEXTURE_CUBE_MAP, this.emptyTextures[gl.TEXTURE_CUBE_MAP].texture);
     for (let i2 = 0; i2 < 6; i2++)
       gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i2, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR), gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -11240,12 +16463,12 @@ class TextureSystem {
    * @param texture - Texture to initialize
    */
   initTexture(texture) {
-    const glTexture = new GLTexture(this.gl.createTexture());
+    const glTexture = new GLTexture$1(this.gl.createTexture());
     return glTexture.dirtyId = -1, texture._glTextures[this.CONTEXT_UID] = glTexture, this.managedTextures.push(texture), texture.on("dispose", this.destroyTexture, this), glTexture;
   }
   initTextureType(texture, glTexture) {
-    var _a;
-    glTexture.internalFormat = ((_a = this.internalFormats[texture.type]) == null ? void 0 : _a[texture.format]) ?? texture.format, glTexture.samplerType = this.samplerTypes[glTexture.internalFormat] ?? SAMPLER_TYPES.FLOAT, this.webGLVersion === 2 && texture.type === TYPES.HALF_FLOAT ? glTexture.type = this.gl.HALF_FLOAT : glTexture.type = texture.type;
+    var _a2;
+    glTexture.internalFormat = ((_a2 = this.internalFormats[texture.type]) == null ? void 0 : _a2[texture.format]) ?? texture.format, glTexture.samplerType = this.samplerTypes[glTexture.internalFormat] ?? SAMPLER_TYPES.FLOAT, this.webGLVersion === 2 && texture.type === TYPES.HALF_FLOAT ? glTexture.type = this.gl.HALF_FLOAT : glTexture.type = texture.type;
   }
   /**
    * Update a texture
@@ -11253,12 +16476,12 @@ class TextureSystem {
    * @param {PIXI.BaseTexture} texture - Texture to initialize
    */
   updateTexture(texture) {
-    var _a;
+    var _a2;
     const glTexture = texture._glTextures[this.CONTEXT_UID];
     if (!glTexture)
       return;
     const renderer = this.renderer;
-    if (this.initTextureType(texture, glTexture), (_a = texture.resource) == null ? void 0 : _a.upload(renderer, texture, glTexture))
+    if (this.initTextureType(texture, glTexture), (_a2 = texture.resource) == null ? void 0 : _a2.upload(renderer, texture, glTexture))
       glTexture.samplerType !== SAMPLER_TYPES.FLOAT && (this.hasIntegerTextures = true);
     else {
       const width = texture.realWidth, height = texture.realHeight, gl = renderer.gl;
@@ -11295,9 +16518,9 @@ class TextureSystem {
    * @param {PIXI.BaseTexture} texture - Texture to update
    */
   updateTextureStyle(texture) {
-    var _a;
+    var _a2;
     const glTexture = texture._glTextures[this.CONTEXT_UID];
-    glTexture && ((texture.mipmap === MIPMAP_MODES.POW2 || this.webGLVersion !== 2) && !texture.isPowerOfTwo ? glTexture.mipmap = false : glTexture.mipmap = texture.mipmap >= 1, this.webGLVersion !== 2 && !texture.isPowerOfTwo ? glTexture.wrapMode = WRAP_MODES.CLAMP : glTexture.wrapMode = texture.wrapMode, ((_a = texture.resource) == null ? void 0 : _a.style(this.renderer, texture, glTexture)) || this.setStyle(texture, glTexture), glTexture.dirtyStyleId = texture.dirtyStyleId);
+    glTexture && ((texture.mipmap === MIPMAP_MODES.POW2 || this.webGLVersion !== 2) && !texture.isPowerOfTwo ? glTexture.mipmap = false : glTexture.mipmap = texture.mipmap >= 1, this.webGLVersion !== 2 && !texture.isPowerOfTwo ? glTexture.wrapMode = WRAP_MODES.CLAMP : glTexture.wrapMode = texture.wrapMode, ((_a2 = texture.resource) == null ? void 0 : _a2.style(this.renderer, texture, glTexture)) || this.setStyle(texture, glTexture), glTexture.dirtyStyleId = texture.dirtyStyleId);
   }
   /**
    * Set style for texture
@@ -11433,8 +16656,8 @@ class ViewSystem {
    * @param {boolean} [removeView=false] - Whether to remove the canvas from the DOM.
    */
   destroy(removeView) {
-    var _a;
-    removeView && ((_a = this.element.parentNode) == null ? void 0 : _a.removeChild(this.element)), this.renderer = null, this.element = null, this.screen = null;
+    var _a2;
+    removeView && ((_a2 = this.element.parentNode) == null ? void 0 : _a2.removeChild(this.element)), this.renderer = null, this.element = null, this.screen = null;
   }
 }
 ViewSystem.defaultOptions = {
@@ -13321,9 +18544,9 @@ class DisplayObject extends EventEmitter {
    * @param source - The source of properties and methods to mix in.
    */
   static mixin(source) {
-    const keys = Object.keys(source);
-    for (let i2 = 0; i2 < keys.length; ++i2) {
-      const propertyName = keys[i2];
+    const keys2 = Object.keys(source);
+    for (let i2 = 0; i2 < keys2.length; ++i2) {
+      const propertyName = keys2[i2];
       Object.defineProperty(
         DisplayObject.prototype,
         propertyName,
@@ -13447,8 +18670,8 @@ class DisplayObject extends EventEmitter {
   }
   /** Remove the DisplayObject from its parent Container. If the DisplayObject has no parent, do nothing. */
   removeFromParent() {
-    var _a;
-    (_a = this.parent) == null ? void 0 : _a.removeChild(this);
+    var _a2;
+    (_a2 = this.parent) == null ? void 0 : _a2.removeChild(this);
   }
   /**
    * Convenience function to set the position, scale, skew and pivot at once.
@@ -13914,9 +19137,9 @@ const _Container = class _Container2 extends DisplayObject {
    * @param renderer - The renderer
    */
   render(renderer) {
-    var _a;
+    var _a2;
     if (!(!this.visible || this.worldAlpha <= 0 || !this.renderable))
-      if (this._mask || ((_a = this.filters) == null ? void 0 : _a.length))
+      if (this._mask || ((_a2 = this.filters) == null ? void 0 : _a2.length))
         this.renderAdvanced(renderer);
       else if (this.cullable)
         this._renderWithCulling(renderer);
@@ -13931,14 +19154,14 @@ const _Container = class _Container2 extends DisplayObject {
    * @param renderer - The renderer
    */
   renderAdvanced(renderer) {
-    var _a, _b, _c;
+    var _a2, _b, _c;
     const filters = this.filters, mask = this._mask;
     if (filters) {
       this._enabledFilters || (this._enabledFilters = []), this._enabledFilters.length = 0;
       for (let i2 = 0; i2 < filters.length; i2++)
         filters[i2].enabled && this._enabledFilters.push(filters[i2]);
     }
-    const flush = filters && ((_a = this._enabledFilters) == null ? void 0 : _a.length) || mask && (!mask.isMaskData || mask.enabled && (mask.autoDetect || mask.type !== MASK_TYPES.NONE));
+    const flush = filters && ((_a2 = this._enabledFilters) == null ? void 0 : _a2.length) || mask && (!mask.isMaskData || mask.enabled && (mask.autoDetect || mask.type !== MASK_TYPES.NONE));
     if (flush && renderer.batch.flush(), filters && ((_b = this._enabledFilters) == null ? void 0 : _b.length) && renderer.filter.push(this, this._enabledFilters), mask && renderer.mask.push(this, this._mask), this.cullable)
       this._renderWithCulling(renderer);
     else {
@@ -14033,8 +19256,8 @@ const _Application = class _Application2 {
    * @readonly
    */
   get view() {
-    var _a;
-    return (_a = this.renderer) == null ? void 0 : _a.view;
+    var _a2;
+    return (_a2 = this.renderer) == null ? void 0 : _a2.view;
   }
   /**
    * Reference to the renderer's screen rectangle. Its safe to use as `filterArea` or `hitArea` for the whole screen.
@@ -14042,8 +19265,8 @@ const _Application = class _Application2 {
    * @readonly
    */
   get screen() {
-    var _a;
-    return (_a = this.renderer) == null ? void 0 : _a.screen;
+    var _a2;
+    return (_a2 = this.renderer) == null ? void 0 : _a2.screen;
   }
   /**
    * Destroy and don't use after this.
@@ -14662,7 +19885,7 @@ class ColorMatrixFilter extends Filter {
    */
   hue(rotation, multiply) {
     rotation = (rotation || 0) / 180 * Math.PI;
-    const cosR = Math.cos(rotation), sinR = Math.sin(rotation), sqrt = Math.sqrt, w2 = 1 / 3, sqrW = sqrt(w2), a00 = cosR + (1 - cosR) * w2, a01 = w2 * (1 - cosR) - sqrW * sinR, a02 = w2 * (1 - cosR) + sqrW * sinR, a10 = w2 * (1 - cosR) + sqrW * sinR, a11 = cosR + w2 * (1 - cosR), a12 = w2 * (1 - cosR) - sqrW * sinR, a20 = w2 * (1 - cosR) - sqrW * sinR, a21 = w2 * (1 - cosR) + sqrW * sinR, a22 = cosR + w2 * (1 - cosR), matrix = [
+    const cosR = Math.cos(rotation), sinR = Math.sin(rotation), sqrt2 = Math.sqrt, w2 = 1 / 3, sqrW = sqrt2(w2), a00 = cosR + (1 - cosR) * w2, a01 = w2 * (1 - cosR) - sqrW * sinR, a02 = w2 * (1 - cosR) + sqrW * sinR, a10 = w2 * (1 - cosR) + sqrW * sinR, a11 = cosR + w2 * (1 - cosR), a12 = w2 * (1 - cosR) - sqrW * sinR, a20 = w2 * (1 - cosR) - sqrW * sinR, a21 = w2 * (1 - cosR) + sqrW * sinR, a22 = cosR + w2 * (1 - cosR), matrix = [
       a00,
       a01,
       a02,
@@ -15209,7 +20432,7 @@ class Sprite extends Container {
     if (this._transformID === this.transform._worldID && this._textureID === texture._updateID)
       return;
     this._textureID !== texture._updateID && (this.uvs = this._texture._uvs.uvsFloat32), this._transformID = this.transform._worldID, this._textureID = texture._updateID;
-    const wt2 = this.transform.worldTransform, a2 = wt2.a, b2 = wt2.b, c2 = wt2.c, d2 = wt2.d, tx = wt2.tx, ty = wt2.ty, vertexData = this.vertexData, trim = texture.trim, orig = texture.orig, anchor = this._anchor;
+    const wt = this.transform.worldTransform, a2 = wt.a, b2 = wt.b, c2 = wt.c, d2 = wt.d, tx = wt.tx, ty = wt.ty, vertexData = this.vertexData, trim = texture.trim, orig = texture.orig, anchor = this._anchor;
     let w0 = 0, w1 = 0, h0 = 0, h1 = 0;
     if (trim ? (w1 = trim.x - anchor._x * orig.width, w0 = w1 + trim.width, h1 = trim.y - anchor._y * orig.height, h0 = h1 + trim.height) : (w1 = -anchor._x * orig.width, w0 = w1 + orig.width, h1 = -anchor._y * orig.height, h0 = h1 + orig.height), vertexData[0] = a2 * w1 + c2 * h1 + tx, vertexData[1] = d2 * h1 + b2 * w1 + ty, vertexData[2] = a2 * w0 + c2 * h1 + tx, vertexData[3] = d2 * h1 + b2 * w0 + ty, vertexData[4] = a2 * w0 + c2 * h0 + tx, vertexData[5] = d2 * h0 + b2 * w0 + ty, vertexData[6] = a2 * w1 + c2 * h0 + tx, vertexData[7] = d2 * h0 + b2 * w1 + ty, this._roundPixels) {
       const resolution = settings.RESOLUTION;
@@ -15228,7 +20451,7 @@ class Sprite extends Container {
     else if (this._transformTrimmedID === this.transform._worldID && this._textureTrimmedID === this._texture._updateID)
       return;
     this._transformTrimmedID = this.transform._worldID, this._textureTrimmedID = this._texture._updateID;
-    const texture = this._texture, vertexData = this.vertexTrimmedData, orig = texture.orig, anchor = this._anchor, wt2 = this.transform.worldTransform, a2 = wt2.a, b2 = wt2.b, c2 = wt2.c, d2 = wt2.d, tx = wt2.tx, ty = wt2.ty, w1 = -anchor._x * orig.width, w0 = w1 + orig.width, h1 = -anchor._y * orig.height, h0 = h1 + orig.height;
+    const texture = this._texture, vertexData = this.vertexTrimmedData, orig = texture.orig, anchor = this._anchor, wt = this.transform.worldTransform, a2 = wt.a, b2 = wt.b, c2 = wt.c, d2 = wt.d, tx = wt.tx, ty = wt.ty, w1 = -anchor._x * orig.width, w0 = w1 + orig.width, h1 = -anchor._y * orig.height, h0 = h1 + orig.height;
     if (vertexData[0] = a2 * w1 + c2 * h1 + tx, vertexData[1] = d2 * h1 + b2 * w1 + ty, vertexData[2] = a2 * w0 + c2 * h1 + tx, vertexData[3] = d2 * h1 + b2 * w0 + ty, vertexData[4] = a2 * w0 + c2 * h0 + tx, vertexData[5] = d2 * h0 + b2 * w0 + ty, vertexData[6] = a2 * w1 + c2 * h0 + tx, vertexData[7] = d2 * h0 + b2 * w1 + ty, this._roundPixels) {
       const resolution = settings.RESOLUTION;
       for (let i2 = 0; i2 < vertexData.length; ++i2)
@@ -15377,4047 +20600,896 @@ class Sprite extends Container {
     this._texture !== value && (this._texture && this._texture.off("update", this._onTextureUpdate, this), this._texture = value || Texture.EMPTY, this._cachedTint = 16777215, this._textureID = -1, this._textureTrimmedID = -1, value && (value.baseTexture.valid ? this._onTextureUpdate() : value.once("update", this._onTextureUpdate, this)));
   }
 }
-class Le {
+const VOID = -1;
+const PRIMITIVE = 0;
+const ARRAY = 1;
+const OBJECT = 2;
+const DATE = 3;
+const REGEXP = 4;
+const MAP = 5;
+const SET = 6;
+const ERROR = 7;
+const BIGINT = 8;
+const env = typeof self === "object" ? self : globalThis;
+const guard = (name, init2) => {
+  switch (name) {
+    case "Function":
+    case "SharedWorker":
+    case "Worker":
+    case "eval":
+    case "setInterval":
+    case "setTimeout":
+      throw new TypeError("unable to deserialize " + name);
+  }
+  return new env[name](init2);
+};
+const deserializer = ($2, _) => {
+  const as = (out, index) => {
+    $2.set(index, out);
+    return out;
+  };
+  const unpair = (index) => {
+    if ($2.has(index))
+      return $2.get(index);
+    const [type2, value] = _[index];
+    switch (type2) {
+      case PRIMITIVE:
+      case VOID:
+        return as(value, index);
+      case ARRAY: {
+        const arr = as([], index);
+        for (const index2 of value)
+          arr.push(unpair(index2));
+        return arr;
+      }
+      case OBJECT: {
+        const object = as({}, index);
+        for (const [key, index2] of value)
+          object[unpair(key)] = unpair(index2);
+        return object;
+      }
+      case DATE:
+        return as(new Date(value), index);
+      case REGEXP: {
+        const { source, flags } = value;
+        return as(new RegExp(source, flags), index);
+      }
+      case MAP: {
+        const map2 = as(/* @__PURE__ */ new Map(), index);
+        for (const [key, index2] of value)
+          map2.set(unpair(key), unpair(index2));
+        return map2;
+      }
+      case SET: {
+        const set = as(/* @__PURE__ */ new Set(), index);
+        for (const index2 of value)
+          set.add(unpair(index2));
+        return set;
+      }
+      case ERROR: {
+        const { name, message } = value;
+        return as(guard(name, message), index);
+      }
+      case BIGINT:
+        return as(BigInt(value), index);
+      case "BigInt":
+        return as(Object(BigInt(value)), index);
+      case "ArrayBuffer":
+        return as(new Uint8Array(value).buffer, value);
+      case "DataView": {
+        const { buffer } = new Uint8Array(value);
+        return as(new DataView(buffer), value);
+      }
+    }
+    return as(guard(type2, value), index);
+  };
+  return unpair;
+};
+const deserialize = (serialized) => deserializer(/* @__PURE__ */ new Map(), serialized)(0);
+const EMPTY = "";
+const { toString } = {};
+const { keys } = Object;
+const typeOf = (value) => {
+  const type2 = typeof value;
+  if (type2 !== "object" || !value)
+    return [PRIMITIVE, type2];
+  const asString = toString.call(value).slice(8, -1);
+  switch (asString) {
+    case "Array":
+      return [ARRAY, EMPTY];
+    case "Object":
+      return [OBJECT, EMPTY];
+    case "Date":
+      return [DATE, EMPTY];
+    case "RegExp":
+      return [REGEXP, EMPTY];
+    case "Map":
+      return [MAP, EMPTY];
+    case "Set":
+      return [SET, EMPTY];
+    case "DataView":
+      return [ARRAY, asString];
+  }
+  if (asString.includes("Array"))
+    return [ARRAY, asString];
+  if (asString.includes("Error"))
+    return [ERROR, asString];
+  return [OBJECT, asString];
+};
+const shouldSkip = ([TYPE, type2]) => TYPE === PRIMITIVE && (type2 === "function" || type2 === "symbol");
+const serializer = (strict, json, $2, _) => {
+  const as = (out, value) => {
+    const index = _.push(out) - 1;
+    $2.set(value, index);
+    return index;
+  };
+  const pair = (value) => {
+    if ($2.has(value))
+      return $2.get(value);
+    let [TYPE, type2] = typeOf(value);
+    switch (TYPE) {
+      case PRIMITIVE: {
+        let entry = value;
+        switch (type2) {
+          case "bigint":
+            TYPE = BIGINT;
+            entry = value.toString();
+            break;
+          case "function":
+          case "symbol":
+            if (strict)
+              throw new TypeError("unable to serialize " + type2);
+            entry = null;
+            break;
+          case "undefined":
+            return as([VOID], value);
+        }
+        return as([TYPE, entry], value);
+      }
+      case ARRAY: {
+        if (type2) {
+          let spread = value;
+          if (type2 === "DataView") {
+            spread = new Uint8Array(value.buffer);
+          } else if (type2 === "ArrayBuffer") {
+            spread = new Uint8Array(value);
+          }
+          return as([type2, [...spread]], value);
+        }
+        const arr = [];
+        const index = as([TYPE, arr], value);
+        for (const entry of value)
+          arr.push(pair(entry));
+        return index;
+      }
+      case OBJECT: {
+        if (type2) {
+          switch (type2) {
+            case "BigInt":
+              return as([type2, value.toString()], value);
+            case "Boolean":
+            case "Number":
+            case "String":
+              return as([type2, value.valueOf()], value);
+          }
+        }
+        if (json && "toJSON" in value)
+          return pair(value.toJSON());
+        const entries = [];
+        const index = as([TYPE, entries], value);
+        for (const key of keys(value)) {
+          if (strict || !shouldSkip(typeOf(value[key])))
+            entries.push([pair(key), pair(value[key])]);
+        }
+        return index;
+      }
+      case DATE:
+        return as([TYPE, value.toISOString()], value);
+      case REGEXP: {
+        const { source, flags } = value;
+        return as([TYPE, { source, flags }], value);
+      }
+      case MAP: {
+        const entries = [];
+        const index = as([TYPE, entries], value);
+        for (const [key, entry] of value) {
+          if (strict || !(shouldSkip(typeOf(key)) || shouldSkip(typeOf(entry))))
+            entries.push([pair(key), pair(entry)]);
+        }
+        return index;
+      }
+      case SET: {
+        const entries = [];
+        const index = as([TYPE, entries], value);
+        for (const entry of value) {
+          if (strict || !shouldSkip(typeOf(entry)))
+            entries.push(pair(entry));
+        }
+        return index;
+      }
+    }
+    const { message } = value;
+    return as([TYPE, { name: type2, message }], value);
+  };
+  return pair;
+};
+const serialize = (value, { json, lossy } = {}) => {
+  const _ = [];
+  return serializer(!(json || lossy), !!json, /* @__PURE__ */ new Map(), _)(value), _;
+};
+const structuredClone$1 = typeof structuredClone === "function" ? (
+  /* c8 ignore start */
+  (any, options) => options && ("json" in options || "lossy" in options) ? deserialize(serialize(any, options)) : structuredClone(any)
+) : (any, options) => deserialize(serialize(any, options));
+function LinearEasing(x2) {
+  return x2;
 }
-class te extends Le {
-  constructor(t2) {
+const { cbrt, sqrt, PI: \u03C0 } = Math;
+const x2t = (x2, a2, b2, c2, d2) => {
+  const q = a2 + b2 * x2;
+  const s2 = q ** 2 + c2;
+  if (s2 > 0) {
+    const root = sqrt(s2);
+    return cbrt(q + root) + cbrt(q - root) - d2;
+  }
+  const l2 = cbrt(sqrt(q * q - s2));
+  const angle = q ? Math.atan(sqrt(-s2) / q) : -\u03C0 / 2;
+  let \u03C6;
+  if (b2 < 0) {
+    \u03C6 = (q > 0 ? 2 * \u03C0 : \u03C0) - angle;
+  } else if (d2 < 0) {
+    \u03C6 = (q > 0 ? 2 * \u03C0 : -3 * \u03C0) + angle;
+  } else {
+    \u03C6 = (q > 0 ? 0 : \u03C0) + angle;
+  }
+  return 2 * l2 * Math.cos(\u03C6 / 3) - d2;
+};
+const Y = (t2, ay, by, cy) => ((ay * t2 + 3 * by) * t2 + cy) * t2;
+function bezier(mX1, mY1, mX2, mY2) {
+  if (!(0 <= mX1 && mX1 <= 1 && 0 <= mX2 && mX2 <= 1)) {
+    throw new Error("bezier x values must be in [0, 1] range");
+  }
+  if (mX1 === mY1 && mX2 === mY2) {
+    return LinearEasing;
+  }
+  const a2 = 6 * (3 * mX1 - 3 * mX2 + 1);
+  const b2 = 6 * (mX2 - 2 * mX1);
+  const c2 = 3 * mX1;
+  const a22 = a2 * a2;
+  const b22 = b2 * b2;
+  const d2 = b2 / a2;
+  const e2 = 3 * b2 * c2 / a22 - b22 * b2 / (a22 * a2);
+  const w1 = 2 * c2 / a2 - b22 / a22;
+  const w2 = w1 * w1 * w1;
+  const o2 = 3 / a2;
+  const ay = 3 * mY1 - 3 * mY2 + 1;
+  const by = mY2 - 2 * mY1;
+  const cy = 3 * mY1;
+  const X2T = a2 ? x2t : LinearEasing;
+  return function BezierEasing(x2) {
+    if (x2 === 0 || x2 === 1) {
+      return x2;
+    }
+    return Y(X2T(x2, e2, o2, w2, d2), ay, by, cy);
+  };
+}
+var AbstractBaseRenderer = class {
+};
+function clamp1(x2) {
+  return Math.max(1, x2);
+}
+var BaseRenderer = class extends AbstractBaseRenderer {
+  constructor(canvas) {
     super();
     __publicField(this, "observer");
-    __publicField(this, "flowSpeed", 4);
+    __publicField(this, "flowSpeed", 1);
     __publicField(this, "currerntRenderScale", 0.75);
-    this.canvas = t2, this.observer = new ResizeObserver(() => {
-      const e2 = Math.max(
-        1,
-        t2.clientWidth * window.devicePixelRatio * this.currerntRenderScale
-      ), s2 = Math.max(
-        1,
-        t2.clientHeight * window.devicePixelRatio * this.currerntRenderScale
-      );
-      this.onResize(e2, s2);
-    }), this.observer.observe(t2);
+    this.canvas = canvas;
+    this.observer = new ResizeObserver(() => {
+      const width = clamp1(canvas.clientWidth * window.devicePixelRatio * this.currerntRenderScale);
+      const height = clamp1(canvas.clientHeight * window.devicePixelRatio * this.currerntRenderScale);
+      this.onResize(width, height);
+    });
+    this.observer.observe(canvas);
   }
-  setRenderScale(t2) {
-    this.currerntRenderScale = t2, this.onResize(
-      this.canvas.clientWidth * window.devicePixelRatio * this.currerntRenderScale,
-      this.canvas.clientHeight * window.devicePixelRatio * this.currerntRenderScale
-    );
+  setRenderScale(scale) {
+    this.currerntRenderScale = scale;
+    this.onResize(this.canvas.clientWidth * window.devicePixelRatio * this.currerntRenderScale, this.canvas.clientHeight * window.devicePixelRatio * this.currerntRenderScale);
   }
   /**
-   * 当画板元素大小发生变化时此函数会被调用
-   * 可以在此处重设和渲染器相关的尺寸设置
-   * 考虑到初始化的时候元素不一定在文档中或出于某些特殊样式状态，尺寸长宽有可能会为 0，请注意进行特判处理
-   * @param width 画板元素实际的物理像素宽度，有可能为 0
-   * @param height 画板元素实际的物理像素高度，有可能为 0
-   */
-  onResize(t2, e2) {
-    this.canvas.width = t2, this.canvas.height = e2;
+  * 当画板元素大小发生变化时此函数会被调用
+  * 可以在此处重设和渲染器相关的尺寸设置
+  * 考虑到初始化的时候元素不一定在文档中或出于某些特殊样式状态，尺寸长宽有可能会为 0，请注意进行特判处理
+  * @param width 画板元素实际的物理像素宽度，有可能为 0
+  * @param height 画板元素实际的物理像素高度，有可能为 0
+  */
+  onResize(width, height) {
+    this.canvas.width = width;
+    this.canvas.height = height;
   }
   /**
-   * 修改背景的流动速度，数字越大越快，默认为 4
-   * @param speed 背景的流动速度，默认为 4
-   */
-  setFlowSpeed(t2) {
-    this.flowSpeed = t2;
+  * 修改背景的流动速度，数字越大越快，默认为 1
+  * @param speed 背景的流动速度，默认为 1
+  */
+  setFlowSpeed(speed) {
+    this.flowSpeed = speed;
   }
   dispose() {
-    this.observer.disconnect(), this.canvas.remove();
+    this.observer.disconnect();
+    this.canvas.remove();
   }
   getElement() {
     return this.canvas;
   }
+};
+function loadImage(imageUrl) {
+  return new Promise((resolve, reject) => {
+    const img = document.createElement("img");
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = imageUrl;
+    img.crossOrigin = "anonymous";
+    img.loading = "eager";
+  });
 }
-const O = 1e-6, Bt = new Float32Array([
-  1,
-  0,
-  0,
-  0,
-  0,
-  1,
-  0,
-  0,
-  0,
-  0,
-  1,
-  0,
-  0,
-  0,
-  0,
-  1
-]);
-const _I = class _I extends Float32Array {
-  /**
-   * Create a {@link Mat4}.
-   */
-  constructor(...t2) {
-    switch (t2.length) {
-      case 16:
-        super(t2);
-        break;
-      case 2:
-        super(t2[0], t2[1], 16);
-        break;
-      case 1:
-        const e2 = t2[0];
-        typeof e2 == "number" ? super([
-          e2,
-          e2,
-          e2,
-          e2,
-          e2,
-          e2,
-          e2,
-          e2,
-          e2,
-          e2,
-          e2,
-          e2,
-          e2,
-          e2,
-          e2,
-          e2
-        ]) : super(e2, 0, 16);
-        break;
-      default:
-        super(Bt);
-        break;
+function loadVideo(videoUrl) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    let playing = false;
+    let timeupdate = false;
+    let rejected = false;
+    video.addEventListener("playing", () => {
+      playing = true;
+      checkReady();
+    }, true);
+    video.addEventListener("timeupdate", () => {
+      timeupdate = true;
+      checkReady();
+    }, true);
+    video.addEventListener("error", (err) => {
+      rejected = true;
+      reject(err);
+    }, true);
+    function checkReady() {
+      if (playing && timeupdate && !rejected) resolve(video);
     }
-  }
-  //============
-  // Attributes
-  //============
-  /**
-   * A string representation of `this`
-   * Equivalent to `Mat4.str(this);`
-   */
-  get str() {
-    return _I.str(this);
-  }
-  //===================
-  // Instance methods
-  //===================
-  /**
-   * Copy the values from another {@link Mat4} into `this`.
-   *
-   * @param a the source vector
-   * @returns `this`
-   */
-  copy(t2) {
-    return this.set(t2), this;
-  }
-  /**
-   * Set `this` to the identity matrix
-   * Equivalent to Mat4.identity(this)
-   *
-   * @returns `this`
-   */
-  identity() {
-    return this.set(Bt), this;
-  }
-  /**
-   * Multiplies this {@link Mat4} against another one
-   * Equivalent to `Mat4.multiply(this, this, b);`
-   *
-   * @param out - The receiving Matrix
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns `this`
-   */
-  multiply(t2) {
-    return _I.multiply(this, this, t2);
-  }
-  /**
-   * Alias for {@link Mat4.multiply}
-   */
-  mul(t2) {
-    return this;
-  }
-  /**
-   * Transpose this {@link Mat4}
-   * Equivalent to `Mat4.transpose(this, this);`
-   *
-   * @returns `this`
-   */
-  transpose() {
-    return _I.transpose(this, this);
-  }
-  /**
-   * Inverts this {@link Mat4}
-   * Equivalent to `Mat4.invert(this, this);`
-   *
-   * @returns `this`
-   */
-  invert() {
-    return _I.invert(this, this);
-  }
-  /**
-   * Translate this {@link Mat4} by the given vector
-   * Equivalent to `Mat4.translate(this, this, v);`
-   *
-   * @param v - The {@link Vec3} to translate by
-   * @returns `this`
-   */
-  translate(t2) {
-    return _I.translate(this, this, t2);
-  }
-  /**
-   * Rotates this {@link Mat4} by the given angle around the given axis
-   * Equivalent to `Mat4.rotate(this, this, rad, axis);`
-   *
-   * @param rad - the angle to rotate the matrix by
-   * @param axis - the axis to rotate around
-   * @returns `out`
-   */
-  rotate(t2, e2) {
-    return _I.rotate(this, this, t2, e2);
-  }
-  /**
-   * Scales this {@link Mat4} by the dimensions in the given vec3 not using vectorization
-   * Equivalent to `Mat4.scale(this, this, v);`
-   *
-   * @param v - The {@link Vec3} to scale the matrix by
-   * @returns `this`
-   */
-  scale(t2) {
-    return _I.scale(this, this, t2);
-  }
-  /**
-   * Rotates this {@link Mat4} by the given angle around the X axis
-   * Equivalent to `Mat4.rotateX(this, this, rad);`
-   *
-   * @param rad - the angle to rotate the matrix by
-   * @returns `this`
-   */
-  rotateX(t2) {
-    return _I.rotateX(this, this, t2);
-  }
-  /**
-   * Rotates this {@link Mat4} by the given angle around the Y axis
-   * Equivalent to `Mat4.rotateY(this, this, rad);`
-   *
-   * @param rad - the angle to rotate the matrix by
-   * @returns `this`
-   */
-  rotateY(t2) {
-    return _I.rotateY(this, this, t2);
-  }
-  /**
-   * Rotates this {@link Mat4} by the given angle around the Z axis
-   * Equivalent to `Mat4.rotateZ(this, this, rad);`
-   *
-   * @param rad - the angle to rotate the matrix by
-   * @returns `this`
-   */
-  rotateZ(t2) {
-    return _I.rotateZ(this, this, t2);
-  }
-  /**
-   * Generates a perspective projection matrix with the given bounds.
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
-   * which matches WebGL/OpenGL's clip volume.
-   * Passing null/undefined/no value for far will generate infinite projection matrix.
-   * Equivalent to `Mat4.perspectiveNO(this, fovy, aspect, near, far);`
-   *
-   * @param fovy - Vertical field of view in radians
-   * @param aspect - Aspect ratio. typically viewport width/height
-   * @param near - Near bound of the frustum
-   * @param far - Far bound of the frustum, can be null or Infinity
-   * @returns `this`
-   */
-  perspectiveNO(t2, e2, s2, i2) {
-    return _I.perspectiveNO(this, t2, e2, s2, i2);
-  }
-  /**
-   * Generates a perspective projection matrix suitable for WebGPU with the given bounds.
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [0, 1],
-   * which matches WebGPU/Vulkan/DirectX/Metal's clip volume.
-   * Passing null/undefined/no value for far will generate infinite projection matrix.
-   * Equivalent to `Mat4.perspectiveZO(this, fovy, aspect, near, far);`
-   *
-   * @param fovy - Vertical field of view in radians
-   * @param aspect - Aspect ratio. typically viewport width/height
-   * @param near - Near bound of the frustum
-   * @param far - Far bound of the frustum, can be null or Infinity
-   * @returns `this`
-   */
-  perspectiveZO(t2, e2, s2, i2) {
-    return _I.perspectiveZO(this, t2, e2, s2, i2);
-  }
-  /**
-   * Generates a orthogonal projection matrix with the given bounds.
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
-   * which matches WebGL/OpenGL's clip volume.
-   * Equivalent to `Mat4.orthoNO(this, left, right, bottom, top, near, far);`
-   *
-   * @param left - Left bound of the frustum
-   * @param right - Right bound of the frustum
-   * @param bottom - Bottom bound of the frustum
-   * @param top - Top bound of the frustum
-   * @param near - Near bound of the frustum
-   * @param far - Far bound of the frustum
-   * @returns `this`
-   */
-  orthoNO(t2, e2, s2, i2, n2, r2) {
-    return _I.orthoNO(this, t2, e2, s2, i2, n2, r2);
-  }
-  /**
-   * Generates a orthogonal projection matrix with the given bounds.
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [0, 1],
-   * which matches WebGPU/Vulkan/DirectX/Metal's clip volume.
-   * Equivalent to `Mat4.orthoZO(this, left, right, bottom, top, near, far);`
-   *
-   * @param left - Left bound of the frustum
-   * @param right - Right bound of the frustum
-   * @param bottom - Bottom bound of the frustum
-   * @param top - Top bound of the frustum
-   * @param near - Near bound of the frustum
-   * @param far - Far bound of the frustum
-   * @returns `this`
-   */
-  orthoZO(t2, e2, s2, i2, n2, r2) {
-    return _I.orthoZO(this, t2, e2, s2, i2, n2, r2);
-  }
-  //================
-  // Static methods
-  //================
-  /**
-   * Creates a new, identity {@link Mat4}
-   * @category Static
-   *
-   * @returns A new {@link Mat4}
-   */
-  static create() {
-    return new _I();
-  }
-  /**
-   * Creates a new {@link Mat4} initialized with values from an existing matrix
-   * @category Static
-   *
-   * @param a - Matrix to clone
-   * @returns A new {@link Mat4}
-   */
-  static clone(t2) {
-    return new _I(t2);
-  }
-  /**
-   * Copy the values from one {@link Mat4} to another
-   * @category Static
-   *
-   * @param out - The receiving Matrix
-   * @param a - Matrix to copy
-   * @returns `out`
-   */
-  static copy(t2, e2) {
-    return t2[0] = e2[0], t2[1] = e2[1], t2[2] = e2[2], t2[3] = e2[3], t2[4] = e2[4], t2[5] = e2[5], t2[6] = e2[6], t2[7] = e2[7], t2[8] = e2[8], t2[9] = e2[9], t2[10] = e2[10], t2[11] = e2[11], t2[12] = e2[12], t2[13] = e2[13], t2[14] = e2[14], t2[15] = e2[15], t2;
-  }
-  /**
-   * Create a new mat4 with the given values
-   * @category Static
-   *
-   * @param values - Matrix components
-   * @returns A new {@link Mat4}
-   */
-  static fromValues(...t2) {
-    return new _I(...t2);
-  }
-  /**
-   * Set the components of a mat4 to the given values
-   * @category Static
-   *
-   * @param out - The receiving matrix
-   * @param values - Matrix components
-   * @returns `out`
-   */
-  static set(t2, ...e2) {
-    return t2[0] = e2[0], t2[1] = e2[1], t2[2] = e2[2], t2[3] = e2[3], t2[4] = e2[4], t2[5] = e2[5], t2[6] = e2[6], t2[7] = e2[7], t2[8] = e2[8], t2[9] = e2[9], t2[10] = e2[10], t2[11] = e2[11], t2[12] = e2[12], t2[13] = e2[13], t2[14] = e2[14], t2[15] = e2[15], t2;
-  }
-  /**
-   * Set a {@link Mat4} to the identity matrix
-   * @category Static
-   *
-   * @param out - The receiving Matrix
-   * @returns `out`
-   */
-  static identity(t2) {
-    return t2[0] = 1, t2[1] = 0, t2[2] = 0, t2[3] = 0, t2[4] = 0, t2[5] = 1, t2[6] = 0, t2[7] = 0, t2[8] = 0, t2[9] = 0, t2[10] = 1, t2[11] = 0, t2[12] = 0, t2[13] = 0, t2[14] = 0, t2[15] = 1, t2;
-  }
-  /**
-   * Transpose the values of a {@link Mat4}
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the source matrix
-   * @returns `out`
-   */
-  static transpose(t2, e2) {
-    if (t2 === e2) {
-      const s2 = e2[1], i2 = e2[2], n2 = e2[3], r2 = e2[6], a2 = e2[7], o2 = e2[11];
-      t2[1] = e2[4], t2[2] = e2[8], t2[3] = e2[12], t2[4] = s2, t2[6] = e2[9], t2[7] = e2[13], t2[8] = i2, t2[9] = r2, t2[11] = e2[14], t2[12] = n2, t2[13] = a2, t2[14] = o2;
-    } else
-      t2[0] = e2[0], t2[1] = e2[4], t2[2] = e2[8], t2[3] = e2[12], t2[4] = e2[1], t2[5] = e2[5], t2[6] = e2[9], t2[7] = e2[13], t2[8] = e2[2], t2[9] = e2[6], t2[10] = e2[10], t2[11] = e2[14], t2[12] = e2[3], t2[13] = e2[7], t2[14] = e2[11], t2[15] = e2[15];
-    return t2;
-  }
-  /**
-   * Inverts a {@link Mat4}
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the source matrix
-   * @returns `out` or `null` if the matrix is not invertable
-   */
-  static invert(t2, e2) {
-    const s2 = e2[0], i2 = e2[1], n2 = e2[2], r2 = e2[3], a2 = e2[4], o2 = e2[5], l2 = e2[6], c2 = e2[7], h2 = e2[8], m2 = e2[9], u2 = e2[10], f2 = e2[11], g2 = e2[12], p2 = e2[13], y2 = e2[14], L = e2[15], x2 = s2 * o2 - i2 * a2, M2 = s2 * l2 - n2 * a2, b2 = s2 * c2 - r2 * a2, w2 = i2 * l2 - n2 * o2, T = i2 * c2 - r2 * o2, v2 = n2 * c2 - r2 * l2, P = h2 * p2 - m2 * g2, z = h2 * y2 - u2 * g2, E = h2 * L - f2 * g2, F = m2 * y2 - u2 * p2, _ = m2 * L - f2 * p2, R = u2 * L - f2 * y2;
-    let k2 = x2 * R - M2 * _ + b2 * F + w2 * E - T * z + v2 * P;
-    return k2 ? (k2 = 1 / k2, t2[0] = (o2 * R - l2 * _ + c2 * F) * k2, t2[1] = (n2 * _ - i2 * R - r2 * F) * k2, t2[2] = (p2 * v2 - y2 * T + L * w2) * k2, t2[3] = (u2 * T - m2 * v2 - f2 * w2) * k2, t2[4] = (l2 * E - a2 * R - c2 * z) * k2, t2[5] = (s2 * R - n2 * E + r2 * z) * k2, t2[6] = (y2 * b2 - g2 * v2 - L * M2) * k2, t2[7] = (h2 * v2 - u2 * b2 + f2 * M2) * k2, t2[8] = (a2 * _ - o2 * E + c2 * P) * k2, t2[9] = (i2 * E - s2 * _ - r2 * P) * k2, t2[10] = (g2 * T - p2 * b2 + L * x2) * k2, t2[11] = (m2 * b2 - h2 * T - f2 * x2) * k2, t2[12] = (o2 * z - a2 * F - l2 * P) * k2, t2[13] = (s2 * F - i2 * z + n2 * P) * k2, t2[14] = (p2 * M2 - g2 * w2 - y2 * x2) * k2, t2[15] = (h2 * w2 - m2 * M2 + u2 * x2) * k2, t2) : null;
-  }
-  /**
-   * Calculates the adjugate of a {@link Mat4}
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the source matrix
-   * @returns `out`
-   */
-  static adjoint(t2, e2) {
-    const s2 = e2[0], i2 = e2[1], n2 = e2[2], r2 = e2[3], a2 = e2[4], o2 = e2[5], l2 = e2[6], c2 = e2[7], h2 = e2[8], m2 = e2[9], u2 = e2[10], f2 = e2[11], g2 = e2[12], p2 = e2[13], y2 = e2[14], L = e2[15], x2 = s2 * o2 - i2 * a2, M2 = s2 * l2 - n2 * a2, b2 = s2 * c2 - r2 * a2, w2 = i2 * l2 - n2 * o2, T = i2 * c2 - r2 * o2, v2 = n2 * c2 - r2 * l2, P = h2 * p2 - m2 * g2, z = h2 * y2 - u2 * g2, E = h2 * L - f2 * g2, F = m2 * y2 - u2 * p2, _ = m2 * L - f2 * p2, R = u2 * L - f2 * y2;
-    return t2[0] = o2 * R - l2 * _ + c2 * F, t2[1] = n2 * _ - i2 * R - r2 * F, t2[2] = p2 * v2 - y2 * T + L * w2, t2[3] = u2 * T - m2 * v2 - f2 * w2, t2[4] = l2 * E - a2 * R - c2 * z, t2[5] = s2 * R - n2 * E + r2 * z, t2[6] = y2 * b2 - g2 * v2 - L * M2, t2[7] = h2 * v2 - u2 * b2 + f2 * M2, t2[8] = a2 * _ - o2 * E + c2 * P, t2[9] = i2 * E - s2 * _ - r2 * P, t2[10] = g2 * T - p2 * b2 + L * x2, t2[11] = m2 * b2 - h2 * T - f2 * x2, t2[12] = o2 * z - a2 * F - l2 * P, t2[13] = s2 * F - i2 * z + n2 * P, t2[14] = p2 * M2 - g2 * w2 - y2 * x2, t2[15] = h2 * w2 - m2 * M2 + u2 * x2, t2;
-  }
-  /**
-   * Calculates the determinant of a {@link Mat4}
-   * @category Static
-   *
-   * @param a - the source matrix
-   * @returns determinant of a
-   */
-  static determinant(t2) {
-    const e2 = t2[0], s2 = t2[1], i2 = t2[2], n2 = t2[3], r2 = t2[4], a2 = t2[5], o2 = t2[6], l2 = t2[7], c2 = t2[8], h2 = t2[9], m2 = t2[10], u2 = t2[11], f2 = t2[12], g2 = t2[13], p2 = t2[14], y2 = t2[15], L = e2 * a2 - s2 * r2, x2 = e2 * o2 - i2 * r2, M2 = s2 * o2 - i2 * a2, b2 = c2 * g2 - h2 * f2, w2 = c2 * p2 - m2 * f2, T = h2 * p2 - m2 * g2, v2 = e2 * T - s2 * w2 + i2 * b2, P = r2 * T - a2 * w2 + o2 * b2, z = c2 * M2 - h2 * x2 + m2 * L, E = f2 * M2 - g2 * x2 + p2 * L;
-    return l2 * v2 - n2 * P + y2 * z - u2 * E;
-  }
-  /**
-   * Multiplies two {@link Mat4}s
-   * @category Static
-   *
-   * @param out - The receiving Matrix
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns `out`
-   */
-  static multiply(t2, e2, s2) {
-    const i2 = e2[0], n2 = e2[1], r2 = e2[2], a2 = e2[3], o2 = e2[4], l2 = e2[5], c2 = e2[6], h2 = e2[7], m2 = e2[8], u2 = e2[9], f2 = e2[10], g2 = e2[11], p2 = e2[12], y2 = e2[13], L = e2[14], x2 = e2[15];
-    let M2 = s2[0], b2 = s2[1], w2 = s2[2], T = s2[3];
-    return t2[0] = M2 * i2 + b2 * o2 + w2 * m2 + T * p2, t2[1] = M2 * n2 + b2 * l2 + w2 * u2 + T * y2, t2[2] = M2 * r2 + b2 * c2 + w2 * f2 + T * L, t2[3] = M2 * a2 + b2 * h2 + w2 * g2 + T * x2, M2 = s2[4], b2 = s2[5], w2 = s2[6], T = s2[7], t2[4] = M2 * i2 + b2 * o2 + w2 * m2 + T * p2, t2[5] = M2 * n2 + b2 * l2 + w2 * u2 + T * y2, t2[6] = M2 * r2 + b2 * c2 + w2 * f2 + T * L, t2[7] = M2 * a2 + b2 * h2 + w2 * g2 + T * x2, M2 = s2[8], b2 = s2[9], w2 = s2[10], T = s2[11], t2[8] = M2 * i2 + b2 * o2 + w2 * m2 + T * p2, t2[9] = M2 * n2 + b2 * l2 + w2 * u2 + T * y2, t2[10] = M2 * r2 + b2 * c2 + w2 * f2 + T * L, t2[11] = M2 * a2 + b2 * h2 + w2 * g2 + T * x2, M2 = s2[12], b2 = s2[13], w2 = s2[14], T = s2[15], t2[12] = M2 * i2 + b2 * o2 + w2 * m2 + T * p2, t2[13] = M2 * n2 + b2 * l2 + w2 * u2 + T * y2, t2[14] = M2 * r2 + b2 * c2 + w2 * f2 + T * L, t2[15] = M2 * a2 + b2 * h2 + w2 * g2 + T * x2, t2;
-  }
-  /**
-   * Alias for {@link Mat4.multiply}
-   * @category Static
-   */
-  static mul(t2, e2, s2) {
-    return t2;
-  }
-  /**
-   * Translate a {@link Mat4} by the given vector
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the matrix to translate
-   * @param v - vector to translate by
-   * @returns `out`
-   */
-  static translate(t2, e2, s2) {
-    const i2 = s2[0], n2 = s2[1], r2 = s2[2];
-    if (e2 === t2)
-      t2[12] = e2[0] * i2 + e2[4] * n2 + e2[8] * r2 + e2[12], t2[13] = e2[1] * i2 + e2[5] * n2 + e2[9] * r2 + e2[13], t2[14] = e2[2] * i2 + e2[6] * n2 + e2[10] * r2 + e2[14], t2[15] = e2[3] * i2 + e2[7] * n2 + e2[11] * r2 + e2[15];
+    video.src = videoUrl;
+    video.playsInline = true;
+    video.crossOrigin = "anonymous";
+    video.autoplay = true;
+    video.loop = true;
+    video.muted = true;
+    video.play();
+  });
+}
+function loadResourceFromUrl(url2, isVideo = false) {
+  return isVideo ? loadVideo(url2) : loadImage(url2);
+}
+function loadResourceFromElement(element) {
+  return new Promise((resolve, reject) => {
+    if (element instanceof HTMLImageElement ? element.complete : element.readyState >= 3) resolve(element);
     else {
-      const a2 = e2[0], o2 = e2[1], l2 = e2[2], c2 = e2[3], h2 = e2[4], m2 = e2[5], u2 = e2[6], f2 = e2[7], g2 = e2[8], p2 = e2[9], y2 = e2[10], L = e2[11];
-      t2[0] = a2, t2[1] = o2, t2[2] = l2, t2[3] = c2, t2[4] = h2, t2[5] = m2, t2[6] = u2, t2[7] = f2, t2[8] = g2, t2[9] = p2, t2[10] = y2, t2[11] = L, t2[12] = a2 * i2 + h2 * n2 + g2 * r2 + e2[12], t2[13] = o2 * i2 + m2 * n2 + p2 * r2 + e2[13], t2[14] = l2 * i2 + u2 * n2 + y2 * r2 + e2[14], t2[15] = c2 * i2 + f2 * n2 + L * r2 + e2[15];
+      element.onload = () => resolve(element);
+      element.onerror = reject;
     }
-    return t2;
-  }
-  /**
-   * Scales the {@link Mat4} by the dimensions in the given {@link Vec3} not using vectorization
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the matrix to scale
-   * @param v - the {@link Vec3} to scale the matrix by
-   * @returns `out`
-   **/
-  static scale(t2, e2, s2) {
-    const i2 = s2[0], n2 = s2[1], r2 = s2[2];
-    return t2[0] = e2[0] * i2, t2[1] = e2[1] * i2, t2[2] = e2[2] * i2, t2[3] = e2[3] * i2, t2[4] = e2[4] * n2, t2[5] = e2[5] * n2, t2[6] = e2[6] * n2, t2[7] = e2[7] * n2, t2[8] = e2[8] * r2, t2[9] = e2[9] * r2, t2[10] = e2[10] * r2, t2[11] = e2[11] * r2, t2[12] = e2[12], t2[13] = e2[13], t2[14] = e2[14], t2[15] = e2[15], t2;
-  }
-  /**
-   * Rotates a {@link Mat4} by the given angle around the given axis
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the matrix to rotate
-   * @param rad - the angle to rotate the matrix by
-   * @param axis - the axis to rotate around
-   * @returns `out` or `null` if axis has a length of 0
-   */
-  static rotate(t2, e2, s2, i2) {
-    let n2 = i2[0], r2 = i2[1], a2 = i2[2], o2 = Math.sqrt(n2 * n2 + r2 * r2 + a2 * a2);
-    if (o2 < O)
-      return null;
-    o2 = 1 / o2, n2 *= o2, r2 *= o2, a2 *= o2;
-    const l2 = Math.sin(s2), c2 = Math.cos(s2), h2 = 1 - c2, m2 = e2[0], u2 = e2[1], f2 = e2[2], g2 = e2[3], p2 = e2[4], y2 = e2[5], L = e2[6], x2 = e2[7], M2 = e2[8], b2 = e2[9], w2 = e2[10], T = e2[11], v2 = n2 * n2 * h2 + c2, P = r2 * n2 * h2 + a2 * l2, z = a2 * n2 * h2 - r2 * l2, E = n2 * r2 * h2 - a2 * l2, F = r2 * r2 * h2 + c2, _ = a2 * r2 * h2 + n2 * l2, R = n2 * a2 * h2 + r2 * l2, k2 = r2 * a2 * h2 - n2 * l2, B = a2 * a2 * h2 + c2;
-    return t2[0] = m2 * v2 + p2 * P + M2 * z, t2[1] = u2 * v2 + y2 * P + b2 * z, t2[2] = f2 * v2 + L * P + w2 * z, t2[3] = g2 * v2 + x2 * P + T * z, t2[4] = m2 * E + p2 * F + M2 * _, t2[5] = u2 * E + y2 * F + b2 * _, t2[6] = f2 * E + L * F + w2 * _, t2[7] = g2 * E + x2 * F + T * _, t2[8] = m2 * R + p2 * k2 + M2 * B, t2[9] = u2 * R + y2 * k2 + b2 * B, t2[10] = f2 * R + L * k2 + w2 * B, t2[11] = g2 * R + x2 * k2 + T * B, e2 !== t2 && (t2[12] = e2[12], t2[13] = e2[13], t2[14] = e2[14], t2[15] = e2[15]), t2;
-  }
-  /**
-   * Rotates a matrix by the given angle around the X axis
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the matrix to rotate
-   * @param rad - the angle to rotate the matrix by
-   * @returns `out`
-   */
-  static rotateX(t2, e2, s2) {
-    let i2 = Math.sin(s2), n2 = Math.cos(s2), r2 = e2[4], a2 = e2[5], o2 = e2[6], l2 = e2[7], c2 = e2[8], h2 = e2[9], m2 = e2[10], u2 = e2[11];
-    return e2 !== t2 && (t2[0] = e2[0], t2[1] = e2[1], t2[2] = e2[2], t2[3] = e2[3], t2[12] = e2[12], t2[13] = e2[13], t2[14] = e2[14], t2[15] = e2[15]), t2[4] = r2 * n2 + c2 * i2, t2[5] = a2 * n2 + h2 * i2, t2[6] = o2 * n2 + m2 * i2, t2[7] = l2 * n2 + u2 * i2, t2[8] = c2 * n2 - r2 * i2, t2[9] = h2 * n2 - a2 * i2, t2[10] = m2 * n2 - o2 * i2, t2[11] = u2 * n2 - l2 * i2, t2;
-  }
-  /**
-   * Rotates a matrix by the given angle around the Y axis
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the matrix to rotate
-   * @param rad - the angle to rotate the matrix by
-   * @returns `out`
-   */
-  static rotateY(t2, e2, s2) {
-    let i2 = Math.sin(s2), n2 = Math.cos(s2), r2 = e2[0], a2 = e2[1], o2 = e2[2], l2 = e2[3], c2 = e2[8], h2 = e2[9], m2 = e2[10], u2 = e2[11];
-    return e2 !== t2 && (t2[4] = e2[4], t2[5] = e2[5], t2[6] = e2[6], t2[7] = e2[7], t2[12] = e2[12], t2[13] = e2[13], t2[14] = e2[14], t2[15] = e2[15]), t2[0] = r2 * n2 - c2 * i2, t2[1] = a2 * n2 - h2 * i2, t2[2] = o2 * n2 - m2 * i2, t2[3] = l2 * n2 - u2 * i2, t2[8] = r2 * i2 + c2 * n2, t2[9] = a2 * i2 + h2 * n2, t2[10] = o2 * i2 + m2 * n2, t2[11] = l2 * i2 + u2 * n2, t2;
-  }
-  /**
-   * Rotates a matrix by the given angle around the Z axis
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the matrix to rotate
-   * @param rad - the angle to rotate the matrix by
-   * @returns `out`
-   */
-  static rotateZ(t2, e2, s2) {
-    let i2 = Math.sin(s2), n2 = Math.cos(s2), r2 = e2[0], a2 = e2[1], o2 = e2[2], l2 = e2[3], c2 = e2[4], h2 = e2[5], m2 = e2[6], u2 = e2[7];
-    return e2 !== t2 && (t2[8] = e2[8], t2[9] = e2[9], t2[10] = e2[10], t2[11] = e2[11], t2[12] = e2[12], t2[13] = e2[13], t2[14] = e2[14], t2[15] = e2[15]), t2[0] = r2 * n2 + c2 * i2, t2[1] = a2 * n2 + h2 * i2, t2[2] = o2 * n2 + m2 * i2, t2[3] = l2 * n2 + u2 * i2, t2[4] = c2 * n2 - r2 * i2, t2[5] = h2 * n2 - a2 * i2, t2[6] = m2 * n2 - o2 * i2, t2[7] = u2 * n2 - l2 * i2, t2;
-  }
-  /**
-   * Creates a {@link Mat4} from a vector translation
-   * This is equivalent to (but much faster than):
-   *
-   *     mat4.identity(dest);
-   *     mat4.translate(dest, dest, vec);
-   * @category Static
-   *
-   * @param out - {@link Mat4} receiving operation result
-   * @param v - Translation vector
-   * @returns `out`
-   */
-  static fromTranslation(t2, e2) {
-    return t2[0] = 1, t2[1] = 0, t2[2] = 0, t2[3] = 0, t2[4] = 0, t2[5] = 1, t2[6] = 0, t2[7] = 0, t2[8] = 0, t2[9] = 0, t2[10] = 1, t2[11] = 0, t2[12] = e2[0], t2[13] = e2[1], t2[14] = e2[2], t2[15] = 1, t2;
-  }
-  /**
-   * Creates a {@link Mat4} from a vector scaling
-   * This is equivalent to (but much faster than):
-   *
-   *     mat4.identity(dest);
-   *     mat4.scale(dest, dest, vec);
-   * @category Static
-   *
-   * @param out - {@link Mat4} receiving operation result
-   * @param v - Scaling vector
-   * @returns `out`
-   */
-  static fromScaling(t2, e2) {
-    return t2[0] = e2[0], t2[1] = 0, t2[2] = 0, t2[3] = 0, t2[4] = 0, t2[5] = e2[1], t2[6] = 0, t2[7] = 0, t2[8] = 0, t2[9] = 0, t2[10] = e2[2], t2[11] = 0, t2[12] = 0, t2[13] = 0, t2[14] = 0, t2[15] = 1, t2;
-  }
-  /**
-   * Creates a {@link Mat4} from a given angle around a given axis
-   * This is equivalent to (but much faster than):
-   *
-   *     mat4.identity(dest);
-   *     mat4.rotate(dest, dest, rad, axis);
-   * @category Static
-   *
-   * @param out - {@link Mat4} receiving operation result
-   * @param rad - the angle to rotate the matrix by
-   * @param axis - the axis to rotate around
-   * @returns `out` or `null` if `axis` has a length of 0
-   */
-  static fromRotation(t2, e2, s2) {
-    let i2 = s2[0], n2 = s2[1], r2 = s2[2], a2 = Math.sqrt(i2 * i2 + n2 * n2 + r2 * r2);
-    if (a2 < O)
-      return null;
-    a2 = 1 / a2, i2 *= a2, n2 *= a2, r2 *= a2;
-    const o2 = Math.sin(e2), l2 = Math.cos(e2), c2 = 1 - l2;
-    return t2[0] = i2 * i2 * c2 + l2, t2[1] = n2 * i2 * c2 + r2 * o2, t2[2] = r2 * i2 * c2 - n2 * o2, t2[3] = 0, t2[4] = i2 * n2 * c2 - r2 * o2, t2[5] = n2 * n2 * c2 + l2, t2[6] = r2 * n2 * c2 + i2 * o2, t2[7] = 0, t2[8] = i2 * r2 * c2 + n2 * o2, t2[9] = n2 * r2 * c2 - i2 * o2, t2[10] = r2 * r2 * c2 + l2, t2[11] = 0, t2[12] = 0, t2[13] = 0, t2[14] = 0, t2[15] = 1, t2;
-  }
-  /**
-   * Creates a matrix from the given angle around the X axis
-   * This is equivalent to (but much faster than):
-   *
-   *     mat4.identity(dest);
-   *     mat4.rotateX(dest, dest, rad);
-   * @category Static
-   *
-   * @param out - mat4 receiving operation result
-   * @param rad - the angle to rotate the matrix by
-   * @returns `out`
-   */
-  static fromXRotation(t2, e2) {
-    let s2 = Math.sin(e2), i2 = Math.cos(e2);
-    return t2[0] = 1, t2[1] = 0, t2[2] = 0, t2[3] = 0, t2[4] = 0, t2[5] = i2, t2[6] = s2, t2[7] = 0, t2[8] = 0, t2[9] = -s2, t2[10] = i2, t2[11] = 0, t2[12] = 0, t2[13] = 0, t2[14] = 0, t2[15] = 1, t2;
-  }
-  /**
-   * Creates a matrix from the given angle around the Y axis
-   * This is equivalent to (but much faster than):
-   *
-   *     mat4.identity(dest);
-   *     mat4.rotateY(dest, dest, rad);
-   * @category Static
-   *
-   * @param out - mat4 receiving operation result
-   * @param rad - the angle to rotate the matrix by
-   * @returns `out`
-   */
-  static fromYRotation(t2, e2) {
-    let s2 = Math.sin(e2), i2 = Math.cos(e2);
-    return t2[0] = i2, t2[1] = 0, t2[2] = -s2, t2[3] = 0, t2[4] = 0, t2[5] = 1, t2[6] = 0, t2[7] = 0, t2[8] = s2, t2[9] = 0, t2[10] = i2, t2[11] = 0, t2[12] = 0, t2[13] = 0, t2[14] = 0, t2[15] = 1, t2;
-  }
-  /**
-   * Creates a matrix from the given angle around the Z axis
-   * This is equivalent to (but much faster than):
-   *
-   *     mat4.identity(dest);
-   *     mat4.rotateZ(dest, dest, rad);
-   * @category Static
-   *
-   * @param out - mat4 receiving operation result
-   * @param rad - the angle to rotate the matrix by
-   * @returns `out`
-   */
-  static fromZRotation(t2, e2) {
-    const s2 = Math.sin(e2), i2 = Math.cos(e2);
-    return t2[0] = i2, t2[1] = s2, t2[2] = 0, t2[3] = 0, t2[4] = -s2, t2[5] = i2, t2[6] = 0, t2[7] = 0, t2[8] = 0, t2[9] = 0, t2[10] = 1, t2[11] = 0, t2[12] = 0, t2[13] = 0, t2[14] = 0, t2[15] = 1, t2;
-  }
-  /**
-   * Creates a matrix from a quaternion rotation and vector translation
-   * This is equivalent to (but much faster than):
-   *
-   *     mat4.identity(dest);
-   *     mat4.translate(dest, vec);
-   *     let quatMat = mat4.create();
-   *     quat4.toMat4(quat, quatMat);
-   *     mat4.multiply(dest, quatMat);
-   * @category Static
-   *
-   * @param out - mat4 receiving operation result
-   * @param q - Rotation quaternion
-   * @param v - Translation vector
-   * @returns `out`
-   */
-  static fromRotationTranslation(t2, e2, s2) {
-    const i2 = e2[0], n2 = e2[1], r2 = e2[2], a2 = e2[3], o2 = i2 + i2, l2 = n2 + n2, c2 = r2 + r2, h2 = i2 * o2, m2 = i2 * l2, u2 = i2 * c2, f2 = n2 * l2, g2 = n2 * c2, p2 = r2 * c2, y2 = a2 * o2, L = a2 * l2, x2 = a2 * c2;
-    return t2[0] = 1 - (f2 + p2), t2[1] = m2 + x2, t2[2] = u2 - L, t2[3] = 0, t2[4] = m2 - x2, t2[5] = 1 - (h2 + p2), t2[6] = g2 + y2, t2[7] = 0, t2[8] = u2 + L, t2[9] = g2 - y2, t2[10] = 1 - (h2 + f2), t2[11] = 0, t2[12] = s2[0], t2[13] = s2[1], t2[14] = s2[2], t2[15] = 1, t2;
-  }
-  /**
-   * Sets a {@link Mat4} from a {@link Quat2}.
-   * @category Static
-   *
-   * @param out - Matrix
-   * @param a - Dual Quaternion
-   * @returns `out`
-   */
-  static fromQuat2(t2, e2) {
-    const s2 = -e2[0], i2 = -e2[1], n2 = -e2[2], r2 = e2[3], a2 = e2[4], o2 = e2[5], l2 = e2[6], c2 = e2[7];
-    let h2 = s2 * s2 + i2 * i2 + n2 * n2 + r2 * r2;
-    return h2 > 0 ? (V[0] = (a2 * r2 + c2 * s2 + o2 * n2 - l2 * i2) * 2 / h2, V[1] = (o2 * r2 + c2 * i2 + l2 * s2 - a2 * n2) * 2 / h2, V[2] = (l2 * r2 + c2 * n2 + a2 * i2 - o2 * s2) * 2 / h2) : (V[0] = (a2 * r2 + c2 * s2 + o2 * n2 - l2 * i2) * 2, V[1] = (o2 * r2 + c2 * i2 + l2 * s2 - a2 * n2) * 2, V[2] = (l2 * r2 + c2 * n2 + a2 * i2 - o2 * s2) * 2), _I.fromRotationTranslation(t2, e2, V), t2;
-  }
-  /**
-   * Calculates a {@link Mat4} normal matrix (transpose inverse) from a {@link Mat4}
-   * @category Static
-   *
-   * @param out - Matrix receiving operation result
-   * @param a - Mat4 to derive the normal matrix from
-   * @returns `out` or `null` if the matrix is not invertable
-   */
-  static normalFromMat4(t2, e2) {
-    const s2 = e2[0], i2 = e2[1], n2 = e2[2], r2 = e2[3], a2 = e2[4], o2 = e2[5], l2 = e2[6], c2 = e2[7], h2 = e2[8], m2 = e2[9], u2 = e2[10], f2 = e2[11], g2 = e2[12], p2 = e2[13], y2 = e2[14], L = e2[15], x2 = s2 * o2 - i2 * a2, M2 = s2 * l2 - n2 * a2, b2 = s2 * c2 - r2 * a2, w2 = i2 * l2 - n2 * o2, T = i2 * c2 - r2 * o2, v2 = n2 * c2 - r2 * l2, P = h2 * p2 - m2 * g2, z = h2 * y2 - u2 * g2, E = h2 * L - f2 * g2, F = m2 * y2 - u2 * p2, _ = m2 * L - f2 * p2, R = u2 * L - f2 * y2;
-    let k2 = x2 * R - M2 * _ + b2 * F + w2 * E - T * z + v2 * P;
-    return k2 ? (k2 = 1 / k2, t2[0] = (o2 * R - l2 * _ + c2 * F) * k2, t2[1] = (l2 * E - a2 * R - c2 * z) * k2, t2[2] = (a2 * _ - o2 * E + c2 * P) * k2, t2[3] = 0, t2[4] = (n2 * _ - i2 * R - r2 * F) * k2, t2[5] = (s2 * R - n2 * E + r2 * z) * k2, t2[6] = (i2 * E - s2 * _ - r2 * P) * k2, t2[7] = 0, t2[8] = (p2 * v2 - y2 * T + L * w2) * k2, t2[9] = (y2 * b2 - g2 * v2 - L * M2) * k2, t2[10] = (g2 * T - p2 * b2 + L * x2) * k2, t2[11] = 0, t2[12] = 0, t2[13] = 0, t2[14] = 0, t2[15] = 1, t2) : null;
-  }
-  /**
-   * Calculates a {@link Mat4} normal matrix (transpose inverse) from a {@link Mat4}
-   * This version omits the calculation of the constant factor (1/determinant), so
-   * any normals transformed with it will need to be renormalized.
-   * From https://stackoverflow.com/a/27616419/25968
-   * @category Static
-   *
-   * @param out - Matrix receiving operation result
-   * @param a - Mat4 to derive the normal matrix from
-   * @returns `out`
-   */
-  static normalFromMat4Fast(t2, e2) {
-    const s2 = e2[0], i2 = e2[1], n2 = e2[2], r2 = e2[4], a2 = e2[5], o2 = e2[6], l2 = e2[8], c2 = e2[9], h2 = e2[10];
-    return t2[0] = a2 * h2 - h2 * c2, t2[1] = o2 * l2 - l2 * h2, t2[2] = r2 * c2 - c2 * l2, t2[3] = 0, t2[4] = c2 * n2 - h2 * i2, t2[5] = h2 * s2 - l2 * n2, t2[6] = l2 * i2 - c2 * s2, t2[7] = 0, t2[8] = i2 * o2 - n2 * a2, t2[9] = n2 * r2 - s2 * o2, t2[10] = s2 * a2 - i2 * r2, t2[11] = 0, t2[12] = 0, t2[13] = 0, t2[14] = 0, t2[15] = 1, t2;
-  }
-  /**
-   * Returns the translation vector component of a transformation
-   * matrix. If a matrix is built with fromRotationTranslation,
-   * the returned vector will be the same as the translation vector
-   * originally supplied.
-   * @category Static
-   *
-   * @param  {vec3} out Vector to receive translation component
-   * @param  {ReadonlyMat4} mat Matrix to be decomposed (input)
-   * @return {vec3} out
-   */
-  static getTranslation(t2, e2) {
-    return t2[0] = e2[12], t2[1] = e2[13], t2[2] = e2[14], t2;
-  }
-  /**
-   * Returns the scaling factor component of a transformation
-   * matrix. If a matrix is built with fromRotationTranslationScale
-   * with a normalized Quaternion parameter, the returned vector will be
-   * the same as the scaling vector
-   * originally supplied.
-   * @category Static
-   *
-   * @param  {vec3} out Vector to receive scaling factor component
-   * @param  {ReadonlyMat4} mat Matrix to be decomposed (input)
-   * @return {vec3} out
-   */
-  static getScaling(t2, e2) {
-    const s2 = e2[0], i2 = e2[1], n2 = e2[2], r2 = e2[4], a2 = e2[5], o2 = e2[6], l2 = e2[8], c2 = e2[9], h2 = e2[10];
-    return t2[0] = Math.sqrt(s2 * s2 + i2 * i2 + n2 * n2), t2[1] = Math.sqrt(r2 * r2 + a2 * a2 + o2 * o2), t2[2] = Math.sqrt(l2 * l2 + c2 * c2 + h2 * h2), t2;
-  }
-  /**
-   * Returns a quaternion representing the rotational component
-   * of a transformation matrix. If a matrix is built with
-   * fromRotationTranslation, the returned quaternion will be the
-   * same as the quaternion originally supplied.
-   * @category Static
-   *
-   * @param out - Quaternion to receive the rotation component
-   * @param mat - Matrix to be decomposed (input)
-   * @return `out`
-   */
-  static getRotation(t2, e2) {
-    _I.getScaling(V, e2);
-    const s2 = 1 / V[0], i2 = 1 / V[1], n2 = 1 / V[2], r2 = e2[0] * s2, a2 = e2[1] * i2, o2 = e2[2] * n2, l2 = e2[4] * s2, c2 = e2[5] * i2, h2 = e2[6] * n2, m2 = e2[8] * s2, u2 = e2[9] * i2, f2 = e2[10] * n2, g2 = r2 + c2 + f2;
-    let p2 = 0;
-    return g2 > 0 ? (p2 = Math.sqrt(g2 + 1) * 2, t2[3] = 0.25 * p2, t2[0] = (h2 - u2) / p2, t2[1] = (m2 - o2) / p2, t2[2] = (a2 - l2) / p2) : r2 > c2 && r2 > f2 ? (p2 = Math.sqrt(1 + r2 - c2 - f2) * 2, t2[3] = (h2 - u2) / p2, t2[0] = 0.25 * p2, t2[1] = (a2 + l2) / p2, t2[2] = (m2 + o2) / p2) : c2 > f2 ? (p2 = Math.sqrt(1 + c2 - r2 - f2) * 2, t2[3] = (m2 - o2) / p2, t2[0] = (a2 + l2) / p2, t2[1] = 0.25 * p2, t2[2] = (h2 + u2) / p2) : (p2 = Math.sqrt(1 + f2 - r2 - c2) * 2, t2[3] = (a2 - l2) / p2, t2[0] = (m2 + o2) / p2, t2[1] = (h2 + u2) / p2, t2[2] = 0.25 * p2), t2;
-  }
-  /**
-   * Decomposes a transformation matrix into its rotation, translation
-   * and scale components. Returns only the rotation component
-   * @category Static
-   *
-   * @param out_r - Quaternion to receive the rotation component
-   * @param out_t - Vector to receive the translation vector
-   * @param out_s - Vector to receive the scaling factor
-   * @param mat - Matrix to be decomposed (input)
-   * @returns `out_r`
-   */
-  static decompose(t2, e2, s2, i2) {
-    e2[0] = i2[12], e2[1] = i2[13], e2[2] = i2[14];
-    const n2 = i2[0], r2 = i2[1], a2 = i2[2], o2 = i2[4], l2 = i2[5], c2 = i2[6], h2 = i2[8], m2 = i2[9], u2 = i2[10];
-    s2[0] = Math.sqrt(n2 * n2 + r2 * r2 + a2 * a2), s2[1] = Math.sqrt(o2 * o2 + l2 * l2 + c2 * c2), s2[2] = Math.sqrt(h2 * h2 + m2 * m2 + u2 * u2);
-    const f2 = 1 / s2[0], g2 = 1 / s2[1], p2 = 1 / s2[2], y2 = n2 * f2, L = r2 * g2, x2 = a2 * p2, M2 = o2 * f2, b2 = l2 * g2, w2 = c2 * p2, T = h2 * f2, v2 = m2 * g2, P = u2 * p2, z = y2 + b2 + P;
-    let E = 0;
-    return z > 0 ? (E = Math.sqrt(z + 1) * 2, t2[3] = 0.25 * E, t2[0] = (w2 - v2) / E, t2[1] = (T - x2) / E, t2[2] = (L - M2) / E) : y2 > b2 && y2 > P ? (E = Math.sqrt(1 + y2 - b2 - P) * 2, t2[3] = (w2 - v2) / E, t2[0] = 0.25 * E, t2[1] = (L + M2) / E, t2[2] = (T + x2) / E) : b2 > P ? (E = Math.sqrt(1 + b2 - y2 - P) * 2, t2[3] = (T - x2) / E, t2[0] = (L + M2) / E, t2[1] = 0.25 * E, t2[2] = (w2 + v2) / E) : (E = Math.sqrt(1 + P - y2 - b2) * 2, t2[3] = (L - M2) / E, t2[0] = (T + x2) / E, t2[1] = (w2 + v2) / E, t2[2] = 0.25 * E), t2;
-  }
-  /**
-   * Creates a matrix from a quaternion rotation, vector translation and vector scale
-   * This is equivalent to (but much faster than):
-   *
-   *     mat4.identity(dest);
-   *     mat4.translate(dest, vec);
-   *     let quatMat = mat4.create();
-   *     quat4.toMat4(quat, quatMat);
-   *     mat4.multiply(dest, quatMat);
-   *     mat4.scale(dest, scale);
-   * @category Static
-   *
-   * @param out - mat4 receiving operation result
-   * @param q - Rotation quaternion
-   * @param v - Translation vector
-   * @param s - Scaling vector
-   * @returns `out`
-   */
-  static fromRotationTranslationScale(t2, e2, s2, i2) {
-    const n2 = e2[0], r2 = e2[1], a2 = e2[2], o2 = e2[3], l2 = n2 + n2, c2 = r2 + r2, h2 = a2 + a2, m2 = n2 * l2, u2 = n2 * c2, f2 = n2 * h2, g2 = r2 * c2, p2 = r2 * h2, y2 = a2 * h2, L = o2 * l2, x2 = o2 * c2, M2 = o2 * h2, b2 = i2[0], w2 = i2[1], T = i2[2];
-    return t2[0] = (1 - (g2 + y2)) * b2, t2[1] = (u2 + M2) * b2, t2[2] = (f2 - x2) * b2, t2[3] = 0, t2[4] = (u2 - M2) * w2, t2[5] = (1 - (m2 + y2)) * w2, t2[6] = (p2 + L) * w2, t2[7] = 0, t2[8] = (f2 + x2) * T, t2[9] = (p2 - L) * T, t2[10] = (1 - (m2 + g2)) * T, t2[11] = 0, t2[12] = s2[0], t2[13] = s2[1], t2[14] = s2[2], t2[15] = 1, t2;
-  }
-  /**
-   * Creates a matrix from a quaternion rotation, vector translation and vector scale, rotating and scaling around the given origin
-   * This is equivalent to (but much faster than):
-   *
-   *     mat4.identity(dest);
-   *     mat4.translate(dest, vec);
-   *     mat4.translate(dest, origin);
-   *     let quatMat = mat4.create();
-   *     quat4.toMat4(quat, quatMat);
-   *     mat4.multiply(dest, quatMat);
-   *     mat4.scale(dest, scale)
-   *     mat4.translate(dest, negativeOrigin);
-   * @category Static
-   *
-   * @param out - mat4 receiving operation result
-   * @param q - Rotation quaternion
-   * @param v - Translation vector
-   * @param s - Scaling vector
-   * @param o - The origin vector around which to scale and rotate
-   * @returns `out`
-   */
-  static fromRotationTranslationScaleOrigin(t2, e2, s2, i2, n2) {
-    const r2 = e2[0], a2 = e2[1], o2 = e2[2], l2 = e2[3], c2 = r2 + r2, h2 = a2 + a2, m2 = o2 + o2, u2 = r2 * c2, f2 = r2 * h2, g2 = r2 * m2, p2 = a2 * h2, y2 = a2 * m2, L = o2 * m2, x2 = l2 * c2, M2 = l2 * h2, b2 = l2 * m2, w2 = i2[0], T = i2[1], v2 = i2[2], P = n2[0], z = n2[1], E = n2[2], F = (1 - (p2 + L)) * w2, _ = (f2 + b2) * w2, R = (g2 - M2) * w2, k2 = (f2 - b2) * T, B = (1 - (u2 + L)) * T, $2 = (y2 + x2) * T, U = (g2 + M2) * v2, Y = (y2 - x2) * v2, j2 = (1 - (u2 + p2)) * v2;
-    return t2[0] = F, t2[1] = _, t2[2] = R, t2[3] = 0, t2[4] = k2, t2[5] = B, t2[6] = $2, t2[7] = 0, t2[8] = U, t2[9] = Y, t2[10] = j2, t2[11] = 0, t2[12] = s2[0] + P - (F * P + k2 * z + U * E), t2[13] = s2[1] + z - (_ * P + B * z + Y * E), t2[14] = s2[2] + E - (R * P + $2 * z + j2 * E), t2[15] = 1, t2;
-  }
-  /**
-   * Calculates a 4x4 matrix from the given quaternion
-   * @category Static
-   *
-   * @param out - mat4 receiving operation result
-   * @param q - Quaternion to create matrix from
-   * @returns `out`
-   */
-  static fromQuat(t2, e2) {
-    const s2 = e2[0], i2 = e2[1], n2 = e2[2], r2 = e2[3], a2 = s2 + s2, o2 = i2 + i2, l2 = n2 + n2, c2 = s2 * a2, h2 = i2 * a2, m2 = i2 * o2, u2 = n2 * a2, f2 = n2 * o2, g2 = n2 * l2, p2 = r2 * a2, y2 = r2 * o2, L = r2 * l2;
-    return t2[0] = 1 - m2 - g2, t2[1] = h2 + L, t2[2] = u2 - y2, t2[3] = 0, t2[4] = h2 - L, t2[5] = 1 - c2 - g2, t2[6] = f2 + p2, t2[7] = 0, t2[8] = u2 + y2, t2[9] = f2 - p2, t2[10] = 1 - c2 - m2, t2[11] = 0, t2[12] = 0, t2[13] = 0, t2[14] = 0, t2[15] = 1, t2;
-  }
-  /**
-   * Generates a frustum matrix with the given bounds
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
-   * which matches WebGL/OpenGL's clip volume.
-   * Passing null/undefined/no value for far will generate infinite projection matrix.
-   * @category Static
-   *
-   * @param out - mat4 frustum matrix will be written into
-   * @param left - Left bound of the frustum
-   * @param right - Right bound of the frustum
-   * @param bottom - Bottom bound of the frustum
-   * @param top - Top bound of the frustum
-   * @param near - Near bound of the frustum
-   * @param far -  Far bound of the frustum, can be null or Infinity
-   * @returns `out`
-   */
-  static frustumNO(t2, e2, s2, i2, n2, r2, a2 = 1 / 0) {
-    const o2 = 1 / (s2 - e2), l2 = 1 / (n2 - i2);
-    if (t2[0] = r2 * 2 * o2, t2[1] = 0, t2[2] = 0, t2[3] = 0, t2[4] = 0, t2[5] = r2 * 2 * l2, t2[6] = 0, t2[7] = 0, t2[8] = (s2 + e2) * o2, t2[9] = (n2 + i2) * l2, t2[11] = -1, t2[12] = 0, t2[13] = 0, t2[15] = 0, a2 != null && a2 !== 1 / 0) {
-      const c2 = 1 / (r2 - a2);
-      t2[10] = (a2 + r2) * c2, t2[14] = 2 * a2 * r2 * c2;
-    } else
-      t2[10] = -1, t2[14] = -2 * r2;
-    return t2;
-  }
-  /**
-   * Alias for {@link Mat4.frustumNO}
-   * @category Static
-   * @deprecated Use {@link Mat4.frustumNO} or {@link Mat4.frustumZO} explicitly
-   */
-  static frustum(t2, e2, s2, i2, n2, r2, a2 = 1 / 0) {
-    return t2;
-  }
-  /**
-   * Generates a frustum matrix with the given bounds
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [0, 1],
-   * which matches WebGPU/Vulkan/DirectX/Metal's clip volume.
-   * Passing null/undefined/no value for far will generate infinite projection matrix.
-   * @category Static
-   *
-   * @param out - mat4 frustum matrix will be written into
-   * @param left - Left bound of the frustum
-   * @param right - Right bound of the frustum
-   * @param bottom - Bottom bound of the frustum
-   * @param top - Top bound of the frustum
-   * @param near - Near bound of the frustum
-   * @param far - Far bound of the frustum, can be null or Infinity
-   * @returns `out`
-   */
-  static frustumZO(t2, e2, s2, i2, n2, r2, a2 = 1 / 0) {
-    const o2 = 1 / (s2 - e2), l2 = 1 / (n2 - i2);
-    if (t2[0] = r2 * 2 * o2, t2[1] = 0, t2[2] = 0, t2[3] = 0, t2[4] = 0, t2[5] = r2 * 2 * l2, t2[6] = 0, t2[7] = 0, t2[8] = (s2 + e2) * o2, t2[9] = (n2 + i2) * l2, t2[11] = -1, t2[12] = 0, t2[13] = 0, t2[15] = 0, a2 != null && a2 !== 1 / 0) {
-      const c2 = 1 / (r2 - a2);
-      t2[10] = a2 * c2, t2[14] = a2 * r2 * c2;
-    } else
-      t2[10] = -1, t2[14] = -r2;
-    return t2;
-  }
-  /**
-   * Generates a perspective projection matrix with the given bounds.
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
-   * which matches WebGL/OpenGL's clip volume.
-   * Passing null/undefined/no value for far will generate infinite projection matrix.
-   * @category Static
-   *
-   * @param out - mat4 frustum matrix will be written into
-   * @param fovy - Vertical field of view in radians
-   * @param aspect - Aspect ratio. typically viewport width/height
-   * @param near - Near bound of the frustum
-   * @param far - Far bound of the frustum, can be null or Infinity
-   * @returns `out`
-   */
-  static perspectiveNO(t2, e2, s2, i2, n2 = 1 / 0) {
-    const r2 = 1 / Math.tan(e2 / 2);
-    if (t2[0] = r2 / s2, t2[1] = 0, t2[2] = 0, t2[3] = 0, t2[4] = 0, t2[5] = r2, t2[6] = 0, t2[7] = 0, t2[8] = 0, t2[9] = 0, t2[11] = -1, t2[12] = 0, t2[13] = 0, t2[15] = 0, n2 != null && n2 !== 1 / 0) {
-      const a2 = 1 / (i2 - n2);
-      t2[10] = (n2 + i2) * a2, t2[14] = 2 * n2 * i2 * a2;
-    } else
-      t2[10] = -1, t2[14] = -2 * i2;
-    return t2;
-  }
-  /**
-   * Alias for {@link Mat4.perspectiveNO}
-   * @category Static
-   * @deprecated Use {@link Mat4.perspectiveNO} or {@link Mat4.perspectiveZO} explicitly
-   */
-  static perspective(t2, e2, s2, i2, n2 = 1 / 0) {
-    return t2;
-  }
-  /**
-   * Generates a perspective projection matrix suitable for WebGPU with the given bounds.
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [0, 1],
-   * which matches WebGPU/Vulkan/DirectX/Metal's clip volume.
-   * Passing null/undefined/no value for far will generate infinite projection matrix.
-   * @category Static
-   *
-   * @param out - mat4 frustum matrix will be written into
-   * @param fovy - Vertical field of view in radians
-   * @param aspect - Aspect ratio. typically viewport width/height
-   * @param near - Near bound of the frustum
-   * @param far - Far bound of the frustum, can be null or Infinity
-   * @returns `out`
-   */
-  static perspectiveZO(t2, e2, s2, i2, n2 = 1 / 0) {
-    const r2 = 1 / Math.tan(e2 / 2);
-    if (t2[0] = r2 / s2, t2[1] = 0, t2[2] = 0, t2[3] = 0, t2[4] = 0, t2[5] = r2, t2[6] = 0, t2[7] = 0, t2[8] = 0, t2[9] = 0, t2[11] = -1, t2[12] = 0, t2[13] = 0, t2[15] = 0, n2 != null && n2 !== 1 / 0) {
-      const a2 = 1 / (i2 - n2);
-      t2[10] = n2 * a2, t2[14] = n2 * i2 * a2;
-    } else
-      t2[10] = -1, t2[14] = -i2;
-    return t2;
-  }
-  /**
-   * Generates a perspective projection matrix with the given field of view.
-   * This is primarily useful for generating projection matrices to be used
-   * with the still experiemental WebVR API.
-   * @category Static
-   *
-   * @param out - mat4 frustum matrix will be written into
-   * @param fov - Object containing the following values: upDegrees, downDegrees, leftDegrees, rightDegrees
-   * @param near - Near bound of the frustum
-   * @param far - Far bound of the frustum
-   * @returns `out`
-   * @deprecated
-   */
-  static perspectiveFromFieldOfView(t2, e2, s2, i2) {
-    const n2 = Math.tan(e2.upDegrees * Math.PI / 180), r2 = Math.tan(e2.downDegrees * Math.PI / 180), a2 = Math.tan(e2.leftDegrees * Math.PI / 180), o2 = Math.tan(e2.rightDegrees * Math.PI / 180), l2 = 2 / (a2 + o2), c2 = 2 / (n2 + r2);
-    return t2[0] = l2, t2[1] = 0, t2[2] = 0, t2[3] = 0, t2[4] = 0, t2[5] = c2, t2[6] = 0, t2[7] = 0, t2[8] = -((a2 - o2) * l2 * 0.5), t2[9] = (n2 - r2) * c2 * 0.5, t2[10] = i2 / (s2 - i2), t2[11] = -1, t2[12] = 0, t2[13] = 0, t2[14] = i2 * s2 / (s2 - i2), t2[15] = 0, t2;
-  }
-  /**
-   * Generates a orthogonal projection matrix with the given bounds.
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
-   * which matches WebGL/OpenGL's clip volume.
-   * @category Static
-   *
-   * @param out - mat4 frustum matrix will be written into
-   * @param left - Left bound of the frustum
-   * @param right - Right bound of the frustum
-   * @param bottom - Bottom bound of the frustum
-   * @param top - Top bound of the frustum
-   * @param near - Near bound of the frustum
-   * @param far - Far bound of the frustum
-   * @returns `out`
-   */
-  static orthoNO(t2, e2, s2, i2, n2, r2, a2) {
-    const o2 = 1 / (e2 - s2), l2 = 1 / (i2 - n2), c2 = 1 / (r2 - a2);
-    return t2[0] = -2 * o2, t2[1] = 0, t2[2] = 0, t2[3] = 0, t2[4] = 0, t2[5] = -2 * l2, t2[6] = 0, t2[7] = 0, t2[8] = 0, t2[9] = 0, t2[10] = 2 * c2, t2[11] = 0, t2[12] = (e2 + s2) * o2, t2[13] = (n2 + i2) * l2, t2[14] = (a2 + r2) * c2, t2[15] = 1, t2;
-  }
-  /**
-   * Alias for {@link Mat4.orthoNO}
-   * @category Static
-   * @deprecated Use {@link Mat4.orthoNO} or {@link Mat4.orthoZO} explicitly
-   */
-  static ortho(t2, e2, s2, i2, n2, r2, a2) {
-    return t2;
-  }
-  /**
-   * Generates a orthogonal projection matrix with the given bounds.
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [0, 1],
-   * which matches WebGPU/Vulkan/DirectX/Metal's clip volume.
-   * @category Static
-   *
-   * @param out - mat4 frustum matrix will be written into
-   * @param left - Left bound of the frustum
-   * @param right - Right bound of the frustum
-   * @param bottom - Bottom bound of the frustum
-   * @param top - Top bound of the frustum
-   * @param near - Near bound of the frustum
-   * @param far - Far bound of the frustum
-   * @returns `out`
-   */
-  static orthoZO(t2, e2, s2, i2, n2, r2, a2) {
-    const o2 = 1 / (e2 - s2), l2 = 1 / (i2 - n2), c2 = 1 / (r2 - a2);
-    return t2[0] = -2 * o2, t2[1] = 0, t2[2] = 0, t2[3] = 0, t2[4] = 0, t2[5] = -2 * l2, t2[6] = 0, t2[7] = 0, t2[8] = 0, t2[9] = 0, t2[10] = c2, t2[11] = 0, t2[12] = (e2 + s2) * o2, t2[13] = (n2 + i2) * l2, t2[14] = r2 * c2, t2[15] = 1, t2;
-  }
-  /**
-   * Generates a look-at matrix with the given eye position, focal point, and up axis.
-   * If you want a matrix that actually makes an object look at another object, you should use targetTo instead.
-   * @category Static
-   *
-   * @param out - mat4 frustum matrix will be written into
-   * @param eye - Position of the viewer
-   * @param center - Point the viewer is looking at
-   * @param up - vec3 pointing up
-   * @returns `out`
-   */
-  static lookAt(t2, e2, s2, i2) {
-    const n2 = e2[0], r2 = e2[1], a2 = e2[2], o2 = i2[0], l2 = i2[1], c2 = i2[2], h2 = s2[0], m2 = s2[1], u2 = s2[2];
-    if (Math.abs(n2 - h2) < O && Math.abs(r2 - m2) < O && Math.abs(a2 - u2) < O)
-      return _I.identity(t2);
-    let f2 = n2 - h2, g2 = r2 - m2, p2 = a2 - u2, y2 = 1 / Math.sqrt(f2 * f2 + g2 * g2 + p2 * p2);
-    f2 *= y2, g2 *= y2, p2 *= y2;
-    let L = l2 * p2 - c2 * g2, x2 = c2 * f2 - o2 * p2, M2 = o2 * g2 - l2 * f2;
-    y2 = Math.sqrt(L * L + x2 * x2 + M2 * M2), y2 ? (y2 = 1 / y2, L *= y2, x2 *= y2, M2 *= y2) : (L = 0, x2 = 0, M2 = 0);
-    let b2 = g2 * M2 - p2 * x2, w2 = p2 * L - f2 * M2, T = f2 * x2 - g2 * L;
-    return y2 = Math.sqrt(b2 * b2 + w2 * w2 + T * T), y2 ? (y2 = 1 / y2, b2 *= y2, w2 *= y2, T *= y2) : (b2 = 0, w2 = 0, T = 0), t2[0] = L, t2[1] = b2, t2[2] = f2, t2[3] = 0, t2[4] = x2, t2[5] = w2, t2[6] = g2, t2[7] = 0, t2[8] = M2, t2[9] = T, t2[10] = p2, t2[11] = 0, t2[12] = -(L * n2 + x2 * r2 + M2 * a2), t2[13] = -(b2 * n2 + w2 * r2 + T * a2), t2[14] = -(f2 * n2 + g2 * r2 + p2 * a2), t2[15] = 1, t2;
-  }
-  /**
-   * Generates a matrix that makes something look at something else.
-   * @category Static
-   *
-   * @param out - mat4 frustum matrix will be written into
-   * @param eye - Position of the viewer
-   * @param target - Point the viewer is looking at
-   * @param up - vec3 pointing up
-   * @returns `out`
-   */
-  static targetTo(t2, e2, s2, i2) {
-    const n2 = e2[0], r2 = e2[1], a2 = e2[2], o2 = i2[0], l2 = i2[1], c2 = i2[2];
-    let h2 = n2 - s2[0], m2 = r2 - s2[1], u2 = a2 - s2[2], f2 = h2 * h2 + m2 * m2 + u2 * u2;
-    f2 > 0 && (f2 = 1 / Math.sqrt(f2), h2 *= f2, m2 *= f2, u2 *= f2);
-    let g2 = l2 * u2 - c2 * m2, p2 = c2 * h2 - o2 * u2, y2 = o2 * m2 - l2 * h2;
-    return f2 = g2 * g2 + p2 * p2 + y2 * y2, f2 > 0 && (f2 = 1 / Math.sqrt(f2), g2 *= f2, p2 *= f2, y2 *= f2), t2[0] = g2, t2[1] = p2, t2[2] = y2, t2[3] = 0, t2[4] = m2 * y2 - u2 * p2, t2[5] = u2 * g2 - h2 * y2, t2[6] = h2 * p2 - m2 * g2, t2[7] = 0, t2[8] = h2, t2[9] = m2, t2[10] = u2, t2[11] = 0, t2[12] = n2, t2[13] = r2, t2[14] = a2, t2[15] = 1, t2;
-  }
-  /**
-   * Returns Frobenius norm of a {@link Mat4}
-   * @category Static
-   *
-   * @param a - the matrix to calculate Frobenius norm of
-   * @returns Frobenius norm
-   */
-  static frob(t2) {
-    return Math.sqrt(t2[0] * t2[0] + t2[1] * t2[1] + t2[2] * t2[2] + t2[3] * t2[3] + t2[4] * t2[4] + t2[5] * t2[5] + t2[6] * t2[6] + t2[7] * t2[7] + t2[8] * t2[8] + t2[9] * t2[9] + t2[10] * t2[10] + t2[11] * t2[11] + t2[12] * t2[12] + t2[13] * t2[13] + t2[14] * t2[14] + t2[15] * t2[15]);
-  }
-  /**
-   * Adds two {@link Mat4}'s
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static add(t2, e2, s2) {
-    return t2[0] = e2[0] + s2[0], t2[1] = e2[1] + s2[1], t2[2] = e2[2] + s2[2], t2[3] = e2[3] + s2[3], t2[4] = e2[4] + s2[4], t2[5] = e2[5] + s2[5], t2[6] = e2[6] + s2[6], t2[7] = e2[7] + s2[7], t2[8] = e2[8] + s2[8], t2[9] = e2[9] + s2[9], t2[10] = e2[10] + s2[10], t2[11] = e2[11] + s2[11], t2[12] = e2[12] + s2[12], t2[13] = e2[13] + s2[13], t2[14] = e2[14] + s2[14], t2[15] = e2[15] + s2[15], t2;
-  }
-  /**
-   * Subtracts matrix b from matrix a
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static subtract(t2, e2, s2) {
-    return t2[0] = e2[0] - s2[0], t2[1] = e2[1] - s2[1], t2[2] = e2[2] - s2[2], t2[3] = e2[3] - s2[3], t2[4] = e2[4] - s2[4], t2[5] = e2[5] - s2[5], t2[6] = e2[6] - s2[6], t2[7] = e2[7] - s2[7], t2[8] = e2[8] - s2[8], t2[9] = e2[9] - s2[9], t2[10] = e2[10] - s2[10], t2[11] = e2[11] - s2[11], t2[12] = e2[12] - s2[12], t2[13] = e2[13] - s2[13], t2[14] = e2[14] - s2[14], t2[15] = e2[15] - s2[15], t2;
-  }
-  /**
-   * Alias for {@link Mat4.subtract}
-   * @category Static
-   */
-  static sub(t2, e2, s2) {
-    return t2;
-  }
-  /**
-   * Multiply each element of the matrix by a scalar.
-   * @category Static
-   *
-   * @param out - the receiving matrix
-   * @param a - the matrix to scale
-   * @param b - amount to scale the matrix's elements by
-   * @returns `out`
-   */
-  static multiplyScalar(t2, e2, s2) {
-    return t2[0] = e2[0] * s2, t2[1] = e2[1] * s2, t2[2] = e2[2] * s2, t2[3] = e2[3] * s2, t2[4] = e2[4] * s2, t2[5] = e2[5] * s2, t2[6] = e2[6] * s2, t2[7] = e2[7] * s2, t2[8] = e2[8] * s2, t2[9] = e2[9] * s2, t2[10] = e2[10] * s2, t2[11] = e2[11] * s2, t2[12] = e2[12] * s2, t2[13] = e2[13] * s2, t2[14] = e2[14] * s2, t2[15] = e2[15] * s2, t2;
-  }
-  /**
-   * Adds two mat4's after multiplying each element of the second operand by a scalar value.
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @param scale - the amount to scale b's elements by before adding
-   * @returns `out`
-   */
-  static multiplyScalarAndAdd(t2, e2, s2, i2) {
-    return t2[0] = e2[0] + s2[0] * i2, t2[1] = e2[1] + s2[1] * i2, t2[2] = e2[2] + s2[2] * i2, t2[3] = e2[3] + s2[3] * i2, t2[4] = e2[4] + s2[4] * i2, t2[5] = e2[5] + s2[5] * i2, t2[6] = e2[6] + s2[6] * i2, t2[7] = e2[7] + s2[7] * i2, t2[8] = e2[8] + s2[8] * i2, t2[9] = e2[9] + s2[9] * i2, t2[10] = e2[10] + s2[10] * i2, t2[11] = e2[11] + s2[11] * i2, t2[12] = e2[12] + s2[12] * i2, t2[13] = e2[13] + s2[13] * i2, t2[14] = e2[14] + s2[14] * i2, t2[15] = e2[15] + s2[15] * i2, t2;
-  }
-  /**
-   * Returns whether or not two {@link Mat4}s have exactly the same elements in the same position (when compared with ===)
-   * @category Static
-   *
-   * @param a - The first matrix.
-   * @param b - The second matrix.
-   * @returns True if the matrices are equal, false otherwise.
-   */
-  static exactEquals(t2, e2) {
-    return t2[0] === e2[0] && t2[1] === e2[1] && t2[2] === e2[2] && t2[3] === e2[3] && t2[4] === e2[4] && t2[5] === e2[5] && t2[6] === e2[6] && t2[7] === e2[7] && t2[8] === e2[8] && t2[9] === e2[9] && t2[10] === e2[10] && t2[11] === e2[11] && t2[12] === e2[12] && t2[13] === e2[13] && t2[14] === e2[14] && t2[15] === e2[15];
-  }
-  /**
-   * Returns whether or not two {@link Mat4}s have approximately the same elements in the same position.
-   * @category Static
-   *
-   * @param a - The first matrix.
-   * @param b - The second matrix.
-   * @returns True if the matrices are equal, false otherwise.
-   */
-  static equals(t2, e2) {
-    const s2 = t2[0], i2 = t2[1], n2 = t2[2], r2 = t2[3], a2 = t2[4], o2 = t2[5], l2 = t2[6], c2 = t2[7], h2 = t2[8], m2 = t2[9], u2 = t2[10], f2 = t2[11], g2 = t2[12], p2 = t2[13], y2 = t2[14], L = t2[15], x2 = e2[0], M2 = e2[1], b2 = e2[2], w2 = e2[3], T = e2[4], v2 = e2[5], P = e2[6], z = e2[7], E = e2[8], F = e2[9], _ = e2[10], R = e2[11], k2 = e2[12], B = e2[13], $2 = e2[14], U = e2[15];
-    return Math.abs(s2 - x2) <= O * Math.max(1, Math.abs(s2), Math.abs(x2)) && Math.abs(i2 - M2) <= O * Math.max(1, Math.abs(i2), Math.abs(M2)) && Math.abs(n2 - b2) <= O * Math.max(1, Math.abs(n2), Math.abs(b2)) && Math.abs(r2 - w2) <= O * Math.max(1, Math.abs(r2), Math.abs(w2)) && Math.abs(a2 - T) <= O * Math.max(1, Math.abs(a2), Math.abs(T)) && Math.abs(o2 - v2) <= O * Math.max(1, Math.abs(o2), Math.abs(v2)) && Math.abs(l2 - P) <= O * Math.max(1, Math.abs(l2), Math.abs(P)) && Math.abs(c2 - z) <= O * Math.max(1, Math.abs(c2), Math.abs(z)) && Math.abs(h2 - E) <= O * Math.max(1, Math.abs(h2), Math.abs(E)) && Math.abs(m2 - F) <= O * Math.max(1, Math.abs(m2), Math.abs(F)) && Math.abs(u2 - _) <= O * Math.max(1, Math.abs(u2), Math.abs(_)) && Math.abs(f2 - R) <= O * Math.max(1, Math.abs(f2), Math.abs(R)) && Math.abs(g2 - k2) <= O * Math.max(1, Math.abs(g2), Math.abs(k2)) && Math.abs(p2 - B) <= O * Math.max(1, Math.abs(p2), Math.abs(B)) && Math.abs(y2 - $2) <= O * Math.max(1, Math.abs(y2), Math.abs($2)) && Math.abs(L - U) <= O * Math.max(1, Math.abs(L), Math.abs(U));
-  }
-  /**
-   * Returns a string representation of a {@link Mat4}
-   * @category Static
-   *
-   * @param a - matrix to represent as a string
-   * @returns string representation of the matrix
-   */
-  static str(t2) {
-    return `Mat4(${t2.join(", ")})`;
-  }
-};
-/**
- * The number of bytes in a {@link Mat4}.
- */
-__publicField(_I, "BYTE_LENGTH", 16 * Float32Array.BYTES_PER_ELEMENT);
-let I = _I;
-const V = new Float32Array(3);
-I.prototype.mul = I.prototype.multiply;
-I.sub = I.subtract;
-I.mul = I.multiply;
-I.frustum = I.frustumNO;
-I.perspective = I.perspectiveNO;
-I.ortho = I.orthoNO;
-const _C = class _C extends Float32Array {
-  /**
-  * Create a {@link Vec3}.
-  */
-  constructor(...t2) {
-    switch (t2.length) {
-      case 3:
-        super(t2);
-        break;
-      case 2:
-        super(t2[0], t2[1], 3);
-        break;
-      case 1: {
-        const e2 = t2[0];
-        typeof e2 == "number" ? super([e2, e2, e2]) : super(e2, 0, 3);
-        break;
-      }
-      default:
-        super(3);
-        break;
-    }
-  }
-  //============
-  // Attributes
-  //============
-  // Getters and setters to make component access read better.
-  // These are likely to be a little bit slower than direct array access.
-  /**
-   * The x component of the vector. Equivalent to `this[0];`
-   * @category Vector components
-   */
-  get x() {
-    return this[0];
-  }
-  set x(t2) {
-    this[0] = t2;
-  }
-  /**
-   * The y component of the vector. Equivalent to `this[1];`
-   * @category Vector components
-   */
-  get y() {
-    return this[1];
-  }
-  set y(t2) {
-    this[1] = t2;
-  }
-  /**
-   * The z component of the vector. Equivalent to `this[2];`
-   * @category Vector components
-   */
-  get z() {
-    return this[2];
-  }
-  set z(t2) {
-    this[2] = t2;
-  }
-  // Alternate set of getters and setters in case this is being used to define
-  // a color.
-  /**
-   * The r component of the vector. Equivalent to `this[0];`
-   * @category Color components
-   */
-  get r() {
-    return this[0];
-  }
-  set r(t2) {
-    this[0] = t2;
-  }
-  /**
-   * The g component of the vector. Equivalent to `this[1];`
-   * @category Color components
-   */
-  get g() {
-    return this[1];
-  }
-  set g(t2) {
-    this[1] = t2;
-  }
-  /**
-   * The b component of the vector. Equivalent to `this[2];`
-   * @category Color components
-   */
-  get b() {
-    return this[2];
-  }
-  set b(t2) {
-    this[2] = t2;
-  }
-  /**
-   * The magnitude (length) of this.
-   * Equivalent to `Vec3.magnitude(this);`
-   *
-   * Magnitude is used because the `length` attribute is already defined by
-   * TypedArrays to mean the number of elements in the array.
-   */
-  get magnitude() {
-    const t2 = this[0], e2 = this[1], s2 = this[2];
-    return Math.sqrt(t2 * t2 + e2 * e2 + s2 * s2);
-  }
-  /**
-   * Alias for {@link Vec3.magnitude}
-   */
-  get mag() {
-    return this.magnitude;
-  }
-  /**
-   * The squared magnitude (length) of `this`.
-   * Equivalent to `Vec3.squaredMagnitude(this);`
-   */
-  get squaredMagnitude() {
-    const t2 = this[0], e2 = this[1], s2 = this[2];
-    return t2 * t2 + e2 * e2 + s2 * s2;
-  }
-  /**
-   * Alias for {@link Vec3.squaredMagnitude}
-   */
-  get sqrMag() {
-    return this.squaredMagnitude;
-  }
-  /**
-   * A string representation of `this`
-   * Equivalent to `Vec3.str(this);`
-   */
-  get str() {
-    return _C.str(this);
-  }
-  //===================
-  // Instances methods
-  //===================
-  /**
-   * Copy the values from another {@link Vec3} into `this`.
-   *
-   * @param a the source vector
-   * @returns `this`
-   */
-  copy(t2) {
-    return this.set(t2), this;
-  }
-  /**
-   * Adds a {@link Vec3} to `this`.
-   * Equivalent to `Vec3.add(this, this, b);`
-   *
-   * @param b - The vector to add to `this`
-   * @returns `this`
-   */
-  add(t2) {
-    return this[0] += t2[0], this[1] += t2[1], this[2] += t2[2], this;
-  }
-  /**
-   * Subtracts a {@link Vec3} from `this`.
-   * Equivalent to `Vec3.subtract(this, this, b);`
-   *
-   * @param b - The vector to subtract from `this`
-   * @returns `this`
-   */
-  subtract(t2) {
-    return this[0] -= t2[0], this[1] -= t2[1], this[2] -= t2[2], this;
-  }
-  /**
-   * Alias for {@link Vec3.subtract}
-   */
-  sub(t2) {
-    return this;
-  }
-  /**
-   * Multiplies `this` by a {@link Vec3}.
-   * Equivalent to `Vec3.multiply(this, this, b);`
-   *
-   * @param b - The vector to multiply `this` by
-   * @returns `this`
-   */
-  multiply(t2) {
-    return this[0] *= t2[0], this[1] *= t2[1], this[2] *= t2[2], this;
-  }
-  /**
-   * Alias for {@link Vec3.multiply}
-   */
-  mul(t2) {
-    return this;
-  }
-  /**
-   * Divides `this` by a {@link Vec3}.
-   * Equivalent to `Vec3.divide(this, this, b);`
-   *
-   * @param b - The vector to divide `this` by
-   * @returns `this`
-   */
-  divide(t2) {
-    return this[0] /= t2[0], this[1] /= t2[1], this[2] /= t2[2], this;
-  }
-  /**
-   * Alias for {@link Vec3.divide}
-   */
-  div(t2) {
-    return this;
-  }
-  /**
-   * Scales `this` by a scalar number.
-   * Equivalent to `Vec3.scale(this, this, b);`
-   *
-   * @param b - Amount to scale `this` by
-   * @returns `this`
-   */
-  scale(t2) {
-    return this[0] *= t2, this[1] *= t2, this[2] *= t2, this;
-  }
-  /**
-   * Calculates `this` scaled by a scalar value then adds the result to `this`.
-   * Equivalent to `Vec3.scaleAndAdd(this, this, b, scale);`
-   *
-   * @param b - The vector to add to `this`
-   * @param scale - The amount to scale `b` by before adding
-   * @returns `this`
-   */
-  scaleAndAdd(t2, e2) {
-    return this[0] += t2[0] * e2, this[1] += t2[1] * e2, this[2] += t2[2] * e2, this;
-  }
-  /**
-   * Calculates the euclidian distance between another {@link Vec3} and `this`.
-   * Equivalent to `Vec3.distance(this, b);`
-   *
-   * @param b - The vector to calculate the distance to
-   * @returns Distance between `this` and `b`
-   */
-  distance(t2) {
-    return _C.distance(this, t2);
-  }
-  /**
-   * Alias for {@link Vec3.distance}
-   */
-  dist(t2) {
-    return 0;
-  }
-  /**
-   * Calculates the squared euclidian distance between another {@link Vec3} and `this`.
-   * Equivalent to `Vec3.squaredDistance(this, b);`
-   *
-   * @param b The vector to calculate the squared distance to
-   * @returns Squared distance between `this` and `b`
-   */
-  squaredDistance(t2) {
-    return _C.squaredDistance(this, t2);
-  }
-  /**
-   * Alias for {@link Vec3.squaredDistance}
-   */
-  sqrDist(t2) {
-    return 0;
-  }
-  /**
-   * Negates the components of `this`.
-   * Equivalent to `Vec3.negate(this, this);`
-   *
-   * @returns `this`
-   */
-  negate() {
-    return this[0] *= -1, this[1] *= -1, this[2] *= -1, this;
-  }
-  /**
-   * Inverts the components of `this`.
-   * Equivalent to `Vec3.inverse(this, this);`
-   *
-   * @returns `this`
-   */
-  invert() {
-    return this[0] = 1 / this[0], this[1] = 1 / this[1], this[2] = 1 / this[2], this;
-  }
-  /**
-   * Sets each component of `this` to it's absolute value.
-   * Equivalent to `Vec3.abs(this, this);`
-   *
-   * @returns `this`
-   */
-  abs() {
-    return this[0] = Math.abs(this[0]), this[1] = Math.abs(this[1]), this[2] = Math.abs(this[2]), this;
-  }
-  /**
-   * Calculates the dot product of this and another {@link Vec3}.
-   * Equivalent to `Vec3.dot(this, b);`
-   *
-   * @param b - The second operand
-   * @returns Dot product of `this` and `b`
-   */
-  dot(t2) {
-    return this[0] * t2[0] + this[1] * t2[1] + this[2] * t2[2];
-  }
-  /**
-   * Normalize `this`.
-   * Equivalent to `Vec3.normalize(this, this);`
-   *
-   * @returns `this`
-   */
-  normalize() {
-    return _C.normalize(this, this);
-  }
-  //================
-  // Static methods
-  //================
-  /**
-   * Creates a new, empty vec3
-   * @category Static
-   *
-   * @returns a new 3D vector
-   */
-  static create() {
-    return new _C();
-  }
-  /**
-   * Creates a new vec3 initialized with values from an existing vector
-   * @category Static
-   *
-   * @param a - vector to clone
-   * @returns a new 3D vector
-   */
-  static clone(t2) {
-    return new _C(t2);
-  }
-  /**
-   * Calculates the magnitude (length) of a {@link Vec3}
-   * @category Static
-   *
-   * @param a - Vector to calculate magnitude of
-   * @returns Magnitude of a
-   */
-  static magnitude(t2) {
-    let e2 = t2[0], s2 = t2[1], i2 = t2[2];
-    return Math.sqrt(e2 * e2 + s2 * s2 + i2 * i2);
-  }
-  /**
-   * Alias for {@link Vec3.magnitude}
-   * @category Static
-   */
-  static mag(t2) {
-    return 0;
-  }
-  /**
-   * Alias for {@link Vec3.magnitude}
-   * @category Static
-   * @deprecated Use {@link Vec3.magnitude} to avoid conflicts with builtin `length` methods/attribs
-   *
-   * @param a - vector to calculate length of
-   * @returns length of a
-   */
-  // @ts-ignore: Length conflicts with Function.length
-  static length(t2) {
-    return 0;
-  }
-  /**
-   * Alias for {@link Vec3.magnitude}
-   * @category Static
-   * @deprecated Use {@link Vec3.mag}
-   */
-  static len(t2) {
-    return 0;
-  }
-  /**
-   * Creates a new vec3 initialized with the given values
-   * @category Static
-   *
-   * @param x - X component
-   * @param y - Y component
-   * @param z - Z component
-   * @returns a new 3D vector
-   */
-  static fromValues(t2, e2, s2) {
-    return new _C(t2, e2, s2);
-  }
-  /**
-   * Copy the values from one vec3 to another
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the source vector
-   * @returns `out`
-   */
-  static copy(t2, e2) {
-    return t2[0] = e2[0], t2[1] = e2[1], t2[2] = e2[2], t2;
-  }
-  /**
-   * Set the components of a vec3 to the given values
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param x - X component
-   * @param y - Y component
-   * @param z - Z component
-   * @returns `out`
-   */
-  static set(t2, e2, s2, i2) {
-    return t2[0] = e2, t2[1] = s2, t2[2] = i2, t2;
-  }
-  /**
-   * Adds two {@link Vec3}s
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns `out`
-   */
-  static add(t2, e2, s2) {
-    return t2[0] = e2[0] + s2[0], t2[1] = e2[1] + s2[1], t2[2] = e2[2] + s2[2], t2;
-  }
-  /**
-   * Subtracts vector b from vector a
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static subtract(t2, e2, s2) {
-    return t2[0] = e2[0] - s2[0], t2[1] = e2[1] - s2[1], t2[2] = e2[2] - s2[2], t2;
-  }
-  /**
-   * Alias for {@link Vec3.subtract}
-   * @category Static
-   */
-  static sub(t2, e2, s2) {
-    return [0, 0, 0];
-  }
-  /**
-   * Multiplies two vec3's
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static multiply(t2, e2, s2) {
-    return t2[0] = e2[0] * s2[0], t2[1] = e2[1] * s2[1], t2[2] = e2[2] * s2[2], t2;
-  }
-  /**
-   * Alias for {@link Vec3.multiply}
-   * @category Static
-   */
-  static mul(t2, e2, s2) {
-    return [0, 0, 0];
-  }
-  /**
-   * Divides two vec3's
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static divide(t2, e2, s2) {
-    return t2[0] = e2[0] / s2[0], t2[1] = e2[1] / s2[1], t2[2] = e2[2] / s2[2], t2;
-  }
-  /**
-   * Alias for {@link Vec3.divide}
-   * @category Static
-   */
-  static div(t2, e2, s2) {
-    return [0, 0, 0];
-  }
-  /**
-   * Math.ceil the components of a vec3
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to ceil
-   * @returns `out`
-   */
-  static ceil(t2, e2) {
-    return t2[0] = Math.ceil(e2[0]), t2[1] = Math.ceil(e2[1]), t2[2] = Math.ceil(e2[2]), t2;
-  }
-  /**
-   * Math.floor the components of a vec3
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to floor
-   * @returns `out`
-   */
-  static floor(t2, e2) {
-    return t2[0] = Math.floor(e2[0]), t2[1] = Math.floor(e2[1]), t2[2] = Math.floor(e2[2]), t2;
-  }
-  /**
-   * Returns the minimum of two vec3's
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static min(t2, e2, s2) {
-    return t2[0] = Math.min(e2[0], s2[0]), t2[1] = Math.min(e2[1], s2[1]), t2[2] = Math.min(e2[2], s2[2]), t2;
-  }
-  /**
-   * Returns the maximum of two vec3's
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static max(t2, e2, s2) {
-    return t2[0] = Math.max(e2[0], s2[0]), t2[1] = Math.max(e2[1], s2[1]), t2[2] = Math.max(e2[2], s2[2]), t2;
-  }
-  /**
-   * symmetric round the components of a vec3
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to round
-   * @returns `out`
-   */
-  /*static round(out: Vec3Like, a: Readonly<Vec3Like>): Vec3Like {
-    out[0] = glMatrix.round(a[0]);
-    out[1] = glMatrix.round(a[1]);
-    out[2] = glMatrix.round(a[2]);
-    return out;
-  }*/
-  /**
-   * Scales a vec3 by a scalar number
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the vector to scale
-   * @param scale - amount to scale the vector by
-   * @returns `out`
-   */
-  static scale(t2, e2, s2) {
-    return t2[0] = e2[0] * s2, t2[1] = e2[1] * s2, t2[2] = e2[2] * s2, t2;
-  }
-  /**
-   * Adds two vec3's after scaling the second operand by a scalar value
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @param scale - the amount to scale b by before adding
-   * @returns `out`
-   */
-  static scaleAndAdd(t2, e2, s2, i2) {
-    return t2[0] = e2[0] + s2[0] * i2, t2[1] = e2[1] + s2[1] * i2, t2[2] = e2[2] + s2[2] * i2, t2;
-  }
-  /**
-   * Calculates the euclidian distance between two vec3's
-   * @category Static
-   *
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns distance between a and b
-   */
-  static distance(t2, e2) {
-    const s2 = e2[0] - t2[0], i2 = e2[1] - t2[1], n2 = e2[2] - t2[2];
-    return Math.sqrt(s2 * s2 + i2 * i2 + n2 * n2);
-  }
-  /**
-   * Alias for {@link Vec3.distance}
-   */
-  static dist(t2, e2) {
-    return 0;
-  }
-  /**
-   * Calculates the squared euclidian distance between two vec3's
-   * @category Static
-   *
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns squared distance between a and b
-   */
-  static squaredDistance(t2, e2) {
-    const s2 = e2[0] - t2[0], i2 = e2[1] - t2[1], n2 = e2[2] - t2[2];
-    return s2 * s2 + i2 * i2 + n2 * n2;
-  }
-  /**
-   * Alias for {@link Vec3.squaredDistance}
-   */
-  static sqrDist(t2, e2) {
-    return 0;
-  }
-  /**
-   * Calculates the squared length of a vec3
-   * @category Static
-   *
-   * @param a - vector to calculate squared length of
-   * @returns squared length of a
-   */
-  static squaredLength(t2) {
-    const e2 = t2[0], s2 = t2[1], i2 = t2[2];
-    return e2 * e2 + s2 * s2 + i2 * i2;
-  }
-  /**
-   * Alias for {@link Vec3.squaredLength}
-   */
-  static sqrLen(t2, e2) {
-    return 0;
-  }
-  /**
-   * Negates the components of a vec3
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to negate
-   * @returns `out`
-   */
-  static negate(t2, e2) {
-    return t2[0] = -e2[0], t2[1] = -e2[1], t2[2] = -e2[2], t2;
-  }
-  /**
-   * Returns the inverse of the components of a vec3
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to invert
-   * @returns `out`
-   */
-  static inverse(t2, e2) {
-    return t2[0] = 1 / e2[0], t2[1] = 1 / e2[1], t2[2] = 1 / e2[2], t2;
-  }
-  /**
-   * Returns the absolute value of the components of a {@link Vec3}
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - Vector to compute the absolute values of
-   * @returns `out`
-   */
-  static abs(t2, e2) {
-    return t2[0] = Math.abs(e2[0]), t2[1] = Math.abs(e2[1]), t2[2] = Math.abs(e2[2]), t2;
-  }
-  /**
-   * Normalize a vec3
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to normalize
-   * @returns `out`
-   */
-  static normalize(t2, e2) {
-    const s2 = e2[0], i2 = e2[1], n2 = e2[2];
-    let r2 = s2 * s2 + i2 * i2 + n2 * n2;
-    return r2 > 0 && (r2 = 1 / Math.sqrt(r2)), t2[0] = e2[0] * r2, t2[1] = e2[1] * r2, t2[2] = e2[2] * r2, t2;
-  }
-  /**
-   * Calculates the dot product of two vec3's
-   * @category Static
-   *
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns dot product of a and b
-   */
-  static dot(t2, e2) {
-    return t2[0] * e2[0] + t2[1] * e2[1] + t2[2] * e2[2];
-  }
-  /**
-   * Computes the cross product of two vec3's
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static cross(t2, e2, s2) {
-    const i2 = e2[0], n2 = e2[1], r2 = e2[2], a2 = s2[0], o2 = s2[1], l2 = s2[2];
-    return t2[0] = n2 * l2 - r2 * o2, t2[1] = r2 * a2 - i2 * l2, t2[2] = i2 * o2 - n2 * a2, t2;
-  }
-  /**
-   * Performs a linear interpolation between two vec3's
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @param t - interpolation amount, in the range [0-1], between the two inputs
-   * @returns `out`
-   */
-  static lerp(t2, e2, s2, i2) {
-    const n2 = e2[0], r2 = e2[1], a2 = e2[2];
-    return t2[0] = n2 + i2 * (s2[0] - n2), t2[1] = r2 + i2 * (s2[1] - r2), t2[2] = a2 + i2 * (s2[2] - a2), t2;
-  }
-  /**
-   * Performs a spherical linear interpolation between two vec3's
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @param t - interpolation amount, in the range [0-1], between the two inputs
-   * @returns `out`
-   */
-  static slerp(t2, e2, s2, i2) {
-    const n2 = Math.acos(Math.min(Math.max(_C.dot(e2, s2), -1), 1)), r2 = Math.sin(n2), a2 = Math.sin((1 - i2) * n2) / r2, o2 = Math.sin(i2 * n2) / r2;
-    return t2[0] = a2 * e2[0] + o2 * s2[0], t2[1] = a2 * e2[1] + o2 * s2[1], t2[2] = a2 * e2[2] + o2 * s2[2], t2;
-  }
-  /**
-   * Performs a hermite interpolation with two control points
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @param c - the third operand
-   * @param d - the fourth operand
-   * @param t - interpolation amount, in the range [0-1], between the two inputs
-   * @returns `out`
-   */
-  static hermite(t2, e2, s2, i2, n2, r2) {
-    const a2 = r2 * r2, o2 = a2 * (2 * r2 - 3) + 1, l2 = a2 * (r2 - 2) + r2, c2 = a2 * (r2 - 1), h2 = a2 * (3 - 2 * r2);
-    return t2[0] = e2[0] * o2 + s2[0] * l2 + i2[0] * c2 + n2[0] * h2, t2[1] = e2[1] * o2 + s2[1] * l2 + i2[1] * c2 + n2[1] * h2, t2[2] = e2[2] * o2 + s2[2] * l2 + i2[2] * c2 + n2[2] * h2, t2;
-  }
-  /**
-   * Performs a bezier interpolation with two control points
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @param c - the third operand
-   * @param d - the fourth operand
-   * @param t - interpolation amount, in the range [0-1], between the two inputs
-   * @returns `out`
-   */
-  static bezier(t2, e2, s2, i2, n2, r2) {
-    const a2 = 1 - r2, o2 = a2 * a2, l2 = r2 * r2, c2 = o2 * a2, h2 = 3 * r2 * o2, m2 = 3 * l2 * a2, u2 = l2 * r2;
-    return t2[0] = e2[0] * c2 + s2[0] * h2 + i2[0] * m2 + n2[0] * u2, t2[1] = e2[1] * c2 + s2[1] * h2 + i2[1] * m2 + n2[1] * u2, t2[2] = e2[2] * c2 + s2[2] * h2 + i2[2] * m2 + n2[2] * u2, t2;
-  }
-  /**
-   * Generates a random vector with the given scale
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param {Number} [scale] Length of the resulting vector. If omitted, a unit vector will be returned
-   * @returns `out`
-   */
-  /*static random(out: Vec3Like, scale) {
-      scale = scale === undefined ? 1.0 : scale;
-  
-      let r = glMatrix.RANDOM() * 2.0 * Math.PI;
-      let z = glMatrix.RANDOM() * 2.0 - 1.0;
-      let zScale = Math.sqrt(1.0 - z * z) * scale;
-  
-      out[0] = Math.cos(r) * zScale;
-      out[1] = Math.sin(r) * zScale;
-      out[2] = z * scale;
-      return out;
-    }*/
-  /**
-   * Transforms the vec3 with a mat4.
-   * 4th vector component is implicitly '1'
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the vector to transform
-   * @param m - matrix to transform with
-   * @returns `out`
-   */
-  static transformMat4(t2, e2, s2) {
-    const i2 = e2[0], n2 = e2[1], r2 = e2[2], a2 = s2[3] * i2 + s2[7] * n2 + s2[11] * r2 + s2[15] || 1;
-    return t2[0] = (s2[0] * i2 + s2[4] * n2 + s2[8] * r2 + s2[12]) / a2, t2[1] = (s2[1] * i2 + s2[5] * n2 + s2[9] * r2 + s2[13]) / a2, t2[2] = (s2[2] * i2 + s2[6] * n2 + s2[10] * r2 + s2[14]) / a2, t2;
-  }
-  /**
-   * Transforms the vec3 with a mat3.
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the vector to transform
-   * @param m - the 3x3 matrix to transform with
-   * @returns `out`
-   */
-  static transformMat3(t2, e2, s2) {
-    let i2 = e2[0], n2 = e2[1], r2 = e2[2];
-    return t2[0] = i2 * s2[0] + n2 * s2[3] + r2 * s2[6], t2[1] = i2 * s2[1] + n2 * s2[4] + r2 * s2[7], t2[2] = i2 * s2[2] + n2 * s2[5] + r2 * s2[8], t2;
-  }
-  /**
-   * Transforms the vec3 with a quat
-   * Can also be used for dual quaternions. (Multiply it with the real part)
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the vector to transform
-   * @param q - quaternion to transform with
-   * @returns `out`
-   */
-  static transformQuat(t2, e2, s2) {
-    const i2 = s2[0], n2 = s2[1], r2 = s2[2], a2 = s2[3] * 2, o2 = e2[0], l2 = e2[1], c2 = e2[2], h2 = n2 * c2 - r2 * l2, m2 = r2 * o2 - i2 * c2, u2 = i2 * l2 - n2 * o2, f2 = (n2 * u2 - r2 * m2) * 2, g2 = (r2 * h2 - i2 * u2) * 2, p2 = (i2 * m2 - n2 * h2) * 2;
-    return t2[0] = o2 + h2 * a2 + f2, t2[1] = l2 + m2 * a2 + g2, t2[2] = c2 + u2 * a2 + p2, t2;
-  }
-  /**
-   * Rotate a 3D vector around the x-axis
-   * @param out - The receiving vec3
-   * @param a - The vec3 point to rotate
-   * @param b - The origin of the rotation
-   * @param rad - The angle of rotation in radians
-   * @returns `out`
-   */
-  static rotateX(t2, e2, s2, i2) {
-    const n2 = s2[1], r2 = s2[2], a2 = e2[1] - n2, o2 = e2[2] - r2;
-    return t2[0] = e2[0], t2[1] = a2 * Math.cos(i2) - o2 * Math.sin(i2) + n2, t2[2] = a2 * Math.sin(i2) + o2 * Math.cos(i2) + r2, t2;
-  }
-  /**
-   * Rotate a 3D vector around the y-axis
-   * @param out - The receiving vec3
-   * @param a - The vec3 point to rotate
-   * @param b - The origin of the rotation
-   * @param rad - The angle of rotation in radians
-   * @returns `out`
-   */
-  static rotateY(t2, e2, s2, i2) {
-    const n2 = s2[0], r2 = s2[2], a2 = e2[0] - n2, o2 = e2[2] - r2;
-    return t2[0] = o2 * Math.sin(i2) + a2 * Math.cos(i2) + n2, t2[1] = e2[1], t2[2] = o2 * Math.cos(i2) - a2 * Math.sin(i2) + r2, t2;
-  }
-  /**
-   * Rotate a 3D vector around the z-axis
-   * @param out - The receiving vec3
-   * @param a - The vec3 point to rotate
-   * @param b - The origin of the rotation
-   * @param rad - The angle of rotation in radians
-   * @returns `out`
-   */
-  static rotateZ(t2, e2, s2, i2) {
-    const n2 = s2[0], r2 = s2[1], a2 = e2[0] - n2, o2 = e2[1] - r2;
-    return t2[0] = a2 * Math.cos(i2) - o2 * Math.sin(i2) + n2, t2[1] = a2 * Math.sin(i2) + o2 * Math.cos(i2) + r2, t2[2] = s2[2], t2;
-  }
-  /**
-   * Get the angle between two 3D vectors
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns The angle in radians
-   */
-  static angle(t2, e2) {
-    const s2 = t2[0], i2 = t2[1], n2 = t2[2], r2 = e2[0], a2 = e2[1], o2 = e2[2], l2 = Math.sqrt((s2 * s2 + i2 * i2 + n2 * n2) * (r2 * r2 + a2 * a2 + o2 * o2)), c2 = l2 && _C.dot(t2, e2) / l2;
-    return Math.acos(Math.min(Math.max(c2, -1), 1));
-  }
-  /**
-   * Set the components of a vec3 to zero
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @returns `out`
-   */
-  static zero(t2) {
-    return t2[0] = 0, t2[1] = 0, t2[2] = 0, t2;
-  }
-  /**
-   * Returns a string representation of a vector
-   * @category Static
-   *
-   * @param a - vector to represent as a string
-   * @returns string representation of the vector
-   */
-  static str(t2) {
-    return `Vec3(${t2.join(", ")})`;
-  }
-  /**
-   * Returns whether or not the vectors have exactly the same elements in the same position (when compared with ===)
-   * @category Static
-   *
-   * @param a - The first vector.
-   * @param b - The second vector.
-   * @returns True if the vectors are equal, false otherwise.
-   */
-  static exactEquals(t2, e2) {
-    return t2[0] === e2[0] && t2[1] === e2[1] && t2[2] === e2[2];
-  }
-  /**
-   * Returns whether or not the vectors have approximately the same elements in the same position.
-   * @category Static
-   *
-   * @param a - The first vector.
-   * @param b - The second vector.
-   * @returns True if the vectors are equal, false otherwise.
-   */
-  static equals(t2, e2) {
-    const s2 = t2[0], i2 = t2[1], n2 = t2[2], r2 = e2[0], a2 = e2[1], o2 = e2[2];
-    return Math.abs(s2 - r2) <= O * Math.max(1, Math.abs(s2), Math.abs(r2)) && Math.abs(i2 - a2) <= O * Math.max(1, Math.abs(i2), Math.abs(a2)) && Math.abs(n2 - o2) <= O * Math.max(1, Math.abs(n2), Math.abs(o2));
-  }
-};
-/**
-* The number of bytes in a {@link Vec3}.
-*/
-__publicField(_C, "BYTE_LENGTH", 3 * Float32Array.BYTES_PER_ELEMENT);
-let C = _C;
-C.prototype.sub = C.prototype.subtract;
-C.prototype.mul = C.prototype.multiply;
-C.prototype.div = C.prototype.divide;
-C.prototype.dist = C.prototype.distance;
-C.prototype.sqrDist = C.prototype.squaredDistance;
-C.sub = C.subtract;
-C.mul = C.multiply;
-C.div = C.divide;
-C.dist = C.distance;
-C.sqrDist = C.squaredDistance;
-C.sqrLen = C.squaredLength;
-C.mag = C.magnitude;
-C.length = C.magnitude;
-C.len = C.magnitude;
-const _D = class _D extends Float32Array {
-  /**
-   * Create a {@link Vec4}.
-   */
-  constructor(...t2) {
-    switch (t2.length) {
-      case 4:
-        super(t2);
-        break;
-      case 2:
-        super(t2[0], t2[1], 4);
-        break;
-      case 1: {
-        const e2 = t2[0];
-        typeof e2 == "number" ? super([e2, e2, e2, e2]) : super(e2, 0, 4);
-        break;
-      }
-      default:
-        super(4);
-        break;
-    }
-  }
-  //============
-  // Attributes
-  //============
-  // Getters and setters to make component access read better.
-  // These are likely to be a little bit slower than direct array access.
-  /**
-   * The x component of the vector. Equivalent to `this[0];`
-   * @category Vector components
-   */
-  get x() {
-    return this[0];
-  }
-  set x(t2) {
-    this[0] = t2;
-  }
-  /**
-   * The y component of the vector. Equivalent to `this[1];`
-   * @category Vector components
-   */
-  get y() {
-    return this[1];
-  }
-  set y(t2) {
-    this[1] = t2;
-  }
-  /**
-   * The z component of the vector. Equivalent to `this[2];`
-   * @category Vector components
-   */
-  get z() {
-    return this[2];
-  }
-  set z(t2) {
-    this[2] = t2;
-  }
-  /**
-   * The w component of the vector. Equivalent to `this[3];`
-   * @category Vector components
-   */
-  get w() {
-    return this[3];
-  }
-  set w(t2) {
-    this[3] = t2;
-  }
-  // Alternate set of getters and setters in case this is being used to define
-  // a color.
-  /**
-   * The r component of the vector. Equivalent to `this[0];`
-   * @category Color components
-   */
-  get r() {
-    return this[0];
-  }
-  set r(t2) {
-    this[0] = t2;
-  }
-  /**
-   * The g component of the vector. Equivalent to `this[1];`
-   * @category Color components
-   */
-  get g() {
-    return this[1];
-  }
-  set g(t2) {
-    this[1] = t2;
-  }
-  /**
-   * The b component of the vector. Equivalent to `this[2];`
-   * @category Color components
-   */
-  get b() {
-    return this[2];
-  }
-  set b(t2) {
-    this[2] = t2;
-  }
-  /**
-   * The a component of the vector. Equivalent to `this[3];`
-   * @category Color components
-   */
-  get a() {
-    return this[3];
-  }
-  set a(t2) {
-    this[3] = t2;
-  }
-  /**
-   * The magnitude (length) of this.
-   * Equivalent to `Vec4.magnitude(this);`
-   *
-   * Magnitude is used because the `length` attribute is already defined by
-   * TypedArrays to mean the number of elements in the array.
-   */
-  get magnitude() {
-    const t2 = this[0], e2 = this[1], s2 = this[2], i2 = this[3];
-    return Math.sqrt(t2 * t2 + e2 * e2 + s2 * s2 + i2 * i2);
-  }
-  /**
-   * Alias for {@link Vec4.magnitude}
-   */
-  get mag() {
-    return this.magnitude;
-  }
-  /**
-   * A string representation of `this`
-   * Equivalent to `Vec4.str(this);`
-   */
-  get str() {
-    return _D.str(this);
-  }
-  //===================
-  // Instances methods
-  //===================
-  /**
-   * Copy the values from another {@link Vec4} into `this`.
-   *
-   * @param a the source vector
-   * @returns `this`
-   */
-  copy(t2) {
-    return super.set(t2), this;
-  }
-  /**
-   * Adds a {@link Vec4} to `this`.
-   * Equivalent to `Vec4.add(this, this, b);`
-   *
-   * @param b - The vector to add to `this`
-   * @returns `this`
-   */
-  add(t2) {
-    return this[0] += t2[0], this[1] += t2[1], this[2] += t2[2], this[3] += t2[3], this;
-  }
-  /**
-   * Subtracts a {@link Vec4} from `this`.
-   * Equivalent to `Vec4.subtract(this, this, b);`
-   *
-   * @param b - The vector to subtract from `this`
-   * @returns `this`
-   */
-  subtract(t2) {
-    return this[0] -= t2[0], this[1] -= t2[1], this[2] -= t2[2], this[3] -= t2[3], this;
-  }
-  /**
-   * Alias for {@link Vec4.subtract}
-   */
-  sub(t2) {
-    return this;
-  }
-  /**
-   * Multiplies `this` by a {@link Vec4}.
-   * Equivalent to `Vec4.multiply(this, this, b);`
-   *
-   * @param b - The vector to multiply `this` by
-   * @returns `this`
-   */
-  multiply(t2) {
-    return this[0] *= t2[0], this[1] *= t2[1], this[2] *= t2[2], this[3] *= t2[3], this;
-  }
-  /**
-   * Alias for {@link Vec4.multiply}
-   */
-  mul(t2) {
-    return this;
-  }
-  /**
-   * Divides `this` by a {@link Vec4}.
-   * Equivalent to `Vec4.divide(this, this, b);`
-   *
-   * @param b - The vector to divide `this` by
-   * @returns `this`
-   */
-  divide(t2) {
-    return this[0] /= t2[0], this[1] /= t2[1], this[2] /= t2[2], this[3] /= t2[3], this;
-  }
-  /**
-   * Alias for {@link Vec4.divide}
-   */
-  div(t2) {
-    return this;
-  }
-  /**
-   * Scales `this` by a scalar number.
-   * Equivalent to `Vec4.scale(this, this, b);`
-   *
-   * @param b - Amount to scale `this` by
-   * @returns `this`
-   */
-  scale(t2) {
-    return this[0] *= t2, this[1] *= t2, this[2] *= t2, this[3] *= t2, this;
-  }
-  /**
-   * Calculates `this` scaled by a scalar value then adds the result to `this`.
-   * Equivalent to `Vec4.scaleAndAdd(this, this, b, scale);`
-   *
-   * @param b - The vector to add to `this`
-   * @param scale - The amount to scale `b` by before adding
-   * @returns `this`
-   */
-  scaleAndAdd(t2, e2) {
-    return this[0] += t2[0] * e2, this[1] += t2[1] * e2, this[2] += t2[2] * e2, this[3] += t2[3] * e2, this;
-  }
-  /**
-   * Calculates the euclidian distance between another {@link Vec4} and `this`.
-   * Equivalent to `Vec4.distance(this, b);`
-   *
-   * @param b - The vector to calculate the distance to
-   * @returns Distance between `this` and `b`
-   */
-  distance(t2) {
-    return _D.distance(this, t2);
-  }
-  /**
-   * Alias for {@link Vec4.distance}
-   */
-  dist(t2) {
-    return 0;
-  }
-  /**
-   * Calculates the squared euclidian distance between another {@link Vec4} and `this`.
-   * Equivalent to `Vec4.squaredDistance(this, b);`
-   *
-   * @param b The vector to calculate the squared distance to
-   * @returns Squared distance between `this` and `b`
-   */
-  squaredDistance(t2) {
-    return _D.squaredDistance(this, t2);
-  }
-  /**
-   * Alias for {@link Vec4.squaredDistance}
-   */
-  sqrDist(t2) {
-    return 0;
-  }
-  /**
-   * Negates the components of `this`.
-   * Equivalent to `Vec4.negate(this, this);`
-   *
-   * @returns `this`
-   */
-  negate() {
-    return this[0] *= -1, this[1] *= -1, this[2] *= -1, this[3] *= -1, this;
-  }
-  /**
-   * Inverts the components of `this`.
-   * Equivalent to `Vec4.inverse(this, this);`
-   *
-   * @returns `this`
-   */
-  invert() {
-    return this[0] = 1 / this[0], this[1] = 1 / this[1], this[2] = 1 / this[2], this[3] = 1 / this[3], this;
-  }
-  /**
-   * Sets each component of `this` to it's absolute value.
-   * Equivalent to `Vec4.abs(this, this);`
-   *
-   * @returns `this`
-   */
-  abs() {
-    return this[0] = Math.abs(this[0]), this[1] = Math.abs(this[1]), this[2] = Math.abs(this[2]), this[3] = Math.abs(this[3]), this;
-  }
-  /**
-   * Calculates the dot product of this and another {@link Vec4}.
-   * Equivalent to `Vec4.dot(this, b);`
-   *
-   * @param b - The second operand
-   * @returns Dot product of `this` and `b`
-   */
-  dot(t2) {
-    return this[0] * t2[0] + this[1] * t2[1] + this[2] * t2[2] + this[3] * t2[3];
-  }
-  /**
-   * Normalize `this`.
-   * Equivalent to `Vec4.normalize(this, this);`
-   *
-   * @returns `this`
-   */
-  normalize() {
-    return _D.normalize(this, this);
-  }
-  //===================
-  // Static methods
-  //===================
-  /**
-   * Creates a new, empty {@link Vec4}
-   * @category Static
-   *
-   * @returns a new 4D vector
-   */
-  static create() {
-    return new _D();
-  }
-  /**
-   * Creates a new {@link Vec4} initialized with values from an existing vector
-   * @category Static
-   *
-   * @param a - vector to clone
-   * @returns a new 4D vector
-   */
-  static clone(t2) {
-    return new _D(t2);
-  }
-  /**
-   * Creates a new {@link Vec4} initialized with the given values
-   * @category Static
-   *
-   * @param x - X component
-   * @param y - Y component
-   * @param z - Z component
-   * @param w - W component
-   * @returns a new 4D vector
-   */
-  static fromValues(t2, e2, s2, i2) {
-    return new _D(t2, e2, s2, i2);
-  }
-  /**
-   * Copy the values from one {@link Vec4} to another
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the source vector
-   * @returns `out`
-   */
-  static copy(t2, e2) {
-    return t2[0] = e2[0], t2[1] = e2[1], t2[2] = e2[2], t2[3] = e2[3], t2;
-  }
-  /**
-   * Set the components of a {@link Vec4} to the given values
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param x - X component
-   * @param y - Y component
-   * @param z - Z component
-   * @param w - W component
-   * @returns `out`
-   */
-  static set(t2, e2, s2, i2, n2) {
-    return t2[0] = e2, t2[1] = s2, t2[2] = i2, t2[3] = n2, t2;
-  }
-  /**
-   * Adds two {@link Vec4}s
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns `out`
-   */
-  static add(t2, e2, s2) {
-    return t2[0] = e2[0] + s2[0], t2[1] = e2[1] + s2[1], t2[2] = e2[2] + s2[2], t2[3] = e2[3] + s2[3], t2;
-  }
-  /**
-   * Subtracts vector b from vector a
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static subtract(t2, e2, s2) {
-    return t2[0] = e2[0] - s2[0], t2[1] = e2[1] - s2[1], t2[2] = e2[2] - s2[2], t2[3] = e2[3] - s2[3], t2;
-  }
-  /**
-   * Alias for {@link Vec4.subtract}
-   * @category Static
-   */
-  static sub(t2, e2, s2) {
-    return t2;
-  }
-  /**
-   * Multiplies two {@link Vec4}'s
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static multiply(t2, e2, s2) {
-    return t2[0] = e2[0] * s2[0], t2[1] = e2[1] * s2[1], t2[2] = e2[2] * s2[2], t2[3] = e2[3] * s2[3], t2;
-  }
-  /**
-   * Alias for {@link Vec4.multiply}
-   * @category Static
-   */
-  static mul(t2, e2, s2) {
-    return t2;
-  }
-  /**
-   * Divides two {@link Vec4}'s
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static divide(t2, e2, s2) {
-    return t2[0] = e2[0] / s2[0], t2[1] = e2[1] / s2[1], t2[2] = e2[2] / s2[2], t2[3] = e2[3] / s2[3], t2;
-  }
-  /**
-   * Alias for {@link Vec4.divide}
-   * @category Static
-   */
-  static div(t2, e2, s2) {
-    return t2;
-  }
-  /**
-   * Math.ceil the components of a {@link Vec4}
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to ceil
-   * @returns `out`
-   */
-  static ceil(t2, e2) {
-    return t2[0] = Math.ceil(e2[0]), t2[1] = Math.ceil(e2[1]), t2[2] = Math.ceil(e2[2]), t2[3] = Math.ceil(e2[3]), t2;
-  }
-  /**
-   * Math.floor the components of a {@link Vec4}
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to floor
-   * @returns `out`
-   */
-  static floor(t2, e2) {
-    return t2[0] = Math.floor(e2[0]), t2[1] = Math.floor(e2[1]), t2[2] = Math.floor(e2[2]), t2[3] = Math.floor(e2[3]), t2;
-  }
-  /**
-   * Returns the minimum of two {@link Vec4}'s
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static min(t2, e2, s2) {
-    return t2[0] = Math.min(e2[0], s2[0]), t2[1] = Math.min(e2[1], s2[1]), t2[2] = Math.min(e2[2], s2[2]), t2[3] = Math.min(e2[3], s2[3]), t2;
-  }
-  /**
-   * Returns the maximum of two {@link Vec4}'s
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns `out`
-   */
-  static max(t2, e2, s2) {
-    return t2[0] = Math.max(e2[0], s2[0]), t2[1] = Math.max(e2[1], s2[1]), t2[2] = Math.max(e2[2], s2[2]), t2[3] = Math.max(e2[3], s2[3]), t2;
-  }
-  /**
-   * Math.round the components of a {@link Vec4}
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to round
-   * @returns `out`
-   */
-  static round(t2, e2) {
-    return t2[0] = Math.round(e2[0]), t2[1] = Math.round(e2[1]), t2[2] = Math.round(e2[2]), t2[3] = Math.round(e2[3]), t2;
-  }
-  /**
-   * Scales a {@link Vec4} by a scalar number
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the vector to scale
-   * @param scale - amount to scale the vector by
-   * @returns `out`
-   */
-  static scale(t2, e2, s2) {
-    return t2[0] = e2[0] * s2, t2[1] = e2[1] * s2, t2[2] = e2[2] * s2, t2[3] = e2[3] * s2, t2;
-  }
-  /**
-   * Adds two {@link Vec4}'s after scaling the second operand by a scalar value
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @param scale - the amount to scale b by before adding
-   * @returns `out`
-   */
-  static scaleAndAdd(t2, e2, s2, i2) {
-    return t2[0] = e2[0] + s2[0] * i2, t2[1] = e2[1] + s2[1] * i2, t2[2] = e2[2] + s2[2] * i2, t2[3] = e2[3] + s2[3] * i2, t2;
-  }
-  /**
-   * Calculates the euclidian distance between two {@link Vec4}'s
-   * @category Static
-   *
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns distance between a and b
-   */
-  static distance(t2, e2) {
-    const s2 = e2[0] - t2[0], i2 = e2[1] - t2[1], n2 = e2[2] - t2[2], r2 = e2[3] - t2[3];
-    return Math.hypot(s2, i2, n2, r2);
-  }
-  /**
-   * Alias for {@link Vec4.distance}
-   * @category Static
-   */
-  static dist(t2, e2) {
-    return 0;
-  }
-  /**
-   * Calculates the squared euclidian distance between two {@link Vec4}'s
-   * @category Static
-   *
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns squared distance between a and b
-   */
-  static squaredDistance(t2, e2) {
-    const s2 = e2[0] - t2[0], i2 = e2[1] - t2[1], n2 = e2[2] - t2[2], r2 = e2[3] - t2[3];
-    return s2 * s2 + i2 * i2 + n2 * n2 + r2 * r2;
-  }
-  /**
-   * Alias for {@link Vec4.squaredDistance}
-   * @category Static
-   */
-  static sqrDist(t2, e2) {
-    return 0;
-  }
-  /**
-   * Calculates the magnitude (length) of a {@link Vec4}
-   * @category Static
-   *
-   * @param a - vector to calculate length of
-   * @returns length of `a`
-   */
-  static magnitude(t2) {
-    const e2 = t2[0], s2 = t2[1], i2 = t2[2], n2 = t2[3];
-    return Math.sqrt(e2 * e2 + s2 * s2 + i2 * i2 + n2 * n2);
-  }
-  /**
-   * Alias for {@link Vec4.magnitude}
-   * @category Static
-   */
-  static mag(t2) {
-    return 0;
-  }
-  /**
-   * Alias for {@link Vec4.magnitude}
-   * @category Static
-   * @deprecated Use {@link Vec4.magnitude} to avoid conflicts with builtin `length` methods/attribs
-   */
-  // @ts-ignore: Length conflicts with Function.length
-  static length(t2) {
-    return 0;
-  }
-  /**
-   * Alias for {@link Vec4.magnitude}
-   * @category Static
-   * @deprecated Use {@link Vec4.mag}
-   */
-  static len(t2) {
-    return 0;
-  }
-  /**
-   * Calculates the squared length of a {@link Vec4}
-   * @category Static
-   *
-   * @param a - vector to calculate squared length of
-   * @returns squared length of a
-   */
-  static squaredLength(t2) {
-    const e2 = t2[0], s2 = t2[1], i2 = t2[2], n2 = t2[3];
-    return e2 * e2 + s2 * s2 + i2 * i2 + n2 * n2;
-  }
-  /**
-   * Alias for {@link Vec4.squaredLength}
-   * @category Static
-   */
-  static sqrLen(t2) {
-    return 0;
-  }
-  /**
-   * Negates the components of a {@link Vec4}
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to negate
-   * @returns `out`
-   */
-  static negate(t2, e2) {
-    return t2[0] = -e2[0], t2[1] = -e2[1], t2[2] = -e2[2], t2[3] = -e2[3], t2;
-  }
-  /**
-   * Returns the inverse of the components of a {@link Vec4}
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to invert
-   * @returns `out`
-   */
-  static inverse(t2, e2) {
-    return t2[0] = 1 / e2[0], t2[1] = 1 / e2[1], t2[2] = 1 / e2[2], t2[3] = 1 / e2[3], t2;
-  }
-  /**
-   * Returns the absolute value of the components of a {@link Vec4}
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - Vector to compute the absolute values of
-   * @returns `out`
-   */
-  static abs(t2, e2) {
-    return t2[0] = Math.abs(e2[0]), t2[1] = Math.abs(e2[1]), t2[2] = Math.abs(e2[2]), t2[3] = Math.abs(e2[3]), t2;
-  }
-  /**
-   * Normalize a {@link Vec4}
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - vector to normalize
-   * @returns `out`
-   */
-  static normalize(t2, e2) {
-    const s2 = e2[0], i2 = e2[1], n2 = e2[2], r2 = e2[3];
-    let a2 = s2 * s2 + i2 * i2 + n2 * n2 + r2 * r2;
-    return a2 > 0 && (a2 = 1 / Math.sqrt(a2)), t2[0] = s2 * a2, t2[1] = i2 * a2, t2[2] = n2 * a2, t2[3] = r2 * a2, t2;
-  }
-  /**
-   * Calculates the dot product of two {@link Vec4}'s
-   * @category Static
-   *
-   * @param a - the first operand
-   * @param b - the second operand
-   * @returns dot product of a and b
-   */
-  static dot(t2, e2) {
-    return t2[0] * e2[0] + t2[1] * e2[1] + t2[2] * e2[2] + t2[3] * e2[3];
-  }
-  /**
-   * Returns the cross-product of three vectors in a 4-dimensional space
-   * @category Static
-   *
-   * @param out the receiving vector
-   * @param u - the first vector
-   * @param v - the second vector
-   * @param w - the third vector
-   * @returns result
-   */
-  static cross(t2, e2, s2, i2) {
-    const n2 = s2[0] * i2[1] - s2[1] * i2[0], r2 = s2[0] * i2[2] - s2[2] * i2[0], a2 = s2[0] * i2[3] - s2[3] * i2[0], o2 = s2[1] * i2[2] - s2[2] * i2[1], l2 = s2[1] * i2[3] - s2[3] * i2[1], c2 = s2[2] * i2[3] - s2[3] * i2[2], h2 = e2[0], m2 = e2[1], u2 = e2[2], f2 = e2[3];
-    return t2[0] = m2 * c2 - u2 * l2 + f2 * o2, t2[1] = -(h2 * c2) + u2 * a2 - f2 * r2, t2[2] = h2 * l2 - m2 * a2 + f2 * n2, t2[3] = -(h2 * o2) + m2 * r2 - u2 * n2, t2;
-  }
-  /**
-   * Performs a linear interpolation between two {@link Vec4}'s
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the first operand
-   * @param b - the second operand
-   * @param t - interpolation amount, in the range [0-1], between the two inputs
-   * @returns `out`
-   */
-  static lerp(t2, e2, s2, i2) {
-    const n2 = e2[0], r2 = e2[1], a2 = e2[2], o2 = e2[3];
-    return t2[0] = n2 + i2 * (s2[0] - n2), t2[1] = r2 + i2 * (s2[1] - r2), t2[2] = a2 + i2 * (s2[2] - a2), t2[3] = o2 + i2 * (s2[3] - o2), t2;
-  }
-  /**
-   * Generates a random vector with the given scale
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param [scale] - Length of the resulting vector. If ommitted, a unit vector will be returned
-   * @returns `out`
-   */
-  /*static random(out: Vec4Like, scale): Vec4Like {
-      scale = scale || 1.0;
-  
-      // Marsaglia, George. Choosing a Point from the Surface of a
-      // Sphere. Ann. Math. Statist. 43 (1972), no. 2, 645--646.
-      // http://projecteuclid.org/euclid.aoms/1177692644;
-      var v1, v2, v3, v4;
-      var s1, s2;
-      do {
-        v1 = glMatrix.RANDOM() * 2 - 1;
-        v2 = glMatrix.RANDOM() * 2 - 1;
-        s1 = v1 * v1 + v2 * v2;
-      } while (s1 >= 1);
-      do {
-        v3 = glMatrix.RANDOM() * 2 - 1;
-        v4 = glMatrix.RANDOM() * 2 - 1;
-        s2 = v3 * v3 + v4 * v4;
-      } while (s2 >= 1);
-  
-      var d = Math.sqrt((1 - s1) / s2);
-      out[0] = scale * v1;
-      out[1] = scale * v2;
-      out[2] = scale * v3 * d;
-      out[3] = scale * v4 * d;
-      return out;
-    }*/
-  /**
-   * Transforms the {@link Vec4} with a {@link Mat4}.
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the vector to transform
-   * @param m - matrix to transform with
-   * @returns `out`
-   */
-  static transformMat4(t2, e2, s2) {
-    const i2 = e2[0], n2 = e2[1], r2 = e2[2], a2 = e2[3];
-    return t2[0] = s2[0] * i2 + s2[4] * n2 + s2[8] * r2 + s2[12] * a2, t2[1] = s2[1] * i2 + s2[5] * n2 + s2[9] * r2 + s2[13] * a2, t2[2] = s2[2] * i2 + s2[6] * n2 + s2[10] * r2 + s2[14] * a2, t2[3] = s2[3] * i2 + s2[7] * n2 + s2[11] * r2 + s2[15] * a2, t2;
-  }
-  /**
-   * Transforms the {@link Vec4} with a {@link Quat}
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - the vector to transform
-   * @param q - quaternion to transform with
-   * @returns `out`
-   */
-  static transformQuat(t2, e2, s2) {
-    const i2 = e2[0], n2 = e2[1], r2 = e2[2], a2 = s2[0], o2 = s2[1], l2 = s2[2], c2 = s2[3], h2 = c2 * i2 + o2 * r2 - l2 * n2, m2 = c2 * n2 + l2 * i2 - a2 * r2, u2 = c2 * r2 + a2 * n2 - o2 * i2, f2 = -a2 * i2 - o2 * n2 - l2 * r2;
-    return t2[0] = h2 * c2 + f2 * -a2 + m2 * -l2 - u2 * -o2, t2[1] = m2 * c2 + f2 * -o2 + u2 * -a2 - h2 * -l2, t2[2] = u2 * c2 + f2 * -l2 + h2 * -o2 - m2 * -a2, t2[3] = e2[3], t2;
-  }
-  /**
-   * Set the components of a {@link Vec4} to zero
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @returns `out`
-   */
-  static zero(t2) {
-    return t2[0] = 0, t2[1] = 0, t2[2] = 0, t2[3] = 0, t2;
-  }
-  /**
-   * Returns a string representation of a {@link Vec4}
-   * @category Static
-   *
-   * @param a - vector to represent as a string
-   * @returns string representation of the vector
-   */
-  static str(t2) {
-    return `Vec4(${t2.join(", ")})`;
-  }
-  /**
-   * Returns whether or not the vectors have exactly the same elements in the same position (when compared with ===)
-   * @category Static
-   *
-   * @param a - The first vector.
-   * @param b - The second vector.
-   * @returns True if the vectors are equal, false otherwise.
-   */
-  static exactEquals(t2, e2) {
-    return t2[0] === e2[0] && t2[1] === e2[1] && t2[2] === e2[2] && t2[3] === e2[3];
-  }
-  /**
-   * Returns whether or not the vectors have approximately the same elements in the same position.
-   * @category Static
-   *
-   * @param a - The first vector.
-   * @param b - The second vector.
-   * @returns True if the vectors are equal, false otherwise.
-   */
-  static equals(t2, e2) {
-    const s2 = t2[0], i2 = t2[1], n2 = t2[2], r2 = t2[3], a2 = e2[0], o2 = e2[1], l2 = e2[2], c2 = e2[3];
-    return Math.abs(s2 - a2) <= O * Math.max(1, Math.abs(s2), Math.abs(a2)) && Math.abs(i2 - o2) <= O * Math.max(1, Math.abs(i2), Math.abs(o2)) && Math.abs(n2 - l2) <= O * Math.max(1, Math.abs(n2), Math.abs(l2)) && Math.abs(r2 - c2) <= O * Math.max(1, Math.abs(r2), Math.abs(c2));
-  }
-};
-/**
- * The number of bytes in a {@link Vec4}.
- */
-__publicField(_D, "BYTE_LENGTH", 4 * Float32Array.BYTES_PER_ELEMENT);
-let D = _D;
-D.prototype.sub = D.prototype.subtract;
-D.prototype.mul = D.prototype.multiply;
-D.prototype.div = D.prototype.divide;
-D.prototype.dist = D.prototype.distance;
-D.prototype.sqrDist = D.prototype.squaredDistance;
-D.sub = D.subtract;
-D.mul = D.multiply;
-D.div = D.divide;
-D.dist = D.distance;
-D.sqrDist = D.squaredDistance;
-D.sqrLen = D.squaredLength;
-D.mag = D.magnitude;
-D.length = D.magnitude;
-D.len = D.magnitude;
-const _A = class _A extends Float32Array {
-  /**
-   * Create a {@link Vec2}.
-   */
-  constructor(...t2) {
-    switch (t2.length) {
-      case 2: {
-        const e2 = t2[0];
-        typeof e2 == "number" ? super([e2, t2[1]]) : super(e2, t2[1], 2);
-        break;
-      }
-      case 1: {
-        const e2 = t2[0];
-        typeof e2 == "number" ? super([e2, e2]) : super(e2, 0, 2);
-        break;
-      }
-      default:
-        super(2);
-        break;
-    }
-  }
-  //============
-  // Attributes
-  //============
-  // Getters and setters to make component access read better.
-  // These are likely to be a little bit slower than direct array access.
-  /**
-   * The x component of the vector. Equivalent to `this[0];`
-   * @category Vector components
-   */
-  get x() {
-    return this[0];
-  }
-  set x(t2) {
-    this[0] = t2;
-  }
-  /**
-   * The y component of the vector. Equivalent to `this[1];`
-   * @category Vector components
-   */
-  get y() {
-    return this[1];
-  }
-  set y(t2) {
-    this[1] = t2;
-  }
-  // Alternate set of getters and setters in case this is being used to define
-  // a color.
-  /**
-   * The r component of the vector. Equivalent to `this[0];`
-   * @category Color components
-   */
-  get r() {
-    return this[0];
-  }
-  set r(t2) {
-    this[0] = t2;
-  }
-  /**
-   * The g component of the vector. Equivalent to `this[1];`
-   * @category Color components
-   */
-  get g() {
-    return this[1];
-  }
-  set g(t2) {
-    this[1] = t2;
-  }
-  /**
-   * The magnitude (length) of this.
-   * Equivalent to `Vec2.magnitude(this);`
-   *
-   * Magnitude is used because the `length` attribute is already defined by
-   * TypedArrays to mean the number of elements in the array.
-   */
-  get magnitude() {
-    return Math.hypot(this[0], this[1]);
-  }
-  /**
-   * Alias for {@link Vec2.magnitude}
-   */
-  get mag() {
-    return this.magnitude;
-  }
-  /**
-   * The squared magnitude (length) of `this`.
-   * Equivalent to `Vec2.squaredMagnitude(this);`
-   */
-  get squaredMagnitude() {
-    const t2 = this[0], e2 = this[1];
-    return t2 * t2 + e2 * e2;
-  }
-  /**
-   * Alias for {@link Vec2.squaredMagnitude}
-   */
-  get sqrMag() {
-    return this.squaredMagnitude;
-  }
-  /**
-   * A string representation of `this`
-   * Equivalent to `Vec2.str(this);`
-   */
-  get str() {
-    return _A.str(this);
-  }
-  //===================
-  // Instances methods
-  //===================
-  /**
-   * Copy the values from another {@link Vec2} into `this`.
-   *
-   * @param a the source vector
-   * @returns `this`
-   */
-  copy(t2) {
-    return this.set(t2), this;
-  }
-  // Instead of zero(), use a.fill(0) for instances;
-  /**
-   * Adds a {@link Vec2} to `this`.
-   * Equivalent to `Vec2.add(this, this, b);`
-   *
-   * @param b - The vector to add to `this`
-   * @returns `this`
-   */
-  add(t2) {
-    return this[0] += t2[0], this[1] += t2[1], this;
-  }
-  /**
-   * Subtracts a {@link Vec2} from `this`.
-   * Equivalent to `Vec2.subtract(this, this, b);`
-   *
-   * @param b - The vector to subtract from `this`
-   * @returns `this`
-   */
-  subtract(t2) {
-    return this[0] -= t2[0], this[1] -= t2[1], this;
-  }
-  /**
-   * Alias for {@link Vec2.subtract}
-   */
-  sub(t2) {
-    return this;
-  }
-  /**
-   * Multiplies `this` by a {@link Vec2}.
-   * Equivalent to `Vec2.multiply(this, this, b);`
-   *
-   * @param b - The vector to multiply `this` by
-   * @returns `this`
-   */
-  multiply(t2) {
-    return this[0] *= t2[0], this[1] *= t2[1], this;
-  }
-  /**
-   * Alias for {@link Vec2.multiply}
-   */
-  mul(t2) {
-    return this;
-  }
-  /**
-   * Divides `this` by a {@link Vec2}.
-   * Equivalent to `Vec2.divide(this, this, b);`
-   *
-   * @param b - The vector to divide `this` by
-   * @returns {Vec2} `this`
-   */
-  divide(t2) {
-    return this[0] /= t2[0], this[1] /= t2[1], this;
-  }
-  /**
-   * Alias for {@link Vec2.divide}
-   */
-  div(t2) {
-    return this;
-  }
-  /**
-   * Scales `this` by a scalar number.
-   * Equivalent to `Vec2.scale(this, this, b);`
-   *
-   * @param b - Amount to scale `this` by
-   * @returns `this`
-   */
-  scale(t2) {
-    return this[0] *= t2, this[1] *= t2, this;
-  }
-  /**
-   * Calculates `this` scaled by a scalar value then adds the result to `this`.
-   * Equivalent to `Vec2.scaleAndAdd(this, this, b, scale);`
-   *
-   * @param b - The vector to add to `this`
-   * @param scale - The amount to scale `b` by before adding
-   * @returns `this`
-   */
-  scaleAndAdd(t2, e2) {
-    return this[0] += t2[0] * e2, this[1] += t2[1] * e2, this;
-  }
-  /**
-   * Calculates the euclidian distance between another {@link Vec2} and `this`.
-   * Equivalent to `Vec2.distance(this, b);`
-   *
-   * @param b - The vector to calculate the distance to
-   * @returns Distance between `this` and `b`
-   */
-  distance(t2) {
-    return _A.distance(this, t2);
-  }
-  /**
-   * Alias for {@link Vec2.distance}
-   */
-  dist(t2) {
-    return 0;
-  }
-  /**
-   * Calculates the squared euclidian distance between another {@link Vec2} and `this`.
-   * Equivalent to `Vec2.squaredDistance(this, b);`
-   *
-   * @param b The vector to calculate the squared distance to
-   * @returns Squared distance between `this` and `b`
-   */
-  squaredDistance(t2) {
-    return _A.squaredDistance(this, t2);
-  }
-  /**
-   * Alias for {@link Vec2.squaredDistance}
-   */
-  sqrDist(t2) {
-    return 0;
-  }
-  /**
-   * Negates the components of `this`.
-   * Equivalent to `Vec2.negate(this, this);`
-   *
-   * @returns `this`
-   */
-  negate() {
-    return this[0] *= -1, this[1] *= -1, this;
-  }
-  /**
-   * Inverts the components of `this`.
-   * Equivalent to `Vec2.inverse(this, this);`
-   *
-   * @returns `this`
-   */
-  invert() {
-    return this[0] = 1 / this[0], this[1] = 1 / this[1], this;
-  }
-  /**
-   * Sets each component of `this` to it's absolute value.
-   * Equivalent to `Vec2.abs(this, this);`
-   *
-   * @returns `this`
-   */
-  abs() {
-    return this[0] = Math.abs(this[0]), this[1] = Math.abs(this[1]), this;
-  }
-  /**
-   * Calculates the dot product of this and another {@link Vec2}.
-   * Equivalent to `Vec2.dot(this, b);`
-   *
-   * @param b - The second operand
-   * @returns Dot product of `this` and `b`
-   */
-  dot(t2) {
-    return this[0] * t2[0] + this[1] * t2[1];
-  }
-  /**
-   * Normalize `this`.
-   * Equivalent to `Vec2.normalize(this, this);`
-   *
-   * @returns `this`
-   */
-  normalize() {
-    return _A.normalize(this, this);
-  }
-  //================
-  // Static methods
-  //================
-  /**
-   * Creates a new, empty {@link Vec2}
-   * @category Static
-   *
-   * @returns A new 2D vector
-   */
-  static create() {
-    return new _A();
-  }
-  /**
-   * Creates a new {@link Vec2} initialized with values from an existing vector
-   * @category Static
-   *
-   * @param a - Vector to clone
-   * @returns A new 2D vector
-   */
-  static clone(t2) {
-    return new _A(t2);
-  }
-  /**
-   * Creates a new {@link Vec2} initialized with the given values
-   * @category Static
-   *
-   * @param x - X component
-   * @param y - Y component
-   * @returns A new 2D vector
-   */
-  static fromValues(t2, e2) {
-    return new _A(t2, e2);
-  }
-  /**
-   * Copy the values from one {@link Vec2} to another
-   * @category Static
-   *
-   * @param out - the receiving vector
-   * @param a - The source vector
-   * @returns `out`
-   */
-  static copy(t2, e2) {
-    return t2[0] = e2[0], t2[1] = e2[1], t2;
-  }
-  /**
-   * Set the components of a {@link Vec2} to the given values
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param x - X component
-   * @param y - Y component
-   * @returns `out`
-   */
-  static set(t2, e2, s2) {
-    return t2[0] = e2, t2[1] = s2, t2;
-  }
-  /**
-   * Adds two {@link Vec2}s
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns `out`
-   */
-  static add(t2, e2, s2) {
-    return t2[0] = e2[0] + s2[0], t2[1] = e2[1] + s2[1], t2;
-  }
-  /**
-   * Subtracts vector b from vector a
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns `out`
-   */
-  static subtract(t2, e2, s2) {
-    return t2[0] = e2[0] - s2[0], t2[1] = e2[1] - s2[1], t2;
-  }
-  /**
-   * Alias for {@link Vec2.subtract}
-   * @category Static
-   */
-  static sub(t2, e2, s2) {
-    return [0, 0];
-  }
-  /**
-   * Multiplies two {@link Vec2}s
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns `out`
-   */
-  static multiply(t2, e2, s2) {
-    return t2[0] = e2[0] * s2[0], t2[1] = e2[1] * s2[1], t2;
-  }
-  /**
-   * Alias for {@link Vec2.multiply}
-   * @category Static
-   */
-  static mul(t2, e2, s2) {
-    return [0, 0];
-  }
-  /**
-   * Divides two {@link Vec2}s
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns `out`
-   */
-  static divide(t2, e2, s2) {
-    return t2[0] = e2[0] / s2[0], t2[1] = e2[1] / s2[1], t2;
-  }
-  /**
-   * Alias for {@link Vec2.divide}
-   * @category Static
-   */
-  static div(t2, e2, s2) {
-    return [0, 0];
-  }
-  /**
-   * Math.ceil the components of a {@link Vec2}
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - Vector to ceil
-   * @returns `out`
-   */
-  static ceil(t2, e2) {
-    return t2[0] = Math.ceil(e2[0]), t2[1] = Math.ceil(e2[1]), t2;
-  }
-  /**
-   * Math.floor the components of a {@link Vec2}
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - Vector to floor
-   * @returns `out`
-   */
-  static floor(t2, e2) {
-    return t2[0] = Math.floor(e2[0]), t2[1] = Math.floor(e2[1]), t2;
-  }
-  /**
-   * Returns the minimum of two {@link Vec2}s
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns `out`
-   */
-  static min(t2, e2, s2) {
-    return t2[0] = Math.min(e2[0], s2[0]), t2[1] = Math.min(e2[1], s2[1]), t2;
-  }
-  /**
-   * Returns the maximum of two {@link Vec2}s
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns `out`
-   */
-  static max(t2, e2, s2) {
-    return t2[0] = Math.max(e2[0], s2[0]), t2[1] = Math.max(e2[1], s2[1]), t2;
-  }
-  /**
-   * Math.round the components of a {@link Vec2}
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - Vector to round
-   * @returns `out`
-   */
-  static round(t2, e2) {
-    return t2[0] = Math.round(e2[0]), t2[1] = Math.round(e2[1]), t2;
-  }
-  /**
-   * Scales a {@link Vec2} by a scalar number
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The vector to scale
-   * @param b - Amount to scale the vector by
-   * @returns `out`
-   */
-  static scale(t2, e2, s2) {
-    return t2[0] = e2[0] * s2, t2[1] = e2[1] * s2, t2;
-  }
-  /**
-   * Adds two Vec2's after scaling the second operand by a scalar value
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The first operand
-   * @param b - The second operand
-   * @param scale - The amount to scale b by before adding
-   * @returns `out`
-   */
-  static scaleAndAdd(t2, e2, s2, i2) {
-    return t2[0] = e2[0] + s2[0] * i2, t2[1] = e2[1] + s2[1] * i2, t2;
-  }
-  /**
-   * Calculates the euclidian distance between two {@link Vec2}s
-   * @category Static
-   *
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns distance between `a` and `b`
-   */
-  static distance(t2, e2) {
-    return Math.hypot(e2[0] - t2[0], e2[1] - t2[1]);
-  }
-  /**
-   * Alias for {@link Vec2.distance}
-   * @category Static
-   */
-  static dist(t2, e2) {
-    return 0;
-  }
-  /**
-   * Calculates the squared euclidian distance between two {@link Vec2}s
-   * @category Static
-   *
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns Squared distance between `a` and `b`
-   */
-  static squaredDistance(t2, e2) {
-    const s2 = e2[0] - t2[0], i2 = e2[1] - t2[1];
-    return s2 * s2 + i2 * i2;
-  }
-  /**
-   * Alias for {@link Vec2.distance}
-   * @category Static
-   */
-  static sqrDist(t2, e2) {
-    return 0;
-  }
-  /**
-   * Calculates the magnitude (length) of a {@link Vec2}
-   * @category Static
-   *
-   * @param a - Vector to calculate magnitude of
-   * @returns Magnitude of a
-   */
-  static magnitude(t2) {
-    let e2 = t2[0], s2 = t2[1];
-    return Math.sqrt(e2 * e2 + s2 * s2);
-  }
-  /**
-   * Alias for {@link Vec2.magnitude}
-   * @category Static
-   */
-  static mag(t2) {
-    return 0;
-  }
-  /**
-   * Alias for {@link Vec2.magnitude}
-   * @category Static
-   * @deprecated Use {@link Vec2.magnitude} to avoid conflicts with builtin `length` methods/attribs
-   *
-   * @param a - vector to calculate length of
-   * @returns length of a
-   */
-  // @ts-ignore: Length conflicts with Function.length
-  static length(t2) {
-    return 0;
-  }
-  /**
-   * Alias for {@link Vec2.magnitude}
-   * @category Static
-   * @deprecated Use {@link Vec2.mag}
-   */
-  static len(t2) {
-    return 0;
-  }
-  /**
-   * Calculates the squared length of a {@link Vec2}
-   * @category Static
-   *
-   * @param a - Vector to calculate squared length of
-   * @returns Squared length of a
-   */
-  static squaredLength(t2) {
-    const e2 = t2[0], s2 = t2[1];
-    return e2 * e2 + s2 * s2;
-  }
-  /**
-   * Alias for {@link Vec2.squaredLength}
-   */
-  static sqrLen(t2, e2) {
-    return 0;
-  }
-  /**
-   * Negates the components of a {@link Vec2}
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - Vector to negate
-   * @returns `out`
-   */
-  static negate(t2, e2) {
-    return t2[0] = -e2[0], t2[1] = -e2[1], t2;
-  }
-  /**
-   * Returns the inverse of the components of a {@link Vec2}
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - Vector to invert
-   * @returns `out`
-   */
-  static inverse(t2, e2) {
-    return t2[0] = 1 / e2[0], t2[1] = 1 / e2[1], t2;
-  }
-  /**
-   * Returns the absolute value of the components of a {@link Vec2}
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - Vector to compute the absolute values of
-   * @returns `out`
-   */
-  static abs(t2, e2) {
-    return t2[0] = Math.abs(e2[0]), t2[1] = Math.abs(e2[1]), t2;
-  }
-  /**
-   * Normalize a {@link Vec2}
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - Vector to normalize
-   * @returns `out`
-   */
-  static normalize(t2, e2) {
-    const s2 = e2[0], i2 = e2[1];
-    let n2 = s2 * s2 + i2 * i2;
-    return n2 > 0 && (n2 = 1 / Math.sqrt(n2)), t2[0] = e2[0] * n2, t2[1] = e2[1] * n2, t2;
-  }
-  /**
-   * Calculates the dot product of two {@link Vec2}s
-   * @category Static
-   *
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns Dot product of `a` and `b`
-   */
-  static dot(t2, e2) {
-    return t2[0] * e2[0] + t2[1] * e2[1];
-  }
-  /**
-   * Computes the cross product of two {@link Vec2}s
-   * Note that the cross product must by definition produce a 3D vector.
-   * For this reason there is also not instance equivalent for this function.
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns `out`
-   */
-  static cross(t2, e2, s2) {
-    const i2 = e2[0] * s2[1] - e2[1] * s2[0];
-    return t2[0] = t2[1] = 0, t2[2] = i2, t2;
-  }
-  /**
-   * Performs a linear interpolation between two {@link Vec2}s
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @param a - The first operand
-   * @param b - The second operand
-   * @param t - Interpolation amount, in the range [0-1], between the two inputs
-   * @returns `out`
-   */
-  static lerp(t2, e2, s2, i2) {
-    const n2 = e2[0], r2 = e2[1];
-    return t2[0] = n2 + i2 * (s2[0] - n2), t2[1] = r2 + i2 * (s2[1] - r2), t2;
-  }
-  /**
-   * Transforms the {@link Vec2} with a {@link Mat2}
-   *
-   * @param out - The receiving vector
-   * @param a - The vector to transform
-   * @param m - Matrix to transform with
-   * @returns `out`
-   */
-  static transformMat2(t2, e2, s2) {
-    const i2 = e2[0], n2 = e2[1];
-    return t2[0] = s2[0] * i2 + s2[2] * n2, t2[1] = s2[1] * i2 + s2[3] * n2, t2;
-  }
-  /**
-   * Transforms the {@link Vec2} with a {@link Mat2d}
-   *
-   * @param out - The receiving vector
-   * @param a - The vector to transform
-   * @param m - Matrix to transform with
-   * @returns `out`
-   */
-  static transformMat2d(t2, e2, s2) {
-    const i2 = e2[0], n2 = e2[1];
-    return t2[0] = s2[0] * i2 + s2[2] * n2 + s2[4], t2[1] = s2[1] * i2 + s2[3] * n2 + s2[5], t2;
-  }
-  /**
-   * Transforms the {@link Vec2} with a {@link Mat3}
-   * 3rd vector component is implicitly '1'
-   *
-   * @param out - The receiving vector
-   * @param a - The vector to transform
-   * @param m - Matrix to transform with
-   * @returns `out`
-   */
-  static transformMat3(t2, e2, s2) {
-    const i2 = e2[0], n2 = e2[1];
-    return t2[0] = s2[0] * i2 + s2[3] * n2 + s2[6], t2[1] = s2[1] * i2 + s2[4] * n2 + s2[7], t2;
-  }
-  /**
-   * Transforms the {@link Vec2} with a {@link Mat4}
-   * 3rd vector component is implicitly '0'
-   * 4th vector component is implicitly '1'
-   *
-   * @param out - The receiving vector
-   * @param a - The vector to transform
-   * @param m - Matrix to transform with
-   * @returns `out`
-   */
-  static transformMat4(t2, e2, s2) {
-    const i2 = e2[0], n2 = e2[1];
-    return t2[0] = s2[0] * i2 + s2[4] * n2 + s2[12], t2[1] = s2[1] * i2 + s2[5] * n2 + s2[13], t2;
-  }
-  /**
-   * Rotate a 2D vector
-   * @category Static
-   *
-   * @param out - The receiving {@link Vec2}
-   * @param a - The {@link Vec2} point to rotate
-   * @param b - The origin of the rotation
-   * @param rad - The angle of rotation in radians
-   * @returns `out`
-   */
-  static rotate(t2, e2, s2, i2) {
-    const n2 = e2[0] - s2[0], r2 = e2[1] - s2[1], a2 = Math.sin(i2), o2 = Math.cos(i2);
-    return t2[0] = n2 * o2 - r2 * a2 + s2[0], t2[1] = n2 * a2 + r2 * o2 + s2[1], t2;
-  }
-  /**
-   * Get the angle between two 2D vectors
-   * @category Static
-   *
-   * @param a - The first operand
-   * @param b - The second operand
-   * @returns The angle in radians
-   */
-  static angle(t2, e2) {
-    const s2 = t2[0], i2 = t2[1], n2 = e2[0], r2 = e2[1], a2 = Math.sqrt(s2 * s2 + i2 * i2) * Math.sqrt(n2 * n2 + r2 * r2), o2 = a2 && (s2 * n2 + i2 * r2) / a2;
-    return Math.acos(Math.min(Math.max(o2, -1), 1));
-  }
-  /**
-   * Set the components of a {@link Vec2} to zero
-   * @category Static
-   *
-   * @param out - The receiving vector
-   * @returns `out`
-   */
-  static zero(t2) {
-    return t2[0] = 0, t2[1] = 0, t2;
-  }
-  /**
-   * Returns whether or not the vectors have exactly the same elements in the same position (when compared with ===)
-   * @category Static
-   *
-   * @param a - The first vector.
-   * @param b - The second vector.
-   * @returns `true` if the vectors components are ===, `false` otherwise.
-   */
-  static exactEquals(t2, e2) {
-    return t2[0] === e2[0] && t2[1] === e2[1];
-  }
-  /**
-   * Returns whether or not the vectors have approximately the same elements in the same position.
-   * @category Static
-   *
-   * @param a - The first vector.
-   * @param b - The second vector.
-   * @returns `true` if the vectors are approximately equal, `false` otherwise.
-   */
-  static equals(t2, e2) {
-    const s2 = t2[0], i2 = t2[1], n2 = e2[0], r2 = e2[1];
-    return Math.abs(s2 - n2) <= O * Math.max(1, Math.abs(s2), Math.abs(n2)) && Math.abs(i2 - r2) <= O * Math.max(1, Math.abs(i2), Math.abs(r2));
-  }
-  /**
-   * Returns a string representation of a vector
-   * @category Static
-   *
-   * @param a - Vector to represent as a string
-   * @returns String representation of the vector
-   */
-  static str(t2) {
-    return `Vec2(${t2.join(", ")})`;
-  }
-};
-/**
- * The number of bytes in a {@link Vec2}.
- */
-__publicField(_A, "BYTE_LENGTH", 2 * Float32Array.BYTES_PER_ELEMENT);
-let A = _A;
-A.prototype.sub = A.prototype.subtract;
-A.prototype.mul = A.prototype.multiply;
-A.prototype.div = A.prototype.divide;
-A.prototype.dist = A.prototype.distance;
-A.prototype.sqrDist = A.prototype.squaredDistance;
-A.sub = A.subtract;
-A.mul = A.multiply;
-A.div = A.divide;
-A.dist = A.distance;
-A.sqrDist = A.squaredDistance;
-A.sqrLen = A.squaredLength;
-A.mag = A.magnitude;
-A.length = A.magnitude;
-A.len = A.magnitude;
-function Me(d2) {
-  return new Promise((t2, e2) => {
-    const s2 = document.createElement("img");
-    s2.onload = () => t2(s2), s2.onerror = e2, s2.src = d2, s2.crossOrigin = "anonymous", s2.loading = "eager";
   });
 }
-function be(d2) {
-  return new Promise((t2, e2) => {
-    const s2 = document.createElement("video");
-    let i2 = false, n2 = false, r2 = false;
-    s2.addEventListener(
-      "playing",
-      () => {
-        i2 = true, a2();
-      },
-      true
-    ), s2.addEventListener(
-      "timeupdate",
-      () => {
-        n2 = true, a2();
-      },
-      true
-    ), s2.addEventListener(
-      "error",
-      (o2) => {
-        r2 = true, e2(o2);
-      },
-      true
-    );
-    function a2() {
-      i2 && n2 && !r2 && t2(s2);
+function blurImage(imageData, radius, quality) {
+  const pixels = imageData.data;
+  const width = imageData.width;
+  const height = imageData.height;
+  let rsum;
+  let gsum;
+  let bsum;
+  let asum;
+  let x2;
+  let y2;
+  let i2;
+  let p2;
+  let p1;
+  let p22;
+  let yp;
+  let yi;
+  let yw;
+  const wm = width - 1;
+  const hm = height - 1;
+  const rad1x = radius + 1;
+  const divx = radius + rad1x;
+  const rad1y = radius + 1;
+  const div2 = 1 / (divx * (radius + rad1y));
+  const r2 = [];
+  const g2 = [];
+  const b2 = [];
+  const a2 = [];
+  const vmin = [];
+  const vmax = [];
+  while (quality-- > 0) {
+    yw = yi = 0;
+    for (y2 = 0; y2 < height; y2++) {
+      rsum = pixels[yw] * rad1x;
+      gsum = pixels[yw + 1] * rad1x;
+      bsum = pixels[yw + 2] * rad1x;
+      asum = pixels[yw + 3] * rad1x;
+      for (i2 = 1; i2 <= radius; i2++) {
+        p2 = yw + ((i2 > wm ? wm : i2) << 2);
+        rsum += pixels[p2++];
+        gsum += pixels[p2++];
+        bsum += pixels[p2++];
+        asum += pixels[p2];
+      }
+      for (x2 = 0; x2 < width; x2++) {
+        r2[yi] = rsum;
+        g2[yi] = gsum;
+        b2[yi] = bsum;
+        a2[yi] = asum;
+        if (y2 === 0) {
+          vmin[x2] = Math.min(x2 + rad1x, wm) << 2;
+          vmax[x2] = Math.max(x2 - radius, 0) << 2;
+        }
+        p1 = yw + vmin[x2];
+        p22 = yw + vmax[x2];
+        rsum += pixels[p1++] - pixels[p22++];
+        gsum += pixels[p1++] - pixels[p22++];
+        bsum += pixels[p1++] - pixels[p22++];
+        asum += pixels[p1] - pixels[p22];
+        yi++;
+      }
+      yw += width << 2;
     }
-    s2.src = d2, s2.playsInline = true, s2.crossOrigin = "anonymous", s2.autoplay = true, s2.loop = true, s2.muted = true, s2.play();
-  });
-}
-function ee(d2, t2 = false) {
-  return t2 ? be(d2) : Me(d2);
-}
-function se(d2) {
-  return new Promise((t2, e2) => {
-    (d2 instanceof HTMLImageElement ? d2.complete : d2.readyState >= 3) ? t2(d2) : (d2.onload = () => t2(d2), d2.onerror = e2);
-  });
-}
-function xe(d2, t2, e2) {
-  const s2 = d2.data, i2 = d2.width, n2 = d2.height;
-  let r2, a2, o2, l2, c2, h2, m2, u2, f2, g2, p2, y2, L;
-  const x2 = i2 - 1, M2 = n2 - 1, b2 = t2 + 1, w2 = t2 + b2, T = t2 + 1, v2 = t2 + T, P = 1 / (w2 * v2), z = [], E = [], F = [], _ = [], R = [], k2 = [];
-  for (; e2-- > 0; ) {
-    for (L = y2 = 0, h2 = 0; h2 < n2; h2++) {
-      for (r2 = s2[L] * b2, a2 = s2[L + 1] * b2, o2 = s2[L + 2] * b2, l2 = s2[L + 3] * b2, m2 = 1; m2 <= t2; m2++)
-        u2 = L + ((m2 > x2 ? x2 : m2) << 2), r2 += s2[u2++], a2 += s2[u2++], o2 += s2[u2++], l2 += s2[u2];
-      for (c2 = 0; c2 < i2; c2++)
-        z[y2] = r2, E[y2] = a2, F[y2] = o2, _[y2] = l2, h2 === 0 && (R[c2] = Math.min(c2 + b2, x2) << 2, k2[c2] = Math.max(c2 - t2, 0) << 2), f2 = L + R[c2], g2 = L + k2[c2], r2 += s2[f2++] - s2[g2++], a2 += s2[f2++] - s2[g2++], o2 += s2[f2++] - s2[g2++], l2 += s2[f2] - s2[g2], y2++;
-      L += i2 << 2;
+    for (x2 = 0; x2 < width; x2++) {
+      yp = x2;
+      rsum = r2[yp] * rad1y;
+      gsum = g2[yp] * rad1y;
+      bsum = b2[yp] * rad1y;
+      asum = a2[yp] * rad1y;
+      for (i2 = 1; i2 <= radius; i2++) {
+        yp += i2 > hm ? 0 : width;
+        rsum += r2[yp];
+        gsum += g2[yp];
+        bsum += b2[yp];
+        asum += a2[yp];
+      }
+      yi = x2 << 2;
+      for (y2 = 0; y2 < height; y2++) {
+        pixels[yi] = rsum * div2 + 0.5 | 0;
+        pixels[yi + 1] = gsum * div2 + 0.5 | 0;
+        pixels[yi + 2] = bsum * div2 + 0.5 | 0;
+        pixels[yi + 3] = asum * div2 + 0.5 | 0;
+        if (x2 === 0) {
+          vmin[y2] = Math.min(y2 + rad1y, hm) * width;
+          vmax[y2] = Math.max(y2 - radius, 0) * width;
+        }
+        p1 = x2 + vmin[y2];
+        p22 = x2 + vmax[y2];
+        rsum += r2[p1] - r2[p22];
+        gsum += g2[p1] - g2[p22];
+        bsum += b2[p1] - b2[p22];
+        asum += a2[p1] - a2[p22];
+        yi += width << 2;
+      }
     }
-    for (c2 = 0; c2 < i2; c2++) {
-      for (p2 = c2, r2 = z[p2] * T, a2 = E[p2] * T, o2 = F[p2] * T, l2 = _[p2] * T, m2 = 1; m2 <= t2; m2++)
-        p2 += m2 > M2 ? 0 : i2, r2 += z[p2], a2 += E[p2], o2 += F[p2], l2 += _[p2];
-      for (y2 = c2 << 2, h2 = 0; h2 < n2; h2++)
-        s2[y2] = r2 * P + 0.5 | 0, s2[y2 + 1] = a2 * P + 0.5 | 0, s2[y2 + 2] = o2 * P + 0.5 | 0, s2[y2 + 3] = l2 * P + 0.5 | 0, c2 === 0 && (R[h2] = Math.min(h2 + T, M2) * i2, k2[h2] = Math.max(h2 - t2, 0) * i2), f2 = c2 + R[h2], g2 = c2 + k2[h2], r2 += z[f2] - z[g2], a2 += E[f2] - E[g2], o2 += F[f2] - F[g2], l2 += _[f2] - _[g2], y2 += i2 << 2;
-    }
   }
 }
-function Te(d2, t2) {
-  const e2 = d2.data;
-  for (let s2 = 0; s2 < e2.length; s2 += 4) {
-    const i2 = e2[s2], n2 = e2[s2 + 1], r2 = e2[s2 + 2], a2 = e2[s2 + 3], o2 = i2 * 0.3 + n2 * 0.59 + r2 * 0.11;
-    e2[s2] = o2 * (1 - t2) + i2 * t2, e2[s2 + 1] = o2 * (1 - t2) + n2 * t2, e2[s2 + 2] = o2 * (1 - t2) + r2 * t2, e2[s2 + 3] = a2;
-  }
+function clamp(x2, min2, max2) {
+  return Math.min(Math.max(x2, min2), max2);
 }
-function we(d2, t2) {
-  const e2 = d2.data;
-  for (let s2 = 0; s2 < e2.length; s2 += 4) {
-    const i2 = e2[s2], n2 = e2[s2 + 1], r2 = e2[s2 + 2], a2 = e2[s2 + 3];
-    e2[s2] = i2 * t2, e2[s2 + 1] = n2 * t2, e2[s2 + 2] = r2 * t2, e2[s2 + 3] = a2;
-  }
+function clamp01(x2) {
+  return clamp(x2, 0, 1);
 }
-function $t(d2, t2) {
-  const e2 = d2.data;
-  for (let s2 = 0; s2 < e2.length; s2 += 4) {
-    const i2 = e2[s2], n2 = e2[s2 + 1], r2 = e2[s2 + 2], a2 = e2[s2 + 3];
-    e2[s2] = (i2 - 128) * t2 + 128, e2[s2 + 1] = (n2 - 128) * t2 + 128, e2[s2 + 2] = (r2 - 128) * t2 + 128, e2[s2 + 3] = a2;
-  }
+function clampPositive(x2) {
+  return Math.max(0, x2);
 }
-const S = (d2, t2, e2, s2, i2 = 0, n2 = 0, r2 = 1, a2 = 1) => Object.freeze({ cx: d2, cy: t2, x: e2, y: s2, ur: i2, vr: n2, up: r2, vp: a2 }), ct = (d2, t2, e2) => Object.freeze({ width: d2, height: t2, conf: e2 }), qt = [
-  // TODO: 竖屏推荐
-  ct(5, 5, [
-    S(0, 0, -1, -1, 0, 0, 1, 1),
-    S(1, 0, -0.5, -1, 0, 0, 1, 1),
-    S(2, 0, 0, -1, 0, 0, 1, 1),
-    S(3, 0, 0.5, -1, 0, 0, 1, 1),
-    S(4, 0, 1, -1, 0, 0, 1, 1),
-    S(0, 1, -1, -0.5, 0, 0, 1, 1),
-    S(1, 1, -0.5, -0.5, 0, 0, 1, 1),
-    S(2, 1, -0.0052029684413368305, -0.6131420587090777, 0, 0, 1, 1),
-    S(3, 1, 0.5884227308309977, -0.3990805107556692, 0, 0, 1, 1),
-    S(4, 1, 1, -0.5, 0, 0, 1, 1),
-    S(0, 2, -1, 0, 0, 0, 1, 1),
-    S(1, 2, -0.4210024670505933, -0.11895058380429502, 0, 0, 1, 1),
-    S(2, 2, -0.1019613423315412, -0.023812118047224606, 0, -47, 0.629, 0.849),
-    S(3, 2, 0.40275125660925437, -0.06345314544600389, 0, 0, 1, 1),
-    S(4, 2, 1, 0, 0, 0, 1, 1),
-    S(0, 3, -1, 0.5, 0, 0, 1, 1),
-    S(1, 3, 0.06801958477287173, 0.5205913248960121, -31, -45, 1, 1),
-    S(2, 3, 0.21446469120128908, 0.29331610114301043, 6, -56, 0.566, 1.321),
-    S(3, 3, 0.5, 0.5, 0, 0, 1, 1),
-    S(4, 3, 1, 0.5, 0, 0, 1, 1),
-    S(0, 4, -1, 1, 0, 0, 1, 1),
-    S(1, 4, -0.31378372841550195, 1, 0, 0, 1, 1),
-    S(2, 4, 0.26153633255328046, 1, 0, 0, 1, 1),
-    S(3, 4, 0.5, 1, 0, 0, 1, 1),
-    S(4, 4, 1, 1, 0, 0, 1, 1)
+const p = (cx, cy, x2, y2, ur = 0, vr = 0, up = 1, vp = 1) => Object.freeze({
+  cx,
+  cy,
+  x: x2,
+  y: y2,
+  ur,
+  vr,
+  up,
+  vp
+});
+const preset = (width, height, conf) => Object.freeze({
+  width,
+  height,
+  conf
+});
+const CONTROL_POINT_PRESETS = [
+  preset(5, 5, [
+    p(0, 0, -1, -1, 0, 0, 1, 1),
+    p(1, 0, -0.5, -1, 0, 0, 1, 1),
+    p(2, 0, 0, -1, 0, 0, 1, 1),
+    p(3, 0, 0.5, -1, 0, 0, 1, 1),
+    p(4, 0, 1, -1, 0, 0, 1, 1),
+    p(0, 1, -1, -0.5, 0, 0, 1, 1),
+    p(1, 1, -0.5, -0.5, 0, 0, 1, 1),
+    p(2, 1, -0.0052029684413368305, -0.6131420587090777, 0, 0, 1, 1),
+    p(3, 1, 0.5884227308309977, -0.3990805107556692, 0, 0, 1, 1),
+    p(4, 1, 1, -0.5, 0, 0, 1, 1),
+    p(0, 2, -1, 0, 0, 0, 1, 1),
+    p(1, 2, -0.4210024670505933, -0.11895058380429502, 0, 0, 1, 1),
+    p(2, 2, -0.1019613423315412, -0.023812118047224606, 0, -47, 0.629, 0.849),
+    p(3, 2, 0.40275125660925437, -0.06345314544600389, 0, 0, 1, 1),
+    p(4, 2, 1, 0, 0, 0, 1, 1),
+    p(0, 3, -1, 0.5, 0, 0, 1, 1),
+    p(1, 3, 0.06801958477287173, 0.5205913248960121, -31, -45, 1, 1),
+    p(2, 3, 0.21446469120128908, 0.29331610114301043, 6, -56, 0.566, 1.321),
+    p(3, 3, 0.5, 0.5, 0, 0, 1, 1),
+    p(4, 3, 1, 0.5, 0, 0, 1, 1),
+    p(0, 4, -1, 1, 0, 0, 1, 1),
+    p(1, 4, -0.31378372841550195, 1, 0, 0, 1, 1),
+    p(2, 4, 0.26153633255328046, 1, 0, 0, 1, 1),
+    p(3, 4, 0.5, 1, 0, 0, 1, 1),
+    p(4, 4, 1, 1, 0, 0, 1, 1)
   ]),
-  // TODO: 横屏推荐
-  ct(4, 4, [
-    S(0, 0, -1, -1, 0, 0, 1, 1),
-    S(1, 0, -0.33333333333333337, -1, 0, 0, 1, 1),
-    S(2, 0, 0.33333333333333326, -1, 0, 0, 1, 1),
-    S(3, 0, 1, -1, 0, 0, 1, 1),
-    S(0, 1, -1, -0.04495399932657351, 0, 0, 1, 1),
-    S(1, 1, -0.24056117520129328, -0.22465999020104, 0, 0, 1, 1),
-    S(2, 1, 0.334758885767489, -0.00531297192779423, 0, 0, 1, 1),
-    S(3, 1, 0.9989920470678106, -0.3382976020775408, 8, 0, 0.566, 1.792),
-    S(0, 2, -1, 0.33333333333333326, 0, 0, 1, 1),
-    S(1, 2, -0.3425497314639411, -27501607956947893e-21, 0, 0, 1, 1),
-    S(2, 2, 0.3321437945812673, 0.1981776353859399, 0, 0, 1, 1),
-    S(3, 2, 1, 0.0766118180296832, 0, 0, 1, 1),
-    S(0, 3, -1, 1, 0, 0, 1, 1),
-    S(1, 3, -0.33333333333333337, 1, 0, 0, 1, 1),
-    S(2, 3, 0.33333333333333326, 1, 0, 0, 1, 1),
-    S(3, 3, 1, 1, 0, 0, 1, 1)
+  preset(4, 4, [
+    p(0, 0, -1, -1, 0, 0, 1, 1),
+    p(1, 0, -0.33333333333333337, -1, 0, 0, 1, 1),
+    p(2, 0, 0.33333333333333326, -1, 0, 0, 1, 1),
+    p(3, 0, 1, -1, 0, 0, 1, 1),
+    p(0, 1, -1, -0.04495399932657351, 0, 0, 1, 1),
+    p(1, 1, -0.24056117520129328, -0.22465999020104, 0, 0, 1, 1),
+    p(2, 1, 0.334758885767489, -0.00531297192779423, 0, 0, 1, 1),
+    p(3, 1, 0.9989920470678106, -0.3382976020775408, 8, 0, 0.566, 1.792),
+    p(0, 2, -1, 0.33333333333333326, 0, 0, 1, 1),
+    p(1, 2, -0.3425497314639411, -27501607956947893e-21, 0, 0, 1, 1),
+    p(2, 2, 0.3321437945812673, 0.1981776353859399, 0, 0, 1, 1),
+    p(3, 2, 1, 0.0766118180296832, 0, 0, 1, 1),
+    p(0, 3, -1, 1, 0, 0, 1, 1),
+    p(1, 3, -0.33333333333333337, 1, 0, 0, 1, 1),
+    p(2, 3, 0.33333333333333326, 1, 0, 0, 1, 1),
+    p(3, 3, 1, 1, 0, 0, 1, 1)
   ]),
-  ct(4, 4, [
-    S(0, 0, -1, -1, 0, 0, 1, 2.075),
-    S(1, 0, -0.33333333333333337, -1, 0, 0, 1, 1),
-    S(2, 0, 0.33333333333333326, -1, 0, 0, 1, 1),
-    S(3, 0, 1, -1, 0, 0, 1, 1),
-    S(0, 1, -1, -0.4545779491139603, 0, 0, 1, 1),
-    S(1, 1, -0.33333333333333337, -0.33333333333333337, 0, 0, 1, 1),
-    S(2, 1, 0.0889403142626457, -0.6025711180694033, -32, 45, 1, 1),
-    S(3, 1, 1, -0.33333333333333337, 0, 0, 1, 1),
-    S(0, 2, -1, -0.07402408608567845, 1, 0, 1, 0.094),
-    S(1, 2, -0.2719422694359541, 0.09775369930903222, 25, -18, 1.321, 0),
-    S(2, 2, 0.19877414408395877, 0.4307383294587789, 48, -40, 0.755, 0.975),
-    S(3, 2, 1, 0.33333333333333326, -37, 0, 1, 1),
-    S(0, 3, -1, 1, 0, 0, 1, 1),
-    S(1, 3, -0.33333333333333337, 1, 0, 0, 1, 1),
-    S(2, 3, 0.5125850864305672, 1, -20, -18, 0, 1.604),
-    S(3, 3, 1, 1, 0, 0, 1, 1)
+  preset(4, 4, [
+    p(0, 0, -1, -1, 0, 0, 1, 2.075),
+    p(1, 0, -0.33333333333333337, -1, 0, 0, 1, 1),
+    p(2, 0, 0.33333333333333326, -1, 0, 0, 1, 1),
+    p(3, 0, 1, -1, 0, 0, 1, 1),
+    p(0, 1, -1, -0.4545779491139603, 0, 0, 1, 1),
+    p(1, 1, -0.33333333333333337, -0.33333333333333337, 0, 0, 1, 1),
+    p(2, 1, 0.0889403142626457, -0.6025711180694033, -32, 45, 1, 1),
+    p(3, 1, 1, -0.33333333333333337, 0, 0, 1, 1),
+    p(0, 2, -1, -0.07402408608567845, 1, 0, 1, 0.094),
+    p(1, 2, -0.2719422694359541, 0.09775369930903222, 25, -18, 1.321, 0),
+    p(2, 2, 0.19877414408395877, 0.4307383294587789, 48, -40, 0.755, 0.975),
+    p(3, 2, 1, 0.33333333333333326, -37, 0, 1, 1),
+    p(0, 3, -1, 1, 0, 0, 1, 1),
+    p(1, 3, -0.33333333333333337, 1, 0, 0, 1, 1),
+    p(2, 3, 0.5125850864305672, 1, -20, -18, 0, 1.604),
+    p(3, 3, 1, 1, 0, 0, 1, 1)
   ]),
-  ct(5, 5, [
-    S(0, 0, -1, -1, 0, 0, 1, 1),
-    S(1, 0, -0.4501953125, -1, 0, 55, 1, 2.075),
-    S(2, 0, 0.1953125, -1, 0, 0, 1, 1),
-    S(3, 0, 0.4580078125, -1, 0, -25, 1, 1),
-    S(4, 0, 1, -1, 0, 0, 1, 1),
-    S(0, 1, -1, -0.2514475377525607, -16, 0, 2.327, 0.943),
-    S(1, 1, -0.55859375, -0.6609325945787148, 47, 0, 2.358, 0.377),
-    S(2, 1, 0.232421875, -0.5244375756366635, -66, -25, 1.855, 1.164),
-    S(3, 1, 0.685546875, -0.3753706470552125, 0, 0, 1, 1),
-    S(4, 1, 1, -0.6699125300354287, 0, 0, 1, 1),
-    S(0, 2, -1, 0.035910396862284255, 0, 0, 1, 1),
-    S(1, 2, -0.4921875, 0.005378616309457018, 90, 23, 1, 1.981),
-    S(2, 2, 0.021484375, -0.1365043639066228, 0, 42, 1, 1),
-    S(3, 2, 0.4765625, 0.05925822904974043, -30, 0, 1.95, 0.44),
-    S(4, 2, 1, 0.251428847823418, 0, 0, 1, 1),
-    S(0, 3, -1, 0.6968336464764276, -68, 0, 1, 0.786),
-    S(1, 3, -0.6904296875, 0.5890744209958608, -68, 0, 1, 1),
-    S(2, 3, 0.1845703125, 0.3879238667654693, 61, 0, 1, 1),
-    S(3, 3, 0.60546875, 0.4633553246018661, -47, -59, 0.849, 1.73),
-    S(4, 3, 1, 0.6214021886400309, -33, 0, 0.377, 1.604),
-    S(0, 4, -1, 1, 0, 0, 1, 1),
-    S(1, 4, -0.5, 1, 0, -73, 1, 1),
-    S(2, 4, -0.3271484375, 1, 0, -24, 0.314, 2.704),
-    S(3, 4, 0.5, 1, 0, 0, 1, 1),
-    S(4, 4, 1, 1, 0, 0, 1, 1)
+  preset(5, 5, [
+    p(0, 0, -1, -1, 0, 0, 1, 1),
+    p(1, 0, -0.4501953125, -1, 0, 55, 1, 2.075),
+    p(2, 0, 0.1953125, -1, 0, 0, 1, 1),
+    p(3, 0, 0.4580078125, -1, 0, -25, 1, 1),
+    p(4, 0, 1, -1, 0, 0, 1, 1),
+    p(0, 1, -1, -0.2514475377525607, -16, 0, 2.327, 0.943),
+    p(1, 1, -0.55859375, -0.6609325945787148, 47, 0, 2.358, 0.377),
+    p(2, 1, 0.232421875, -0.5244375756366635, -66, -25, 1.855, 1.164),
+    p(3, 1, 0.685546875, -0.3753706470552125, 0, 0, 1, 1),
+    p(4, 1, 1, -0.6699125300354287, 0, 0, 1, 1),
+    p(0, 2, -1, 0.035910396862284255, 0, 0, 1, 1),
+    p(1, 2, -0.4921875, 0.005378616309457018, 90, 23, 1, 1.981),
+    p(2, 2, 0.021484375, -0.1365043639066228, 0, 42, 1, 1),
+    p(3, 2, 0.4765625, 0.05925822904974043, -30, 0, 1.95, 0.44),
+    p(4, 2, 1, 0.251428847823418, 0, 0, 1, 1),
+    p(0, 3, -1, 0.6968336464764276, -68, 0, 1, 0.786),
+    p(1, 3, -0.6904296875, 0.5890744209958608, -68, 0, 1, 1),
+    p(2, 3, 0.1845703125, 0.3879238667654693, 61, 0, 1, 1),
+    p(3, 3, 0.60546875, 0.4633553246018661, -47, -59, 0.849, 1.73),
+    p(4, 3, 1, 0.6214021886400309, -33, 0, 0.377, 1.604),
+    p(0, 4, -1, 1, 0, 0, 1, 1),
+    p(1, 4, -0.5, 1, 0, -73, 1, 1),
+    p(2, 4, -0.3271484375, 1, 0, -24, 0.314, 2.704),
+    p(3, 4, 0.5, 1, 0, 0, 1, 1),
+    p(4, 4, 1, 1, 0, 0, 1, 1)
+  ]),
+  preset(5, 5, [
+    p(0, 0, -1, -1),
+    p(1, 0, -0.6393, -1, 0, 0, 1, 2.3884),
+    p(2, 0, 0, -1),
+    p(3, 0, 0.5, -1),
+    p(4, 0, 1, -1),
+    p(0, 1, -1, -0.2301),
+    p(1, 1, -0.6934, -0.331, 0, -0.7188, 1, 1.063),
+    p(2, 1, -82e-4, -0.6814, -0.2583, 0, 1.0964, 1),
+    p(3, 1, 0.5836, -0.531, 0.7029, 0, 1.5466, 1),
+    p(4, 1, 1, -0.6407),
+    p(0, 2, -1, 0.2973, 0, 0, 1.8352, 1),
+    p(1, 2, -0.4082, 0.0602),
+    p(2, 2, -0.1803, -0.3646, -0.2998, 0, 1.1513, 1),
+    p(3, 2, 0.477, -0.1027, 0.8903, -0.1882, 1.0807, 0.8551),
+    p(4, 2, 1, -0.2973),
+    p(0, 3, -1, 0.7628, 0, 0, 2.3868, 1),
+    p(1, 3, -0.2525, 0.4814, -0.8406, -1.6199, 1.4093, 1.2215),
+    p(2, 3, 0.3607, 0.2814, -1.0713, -0.0529, 1.0025, 0.7611),
+    p(3, 3, 0.4885, 0.623, 0, 0.8184, 1, 1.2876),
+    p(4, 3, 1, 0.5),
+    p(0, 4, -1, 1),
+    p(1, 4, -0.4033, 1),
+    p(2, 4, 0.2672, 1),
+    p(3, 4, 0.5967, 1),
+    p(4, 4, 1, 1)
+  ]),
+  preset(5, 5, [
+    p(0, 0, -1, -1),
+    p(1, 0, -0.2197, -1),
+    p(2, 0, 0.0197, -1),
+    p(3, 0, 0.8033, -1),
+    p(4, 0, 1, -1),
+    p(0, 1, -1, -0.5451),
+    p(1, 1, -0.4885, -0.4035, -1.0246, -0.2268, 1.1936, 0.8005),
+    p(2, 1, -0.1213, -0.2867, 0, -0.6981, 1, 0.809),
+    p(3, 1, 0.3246, -0.5628, 0, -1.2188, 1, 1.044),
+    p(4, 1, 1, -0.3292),
+    p(0, 2, -1, 0.1416),
+    p(1, 2, -0.341, -0.0142, 0, -0.4004, 1, 1.1293),
+    p(2, 2, -0.0393, -0.023, 0.2915, -0.373, 1.044, 0.9879),
+    p(3, 2, 0.3148, -0.0673, -0.7853, -0.8962, 1.4709, 1.0247),
+    p(4, 2, 1, 0.1912),
+    p(0, 3, -1, 0.5),
+    p(1, 3, -0.2689, 0.2743, 0.3404, -0.5248, 1.0184, 0.4391),
+    p(2, 3, 0.0721, 0.269, 0.5302, 0.1244, 0.6723, 0.3225),
+    p(3, 3, 0.4148, 0.3894, -0.6977, -0.6783, 0.8094, 0.9247),
+    p(4, 3, 1, 0.446),
+    p(0, 4, -1, 1),
+    p(1, 4, -0.7311, 1),
+    p(2, 4, 0.323, 1),
+    p(3, 4, 0.6393, 1),
+    p(4, 4, 1, 1)
   ])
-], H = (d2, t2) => Math.random() * (t2 - d2) + d2;
-function Se(d2, t2, e2) {
-  return Math.min(Math.max(d2, t2), e2);
+];
+const randomRange = (min2, max2) => Math.random() * (max2 - min2) + min2;
+function smoothstep(edge0, edge1, x2) {
+  const t2 = clamp01((x2 - edge0) / (edge1 - edge0));
+  return t2 * t2 * (3 - 2 * t2);
 }
-function Ee(d2, t2, e2) {
-  const s2 = Se((e2 - d2) / (t2 - d2), 0, 1);
-  return s2 * s2 * (3 - 2 * s2);
-}
-function ve(d2, t2, e2, s2 = 2, i2 = 0.5, n2 = 0.1) {
-  let r2 = [], a2 = i2;
-  for (let c2 = 0; c2 < e2; c2++) {
-    r2[c2] = [];
-    for (let h2 = 0; h2 < t2; h2++)
-      r2[c2][h2] = d2[c2 * t2 + h2];
+function smoothifyControlPoints(conf, w2, h2, iterations = 2, factor = 0.5, factorIterationModifier = 0.1) {
+  let grid = [];
+  let f2 = factor;
+  for (let j2 = 0; j2 < h2; j2++) {
+    grid[j2] = [];
+    for (let i2 = 0; i2 < w2; i2++) grid[j2][i2] = conf[j2 * w2 + i2];
   }
-  const o2 = [
-    [1, 2, 1],
-    [2, 4, 2],
-    [1, 2, 1]
-  ], l2 = 16;
-  for (let c2 = 0; c2 < s2; c2++) {
-    const h2 = [];
-    for (let m2 = 0; m2 < e2; m2++) {
-      h2[m2] = [];
-      for (let u2 = 0; u2 < t2; u2++) {
-        if (u2 === 0 || u2 === t2 - 1 || m2 === 0 || m2 === e2 - 1) {
-          h2[m2][u2] = r2[m2][u2];
+  const kernel = [
+    [
+      1,
+      2,
+      1
+    ],
+    [
+      2,
+      4,
+      2
+    ],
+    [
+      1,
+      2,
+      1
+    ]
+  ];
+  const kernelSum = 16;
+  for (let iter = 0; iter < iterations; iter++) {
+    const newGrid = [];
+    for (let j2 = 0; j2 < h2; j2++) {
+      newGrid[j2] = [];
+      for (let i2 = 0; i2 < w2; i2++) {
+        if (i2 === 0 || i2 === w2 - 1 || j2 === 0 || j2 === h2 - 1) {
+          newGrid[j2][i2] = grid[j2][i2];
           continue;
         }
-        let f2 = 0, g2 = 0, p2 = 0, y2 = 0, L = 0, x2 = 0;
-        for (let $2 = -1; $2 <= 1; $2++)
-          for (let U = -1; U <= 1; U++) {
-            const Y = o2[$2 + 1][U + 1], j2 = r2[m2 + $2][u2 + U];
-            f2 += j2.x * Y, g2 += j2.y * Y, p2 += j2.ur * Y, y2 += j2.vr * Y, L += j2.up * Y, x2 += j2.vp * Y;
-          }
-        const M2 = f2 / l2, b2 = g2 / l2, w2 = p2 / l2, T = y2 / l2, v2 = L / l2, P = x2 / l2, z = r2[m2][u2], E = z.x * (1 - a2) + M2 * a2, F = z.y * (1 - a2) + b2 * a2, _ = z.ur * (1 - a2) + w2 * a2, R = z.vr * (1 - a2) + T * a2, k2 = z.up * (1 - a2) + v2 * a2, B = z.vp * (1 - a2) + P * a2;
-        h2[m2][u2] = S(u2, m2, E, F, _, R, k2, B);
+        let sumX = 0;
+        let sumY = 0;
+        let sumUR = 0;
+        let sumVR = 0;
+        let sumUP = 0;
+        let sumVP = 0;
+        for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+          const weight = kernel[dj + 1][di + 1];
+          const nb = grid[j2 + dj][i2 + di];
+          sumX += nb.x * weight;
+          sumY += nb.y * weight;
+          sumUR += nb.ur * weight;
+          sumVR += nb.vr * weight;
+          sumUP += nb.up * weight;
+          sumVP += nb.vp * weight;
+        }
+        const avgX = sumX / kernelSum;
+        const avgY = sumY / kernelSum;
+        const avgUR = sumUR / kernelSum;
+        const avgVR = sumVR / kernelSum;
+        const avgUP = sumUP / kernelSum;
+        const avgVP = sumVP / kernelSum;
+        const cur = grid[j2][i2];
+        const newX = cur.x * (1 - f2) + avgX * f2;
+        const newY = cur.y * (1 - f2) + avgY * f2;
+        const newUR = cur.ur * (1 - f2) + avgUR * f2;
+        const newVR = cur.vr * (1 - f2) + avgVR * f2;
+        const newUP = cur.up * (1 - f2) + avgUP * f2;
+        const newVP = cur.vp * (1 - f2) + avgVP * f2;
+        newGrid[j2][i2] = p(i2, j2, newX, newY, newUR, newVR, newUP, newVP);
       }
     }
-    r2 = h2, a2 = Math.min(1, Math.max(a2 + n2, 0));
+    grid = newGrid;
+    f2 = clamp01(f2 + factorIterationModifier);
   }
-  for (let c2 = 0; c2 < e2; c2++)
-    for (let h2 = 0; h2 < t2; h2++)
-      d2[c2 * t2 + h2] = r2[c2][h2];
+  for (let j2 = 0; j2 < h2; j2++) for (let i2 = 0; i2 < w2; i2++) conf[j2 * w2 + i2] = grid[j2][i2];
 }
-function pt(d2, t2) {
-  return Pe(Math.sin(d2 * 12.9898 + t2 * 78.233) * 43758.5453);
+function noise(x2, y2) {
+  return fract(Math.sin(x2 * 12.9898 + y2 * 78.233) * 43758.5453);
 }
-function Pe(d2) {
-  return d2 - Math.floor(d2);
+function fract(x2) {
+  return x2 - Math.floor(x2);
 }
-function ze(d2, t2) {
-  const e2 = Math.floor(d2), s2 = Math.floor(t2), i2 = e2 + 1, n2 = s2 + 1, r2 = d2 - e2, a2 = t2 - s2, o2 = r2 * r2 * (3 - 2 * r2), l2 = a2 * a2 * (3 - 2 * a2), c2 = pt(e2, s2), h2 = pt(i2, s2), m2 = pt(e2, n2), u2 = pt(i2, n2), f2 = c2 * (1 - o2) + h2 * o2, g2 = m2 * (1 - o2) + u2 * o2;
-  return f2 * (1 - l2) + g2 * l2;
+function smoothNoise(x2, y2) {
+  const x0 = Math.floor(x2);
+  const y0 = Math.floor(y2);
+  const x1 = x0 + 1;
+  const y1 = y0 + 1;
+  const xf = x2 - x0;
+  const yf = y2 - y0;
+  const u2 = xf * xf * (3 - 2 * xf);
+  const v2 = yf * yf * (3 - 2 * yf);
+  const n00 = noise(x0, y0);
+  const n10 = noise(x1, y0);
+  const n01 = noise(x0, y1);
+  const n11 = noise(x1, y1);
+  const nx0 = n00 * (1 - u2) + n10 * u2;
+  const nx1 = n01 * (1 - u2) + n11 * u2;
+  return nx0 * (1 - v2) + nx1 * v2;
 }
-function Ie(d2, t2, e2, s2 = 1e-3) {
-  const i2 = d2(t2 + s2, e2), n2 = d2(t2 - s2, e2), r2 = d2(t2, e2 + s2), a2 = d2(t2, e2 - s2), o2 = (i2 - n2) / (2 * s2), l2 = (r2 - a2) / (2 * s2), c2 = Math.sqrt(o2 * o2 + l2 * l2) || 1;
-  return [o2 / c2, l2 / c2];
+function computeNoiseGradient(perlinFn, x2, y2, epsilon = 1e-3) {
+  const n1 = perlinFn(x2 + epsilon, y2);
+  const n2 = perlinFn(x2 - epsilon, y2);
+  const n3 = perlinFn(x2, y2 + epsilon);
+  const n4 = perlinFn(x2, y2 - epsilon);
+  const dx = (n1 - n2) / (2 * epsilon);
+  const dy = (n3 - n4) / (2 * epsilon);
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  return [dx / len, dy / len];
 }
-function ke(d2, t2, e2 = H(0.4, 0.6), s2 = H(0.3, 0.6), i2 = 0.8, n2 = Math.floor(H(3, 5)), r2 = H(0.2, 0.3), a2 = H(-0.1, -0.05)) {
-  const o2 = d2, l2 = t2, c2 = [], h2 = 2 / (o2 - 1), m2 = 2 / (l2 - 1);
-  for (let u2 = 0; u2 < l2; u2++)
-    for (let f2 = 0; f2 < o2; f2++) {
-      const g2 = f2 / (o2 - 1) * 2 - 1, p2 = u2 / (l2 - 1) * 2 - 1, y2 = f2 === 0 || f2 === o2 - 1 || u2 === 0 || u2 === l2 - 1, L = y2 ? 0 : H(-e2 * h2, e2 * h2), x2 = y2 ? 0 : H(-e2 * m2, e2 * m2);
-      let M2 = g2 + L, b2 = p2 + x2;
-      const w2 = y2 ? 0 : H(-60, 60), T = y2 ? 0 : H(-60, 60), v2 = y2 ? 1 : H(0.8, 1.2), P = y2 ? 1 : H(0.8, 1.2);
-      if (!y2) {
-        const z = (g2 + 1) / 2, E = (p2 + 1) / 2, [F, _] = Ie(ze, z, E, 1e-3);
-        let R = F * s2, k2 = _ * s2;
-        const B = Math.min(z, 1 - z, E, 1 - E), $2 = Ee(0, 1, B);
-        R *= $2, k2 *= $2, M2 = M2 * (1 - i2) + (M2 + R) * i2, b2 = b2 * (1 - i2) + (b2 + k2) * i2;
-      }
-      c2.push(S(f2, u2, M2, b2, w2, T, v2, P));
+function generateControlPoints(width, height, variationFraction = randomRange(0.4, 0.6), normalOffset = randomRange(0.3, 0.6), blendFactor = 0.8, smoothIters = Math.floor(randomRange(3, 5)), smoothFactor = randomRange(0.2, 0.3), smoothModifier = randomRange(-0.1, -0.05)) {
+  const w2 = width;
+  const h2 = height;
+  const conf = [];
+  const dx = 2 / (w2 - 1);
+  const dy = 2 / (h2 - 1);
+  for (let j2 = 0; j2 < h2; j2++) for (let i2 = 0; i2 < w2; i2++) {
+    const baseX = i2 / (w2 - 1) * 2 - 1;
+    const baseY = j2 / (h2 - 1) * 2 - 1;
+    const isBorder = i2 === 0 || i2 === w2 - 1 || j2 === 0 || j2 === h2 - 1;
+    const pertX = isBorder ? 0 : randomRange(-variationFraction * dx, variationFraction * dx);
+    const pertY = isBorder ? 0 : randomRange(-variationFraction * dy, variationFraction * dy);
+    let x2 = baseX + pertX;
+    let y2 = baseY + pertY;
+    const ur = isBorder ? 0 : randomRange(-60, 60);
+    const vr = isBorder ? 0 : randomRange(-60, 60);
+    const up = isBorder ? 1 : randomRange(0.8, 1.2);
+    const vp = isBorder ? 1 : randomRange(0.8, 1.2);
+    if (!isBorder) {
+      const uNorm = (baseX + 1) / 2;
+      const vNorm = (baseY + 1) / 2;
+      const [nx, ny] = computeNoiseGradient(smoothNoise, uNorm, vNorm, 1e-3);
+      let offsetX = nx * normalOffset;
+      let offsetY = ny * normalOffset;
+      const weight = smoothstep(0, 1, Math.min(uNorm, 1 - uNorm, vNorm, 1 - vNorm));
+      offsetX *= weight;
+      offsetY *= weight;
+      x2 = x2 * (1 - blendFactor) + (x2 + offsetX) * blendFactor;
+      y2 = y2 * (1 - blendFactor) + (y2 + offsetY) * blendFactor;
     }
-  return ve(c2, o2, l2, n2, r2, a2), ct(o2, l2, c2);
+    conf.push(p(i2, j2, x2, y2, ur, vr, up, vp));
+  }
+  smoothifyControlPoints(conf, w2, h2, smoothIters, smoothFactor, smoothModifier);
+  return preset(w2, h2, conf);
 }
-const De = `precision highp float;\r
-\r
-varying vec3 v_color;\r
-varying vec2 v_uv;\r
-uniform sampler2D u_texture;\r
-uniform float u_time;\r
-uniform float u_volume;\r
-uniform float u_alpha;\r
-\r
-// \u9884\u8BA1\u7B97\u5E38\u91CF\r
-const float INV_255 = 1.0 / 255.0;\r
-const float HALF_INV_255 = 0.5 / 255.0;\r
-const float GRADIENT_NOISE_A = 52.9829189;\r
-const vec2 GRADIENT_NOISE_B = vec2(0.06711056, 0.00583715);\r
-\r
-/* Gradient noise from Jorge Jimenez's presentation: */\r
-/* http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare */\r
-float gradientNoise(in vec2 uv) {\r
-    return fract(GRADIENT_NOISE_A * fract(dot(uv, GRADIENT_NOISE_B)));\r
-}\r
-\r
-// \u4F18\u5316\u7684\u65CB\u8F6C\u51FD\u6570\uFF0C\u907F\u514D\u91CD\u590D\u8BA1\u7B97sin/cos\r
-vec2 rot(vec2 v, float angle) {\r
-    float s = sin(angle);\r
-    float c = cos(angle);\r
-    return vec2(c * v.x - s * v.y, s * v.x + c * v.y);\r
-}\r
-\r
-void main() {\r
-    // \u5408\u5E76\u8BA1\u7B97\u4EE5\u51CF\u5C11\u6307\u4EE4\u6570\r
-    float volumeEffect = u_volume * 2.0;\r
-    float timeVolume = u_time + u_volume;\r
-    \r
-    float dither = INV_255 * gradientNoise(gl_FragCoord.xy) - HALF_INV_255;\r
-    vec2 centeredUV = v_uv - vec2(0.2);\r
-    vec2 rotatedUV = rot(centeredUV, timeVolume * 2.0);\r
-    vec2 finalUV = rotatedUV * max(0.001, 1.0 - volumeEffect) + vec2(0.5);\r
-    \r
-    vec4 result = texture2D(u_texture, finalUV);\r
-    \r
-    float alphaVolumeFactor = u_alpha * max(0.5, 1.0 - u_volume * 0.5);\r
-    result.rgb *= v_color * alphaVolumeFactor;\r
-    result.a *= alphaVolumeFactor;\r
-    \r
-    result.rgb += vec3(dither);\r
-    \r
-    float dist = distance(v_uv, vec2(0.5));\r
-    float vignette = smoothstep(0.8, 0.3, dist);\r
-    float mask = 0.6 + vignette * 0.4;\r
-    result.rgb *= mask;\r
-    \r
-    gl_FragColor = result;\r
-}\r
-`, Fe = `precision highp float;
-
+var mesh_frag_default = "precision highp float;\r\n\r\nvarying vec3 v_color;\r\nvarying vec2 v_uv;\r\nuniform sampler2D u_texture;\r\nuniform float u_time;\r\nuniform float u_volume;\r\nuniform float u_alpha;\r\n\r\n// \u9884\u8BA1\u7B97\u5E38\u91CF\r\nconst float INV_255 = 1.0 / 255.0;\r\nconst float HALF_INV_255 = 0.5 / 255.0;\r\nconst float GRADIENT_NOISE_A = 52.9829189;\r\nconst vec2 GRADIENT_NOISE_B = vec2(0.06711056, 0.00583715);\r\n\r\n/* Gradient noise from Jorge Jimenez's presentation: */\r\n/* http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare */\r\nfloat gradientNoise(in vec2 uv) {\r\n    return fract(GRADIENT_NOISE_A * fract(dot(uv, GRADIENT_NOISE_B)));\r\n}\r\n\r\n// \u4F18\u5316\u7684\u65CB\u8F6C\u51FD\u6570\uFF0C\u907F\u514D\u91CD\u590D\u8BA1\u7B97sin/cos\r\nvec2 rot(vec2 v, float angle) {\r\n    float s = sin(angle);\r\n    float c = cos(angle);\r\n    return vec2(c * v.x - s * v.y, s * v.x + c * v.y);\r\n}\r\n\r\nvoid main() {\r\n    // \u5408\u5E76\u8BA1\u7B97\u4EE5\u51CF\u5C11\u6307\u4EE4\u6570\r\n    float volumeEffect = u_volume * 2.0;\r\n    float timeVolume = u_time + u_volume;\r\n    \r\n    float dither = INV_255 * gradientNoise(gl_FragCoord.xy) - HALF_INV_255;\r\n    vec2 centeredUV = v_uv - vec2(0.2);\r\n    vec2 rotatedUV = rot(centeredUV, timeVolume * 2.0);\r\n    vec2 finalUV = rotatedUV * max(0.001, 1.0 - volumeEffect) + vec2(0.5);\r\n    \r\n    vec4 result = texture2D(u_texture, finalUV);\r\n    \r\n    float alphaVolumeFactor = u_alpha * max(0.5, 1.0 - u_volume * 0.5);\r\n    result.rgb *= v_color * alphaVolumeFactor;\r\n    result.a *= alphaVolumeFactor;\r\n    \r\n    result.rgb += vec3(dither);\r\n    \r\n    float dist = distance(v_uv, vec2(0.5));\r\n    float vignette = smoothstep(0.8, 0.3, dist);\r\n    float mask = 0.6 + vignette * 0.4;\r\n    result.rgb *= mask;\r\n    \r\n    gl_FragColor = result;\r\n}\r\n";
+var mesh_vert_default = "precision highp float;\n\nattribute vec2 a_pos;\nattribute vec3 a_color;\nattribute vec2 a_uv;\nvarying vec3 v_color;\nvarying vec2 v_uv;\n\nuniform float u_aspect;\n\nvoid main() {\n    v_color = a_color;\n    v_uv = a_uv;\n    vec2 pos = a_pos;\n    if (u_aspect > 1.0) {\n        pos.y *= u_aspect;\n    } else {\n        pos.x /= u_aspect;\n    }\n    gl_Position = vec4(pos, 0.0, 1.0);\n}\n";
+const quadVertShader = `
 attribute vec2 a_pos;
-attribute vec3 a_color;
-attribute vec2 a_uv;
-varying vec3 v_color;
 varying vec2 v_uv;
-
-uniform float u_aspect;
-
 void main() {
-    v_color = a_color;
-    v_uv = a_uv;
-    vec2 pos = a_pos;
-    if (u_aspect > 1.0) {
-        pos.y *= u_aspect;
-    } else {
-        pos.x /= u_aspect;
-    }
-    gl_Position = vec4(pos, 0.0, 1.0);
+    gl_Position = vec4(a_pos, 0.0, 1.0);
+    v_uv = a_pos * 0.5 + 0.5;
 }
 `;
-class Ae {
-  constructor(t2, e2, s2, i2 = "unknown") {
+const quadFragShader = `
+precision mediump float;
+varying vec2 v_uv;
+uniform sampler2D u_texture;
+uniform float u_alpha;
+void main() {
+    vec4 color = texture2D(u_texture, v_uv);
+    gl_FragColor = vec4(color.rgb, color.a * u_alpha);
+}
+`;
+function easeInOutSine(x2) {
+  return -(Math.cos(Math.PI * x2) - 1) / 2;
+}
+var GLProgram2 = class {
+  constructor(gl, vertexShaderSource, fragmentShaderSource, label = "unknown") {
     __publicField(this, "gl");
     __publicField(this, "program");
     __publicField(this, "vertexShader");
     __publicField(this, "fragmentShader");
     __publicField(this, "attrs");
     __publicField(this, "notFoundUniforms", /* @__PURE__ */ new Set());
-    this.label = i2, this.gl = t2, this.vertexShader = this.createShader(t2.VERTEX_SHADER, e2), this.fragmentShader = this.createShader(
-      t2.FRAGMENT_SHADER,
-      s2
-    ), this.program = this.createProgram();
-    const n2 = t2.getProgramParameter(this.program, t2.ACTIVE_ATTRIBUTES), r2 = {};
-    for (let a2 = 0; a2 < n2; a2++) {
-      const o2 = t2.getActiveAttrib(this.program, a2);
-      if (!o2) continue;
-      const l2 = t2.getAttribLocation(this.program, o2.name);
-      l2 !== -1 && (r2[o2.name] = l2);
+    this.label = label;
+    this.gl = gl;
+    this.vertexShader = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
+    this.fragmentShader = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
+    this.program = this.createProgram();
+    const num = gl.getProgramParameter(this.program, gl.ACTIVE_ATTRIBUTES);
+    const attrs = {};
+    for (let i2 = 0; i2 < num; i2++) {
+      const info = gl.getActiveAttrib(this.program, i2);
+      if (!info) continue;
+      const location = gl.getAttribLocation(this.program, info.name);
+      if (location === -1) continue;
+      attrs[info.name] = location;
     }
-    this.attrs = r2;
+    this.attrs = attrs;
   }
-  createShader(t2, e2) {
-    const s2 = this.gl, i2 = s2.createShader(t2);
-    if (!i2) throw new Error("Failed to create shader");
-    if (s2.shaderSource(i2, e2), s2.compileShader(i2), !s2.getShaderParameter(i2, s2.COMPILE_STATUS))
-      throw new Error(
-        `Failed to compile shader for type ${t2} "${this.label}": ${s2.getShaderInfoLog(i2)}`
-      );
-    return i2;
+  createShader(type2, source) {
+    const gl = this.gl;
+    const shader = gl.createShader(type2);
+    if (!shader) throw new Error("Failed to create shader");
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(`Failed to compile shader for type ${type2} "${this.label}": ${gl.getShaderInfoLog(shader)}`);
+    return shader;
   }
   createProgram() {
-    const t2 = this.gl, e2 = t2.createProgram();
-    if (!e2) throw new Error("Failed to create program");
-    if (t2.attachShader(e2, this.vertexShader), t2.attachShader(e2, this.fragmentShader), t2.linkProgram(e2), t2.validateProgram(e2), !t2.getProgramParameter(e2, t2.LINK_STATUS)) {
-      const s2 = t2.getProgramInfoLog(e2);
-      throw t2.deleteProgram(e2), new Error(`Failed to link program "${this.label}": ${s2}`);
+    const gl = this.gl;
+    const program = gl.createProgram();
+    if (!program) throw new Error("Failed to create program");
+    gl.attachShader(program, this.vertexShader);
+    gl.attachShader(program, this.fragmentShader);
+    gl.linkProgram(program);
+    gl.validateProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      const errLog = gl.getProgramInfoLog(program);
+      gl.deleteProgram(program);
+      throw new Error(`Failed to link program "${this.label}": ${errLog}`);
     }
-    return e2;
+    return program;
   }
   use() {
     this.gl.useProgram(this.program);
   }
-  warnUniformNotFound(t2) {
-    this.notFoundUniforms.has(t2) || (this.notFoundUniforms.add(t2), console.warn(
-      `Failed to get uniform location for program "${this.label}": ${t2}`
-    ));
+  warnUniformNotFound(name) {
+    if (this.notFoundUniforms.has(name)) return;
+    this.notFoundUniforms.add(name);
+    console.warn(`Failed to get uniform location for program "${this.label}": ${name}`);
   }
-  setUniform1f(t2, e2) {
-    const s2 = this.gl, i2 = s2.getUniformLocation(this.program, t2);
-    i2 ? s2.uniform1f(i2, e2) : this.warnUniformNotFound(t2);
+  setUniform1f(name, value) {
+    const gl = this.gl;
+    const location = gl.getUniformLocation(this.program, name);
+    if (!location) this.warnUniformNotFound(name);
+    else gl.uniform1f(location, value);
   }
-  setUniform2f(t2, e2, s2) {
-    const i2 = this.gl, n2 = i2.getUniformLocation(this.program, t2);
-    n2 ? i2.uniform2f(n2, e2, s2) : this.warnUniformNotFound(t2);
+  setUniform2f(name, value1, value2) {
+    const gl = this.gl;
+    const location = gl.getUniformLocation(this.program, name);
+    if (!location) this.warnUniformNotFound(name);
+    else gl.uniform2f(location, value1, value2);
   }
-  setUniform1i(t2, e2) {
-    const s2 = this.gl, i2 = s2.getUniformLocation(this.program, t2);
-    i2 ? s2.uniform1i(i2, e2) : this.warnUniformNotFound(t2);
+  setUniform1i(name, value) {
+    const gl = this.gl;
+    const location = gl.getUniformLocation(this.program, name);
+    if (!location) this.warnUniformNotFound(name);
+    else gl.uniform1i(location, value);
   }
   dispose() {
-    const t2 = this.gl;
-    t2.deleteShader(this.vertexShader), t2.deleteShader(this.fragmentShader), t2.deleteProgram(this.program);
+    const gl = this.gl;
+    gl.deleteShader(this.vertexShader);
+    gl.deleteShader(this.fragmentShader);
+    gl.deleteProgram(this.program);
   }
-}
-class _e {
-  constructor(t2, e2, s2, i2) {
+};
+var Mesh = class {
+  constructor(gl, attrPos, attrColor, attrUV) {
     __publicField(this, "vertexWidth", 0);
     __publicField(this, "vertexHeight", 0);
     __publicField(this, "vertexBuffer");
@@ -19425,106 +21497,152 @@ class _e {
     __publicField(this, "vertexData");
     __publicField(this, "indexData");
     __publicField(this, "vertexIndexLength", 0);
-    // 调试用途，开启线框模式
     __publicField(this, "wireFrame", false);
-    this.gl = t2, this.attrPos = e2, this.attrColor = s2, this.attrUV = i2;
-    const n2 = t2.createBuffer();
-    if (!n2) throw new Error("Failed to create vertex buffer");
-    this.vertexBuffer = n2;
-    const r2 = t2.createBuffer();
-    if (!r2) throw new Error("Failed to create index buffer");
-    this.indexBuffer = r2, this.bind(), this.vertexData = new Float32Array(0), this.indexData = new Uint16Array(0), this.resize(2, 2), this.update();
+    this.gl = gl;
+    this.attrPos = attrPos;
+    this.attrColor = attrColor;
+    this.attrUV = attrUV;
+    const vertexBuf = gl.createBuffer();
+    if (!vertexBuf) throw new Error("Failed to create vertex buffer");
+    this.vertexBuffer = vertexBuf;
+    const indexBuf = gl.createBuffer();
+    if (!indexBuf) throw new Error("Failed to create index buffer");
+    this.indexBuffer = indexBuf;
+    this.bind();
+    this.vertexData = new Float32Array(0);
+    this.indexData = new Uint16Array(0);
+    this.resize(2, 2);
+    this.update();
   }
-  setWireFrame(t2) {
-    this.wireFrame = t2, this.resize(this.vertexWidth, this.vertexHeight);
+  setWireFrame(enable) {
+    this.wireFrame = enable;
+    this.resize(this.vertexWidth, this.vertexHeight);
   }
-  setVertexPos(t2, e2, s2, i2) {
-    const n2 = (t2 + e2 * this.vertexWidth) * 7;
-    if (n2 >= this.vertexData.length - 1) {
-      console.warn("Vertex position out of range", n2, this.vertexData.length);
+  setVertexPos(vx2, vy2, x2, y2) {
+    const idx = (vx2 + vy2 * this.vertexWidth) * 7;
+    if (idx >= this.vertexData.length - 1) {
+      console.warn("Vertex position out of range", idx, this.vertexData.length);
       return;
     }
-    this.vertexData[n2] = s2, this.vertexData[n2 + 1] = i2;
+    this.vertexData[idx] = x2;
+    this.vertexData[idx + 1] = y2;
   }
-  setVertexColor(t2, e2, s2, i2, n2) {
-    const r2 = (t2 + e2 * this.vertexWidth) * 7 + 2;
-    if (r2 >= this.vertexData.length - 2) {
-      console.warn("Vertex color out of range", r2, this.vertexData.length);
+  setVertexColor(vx2, vy2, r2, g2, b2) {
+    const idx = (vx2 + vy2 * this.vertexWidth) * 7 + 2;
+    if (idx >= this.vertexData.length - 2) {
+      console.warn("Vertex color out of range", idx, this.vertexData.length);
       return;
     }
-    this.vertexData[r2] = s2, this.vertexData[r2 + 1] = i2, this.vertexData[r2 + 2] = n2;
+    this.vertexData[idx] = r2;
+    this.vertexData[idx + 1] = g2;
+    this.vertexData[idx + 2] = b2;
   }
-  setVertexUV(t2, e2, s2, i2) {
-    const n2 = (t2 + e2 * this.vertexWidth) * 7 + 5;
-    if (n2 >= this.vertexData.length - 1) {
-      console.warn("Vertex UV out of range", n2, this.vertexData.length);
+  setVertexUV(vx2, vy2, x2, y2) {
+    const idx = (vx2 + vy2 * this.vertexWidth) * 7 + 5;
+    if (idx >= this.vertexData.length - 1) {
+      console.warn("Vertex UV out of range", idx, this.vertexData.length);
       return;
     }
-    this.vertexData[n2] = s2, this.vertexData[n2 + 1] = i2;
+    this.vertexData[idx] = x2;
+    this.vertexData[idx + 1] = y2;
   }
-  // 批量设置顶点数据的优化方法
-  setVertexData(t2, e2, s2, i2, n2, r2, a2, o2, l2) {
-    const c2 = (t2 + e2 * this.vertexWidth) * 7;
-    if (c2 >= this.vertexData.length - 6) {
-      console.warn("Vertex data out of range", c2, this.vertexData.length);
+  setVertexData(vx2, vy2, x2, y2, r2, g2, b2, u2, v2) {
+    const idx = (vx2 + vy2 * this.vertexWidth) * 7;
+    if (idx >= this.vertexData.length - 6) {
+      console.warn("Vertex data out of range", idx, this.vertexData.length);
       return;
     }
-    const h2 = this.vertexData;
-    h2[c2] = s2, h2[c2 + 1] = i2, h2[c2 + 2] = n2, h2[c2 + 3] = r2, h2[c2 + 4] = a2, h2[c2 + 5] = o2, h2[c2 + 6] = l2;
+    const data = this.vertexData;
+    data[idx] = x2;
+    data[idx + 1] = y2;
+    data[idx + 2] = r2;
+    data[idx + 3] = g2;
+    data[idx + 4] = b2;
+    data[idx + 5] = u2;
+    data[idx + 6] = v2;
   }
   getVertexIndexLength() {
     return this.vertexIndexLength;
   }
   draw() {
-    const t2 = this.gl;
-    this.wireFrame ? t2.drawElements(t2.LINES, this.vertexIndexLength, t2.UNSIGNED_SHORT, 0) : t2.drawElements(
-      t2.TRIANGLES,
-      this.vertexIndexLength,
-      t2.UNSIGNED_SHORT,
-      0
-    );
+    const gl = this.gl;
+    if (this.wireFrame) gl.drawElements(gl.LINES, this.vertexIndexLength, gl.UNSIGNED_SHORT, 0);
+    else gl.drawElements(gl.TRIANGLES, this.vertexIndexLength, gl.UNSIGNED_SHORT, 0);
   }
-  resize(t2, e2) {
-    this.vertexWidth = t2, this.vertexHeight = e2, this.vertexIndexLength = t2 * e2 * 6, this.wireFrame && (this.vertexIndexLength = t2 * e2 * 10);
-    const s2 = new Float32Array(
-      t2 * e2 * 7
-    ), i2 = new Uint16Array(this.vertexIndexLength);
-    this.vertexData = s2, this.indexData = i2;
-    for (let r2 = 0; r2 < e2; r2++)
-      for (let a2 = 0; a2 < t2; a2++) {
-        const o2 = a2 / (t2 - 1) * 2 - 1, l2 = r2 / (e2 - 1) * 2 - 1;
-        this.setVertexPos(a2, r2, o2 || 0, l2 || 0), this.setVertexColor(a2, r2, 1, 1, 1), this.setVertexUV(a2, r2, a2 / (t2 - 1), r2 / (e2 - 1));
-      }
-    for (let r2 = 0; r2 < e2 - 1; r2++)
-      for (let a2 = 0; a2 < t2 - 1; a2++)
-        if (this.wireFrame) {
-          const o2 = (r2 * t2 + a2) * 10;
-          i2[o2] = r2 * t2 + a2, i2[o2 + 1] = r2 * t2 + a2 + 1, i2[o2 + 2] = r2 * t2 + a2 + 1, i2[o2 + 3] = (r2 + 1) * t2 + a2, i2[o2 + 4] = (r2 + 1) * t2 + a2, i2[o2 + 5] = (r2 + 1) * t2 + a2 + 1, i2[o2 + 6] = (r2 + 1) * t2 + a2 + 1, i2[o2 + 7] = r2 * t2 + a2 + 1, i2[o2 + 8] = r2 * t2 + a2, i2[o2 + 9] = (r2 + 1) * t2 + a2;
-        } else {
-          const o2 = (r2 * t2 + a2) * 6;
-          i2[o2] = r2 * t2 + a2, i2[o2 + 1] = r2 * t2 + a2 + 1, i2[o2 + 2] = (r2 + 1) * t2 + a2, i2[o2 + 3] = r2 * t2 + a2 + 1, i2[o2 + 4] = (r2 + 1) * t2 + a2 + 1, i2[o2 + 5] = (r2 + 1) * t2 + a2;
-        }
-    const n2 = this.gl;
-    n2.bindBuffer(n2.ELEMENT_ARRAY_BUFFER, this.indexBuffer), n2.bufferData(n2.ELEMENT_ARRAY_BUFFER, this.indexData, n2.STATIC_DRAW);
+  resize(vertexWidth, vertexHeight) {
+    this.vertexWidth = vertexWidth;
+    this.vertexHeight = vertexHeight;
+    this.vertexIndexLength = vertexWidth * vertexHeight * 6;
+    if (this.wireFrame) this.vertexIndexLength = vertexWidth * vertexHeight * 10;
+    const vertexData = new Float32Array(vertexWidth * vertexHeight * 7);
+    const indexData = new Uint16Array(this.vertexIndexLength);
+    this.vertexData = vertexData;
+    this.indexData = indexData;
+    for (let y2 = 0; y2 < vertexHeight; y2++) for (let x2 = 0; x2 < vertexWidth; x2++) {
+      const px = x2 / (vertexWidth - 1) * 2 - 1;
+      const py = y2 / (vertexHeight - 1) * 2 - 1;
+      this.setVertexPos(x2, y2, px || 0, py || 0);
+      this.setVertexColor(x2, y2, 1, 1, 1);
+      this.setVertexUV(x2, y2, x2 / (vertexWidth - 1), y2 / (vertexHeight - 1));
+    }
+    for (let y2 = 0; y2 < vertexHeight - 1; y2++) for (let x2 = 0; x2 < vertexWidth - 1; x2++) if (this.wireFrame) {
+      const idx = (y2 * vertexWidth + x2) * 10;
+      indexData[idx] = y2 * vertexWidth + x2;
+      indexData[idx + 1] = y2 * vertexWidth + x2 + 1;
+      indexData[idx + 2] = y2 * vertexWidth + x2 + 1;
+      indexData[idx + 3] = (y2 + 1) * vertexWidth + x2;
+      indexData[idx + 4] = (y2 + 1) * vertexWidth + x2;
+      indexData[idx + 5] = (y2 + 1) * vertexWidth + x2 + 1;
+      indexData[idx + 6] = (y2 + 1) * vertexWidth + x2 + 1;
+      indexData[idx + 7] = y2 * vertexWidth + x2 + 1;
+      indexData[idx + 8] = y2 * vertexWidth + x2;
+      indexData[idx + 9] = (y2 + 1) * vertexWidth + x2;
+    } else {
+      const idx = (y2 * vertexWidth + x2) * 6;
+      indexData[idx] = y2 * vertexWidth + x2;
+      indexData[idx + 1] = y2 * vertexWidth + x2 + 1;
+      indexData[idx + 2] = (y2 + 1) * vertexWidth + x2;
+      indexData[idx + 3] = y2 * vertexWidth + x2 + 1;
+      indexData[idx + 4] = (y2 + 1) * vertexWidth + x2 + 1;
+      indexData[idx + 5] = (y2 + 1) * vertexWidth + x2;
+    }
+    const gl = this.gl;
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexData, gl.STATIC_DRAW);
   }
   bind() {
-    const t2 = this.gl;
-    t2.bindBuffer(t2.ARRAY_BUFFER, this.vertexBuffer), t2.bindBuffer(t2.ELEMENT_ARRAY_BUFFER, this.indexBuffer), this.attrPos !== void 0 && (t2.vertexAttribPointer(this.attrPos, 2, t2.FLOAT, false, 28, 0), t2.enableVertexAttribArray(this.attrPos)), this.attrColor !== void 0 && (t2.vertexAttribPointer(this.attrColor, 3, t2.FLOAT, false, 28, 8), t2.enableVertexAttribArray(this.attrColor)), this.attrUV !== void 0 && (t2.vertexAttribPointer(this.attrUV, 2, t2.FLOAT, false, 28, 20), t2.enableVertexAttribArray(this.attrUV));
+    const gl = this.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+    if (this.attrPos !== void 0) {
+      gl.vertexAttribPointer(this.attrPos, 2, gl.FLOAT, false, 28, 0);
+      gl.enableVertexAttribArray(this.attrPos);
+    }
+    if (this.attrColor !== void 0) {
+      gl.vertexAttribPointer(this.attrColor, 3, gl.FLOAT, false, 28, 8);
+      gl.enableVertexAttribArray(this.attrColor);
+    }
+    if (this.attrUV !== void 0) {
+      gl.vertexAttribPointer(this.attrUV, 2, gl.FLOAT, false, 28, 20);
+      gl.enableVertexAttribArray(this.attrUV);
+    }
   }
   update() {
-    const t2 = this.gl;
-    t2.bindBuffer(t2.ARRAY_BUFFER, this.vertexBuffer), t2.bufferData(t2.ARRAY_BUFFER, this.vertexData, t2.DYNAMIC_DRAW);
+    const gl = this.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
   }
   dispose() {
-    this.gl.deleteBuffer(this.vertexBuffer), this.gl.deleteBuffer(this.indexBuffer);
+    this.gl.deleteBuffer(this.vertexBuffer);
+    this.gl.deleteBuffer(this.indexBuffer);
   }
-}
-class Ce {
+};
+var ControlPoint = class {
   constructor() {
-    __publicField(this, "color", C.fromValues(1, 1, 1));
-    __publicField(this, "location", A.fromValues(0, 0));
-    __publicField(this, "uTangent", A.fromValues(0, 0));
-    __publicField(this, "vTangent", A.fromValues(0, 0));
+    __publicField(this, "color", Vec3.fromValues(1, 1, 1));
+    __publicField(this, "location", Vec2.fromValues(0, 0));
+    __publicField(this, "uTangent", Vec2.fromValues(0, 0));
+    __publicField(this, "vTangent", Vec2.fromValues(0, 0));
     __publicField(this, "_uRot", 0);
     __publicField(this, "_vRot", 0);
     __publicField(this, "_uScale", 1);
@@ -19537,11 +21655,13 @@ class Ce {
   get vRot() {
     return this._vRot;
   }
-  set uRot(t2) {
-    this._uRot = t2, this.updateUTangent();
+  set uRot(value) {
+    this._uRot = value;
+    this.updateUTangent();
   }
-  set vRot(t2) {
-    this._vRot = t2, this.updateVTangent();
+  set vRot(value) {
+    this._vRot = value;
+    this.updateVTangent();
   }
   get uScale() {
     return this._uScale;
@@ -19549,54 +21669,74 @@ class Ce {
   get vScale() {
     return this._vScale;
   }
-  set uScale(t2) {
-    this._uScale = t2, this.updateUTangent();
+  set uScale(value) {
+    this._uScale = value;
+    this.updateUTangent();
   }
-  set vScale(t2) {
-    this._vScale = t2, this.updateVTangent();
+  set vScale(value) {
+    this._vScale = value;
+    this.updateVTangent();
   }
   updateUTangent() {
-    this.uTangent[0] = Math.cos(this._uRot) * this._uScale, this.uTangent[1] = Math.sin(this._uRot) * this._uScale;
+    this.uTangent[0] = Math.cos(this._uRot) * this._uScale;
+    this.uTangent[1] = Math.sin(this._uRot) * this._uScale;
   }
   updateVTangent() {
-    this.vTangent[0] = -Math.sin(this._vRot) * this._vScale, this.vTangent[1] = Math.cos(this._vRot) * this._vScale;
+    this.vTangent[0] = -Math.sin(this._vRot) * this._vScale;
+    this.vTangent[1] = Math.cos(this._vRot) * this._vScale;
   }
+};
+const H = Mat4.fromValues(2, -2, 1, 1, -3, 3, -2, -1, 0, 0, 1, 0, 1, 0, 0, 0);
+const H_T = Mat4.clone(H).transpose();
+function meshCoefficients(p00, p01, p10, p11, axis, output = Mat4.create()) {
+  const l2 = (p2) => p2.location[axis];
+  const u2 = (p2) => p2.uTangent[axis];
+  const v2 = (p2) => p2.vTangent[axis];
+  output[0] = l2(p00);
+  output[1] = l2(p01);
+  output[2] = v2(p00);
+  output[3] = v2(p01);
+  output[4] = l2(p10);
+  output[5] = l2(p11);
+  output[6] = v2(p10);
+  output[7] = v2(p11);
+  output[8] = u2(p00);
+  output[9] = u2(p01);
+  output[10] = 0;
+  output[11] = 0;
+  output[12] = u2(p10);
+  output[13] = u2(p11);
+  output[14] = 0;
+  output[15] = 0;
+  return output;
 }
-const at = I.fromValues(2, -2, 1, 1, -3, 3, -2, -1, 0, 0, 1, 0, 1, 0, 0, 0), lt = I.clone(at).transpose(), Z = D.create(), ft = D.create(), K = D.create(), tt = I.create(), et = I.create();
-function Re(d2, t2, e2, s2, i2 = A.create()) {
-  Z[0] = d2 ** 3, Z[1] = d2 ** 2, Z[2] = d2, Z[3] = 1, ft.copy(Z), K[0] = t2 ** 3, K[1] = t2 ** 2, K[2] = t2, K[3] = 1, tt.copy(e2).transpose(), I.mul(tt, tt, at), I.mul(tt, lt, tt), D.transformMat4(Z, Z, tt);
-  const n2 = K.dot(Z);
-  et.copy(s2).transpose(), I.mul(et, et, at), I.mul(et, lt, et), D.transformMat4(ft, ft, et);
-  const r2 = K.dot(ft);
-  return i2.x = n2, i2.y = r2, i2;
+function colorCoefficients(p00, p01, p10, p11, axis, output = Mat4.create()) {
+  const c2 = (p2) => p2.color[axis];
+  output.fill(0);
+  output[0] = c2(p00);
+  output[1] = c2(p01);
+  output[4] = c2(p10);
+  output[5] = c2(p11);
+  return output;
 }
-function Vt(d2, t2, e2, s2, i2, n2 = I.create()) {
-  const r2 = (l2) => l2.location[i2], a2 = (l2) => l2.uTangent[i2], o2 = (l2) => l2.vTangent[i2];
-  return n2[0] = r2(d2), n2[1] = r2(t2), n2[2] = o2(d2), n2[3] = o2(t2), n2[4] = r2(e2), n2[5] = r2(s2), n2[6] = o2(e2), n2[7] = o2(s2), n2[8] = a2(d2), n2[9] = a2(t2), n2[10] = 0, n2[11] = 0, n2[12] = a2(e2), n2[13] = a2(s2), n2[14] = 0, n2[15] = 0, n2;
-}
-function vt(d2, t2, e2, s2, i2, n2 = I.create()) {
-  const r2 = (a2) => a2.color[i2];
-  return n2.fill(0), n2[0] = r2(d2), n2[1] = r2(t2), n2[4] = r2(e2), n2[5] = r2(s2), n2;
-}
-const G = D.create(), ut = D.create(), gt = D.create(), J = D.create(), st = I.create(), it = I.create(), nt = I.create(), yt = C.create();
-function Oe(d2, t2, e2, s2, i2) {
-  return G[0] = d2 ** 3, G[1] = d2 ** 2, G[2] = d2, G[3] = 1, ut.copy(G), gt.copy(G), J[0] = t2 ** 3, J[1] = t2 ** 2, J[2] = t2, J[3] = 1, st.copy(e2).transpose(), I.mul(st, st, at), I.mul(st, lt, st), D.transformMat4(G, G, st), yt.r = J.dot(G), it.copy(s2).transpose(), I.mul(it, it, at), I.mul(it, lt, it), D.transformMat4(ut, ut, it), yt.g = J.dot(ut), nt.copy(i2).transpose(), I.mul(nt, nt, at), I.mul(nt, lt, nt), D.transformMat4(gt, gt, nt), yt.b = J.dot(gt), yt;
-}
-class We {
-  constructor(t2, e2) {
+var Map2D = class {
+  constructor(width, height) {
     __publicField(this, "_width", 0);
     __publicField(this, "_height", 0);
     __publicField(this, "_data", []);
-    this.resize(t2, e2), Object.seal(this);
+    this.resize(width, height);
+    Object.seal(this);
   }
-  resize(t2, e2) {
-    this._width = t2, this._height = e2, this._data = new Array(t2 * e2).fill(0);
+  resize(width, height) {
+    this._width = width;
+    this._height = height;
+    this._data = new Array(width * height).fill(0);
   }
-  set(t2, e2, s2) {
-    this._data[t2 + e2 * this._width] = s2;
+  set(x2, y2, value) {
+    this._data[x2 + y2 * this._width] = value;
   }
-  get(t2, e2) {
-    return this._data[t2 + e2 * this._width];
+  get(x2, y2) {
+    return this._data[x2 + y2 * this._width];
   }
   get width() {
     return this._width;
@@ -19604,113 +21744,186 @@ class We {
   get height() {
     return this._height;
   }
-}
-class Ne extends _e {
-  constructor(t2, e2, s2, i2) {
-    super(t2, e2, s2, i2);
+};
+var BHPMesh = class extends Mesh {
+  constructor(gl, attrPos, attrColor, attrUV) {
+    super(gl, attrPos, attrColor, attrUV);
     /**
-     * 细分级别，越大曲线越平滑，但是性能消耗也越大
-     */
+    * 细分级别，越大曲线越平滑，但是性能消耗也越大
+    */
     __publicField(this, "_subDivisions", 10);
-    __publicField(this, "_controlPoints", new We(3, 3));
-    __publicField(this, "tmpV2", A.create());
-    // 预分配重复使用的矩阵，避免频繁创建
-    __publicField(this, "tempX", I.create());
-    __publicField(this, "tempY", I.create());
-    __publicField(this, "tempR", I.create());
-    __publicField(this, "tempG", I.create());
-    __publicField(this, "tempB", I.create());
-    this.resizeControlPoints(3, 3), Object.seal(this);
+    __publicField(this, "_controlPoints", new Map2D(3, 3));
+    __publicField(this, "tempX", Mat4.create());
+    __publicField(this, "tempY", Mat4.create());
+    __publicField(this, "tempR", Mat4.create());
+    __publicField(this, "tempG", Mat4.create());
+    __publicField(this, "tempB", Mat4.create());
+    __publicField(this, "tempXAcc", Mat4.create());
+    __publicField(this, "tempYAcc", Mat4.create());
+    __publicField(this, "tempRAcc", Mat4.create());
+    __publicField(this, "tempGAcc", Mat4.create());
+    __publicField(this, "tempBAcc", Mat4.create());
+    __publicField(this, "tempUx", Vec4.create());
+    __publicField(this, "tempUy", Vec4.create());
+    __publicField(this, "tempUr", Vec4.create());
+    __publicField(this, "tempUg", Vec4.create());
+    __publicField(this, "tempUb", Vec4.create());
+    this.resizeControlPoints(3, 3);
+    Object.seal(this);
   }
-  setWireFrame(t2) {
-    super.setWireFrame(t2), this.updateMesh();
+  setWireFrame(enable) {
+    super.setWireFrame(enable);
+    this.updateMesh();
   }
   /**
-   * 以当前的控制点矩阵大小和细分级别为参考重新设置细分级别，此操作不会重设控制点数据
-   * @param subDivisions 细分级别
-   */
-  resetSubdivition(t2) {
-    this._subDivisions = t2, super.resize(
-      (this._controlPoints.width - 1) * t2,
-      (this._controlPoints.height - 1) * t2
-    );
+  * 以当前的控制点矩阵大小和细分级别为参考重新设置细分级别，此操作不会重设控制点数据
+  * @param subDivisions 细分级别
+  */
+  resetSubdivition(subDivisions) {
+    this._subDivisions = subDivisions;
+    super.resize((this._controlPoints.width - 1) * subDivisions, (this._controlPoints.height - 1) * subDivisions);
   }
   /**
-   * 重设控制点矩阵尺寸，将会重置所有控制点的颜色和坐标数据
-   * 请在调用此方法后重新设置颜色和坐标，并调用 updateMesh 方法更新网格
-   * @param width 控制点宽度数量，必须大于等于 2
-   * @param height 控制点高度数量，必须大于等于 2
-   */
-  resizeControlPoints(t2, e2) {
-    if (!(t2 >= 2 && e2 >= 2))
-      throw new Error("Control points must be larger than 3x3 or equal");
-    this._controlPoints.resize(t2, e2);
-    for (let s2 = 0; s2 < e2; s2++)
-      for (let i2 = 0; i2 < t2; i2++) {
-        const n2 = new Ce();
-        n2.location.x = i2 / (t2 - 1) * 2 - 1, n2.location.y = s2 / (e2 - 1) * 2 - 1, n2.uTangent.x = 2 / (t2 - 1), n2.vTangent.y = 2 / (e2 - 1), this._controlPoints.set(i2, s2, n2);
-      }
+  * 重设控制点矩阵尺寸，将会重置所有控制点的颜色和坐标数据
+  * 请在调用此方法后重新设置颜色和坐标，并调用 updateMesh 方法更新网格
+  * @param width 控制点宽度数量，必须大于等于 2
+  * @param height 控制点高度数量，必须大于等于 2
+  */
+  resizeControlPoints(width, height) {
+    if (!(width >= 2 && height >= 2)) throw new Error("Control points must be larger than 3x3 or equal");
+    this._controlPoints.resize(width, height);
+    for (let y2 = 0; y2 < height; y2++) for (let x2 = 0; x2 < width; x2++) {
+      const point = new ControlPoint();
+      point.location.x = x2 / (width - 1) * 2 - 1;
+      point.location.y = y2 / (height - 1) * 2 - 1;
+      point.uTangent.x = 2 / (width - 1);
+      point.vTangent.y = 2 / (height - 1);
+      this._controlPoints.set(x2, y2, point);
+    }
     this.resetSubdivition(this._subDivisions);
   }
   /**
-   * 获取指定位置的控制点，然后可以设置颜色和坐标属性
-   * 留意颜色属性和坐标属性的值范围均参考 WebGL 的定义
-   * 即颜色各个组件取值 [0-1]，坐标取值 [-1, 1]
-   * 点的位置以画面左下角为原点 (0,0)
-   * @param x 需要获取的控制点的 x 坐标
-   * @param y 需要获取的控制点的 y 坐标
-   * @returns 控制点对象
-   */
-  getControlPoint(t2, e2) {
-    return this._controlPoints.get(t2, e2);
+  * 获取指定位置的控制点，然后可以设置颜色和坐标属性
+  * 留意颜色属性和坐标属性的值范围均参考 WebGL 的定义
+  * 即颜色各个组件取值 [0-1]，坐标取值 [-1, 1]
+  * 点的位置以画面左下角为原点 (0,0)
+  * @param x 需要获取的控制点的 x 坐标
+  * @param y 需要获取的控制点的 y 坐标
+  * @returns 控制点对象
+  */
+  getControlPoint(x2, y2) {
+    return this._controlPoints.get(x2, y2);
+  }
+  precomputeMatrix(M2, output) {
+    output.copy(M2).transpose();
+    Mat4.mul(output, output, H);
+    Mat4.mul(output, H_T, output);
+    return output;
   }
   /**
-   * 更新最终呈现的网格数据，此方法应在所有控制点或细分参数的操作完成后调用
-   */
+  * 更新最终呈现的网格数据，此方法应在所有控制点或细分参数的操作完成后调用
+  */
   updateMesh() {
-    const t2 = this._subDivisions - 1, e2 = t2 * (this._controlPoints.height - 1), s2 = t2 * (this._controlPoints.width - 1), i2 = this._controlPoints.width, n2 = this._controlPoints.height, r2 = this._subDivisions, a2 = 1 / t2, o2 = 1 / s2, l2 = 1 / e2;
-    for (let c2 = 0; c2 < i2 - 1; c2++)
-      for (let h2 = 0; h2 < n2 - 1; h2++) {
-        const m2 = this._controlPoints.get(c2, h2), u2 = this._controlPoints.get(c2, h2 + 1), f2 = this._controlPoints.get(c2 + 1, h2), g2 = this._controlPoints.get(c2 + 1, h2 + 1);
-        Vt(m2, u2, f2, g2, "x", this.tempX), Vt(m2, u2, f2, g2, "y", this.tempY), vt(m2, u2, f2, g2, "r", this.tempR), vt(m2, u2, f2, g2, "g", this.tempG), vt(m2, u2, f2, g2, "b", this.tempB);
-        const p2 = c2 / (i2 - 1), y2 = h2 / (n2 - 1), L = h2 * r2, x2 = c2 * r2;
-        for (let M2 = 0; M2 < r2; M2++) {
-          const b2 = M2 * a2, w2 = L + M2;
-          for (let T = 0; T < r2; T++) {
-            const v2 = T * a2, P = x2 + T, [z, E] = Re(
-              b2,
-              v2,
-              this.tempX,
-              this.tempY,
-              this.tmpV2
-            ), [F, _, R] = Oe(
-              b2,
-              v2,
-              this.tempR,
-              this.tempG,
-              this.tempB
-            ), k2 = p2 + T * o2, B = 1 - y2 - M2 * l2;
-            this.setVertexData(w2, P, z, E, F, _, R, k2, B);
-          }
+    const subDivM1 = this._subDivisions - 1;
+    const tW = subDivM1 * (this._controlPoints.height - 1);
+    const tH = subDivM1 * (this._controlPoints.width - 1);
+    const controlPointsWidth = this._controlPoints.width;
+    const controlPointsHeight = this._controlPoints.height;
+    const subDivisions = this._subDivisions;
+    const invSubDivM1 = 1 / subDivM1;
+    const invTH = 1 / tH;
+    const invTW = 1 / tW;
+    const normPowers = new Float32Array(subDivisions * 4);
+    for (let i2 = 0; i2 < subDivisions; i2++) {
+      const norm = i2 * invSubDivM1;
+      const idx = i2 * 4;
+      normPowers[idx] = norm ** 3;
+      normPowers[idx + 1] = norm ** 2;
+      normPowers[idx + 2] = norm;
+      normPowers[idx + 3] = 1;
+    }
+    for (let x2 = 0; x2 < controlPointsWidth - 1; x2++) for (let y2 = 0; y2 < controlPointsHeight - 1; y2++) {
+      const p00 = this._controlPoints.get(x2, y2);
+      const p01 = this._controlPoints.get(x2, y2 + 1);
+      const p10 = this._controlPoints.get(x2 + 1, y2);
+      const p11 = this._controlPoints.get(x2 + 1, y2 + 1);
+      meshCoefficients(p00, p01, p10, p11, "x", this.tempX);
+      meshCoefficients(p00, p01, p10, p11, "y", this.tempY);
+      colorCoefficients(p00, p01, p10, p11, "r", this.tempR);
+      colorCoefficients(p00, p01, p10, p11, "g", this.tempG);
+      colorCoefficients(p00, p01, p10, p11, "b", this.tempB);
+      this.precomputeMatrix(this.tempX, this.tempXAcc);
+      this.precomputeMatrix(this.tempY, this.tempYAcc);
+      this.precomputeMatrix(this.tempR, this.tempRAcc);
+      this.precomputeMatrix(this.tempG, this.tempGAcc);
+      this.precomputeMatrix(this.tempB, this.tempBAcc);
+      const sX = x2 / (controlPointsWidth - 1);
+      const sY = y2 / (controlPointsHeight - 1);
+      const baseVx = y2 * subDivisions;
+      const baseVy = x2 * subDivisions;
+      for (let u2 = 0; u2 < subDivisions; u2++) {
+        const vxOffset = baseVx + u2;
+        const uIdx = u2 * 4;
+        this.tempUx[0] = normPowers[uIdx];
+        this.tempUx[1] = normPowers[uIdx + 1];
+        this.tempUx[2] = normPowers[uIdx + 2];
+        this.tempUx[3] = normPowers[uIdx + 3];
+        Vec4.transformMat4(this.tempUx, this.tempUx, this.tempXAcc);
+        this.tempUy[0] = normPowers[uIdx];
+        this.tempUy[1] = normPowers[uIdx + 1];
+        this.tempUy[2] = normPowers[uIdx + 2];
+        this.tempUy[3] = normPowers[uIdx + 3];
+        Vec4.transformMat4(this.tempUy, this.tempUy, this.tempYAcc);
+        this.tempUr[0] = normPowers[uIdx];
+        this.tempUr[1] = normPowers[uIdx + 1];
+        this.tempUr[2] = normPowers[uIdx + 2];
+        this.tempUr[3] = normPowers[uIdx + 3];
+        Vec4.transformMat4(this.tempUr, this.tempUr, this.tempRAcc);
+        this.tempUg[0] = normPowers[uIdx];
+        this.tempUg[1] = normPowers[uIdx + 1];
+        this.tempUg[2] = normPowers[uIdx + 2];
+        this.tempUg[3] = normPowers[uIdx + 3];
+        Vec4.transformMat4(this.tempUg, this.tempUg, this.tempGAcc);
+        this.tempUb[0] = normPowers[uIdx];
+        this.tempUb[1] = normPowers[uIdx + 1];
+        this.tempUb[2] = normPowers[uIdx + 2];
+        this.tempUb[3] = normPowers[uIdx + 3];
+        Vec4.transformMat4(this.tempUb, this.tempUb, this.tempBAcc);
+        for (let v2 = 0; v2 < subDivisions; v2++) {
+          const vy2 = baseVy + v2;
+          const vIdx = v2 * 4;
+          const v0 = normPowers[vIdx];
+          const v1 = normPowers[vIdx + 1];
+          const v22 = normPowers[vIdx + 2];
+          const v3 = normPowers[vIdx + 3];
+          const px = v0 * this.tempUx[0] + v1 * this.tempUx[1] + v22 * this.tempUx[2] + v3 * this.tempUx[3];
+          const py = v0 * this.tempUy[0] + v1 * this.tempUy[1] + v22 * this.tempUy[2] + v3 * this.tempUy[3];
+          const pr = v0 * this.tempUr[0] + v1 * this.tempUr[1] + v22 * this.tempUr[2] + v3 * this.tempUr[3];
+          const pg = v0 * this.tempUg[0] + v1 * this.tempUg[1] + v22 * this.tempUg[2] + v3 * this.tempUg[3];
+          const pb = v0 * this.tempUb[0] + v1 * this.tempUb[1] + v22 * this.tempUb[2] + v3 * this.tempUb[3];
+          const uvX = sX + v2 * invTH;
+          const uvY = 1 - sY - u2 * invTW;
+          this.setVertexData(vxOffset, vy2, px, py, pr, pg, pb, uvX, uvY);
         }
       }
+    }
     this.update();
   }
-}
-class Ht {
-  constructor(t2, e2) {
+};
+var GLTexture2 = class {
+  constructor(gl, albumImageData) {
     __publicField(this, "tex");
-    this.gl = t2;
-    const s2 = t2.createTexture();
-    if (!s2) throw new Error("Failed to create texture");
-    this.tex = s2, t2.activeTexture(t2.TEXTURE0), t2.bindTexture(t2.TEXTURE_2D, s2), t2.texImage2D(
-      t2.TEXTURE_2D,
-      0,
-      t2.RGBA,
-      t2.RGBA,
-      t2.UNSIGNED_BYTE,
-      e2
-    ), t2.texParameteri(t2.TEXTURE_2D, t2.TEXTURE_MIN_FILTER, t2.LINEAR), t2.texParameteri(t2.TEXTURE_2D, t2.TEXTURE_MAG_FILTER, t2.LINEAR), t2.texParameteri(t2.TEXTURE_2D, t2.TEXTURE_WRAP_S, t2.MIRRORED_REPEAT), t2.texParameteri(t2.TEXTURE_2D, t2.TEXTURE_WRAP_T, t2.MIRRORED_REPEAT);
+    this.gl = gl;
+    const albumTexture = gl.createTexture();
+    if (!albumTexture) throw new Error("Failed to create texture");
+    this.tex = albumTexture;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, albumTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, albumImageData);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
   }
   bind() {
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.tex);
@@ -19718,19 +21931,20 @@ class Ht {
   dispose() {
     this.gl.deleteTexture(this.tex);
   }
+};
+function createOffscreenCanvas(width, height) {
+  if ("OffscreenCanvas" in window) return new OffscreenCanvas(width, height);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
 }
-function Be(d2, t2) {
-  if ("OffscreenCanvas" in window) return new OffscreenCanvas(d2, t2);
-  const e2 = document.createElement("canvas");
-  return e2.width = d2, e2.height = t2, e2;
-}
-class si extends te {
-  constructor(t2) {
-    super(t2);
+var MeshGradientRenderer = class extends BaseRenderer {
+  constructor(canvas) {
+    super(canvas);
     __publicField(this, "gl");
     __publicField(this, "lastFrameTime", 0);
     __publicField(this, "frameTime", 0);
-    __publicField(this, "currentImageData");
     __publicField(this, "lastTickTime", 0);
     __publicField(this, "smoothedVolume", 0);
     __publicField(this, "volume", 0);
@@ -19739,348 +21953,573 @@ class si extends te {
     __publicField(this, "paused", false);
     __publicField(this, "staticMode", false);
     __publicField(this, "mainProgram");
+    __publicField(this, "quadProgram");
+    __publicField(this, "quadBuffer");
+    __publicField(this, "fbo", null);
+    __publicField(this, "fboTexture", null);
     __publicField(this, "manualControl", false);
-    __publicField(this, "reduceImageSizeCanvas", Be(
-      32,
-      32
-    ));
-    __publicField(this, "targetSize", A.fromValues(0, 0));
-    __publicField(this, "currentSize", A.fromValues(0, 0));
+    __publicField(this, "reduceImageSizeCanvas", createOffscreenCanvas(32, 32));
+    __publicField(this, "targetSize", Vec2.fromValues(0, 0));
+    __publicField(this, "currentSize", Vec2.fromValues(0, 0));
     __publicField(this, "isNoCover", true);
     __publicField(this, "meshStates", []);
     __publicField(this, "_disposed", false);
-    // 性能监控
     __publicField(this, "frameCount", 0);
     __publicField(this, "lastFPSUpdate", 0);
     __publicField(this, "currentFPS", 0);
     __publicField(this, "enablePerformanceMonitoring", false);
     __publicField(this, "onTickBinded", this.onTick.bind(this));
-    __publicField(this, "supportTextureFloat", true);
-    const e2 = t2.getContext("webgl");
-    if (!e2) throw new Error("WebGL not supported");
-    e2.getExtension("EXT_color_buffer_float") || console.warn("EXT_color_buffer_float not supported"), e2.getExtension("EXT_float_blend") || (console.warn("EXT_float_blend not supported"), this.supportTextureFloat = false), e2.getExtension("OES_texture_float_linear") || console.warn("OES_texture_float_linear not supported"), e2.getExtension("OES_texture_float") || (this.supportTextureFloat = false, console.warn("OES_texture_float not supported")), this.gl = e2, e2.enable(e2.BLEND), e2.enable(e2.DEPTH_TEST), e2.depthFunc(e2.ALWAYS), this.mainProgram = new Ae(
-      e2,
-      Fe,
-      De,
-      "main-program-mg"
-    ), this.requestTick();
+    const gl = canvas.getContext("webgl", { antialias: true });
+    if (!gl) throw new Error("WebGL not supported");
+    if (!gl.getExtension("EXT_color_buffer_float")) console.warn("EXT_color_buffer_float not supported");
+    if (!gl.getExtension("EXT_float_blend")) console.warn("EXT_float_blend not supported");
+    if (!gl.getExtension("OES_texture_float_linear")) console.warn("OES_texture_float_linear not supported");
+    if (!gl.getExtension("OES_texture_float")) console.warn("OES_texture_float not supported");
+    this.gl = gl;
+    gl.enable(gl.BLEND);
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.ALWAYS);
+    this.mainProgram = new GLProgram2(gl, mesh_vert_default, mesh_frag_default, "main-program-mg");
+    this.quadProgram = new GLProgram2(gl, quadVertShader, quadFragShader, "quad-program");
+    const quadBuffer = gl.createBuffer();
+    if (!quadBuffer) throw new Error("Failed to create quad buffer");
+    this.quadBuffer = quadBuffer;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1,
+      -1,
+      1,
+      -1,
+      -1,
+      1,
+      -1,
+      1,
+      1,
+      -1,
+      1,
+      1
+    ]), gl.STATIC_DRAW);
+    this.requestTick();
   }
-  setManualControl(t2) {
-    this.manualControl = t2;
+  setManualControl(enable) {
+    this.manualControl = enable;
   }
-  setWireFrame(t2) {
-    for (const e2 of this.meshStates)
-      e2.mesh.setWireFrame(t2);
+  setWireFrame(enable) {
+    for (const state2 of this.meshStates) state2.mesh.setWireFrame(enable);
   }
-  getControlPoint(t2, e2) {
-    var _a, _b;
-    return (_b = (_a = this.meshStates[this.meshStates.length - 1]) == null ? void 0 : _a.mesh) == null ? void 0 : _b.getControlPoint(
-      t2,
-      e2
-    );
+  getControlPoint(x2, y2) {
+    var _a2, _b;
+    return (_b = (_a2 = this.meshStates[this.meshStates.length - 1]) == null ? void 0 : _a2.mesh) == null ? void 0 : _b.getControlPoint(x2, y2);
   }
-  resizeControlPoints(t2, e2) {
-    var _a, _b;
-    return (_b = (_a = this.meshStates[this.meshStates.length - 1]) == null ? void 0 : _a.mesh) == null ? void 0 : _b.resizeControlPoints(t2, e2);
+  resizeControlPoints(width, height) {
+    var _a2, _b;
+    (_b = (_a2 = this.meshStates[this.meshStates.length - 1]) == null ? void 0 : _a2.mesh) == null ? void 0 : _b.resizeControlPoints(width, height);
   }
-  resetSubdivition(t2) {
-    var _a, _b;
-    return (_b = (_a = this.meshStates[this.meshStates.length - 1]) == null ? void 0 : _a.mesh) == null ? void 0 : _b.resetSubdivition(
-      t2
-    );
+  resetSubdivition(subDivisions) {
+    var _a2, _b;
+    (_b = (_a2 = this.meshStates[this.meshStates.length - 1]) == null ? void 0 : _a2.mesh) == null ? void 0 : _b.resetSubdivition(subDivisions);
   }
-  onTick(t2) {
-    if (this.tickHandle = 0, this.paused || this._disposed) return;
-    this.updatePerformanceStats(t2), Number.isNaN(this.lastFrameTime) && (this.lastFrameTime = t2);
-    const e2 = t2 - this.lastTickTime, s2 = t2 - this.lastFrameTime;
-    if (this.lastFrameTime = t2, e2 < 1e3 / this.maxFPS) {
+  onTick(tickTime) {
+    this.tickHandle = 0;
+    if (this.paused) return;
+    if (this._disposed) return;
+    this.updatePerformanceStats(tickTime);
+    const interval = 1e3 / this.maxFPS;
+    const delta = tickTime - this.lastTickTime;
+    if (delta < interval) {
       this.requestTick();
       return;
     }
-    this.frameTime += s2 * this.flowSpeed, this.onRedraw(this.frameTime, s2) && this.staticMode ? this.staticMode && (this.lastFrameTime = Number.NaN) : this.requestTick(), this.lastTickTime = t2;
+    if (Number.isNaN(this.lastFrameTime)) this.lastFrameTime = tickTime;
+    const frameDelta = tickTime - this.lastFrameTime;
+    this.lastFrameTime = tickTime;
+    this.lastTickTime = tickTime - delta % interval;
+    this.frameTime += frameDelta * this.flowSpeed;
+    if (!(this.onRedraw(this.frameTime, frameDelta) && this.staticMode)) this.requestTick();
+    else if (this.staticMode) this.lastFrameTime = NaN;
   }
   checkIfResize() {
-    const [t2, e2] = [this.targetSize.x, this.targetSize.y], [s2, i2] = [this.currentSize.x, this.currentSize.y];
-    if (t2 !== s2 || e2 !== i2) {
-      super.onResize(t2, e2);
-      const n2 = this.gl;
-      n2.bindFramebuffer(n2.FRAMEBUFFER, null), n2.viewport(0, 0, t2, e2), this.currentSize.x = t2, this.currentSize.y = e2;
+    const [tW, tH] = [this.targetSize.x, this.targetSize.y];
+    const [cW, cH] = [this.currentSize.x, this.currentSize.y];
+    if (tW !== cW || tH !== cH) {
+      super.onResize(tW, tH);
+      const gl = this.gl;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, tW, tH);
+      this.currentSize.x = tW;
+      this.currentSize.y = tH;
+      if (tW > 0 && tH > 0) this.updateFBO(tW, tH);
     }
   }
-  onRedraw(t2, e2) {
-    const s2 = this.meshStates[this.meshStates.length - 1];
-    let i2 = false;
-    const n2 = e2 / 500;
-    if (s2)
-      if (s2.mesh.bind(), this.manualControl && s2.mesh.updateMesh(), this.isNoCover) {
-        let o2 = false;
-        for (let l2 = this.meshStates.length - 1; l2 >= 0; l2--) {
-          const c2 = this.meshStates[l2];
-          c2.alpha = Math.max(0, c2.alpha - n2), c2.alpha > 0 ? o2 = true : (c2.mesh.dispose(), c2.texture.dispose(), this.meshStates.splice(l2, 1));
+  updateFBO(width, height) {
+    const gl = this.gl;
+    if (this.fbo) gl.deleteFramebuffer(this.fbo);
+    if (this.fboTexture) gl.deleteTexture(this.fboTexture);
+    this.fboTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.fboTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.fboTexture, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+  onRedraw(tickTime, delta) {
+    const latestMeshState = this.meshStates[this.meshStates.length - 1];
+    let canBeStatic = false;
+    const deltaFactor = delta / 500;
+    if (latestMeshState) {
+      latestMeshState.mesh.bind();
+      if (this.manualControl) latestMeshState.mesh.updateMesh();
+      if (this.isNoCover) {
+        let hasActiveStates = false;
+        for (let i2 = this.meshStates.length - 1; i2 >= 0; i2--) {
+          const state2 = this.meshStates[i2];
+          if (state2.alpha <= -0.1) {
+            state2.mesh.dispose();
+            state2.texture.dispose();
+            this.meshStates.splice(i2, 1);
+          } else {
+            state2.alpha = Math.max(-0.1, state2.alpha - deltaFactor);
+            hasActiveStates = true;
+          }
         }
-        i2 = !o2;
+        canBeStatic = !hasActiveStates;
       } else {
-        if (s2.alpha = Math.min(
-          1,
-          s2.alpha + n2
-        ), s2.alpha >= 1) {
-          const o2 = this.meshStates.splice(0, this.meshStates.length - 1);
-          for (const l2 of o2)
-            l2.mesh.dispose(), l2.texture.dispose();
-        }
-        i2 = this.meshStates.length === 1 && s2.alpha >= 1;
+        if (latestMeshState.alpha >= 1.1) {
+          const deleted = this.meshStates.splice(0, this.meshStates.length - 1);
+          for (const state2 of deleted) {
+            state2.mesh.dispose();
+            state2.texture.dispose();
+          }
+        } else latestMeshState.alpha = Math.min(1.1, latestMeshState.alpha + deltaFactor);
+        canBeStatic = this.meshStates.length === 1 && latestMeshState.alpha >= 1.1;
       }
-    const r2 = this.gl;
-    r2.bindFramebuffer(r2.FRAMEBUFFER, null), r2.blendFunc(r2.SRC_ALPHA, r2.ONE_MINUS_SRC_ALPHA), r2.clear(r2.COLOR_BUFFER_BIT), this.checkIfResize();
-    const a2 = Math.min(1, e2 / 100);
-    this.smoothedVolume += (this.volume - this.smoothedVolume) * a2, this.mainProgram.use(), r2.activeTexture(r2.TEXTURE0), this.mainProgram.setUniform1f("u_time", t2 / 1e4), this.mainProgram.setUniform1f(
-      "u_aspect",
-      this.manualControl ? 1 : this.canvas.width / this.canvas.height
-    ), this.mainProgram.setUniform1i("u_texture", 0), this.mainProgram.setUniform1f("u_volume", this.volume);
-    for (const o2 of this.meshStates)
-      this.mainProgram.setUniform1f("u_alpha", o2.alpha), o2.texture.bind(), o2.mesh.bind(), o2.mesh.draw();
-    return r2.flush(), i2;
+    }
+    const gl = this.gl;
+    this.checkIfResize();
+    if (!this.fbo) return canBeStatic;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    const lerpFactor = Math.min(1, delta / 100);
+    this.smoothedVolume += (this.volume - this.smoothedVolume) * lerpFactor;
+    for (const state2 of this.meshStates) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+      gl.disable(gl.BLEND);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      this.mainProgram.use();
+      gl.activeTexture(gl.TEXTURE0);
+      this.mainProgram.setUniform1f("u_time", tickTime / 1e4);
+      this.mainProgram.setUniform1f("u_aspect", this.manualControl ? 1 : this.canvas.width / this.canvas.height);
+      this.mainProgram.setUniform1i("u_texture", 0);
+      this.mainProgram.setUniform1f("u_volume", this.volume);
+      this.mainProgram.setUniform1f("u_alpha", 1);
+      state2.texture.bind();
+      state2.mesh.bind();
+      state2.mesh.draw();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.enable(gl.BLEND);
+      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      this.quadProgram.use();
+      this.quadProgram.setUniform1i("u_texture", 0);
+      this.quadProgram.setUniform1f("u_alpha", easeInOutSine(clamp01(state2.alpha)));
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.fboTexture);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
+      const a_pos = this.quadProgram.attrs.a_pos;
+      gl.vertexAttribPointer(a_pos, 2, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(a_pos);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      gl.disableVertexAttribArray(a_pos);
+    }
+    gl.flush();
+    return canBeStatic;
   }
   requestTick() {
-    this._disposed || this.tickHandle === 0 && (this.tickHandle = requestAnimationFrame(this.onTickBinded));
+    if (this._disposed) return;
+    if (this.tickHandle === 0) this.tickHandle = requestAnimationFrame(this.onTickBinded);
   }
-  onResize(t2, e2) {
-    this.targetSize.x = Math.ceil(t2), this.targetSize.y = Math.ceil(e2), this.requestTick();
+  onResize(width, height) {
+    this.targetSize.x = Math.ceil(width);
+    this.targetSize.y = Math.ceil(height);
+    this.requestTick();
   }
-  setStaticMode(t2) {
-    this.staticMode = t2, this.lastFrameTime = performance.now(), this.requestTick();
+  setStaticMode(enable) {
+    this.staticMode = enable;
+    this.lastFrameTime = performance.now();
+    this.requestTick();
   }
-  setFPS(t2) {
-    this.maxFPS = t2;
+  setFPS(fps) {
+    this.maxFPS = fps;
   }
   pause() {
-    this.tickHandle && (cancelAnimationFrame(this.tickHandle), this.tickHandle = 0), this.paused = true;
+    if (this.tickHandle) {
+      cancelAnimationFrame(this.tickHandle);
+      this.tickHandle = 0;
+    }
+    this.paused = true;
   }
   resume() {
-    this.paused = false, this.requestTick();
+    this.paused = false;
+    this.requestTick();
   }
-  async setAlbum(t2, e2) {
-    if (t2 === void 0 || typeof t2 == "string" && t2.trim().length === 0) {
+  async setAlbum(albumSource, isVideo) {
+    if (albumSource === void 0 || typeof albumSource === "string" && albumSource.trim().length === 0) {
       this.isNoCover = true;
       return;
     }
-    let s2 = null, i2 = 5;
-    for (; !s2 && i2 > 0; )
-      try {
-        typeof t2 == "string" ? s2 = await ee(t2, e2) : s2 = await se(t2);
-      } catch (c2) {
-        console.warn(
-          `failed on loading album resource, retrying (${i2})`,
-          {
-            albumSource: t2,
-            error: c2
-          }
-        ), i2--;
-      }
-    if (!s2) {
-      console.error("Failed to load album resource", t2), this.isNoCover = true;
+    let res = null;
+    let blob = null;
+    let remainRetryTimes = 5;
+    while (!res && remainRetryTimes > 0) try {
+      if (typeof albumSource === "string") if (!isVideo && "createImageBitmap" in window) {
+        blob = await (await fetch(albumSource)).blob();
+        res = await loadResourceFromUrl(URL.createObjectURL(blob), false);
+      } else res = await loadResourceFromUrl(albumSource, isVideo);
+      else res = await loadResourceFromElement(albumSource);
+    } catch (error) {
+      console.warn(`failed on loading album resource, retrying (${remainRetryTimes})`, {
+        albumSource,
+        error
+      });
+      remainRetryTimes--;
+    }
+    if (!res) {
+      console.error("Failed to load album resource", albumSource);
+      this.isNoCover = true;
       return;
     }
     this.isNoCover = false;
-    const n2 = this.reduceImageSizeCanvas, r2 = n2.getContext("2d", {
-      willReadFrequently: true
-    });
-    if (!r2) throw new Error("Failed to create canvas context");
-    r2.clearRect(0, 0, n2.width, n2.height);
-    const a2 = s2 instanceof HTMLVideoElement ? s2.videoWidth : s2.naturalWidth, o2 = s2 instanceof HTMLVideoElement ? s2.videoHeight : s2.naturalHeight;
-    if (a2 * o2 === 0) throw new Error("Invalid image size");
-    r2.drawImage(s2, 0, 0, a2, o2, 0, 0, n2.width, n2.height);
-    const l2 = r2.getImageData(0, 0, n2.width, n2.height);
-    if ($t(l2, 0.4), Te(l2, 3), $t(l2, 1.7), we(l2, 0.75), xe(l2, 2, 4), this.manualControl && this.meshStates.length > 0)
-      this.meshStates[0].texture.dispose(), this.meshStates[0].texture = new Ht(this.gl, l2);
-    else {
-      const c2 = new Ne(
-        this.gl,
-        this.mainProgram.attrs.a_pos,
-        this.mainProgram.attrs.a_color,
-        this.mainProgram.attrs.a_uv
-      );
-      c2.resetSubdivition(15);
-      const h2 = Math.random() > 0.8 ? ke(6, 6) : qt[Math.floor(Math.random() * qt.length)];
-      c2.resizeControlPoints(h2.width, h2.height);
-      const m2 = 2 / (h2.width - 1), u2 = 2 / (h2.height - 1);
-      for (const p2 of h2.conf) {
-        const y2 = c2.getControlPoint(p2.cx, p2.cy);
-        y2.location.x = p2.x, y2.location.y = p2.y, y2.uRot = p2.ur * Math.PI / 180, y2.vRot = p2.vr * Math.PI / 180, y2.uScale = m2 * p2.up, y2.vScale = u2 * p2.vp;
+    const c2 = this.reduceImageSizeCanvas;
+    const ctx = c2.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("Failed to create canvas context");
+    ctx.clearRect(0, 0, c2.width, c2.height);
+    const imgw = res instanceof HTMLVideoElement ? res.videoWidth : res.naturalWidth;
+    const imgh = res instanceof HTMLVideoElement ? res.videoHeight : res.naturalHeight;
+    if (imgw * imgh === 0) throw new Error("Invalid image size");
+    let bitmap = null;
+    try {
+      if ("createImageBitmap" in window) if (blob) {
+        bitmap = await createImageBitmap(blob, {
+          resizeWidth: c2.width,
+          resizeHeight: c2.height,
+          resizeQuality: "low"
+        });
+        URL.revokeObjectURL(res.src);
+      } else bitmap = await createImageBitmap(res, {
+        resizeWidth: c2.width,
+        resizeHeight: c2.height,
+        resizeQuality: "low"
+      });
+    } catch (e2) {
+      console.warn("createImageBitmap failed", e2);
+    }
+    if (bitmap) {
+      ctx.drawImage(bitmap, 0, 0);
+      bitmap.close();
+    } else ctx.drawImage(res, 0, 0, imgw, imgh, 0, 0, c2.width, c2.height);
+    const imageData = ctx.getImageData(0, 0, c2.width, c2.height);
+    const pixels = imageData.data;
+    for (let i2 = 0; i2 < pixels.length; i2 += 4) {
+      let r2 = pixels[i2];
+      let g2 = pixels[i2 + 1];
+      let b2 = pixels[i2 + 2];
+      r2 = (r2 - 128) * 0.4 + 128;
+      g2 = (g2 - 128) * 0.4 + 128;
+      b2 = (b2 - 128) * 0.4 + 128;
+      const gray = r2 * 0.3 + g2 * 0.59 + b2 * 0.11;
+      r2 = gray * -2 + r2 * 3;
+      g2 = gray * -2 + g2 * 3;
+      b2 = gray * -2 + b2 * 3;
+      r2 = (r2 - 128) * 1.7 + 128;
+      g2 = (g2 - 128) * 1.7 + 128;
+      b2 = (b2 - 128) * 1.7 + 128;
+      pixels[i2] = r2 * 0.75;
+      pixels[i2 + 1] = g2 * 0.75;
+      pixels[i2 + 2] = b2 * 0.75;
+    }
+    blurImage(imageData, 2, 4);
+    if (this.manualControl && this.meshStates.length > 0) {
+      this.meshStates[0].texture.dispose();
+      this.meshStates[0].texture = new GLTexture2(this.gl, imageData);
+    } else {
+      const newMesh = new BHPMesh(this.gl, this.mainProgram.attrs.a_pos, this.mainProgram.attrs.a_color, this.mainProgram.attrs.a_uv);
+      newMesh.resetSubdivition(50);
+      const chosenPreset = Math.random() > 0.8 ? generateControlPoints(6, 6) : CONTROL_POINT_PRESETS[Math.floor(Math.random() * CONTROL_POINT_PRESETS.length)];
+      newMesh.resizeControlPoints(chosenPreset.width, chosenPreset.height);
+      const uPower = 2 / (chosenPreset.width - 1);
+      const vPower = 2 / (chosenPreset.height - 1);
+      for (const cp of chosenPreset.conf) {
+        const p2 = newMesh.getControlPoint(cp.cx, cp.cy);
+        p2.location.x = cp.x;
+        p2.location.y = cp.y;
+        p2.uRot = cp.ur * Math.PI / 180;
+        p2.vRot = cp.vr * Math.PI / 180;
+        p2.uScale = uPower * cp.up;
+        p2.vScale = vPower * cp.vp;
       }
-      c2.updateMesh(), this.currentImageData = l2;
-      const f2 = new Ht(this.gl, l2), g2 = {
-        mesh: c2,
-        texture: f2,
+      newMesh.updateMesh();
+      const newState = {
+        mesh: newMesh,
+        texture: new GLTexture2(this.gl, imageData),
         alpha: 0
       };
-      this.meshStates.push(g2);
+      this.meshStates.push(newState);
     }
     this.requestTick();
   }
-  setLowFreqVolume(t2) {
-    this.volume = t2 / 10;
+  setLowFreqVolume(volume) {
+    this.volume = volume / 10;
   }
-  setHasLyric(t2) {
+  setHasLyric(_hasLyric) {
   }
   dispose() {
-    super.dispose(), this.tickHandle && (cancelAnimationFrame(this.tickHandle), this.tickHandle = 0), this._disposed = true, this.mainProgram.dispose();
-    for (const t2 of this.meshStates)
-      t2.mesh.dispose(), t2.texture.dispose();
+    super.dispose();
+    if (this.tickHandle) {
+      cancelAnimationFrame(this.tickHandle);
+      this.tickHandle = 0;
+    }
+    this._disposed = true;
+    this.mainProgram.dispose();
+    this.quadProgram.dispose();
+    this.gl.deleteBuffer(this.quadBuffer);
+    if (this.fbo) this.gl.deleteFramebuffer(this.fbo);
+    if (this.fboTexture) this.gl.deleteTexture(this.fboTexture);
+    for (const state2 of this.meshStates) {
+      state2.mesh.dispose();
+      state2.texture.dispose();
+    }
   }
-  enablePerformanceMonitor(t2) {
-    this.enablePerformanceMonitoring = t2, t2 && (this.frameCount = 0, this.lastFPSUpdate = performance.now());
+  enablePerformanceMonitor(enable) {
+    this.enablePerformanceMonitoring = enable;
+    if (enable) {
+      this.frameCount = 0;
+      this.lastFPSUpdate = performance.now();
+    }
   }
   getCurrentFPS() {
     return this.currentFPS;
   }
-  updatePerformanceStats(t2) {
-    this.enablePerformanceMonitoring && (this.frameCount++, t2 - this.lastFPSUpdate > 1e3 && (this.currentFPS = this.frameCount, this.frameCount = 0, this.lastFPSUpdate = t2));
+  updatePerformanceStats(tickTime) {
+    if (!this.enablePerformanceMonitoring) return;
+    this.frameCount++;
+    if (tickTime - this.lastFPSUpdate > 1e3) {
+      this.currentFPS = this.frameCount;
+      this.frameCount = 0;
+      this.lastFPSUpdate = tickTime;
+    }
   }
-}
-class $e extends Container {
+};
+var TimedContainer = class extends Container {
   constructor() {
     super(...arguments);
     __publicField(this, "time", 0);
   }
-}
-class ii extends te {
-  constructor(t2) {
-    super(t2);
+};
+var PixiRenderer = class extends BaseRenderer {
+  constructor(canvas) {
+    super(canvas);
     __publicField(this, "app");
     __publicField(this, "curContainer");
     __publicField(this, "staticMode", false);
     __publicField(this, "lastContainer", /* @__PURE__ */ new Set());
-    __publicField(this, "onTick", (t2) => {
-      for (const e2 of this.lastContainer)
-        e2.alpha = Math.max(0, e2.alpha - t2 / 60), e2.alpha <= 0 && (this.app.stage.removeChild(e2), this.lastContainer.delete(e2), e2.destroy(true));
+    __publicField(this, "onTick", (delta) => {
+      for (const lastContainer of this.lastContainer) {
+        lastContainer.alpha = clampPositive(lastContainer.alpha - delta / 60);
+        if (lastContainer.alpha <= 0) {
+          this.app.stage.removeChild(lastContainer);
+          this.lastContainer.delete(lastContainer);
+          lastContainer.destroy(true);
+        }
+      }
       if (this.curContainer) {
-        this.curContainer.alpha = Math.min(
-          1,
-          this.curContainer.alpha + t2 / 60
-        );
-        const [e2, s2, i2, n2] = this.curContainer.children, r2 = Math.max(this.app.screen.width, this.app.screen.height);
-        e2.position.set(this.app.screen.width / 2, this.app.screen.height / 2), s2.position.set(
-          this.app.screen.width / 2.5,
-          this.app.screen.height / 2.5
-        ), i2.position.set(this.app.screen.width / 2, this.app.screen.height / 2), n2.position.set(this.app.screen.width / 2, this.app.screen.height / 2), e2.width = r2 * Math.sqrt(2), e2.height = e2.width, s2.width = r2 * 0.8, s2.height = s2.width, i2.width = r2 * 0.5, i2.height = i2.width, n2.width = r2 * 0.25, n2.height = n2.width, this.curContainer.time += t2 * this.flowSpeed, e2.rotation += t2 / 1e3 * this.flowSpeed, s2.rotation -= t2 / 500 * this.flowSpeed, i2.rotation += t2 / 1e3 * this.flowSpeed, n2.rotation -= t2 / 750 * this.flowSpeed, i2.x = this.app.screen.width / 2 + this.app.screen.width / 4 * Math.cos(this.curContainer.time / 1e3 * 0.75), i2.y = this.app.screen.height / 2 + this.app.screen.width / 4 * Math.cos(this.curContainer.time / 1e3 * 0.75), n2.x = this.app.screen.width / 2 + this.app.screen.width / 4 * 0.1 + Math.cos(this.curContainer.time * 6e-3 * 0.75), n2.y = this.app.screen.height / 2 + this.app.screen.width / 4 * 0.1 + Math.cos(this.curContainer.time * 6e-3 * 0.75), this.curContainer.alpha >= 1 && this.lastContainer.size === 0 && this.staticMode && this.app.ticker.stop();
+        this.curContainer.alpha = Math.min(1, this.curContainer.alpha + delta / 60);
+        const [s1, s2, s3, s4] = this.curContainer.children;
+        const maxSize = Math.max(this.app.screen.width, this.app.screen.height);
+        s1.position.set(this.app.screen.width / 2, this.app.screen.height / 2);
+        s2.position.set(this.app.screen.width / 2.5, this.app.screen.height / 2.5);
+        s3.position.set(this.app.screen.width / 2, this.app.screen.height / 2);
+        s4.position.set(this.app.screen.width / 2, this.app.screen.height / 2);
+        s1.width = maxSize * Math.sqrt(2);
+        s1.height = s1.width;
+        s2.width = maxSize * 0.8;
+        s2.height = s2.width;
+        s3.width = maxSize * 0.5;
+        s3.height = s3.width;
+        s4.width = maxSize * 0.25;
+        s4.height = s4.width;
+        this.curContainer.time += delta * this.flowSpeed;
+        s1.rotation += delta / 1e3 * this.flowSpeed;
+        s2.rotation -= delta / 500 * this.flowSpeed;
+        s3.rotation += delta / 1e3 * this.flowSpeed;
+        s4.rotation -= delta / 750 * this.flowSpeed;
+        s3.x = this.app.screen.width / 2 + this.app.screen.width / 4 * Math.cos(this.curContainer.time / 1e3 * 0.75);
+        s3.y = this.app.screen.height / 2 + this.app.screen.width / 4 * Math.cos(this.curContainer.time / 1e3 * 0.75);
+        s4.x = this.app.screen.width / 2 + this.app.screen.width / 4 * 0.1 + Math.cos(this.curContainer.time * 6e-3 * 0.75);
+        s4.y = this.app.screen.height / 2 + this.app.screen.width / 4 * 0.1 + Math.cos(this.curContainer.time * 6e-3 * 0.75);
+        if (this.curContainer.alpha >= 1 && this.lastContainer.size === 0 && this.staticMode) this.app.ticker.stop();
       }
     });
-    this.canvas = t2, this.app = new Application({
-      view: t2,
+    this.canvas = canvas;
+    this.app = new Application({
+      view: canvas,
       resizeTo: this.canvas,
       powerPreference: "low-power",
       backgroundAlpha: 1
-    }), this.rebuildFilters(), this.app.ticker.maxFPS = 30, this.app.ticker.add(this.onTick), this.app.ticker.start();
+    });
+    this.rebuildFilters();
+    this.app.ticker.maxFPS = 30;
+    this.app.ticker.add(this.onTick);
+    this.app.ticker.start();
   }
-  onResize(t2, e2) {
-    super.onResize(t2, e2), this.app.resize(), this.rebuildFilters();
+  onResize(width, height) {
+    super.onResize(width, height);
+    this.app.resize();
+    this.rebuildFilters();
   }
-  setRenderScale(t2) {
-    super.setRenderScale(t2), this.rebuildFilters();
+  setRenderScale(scale) {
+    super.setRenderScale(scale);
+    this.rebuildFilters();
   }
   rebuildFilters() {
-    const t$12 = Math.min(this.canvas.width, this.canvas.height), e2 = Math.max(this.canvas.width, this.canvas.height), s2 = new ColorMatrixFilter();
-    s2.saturate(1.2, false);
-    const i2 = new ColorMatrixFilter();
-    i2.brightness(0.6, false);
-    const n2 = new ColorMatrixFilter();
-    n2.contrast(0.3, true);
-    for (const r2 of this.app.stage.filters ?? [])
-      r2.destroy();
-    this.app.stage.filters = [], this.app.stage.filters.push(new BlurFilter(5, 1)), this.app.stage.filters.push(new BlurFilter(10, 1)), this.app.stage.filters.push(new BlurFilter(20, 2)), this.app.stage.filters.push(new BlurFilter(40, 2)), this.app.stage.filters.push(new BlurFilter(80, 2)), t$12 > 768 && this.app.stage.filters.push(new BlurFilter(160, 4)), t$12 > 768 * 2 && this.app.stage.filters.push(new BlurFilter(320, 4)), this.app.stage.filters.push(s2, i2, n2), this.app.stage.filters.push(new BlurFilter(5, 1)), Math.random() > 0.5 ? (this.app.stage.filters.push(
-      new t({
-        radius: (e2 + t$12) / 2,
+    const minBorder = Math.min(this.canvas.width, this.canvas.height);
+    const maxBorder = Math.max(this.canvas.width, this.canvas.height);
+    const c0 = new ColorMatrixFilter();
+    c0.saturate(1.2, false);
+    const c1 = new ColorMatrixFilter();
+    c1.brightness(0.6, false);
+    const c2 = new ColorMatrixFilter();
+    c2.contrast(0.3, true);
+    for (const filter of this.app.stage.filters ?? []) filter.destroy();
+    this.app.stage.filters = [];
+    this.app.stage.filters.push(new BlurFilter(5, 1));
+    this.app.stage.filters.push(new BlurFilter(10, 1));
+    this.app.stage.filters.push(new BlurFilter(20, 2));
+    this.app.stage.filters.push(new BlurFilter(40, 2));
+    this.app.stage.filters.push(new BlurFilter(80, 2));
+    if (minBorder > 768) this.app.stage.filters.push(new BlurFilter(160, 4));
+    if (minBorder > 768 * 2) this.app.stage.filters.push(new BlurFilter(320, 4));
+    this.app.stage.filters.push(c0, c1, c2);
+    this.app.stage.filters.push(new BlurFilter(5, 1));
+    if (Math.random() > 0.5) {
+      this.app.stage.filters.push(new t({
+        radius: (maxBorder + minBorder) / 2,
         strength: 1,
         center: [0.25, 1]
-      })
-    ), this.app.stage.filters.push(
-      new t({
-        radius: (e2 + t$12) / 2,
+      }));
+      this.app.stage.filters.push(new t({
+        radius: (maxBorder + minBorder) / 2,
         strength: 1,
         center: [0.75, 0]
-      })
-    )) : (this.app.stage.filters.push(
-      new t({
-        radius: (e2 + t$12) / 2,
+      }));
+    } else {
+      this.app.stage.filters.push(new t({
+        radius: (maxBorder + minBorder) / 2,
         strength: 1,
         center: [0.75, 1]
-      })
-    ), this.app.stage.filters.push(
-      new t({
-        radius: (e2 + t$12) / 2,
+      }));
+      this.app.stage.filters.push(new t({
+        radius: (maxBorder + minBorder) / 2,
         strength: 1,
         center: [0.25, 0]
-      })
-    ));
+      }));
+    }
   }
-  setStaticMode(t2 = false) {
-    this.staticMode = t2, this.app.ticker.start();
+  setStaticMode(enable = false) {
+    this.staticMode = enable;
+    this.app.ticker.start();
   }
-  setFPS(t2) {
-    this.app.ticker.maxFPS = t2;
+  setFPS(fps) {
+    this.app.ticker.maxFPS = fps;
   }
   pause() {
-    this.app.ticker.stop(), this.app.render();
+    this.app.ticker.stop();
+    this.app.render();
   }
   resume() {
     this.app.ticker.start();
   }
-  setLowFreqVolume(t2) {
+  setLowFreqVolume(_volume) {
   }
-  setHasLyric(t2) {
+  setHasLyric(_hasLyric) {
   }
-  async setAlbum(t2, e2) {
-    var _a, _b;
-    if (!t2 || typeof t2 == "string" && t2.trim().length === 0)
-      return;
-    let s2 = null, i2 = 5, n2 = null;
-    for (; !((_b = (_a = n2 == null ? void 0 : n2.baseTexture) == null ? void 0 : _a.resource) == null ? void 0 : _b.valid) && i2 > 0; )
-      try {
-        typeof t2 == "string" ? s2 = await ee(t2, e2) : s2 = await se(t2), n2 = Texture.from(s2, {
-          resourceOptions: {
-            autoLoad: false
-          }
-        }), await n2.baseTexture.resource.load();
-      } catch (h2) {
-        console.warn(
-          `failed on loading album image, retrying (${i2})`,
-          t2,
-          h2
-        ), n2 = null, i2--;
-      }
-    if (!n2) return;
-    const r2 = new $e(), a2 = new Sprite(n2), o2 = new Sprite(n2), l2 = new Sprite(n2), c2 = new Sprite(n2);
-    a2.anchor.set(0.5, 0.5), o2.anchor.set(0.5, 0.5), l2.anchor.set(0.5, 0.5), c2.anchor.set(0.5, 0.5), a2.rotation = Math.random() * Math.PI * 2, o2.rotation = Math.random() * Math.PI * 2, l2.rotation = Math.random() * Math.PI * 2, c2.rotation = Math.random() * Math.PI * 2, r2.addChild(a2, o2, l2, c2), this.curContainer && this.lastContainer.add(this.curContainer), this.curContainer = r2, this.app.stage.addChild(r2), this.curContainer.alpha = 0, this.app.ticker.start();
+  async setAlbum(albumSource, isVideo) {
+    var _a2, _b;
+    if (!albumSource || typeof albumSource === "string" && albumSource.trim().length === 0) return;
+    let res = null;
+    let remainRetryTimes = 5;
+    let tex = null;
+    while (!((_b = (_a2 = tex == null ? void 0 : tex.baseTexture) == null ? void 0 : _a2.resource) == null ? void 0 : _b.valid) && remainRetryTimes > 0) try {
+      if (typeof albumSource === "string") res = await loadResourceFromUrl(albumSource, isVideo);
+      else res = await loadResourceFromElement(albumSource);
+      tex = Texture.from(res, { resourceOptions: { autoLoad: false } });
+      await tex.baseTexture.resource.load();
+    } catch (error) {
+      console.warn(`failed on loading album image, retrying (${remainRetryTimes})`, albumSource, error);
+      tex = null;
+      remainRetryTimes--;
+    }
+    if (!tex) return;
+    const container = new TimedContainer();
+    const s1 = new Sprite(tex);
+    const s2 = new Sprite(tex);
+    const s3 = new Sprite(tex);
+    const s4 = new Sprite(tex);
+    s1.anchor.set(0.5, 0.5);
+    s2.anchor.set(0.5, 0.5);
+    s3.anchor.set(0.5, 0.5);
+    s4.anchor.set(0.5, 0.5);
+    s1.rotation = Math.random() * Math.PI * 2;
+    s2.rotation = Math.random() * Math.PI * 2;
+    s3.rotation = Math.random() * Math.PI * 2;
+    s4.rotation = Math.random() * Math.PI * 2;
+    container.addChild(s1, s2, s3, s4);
+    if (this.curContainer) this.lastContainer.add(this.curContainer);
+    this.curContainer = container;
+    this.app.stage.addChild(container);
+    this.curContainer.alpha = 0;
+    this.app.ticker.start();
   }
   dispose() {
-    super.dispose(), this.app.ticker.remove(this.onTick), this.app.destroy(true);
+    super.dispose();
+    this.app.ticker.remove(this.onTick);
+    this.app.destroy(true);
   }
   getElement() {
     return this.canvas;
   }
-}
-class ie {
-  constructor(t2, e2) {
+};
+var BackgroundRender = class BackgroundRender2 {
+  constructor(renderer, canvas) {
     __publicField(this, "element");
     __publicField(this, "renderer");
-    this.renderer = t2, this.element = e2, e2.style.pointerEvents = "none", e2.style.zIndex = "-1", e2.style.contain = "strict";
+    this.renderer = renderer;
+    this.element = canvas;
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "-1";
+    canvas.style.contain = "strict";
   }
-  static new(t2) {
-    const e2 = document.createElement("canvas");
-    return new ie(new t2(e2), e2);
+  static new(type2) {
+    const newCanvas = document.createElement("canvas");
+    return new BackgroundRender2(new type2(newCanvas), newCanvas);
   }
-  setRenderScale(t2) {
-    this.renderer.setRenderScale(t2);
+  setRenderScale(scale) {
+    this.renderer.setRenderScale(scale);
   }
-  setFlowSpeed(t2) {
-    this.renderer.setFlowSpeed(t2);
+  setFlowSpeed(speed) {
+    this.renderer.setFlowSpeed(speed);
   }
-  setStaticMode(t2) {
-    this.renderer.setStaticMode(t2);
+  setStaticMode(enable) {
+    this.renderer.setStaticMode(enable);
   }
-  setFPS(t2) {
-    this.renderer.setFPS(t2);
+  setFPS(fps) {
+    this.renderer.setFPS(fps);
   }
   pause() {
     this.renderer.pause();
@@ -20088,377 +22527,187 @@ class ie {
   resume() {
     this.renderer.resume();
   }
-  setLowFreqVolume(t2) {
-    this.renderer.setLowFreqVolume(t2);
+  setLowFreqVolume(volume) {
+    this.renderer.setLowFreqVolume(volume);
   }
-  setHasLyric(t2) {
-    this.renderer.setHasLyric(t2);
+  setHasLyric(hasLyric) {
+    this.renderer.setHasLyric(hasLyric);
   }
-  setAlbum(t2, e2) {
-    return this.renderer.setAlbum(t2, e2);
+  setAlbum(albumSource, isVideo) {
+    return this.renderer.setAlbum(albumSource, isVideo);
   }
   getElement() {
     return this.element;
   }
   dispose() {
-    this.renderer.dispose(), this.element.remove();
-  }
-}
-const qe = "_lyricLine_ut4sn_6", Ve = "_lyricBgLine_ut4sn_50", He = "_active_ut4sn_62", Ue = "_hasDuetLine_ut4sn_78", Ye = "_lyricDuetLine_ut4sn_79", je = "_lyricMainLine_ut4sn_98", Ge = "_romanWord_ut4sn_107", Xe = "_emphasizeWrapper_ut4sn_113", Ze = "_emphasize_ut4sn_113", Je = "_lyricSubLine_ut4sn_136", Qe = "_disableSpring_ut4sn_143", Ke = "_interludeDots_ut4sn_151", ts = "_enabled_ut4sn_163", es = "_tmpDisableTransition_ut4sn_189", W = {
-  lyricLine: qe,
-  lyricBgLine: Ve,
-  active: He,
-  hasDuetLine: Ue,
-  lyricDuetLine: Ye,
-  lyricMainLine: je,
-  romanWord: Ge,
-  emphasizeWrapper: Xe,
-  emphasize: Ze,
-  lyricSubLine: Je,
-  disableSpring: Qe,
-  interludeDots: Ke,
-  enabled: ts,
-  tmpDisableTransition: es
-}, ne = -1, wt = 0, ht = 1, xt = 2, Ft = 3, At = 4, _t = 5, Ct = 6, re = 7, ae = 8, Ut = typeof self == "object" ? self : globalThis, ss = (d2, t2) => {
-  const e2 = (i2, n2) => (d2.set(n2, i2), i2), s2 = (i2) => {
-    if (d2.has(i2))
-      return d2.get(i2);
-    const [n2, r2] = t2[i2];
-    switch (n2) {
-      case wt:
-      case ne:
-        return e2(r2, i2);
-      case ht: {
-        const a2 = e2([], i2);
-        for (const o2 of r2)
-          a2.push(s2(o2));
-        return a2;
-      }
-      case xt: {
-        const a2 = e2({}, i2);
-        for (const [o2, l2] of r2)
-          a2[s2(o2)] = s2(l2);
-        return a2;
-      }
-      case Ft:
-        return e2(new Date(r2), i2);
-      case At: {
-        const { source: a2, flags: o2 } = r2;
-        return e2(new RegExp(a2, o2), i2);
-      }
-      case _t: {
-        const a2 = e2(/* @__PURE__ */ new Map(), i2);
-        for (const [o2, l2] of r2)
-          a2.set(s2(o2), s2(l2));
-        return a2;
-      }
-      case Ct: {
-        const a2 = e2(/* @__PURE__ */ new Set(), i2);
-        for (const o2 of r2)
-          a2.add(s2(o2));
-        return a2;
-      }
-      case re: {
-        const { name: a2, message: o2 } = r2;
-        return e2(new Ut[a2](o2), i2);
-      }
-      case ae:
-        return e2(BigInt(r2), i2);
-      case "BigInt":
-        return e2(Object(BigInt(r2)), i2);
-      case "ArrayBuffer":
-        return e2(new Uint8Array(r2).buffer, r2);
-      case "DataView": {
-        const { buffer: a2 } = new Uint8Array(r2);
-        return e2(new DataView(a2), r2);
-      }
-    }
-    return e2(new Ut[n2](r2), i2);
-  };
-  return s2;
-}, Yt = (d2) => ss(/* @__PURE__ */ new Map(), d2)(0), rt = "", { toString: is } = {}, { keys: ns } = Object, ot = (d2) => {
-  const t2 = typeof d2;
-  if (t2 !== "object" || !d2)
-    return [wt, t2];
-  const e2 = is.call(d2).slice(8, -1);
-  switch (e2) {
-    case "Array":
-      return [ht, rt];
-    case "Object":
-      return [xt, rt];
-    case "Date":
-      return [Ft, rt];
-    case "RegExp":
-      return [At, rt];
-    case "Map":
-      return [_t, rt];
-    case "Set":
-      return [Ct, rt];
-    case "DataView":
-      return [ht, e2];
-  }
-  return e2.includes("Array") ? [ht, e2] : e2.includes("Error") ? [re, e2] : [xt, e2];
-}, Lt = ([d2, t2]) => d2 === wt && (t2 === "function" || t2 === "symbol"), rs = (d2, t2, e2, s2) => {
-  const i2 = (r2, a2) => {
-    const o2 = s2.push(r2) - 1;
-    return e2.set(a2, o2), o2;
-  }, n2 = (r2) => {
-    if (e2.has(r2))
-      return e2.get(r2);
-    let [a2, o2] = ot(r2);
-    switch (a2) {
-      case wt: {
-        let c2 = r2;
-        switch (o2) {
-          case "bigint":
-            a2 = ae, c2 = r2.toString();
-            break;
-          case "function":
-          case "symbol":
-            if (d2)
-              throw new TypeError("unable to serialize " + o2);
-            c2 = null;
-            break;
-          case "undefined":
-            return i2([ne], r2);
-        }
-        return i2([a2, c2], r2);
-      }
-      case ht: {
-        if (o2) {
-          let m2 = r2;
-          return o2 === "DataView" ? m2 = new Uint8Array(r2.buffer) : o2 === "ArrayBuffer" && (m2 = new Uint8Array(r2)), i2([o2, [...m2]], r2);
-        }
-        const c2 = [], h2 = i2([a2, c2], r2);
-        for (const m2 of r2)
-          c2.push(n2(m2));
-        return h2;
-      }
-      case xt: {
-        if (o2)
-          switch (o2) {
-            case "BigInt":
-              return i2([o2, r2.toString()], r2);
-            case "Boolean":
-            case "Number":
-            case "String":
-              return i2([o2, r2.valueOf()], r2);
-          }
-        if (t2 && "toJSON" in r2)
-          return n2(r2.toJSON());
-        const c2 = [], h2 = i2([a2, c2], r2);
-        for (const m2 of ns(r2))
-          (d2 || !Lt(ot(r2[m2]))) && c2.push([n2(m2), n2(r2[m2])]);
-        return h2;
-      }
-      case Ft:
-        return i2([a2, r2.toISOString()], r2);
-      case At: {
-        const { source: c2, flags: h2 } = r2;
-        return i2([a2, { source: c2, flags: h2 }], r2);
-      }
-      case _t: {
-        const c2 = [], h2 = i2([a2, c2], r2);
-        for (const [m2, u2] of r2)
-          (d2 || !(Lt(ot(m2)) || Lt(ot(u2)))) && c2.push([n2(m2), n2(u2)]);
-        return h2;
-      }
-      case Ct: {
-        const c2 = [], h2 = i2([a2, c2], r2);
-        for (const m2 of r2)
-          (d2 || !Lt(ot(m2))) && c2.push(n2(m2));
-        return h2;
-      }
-    }
-    const { message: l2 } = r2;
-    return i2([a2, { name: o2, message: l2 }], r2);
-  };
-  return n2;
-}, jt = (d2, { json: t2, lossy: e2 } = {}) => {
-  const s2 = [];
-  return rs(!(t2 || e2), !!t2, /* @__PURE__ */ new Map(), s2)(d2), s2;
-}, Gt = typeof structuredClone == "function" ? (
-  /* c8 ignore start */
-  ((d2, t2) => t2 && ("json" in t2 || "lossy" in t2) ? Yt(jt(d2, t2)) : structuredClone(d2))
-) : (d2, t2) => Yt(jt(d2, t2)), as = (d2, t2) => d2.size === t2.size && [...d2].every((e2) => t2.has(e2)), os = (d2) => /^[\p{Unified_Ideograph}\u0800-\u9FFC]+$/u.test(d2);
-function cs(d2) {
-  return (e2) => (d2(e2 + 1e-3) - d2(e2 - 1e-3)) / (2 * 1e-3);
-}
-function Xt(d2) {
-  return cs(d2);
-}
-class Tt {
-  constructor(t2 = 0) {
-    __publicField(this, "currentPosition", 0);
-    __publicField(this, "targetPosition", 0);
-    __publicField(this, "currentTime", 0);
-    __publicField(this, "params", {});
-    __publicField(this, "currentSolver");
-    __publicField(this, "getV");
-    __publicField(this, "getV2");
-    __publicField(this, "queueParams");
-    __publicField(this, "queuePosition");
-    this.targetPosition = t2, this.currentPosition = this.targetPosition, this.currentSolver = () => this.targetPosition, this.getV = () => 0, this.getV2 = () => 0;
-  }
-  resetSolver() {
-    const t2 = this.getV(this.currentTime);
-    this.currentTime = 0, this.currentSolver = ls(
-      this.currentPosition,
-      t2,
-      this.targetPosition,
-      0,
-      this.params
-    ), this.getV = Xt(this.currentSolver), this.getV2 = Xt(this.getV);
-  }
-  arrived() {
-    return Math.abs(this.targetPosition - this.currentPosition) < 0.01 && this.getV(this.currentTime) < 0.01 && this.getV2(this.currentTime) < 0.01 && this.queueParams === void 0 && this.queuePosition === void 0;
-  }
-  setPosition(t2) {
-    this.targetPosition = t2, this.currentPosition = t2, this.currentSolver = () => this.targetPosition, this.getV = () => 0, this.getV2 = () => 0;
-  }
-  update(t2 = 0) {
-    this.currentTime += t2, this.currentPosition = this.currentSolver(this.currentTime), this.queueParams && (this.queueParams.time -= t2, this.queueParams.time <= 0 && this.updateParams({
-      ...this.queueParams
-    })), this.queuePosition && (this.queuePosition.time -= t2, this.queuePosition.time <= 0 && this.setTargetPosition(this.queuePosition.position)), this.arrived() && this.setPosition(this.targetPosition);
-  }
-  updateParams(t2, e2 = 0) {
-    e2 > 0 ? this.queueParams = {
-      ...this.queuePosition ?? {},
-      ...t2,
-      time: e2
-    } : (this.queuePosition = void 0, this.params = {
-      ...this.params,
-      ...t2
-    }, this.resetSolver());
-  }
-  setTargetPosition(t2, e2 = 0) {
-    e2 > 0 ? this.queuePosition = {
-      ...this.queuePosition ?? {},
-      position: t2,
-      time: e2
-    } : (this.queuePosition = void 0, this.targetPosition = t2, this.resetSolver());
-  }
-  getCurrentPosition() {
-    return this.currentPosition;
-  }
-}
-function ls(d2, t2, e2, s2 = 0, i2) {
-  const n2 = (i2 == null ? void 0 : i2.soft) ?? false, r2 = (i2 == null ? void 0 : i2.stiffness) ?? 100, a2 = (i2 == null ? void 0 : i2.damping) ?? 10, o2 = (i2 == null ? void 0 : i2.mass) ?? 1, l2 = e2 - d2;
-  if (n2 || 1 <= a2 / (2 * Math.sqrt(r2 * o2))) {
-    const f2 = -Math.sqrt(r2 / o2), g2 = -f2 * l2 - t2;
-    return (p2) => (p2 -= s2, p2 < 0 ? d2 : e2 - (l2 + p2 * g2) * Math.E ** (p2 * f2));
-  }
-  const c2 = Math.sqrt(4 * o2 * r2 - a2 ** 2), h2 = (a2 * l2 - 2 * o2 * t2) / c2, m2 = 0.5 * c2 / o2, u2 = -(0.5 * a2) / o2;
-  return (f2) => (f2 -= s2, f2 < 0 ? d2 : e2 - (Math.cos(f2 * m2) * l2 + Math.sin(f2 * m2) * h2) * Math.E ** (f2 * u2));
-}
-const It = [], kt = [];
-let Dt = false;
-function hs() {
-  let d2 = kt.shift();
-  for (; d2; ) {
-    try {
-      d2.resolve(d2.task());
-    } catch (t2) {
-      d2.reject(t2);
-    }
-    d2 = kt.shift();
-  }
-  for (d2 = It.shift(); d2; ) {
-    try {
-      d2.resolve(d2.task());
-    } catch (t2) {
-      d2.reject(t2);
-    }
-    d2 = It.shift();
-  }
-  Dt = false;
-}
-function oe() {
-  Dt || (Dt = true, requestAnimationFrame(hs));
-}
-function ce(d2) {
-  const t2 = {
-    task: d2,
-    resolve: () => {
-    },
-    reject: () => {
-    }
-  }, e2 = new Promise((s2, i2) => {
-    t2.resolve = s2, t2.reject = i2;
-  });
-  return It.push(t2), oe(), e2;
-}
-function Zt(d2) {
-  const t2 = {
-    task: d2,
-    resolve: () => {
-    },
-    reject: () => {
-    }
-  }, e2 = new Promise((s2, i2) => {
-    t2.resolve = s2, t2.reject = i2;
-  });
-  return kt.push(t2), oe(), e2;
-}
-class ds {
-  constructor(t2) {
-    __publicField(this, "element", document.createElement("div"));
-    __publicField(this, "left", 0);
-    __publicField(this, "top", 0);
-    __publicField(this, "delay", 0);
-    // 由 LyricPlayer 来设置
-    __publicField(this, "lineSize", [0, 0]);
-    __publicField(this, "lineTransforms", {
-      posX: new Tt(0),
-      posY: new Tt(0)
-    });
-    __publicField(this, "lastStyle", "");
-    this.lyricPlayer = t2, this.element.setAttribute("class", W.lyricLine), this.rebuildStyle();
-  }
-  async measureSize() {
-    return await ce(() => [
-      this.element.clientWidth,
-      this.element.clientHeight
-    ]);
-  }
-  show() {
-    this.rebuildStyle();
-  }
-  hide() {
-    this.rebuildStyle();
-  }
-  rebuildStyle() {
-    let t2 = `transform:translate(${this.lineTransforms.posX.getCurrentPosition().toFixed(2)}px,${this.lineTransforms.posY.getCurrentPosition().toFixed(2)}px);`;
-    !this.lyricPlayer.getEnableSpring() && this.isInSight && (t2 += `transition-delay:${this.delay}ms;`), t2 !== this.lastStyle && (this.lastStyle = t2, this.element.setAttribute("style", t2));
-  }
-  getElement() {
-    return this.element;
-  }
-  setTransform(t2 = this.left, e2 = this.top, s2 = false, i2 = 0) {
-    this.left = t2, this.top = e2, this.delay = i2 * 1e3 | 0, s2 || !this.lyricPlayer.getEnableSpring() ? (s2 && this.element.classList.add(W.tmpDisableTransition), this.lineTransforms.posX.setPosition(t2), this.lineTransforms.posY.setPosition(e2), this.lyricPlayer.getEnableSpring() ? this.rebuildStyle() : this.show(), s2 && requestAnimationFrame(() => {
-      this.element.classList.remove(W.tmpDisableTransition);
-    })) : (this.lineTransforms.posX.setTargetPosition(t2, i2), this.lineTransforms.posY.setTargetPosition(e2, i2));
-  }
-  update(t2 = 0) {
-    this.lyricPlayer.getEnableSpring() && (this.lineTransforms.posX.update(t2), this.lineTransforms.posY.update(t2), this.isInSight ? this.show() : this.hide());
-  }
-  get isInSight() {
-    const t2 = this.lineTransforms.posX.getCurrentPosition(), e2 = this.lineTransforms.posY.getCurrentPosition(), s2 = t2 + this.lineSize[0], i2 = e2 + this.lineSize[1], n2 = this.lyricPlayer.size[0], r2 = this.lyricPlayer.size[1];
-    return !(t2 > n2 || e2 > r2 || s2 < 0 || i2 < 0);
-  }
-  dispose() {
+    this.renderer.dispose();
     this.element.remove();
   }
+};
+var lyric_player_module_default = {
+  "active": "FmKaba_active",
+  "bgWrapper": "FmKaba_bgWrapper",
+  "bgWrapperActive": "FmKaba_bgWrapperActive",
+  "bgWrapperHidden": "FmKaba_bgWrapperHidden",
+  "bgWrapperTop": "FmKaba_bgWrapperTop",
+  "bottomLine": "FmKaba_bottomLine",
+  "disableSpring": "FmKaba_disableSpring",
+  "emphasize": "FmKaba_emphasize",
+  "emphasizeWrapper": "FmKaba_emphasizeWrapper",
+  "enabled": "FmKaba_enabled",
+  "hasDuetLine": "FmKaba_hasDuetLine",
+  "interludeDots": "FmKaba_interludeDots",
+  "lyricBgLine": "FmKaba_lyricBgLine",
+  "lyricDuetLine": "FmKaba_lyricDuetLine",
+  "lyricLine": "FmKaba_lyricLine",
+  "lyricLineWrapper": "FmKaba_lyricLineWrapper",
+  "lyricMainLine": "FmKaba_lyricMainLine",
+  "lyricSubLine": "FmKaba_lyricSubLine",
+  "playing": "FmKaba_playing",
+  "romanWord": "FmKaba_romanWord",
+  "rubyWord": "FmKaba_rubyWord",
+  "tmpDisableTransition": "FmKaba_tmpDisableTransition",
+  "wordBody": "FmKaba_wordBody",
+  "wordWithRuby": "FmKaba_wordWithRuby"
+};
+const DEFAULT_OPTIMIZE_OPTIONS = {
+  normalizeSpaces: true,
+  resetLineTimestamps: true,
+  convertExcessiveBackgroundLines: true,
+  syncMainAndBackgroundLines: true,
+  cleanUnintentionalOverlaps: true,
+  tryAdvanceStartTime: true
+};
+function normalizeSpaces(lines) {
+  for (const line of lines) for (const word of line.words) word.word = word.word.replace(/\s+/g, " ");
 }
-function ms(d2) {
-  const e2 = 2.5949095;
-  return d2 < 0.5 ? (2 * d2) ** 2 * ((e2 + 1) * 2 * d2 - e2) / 2 : ((2 * d2 - 2) ** 2 * ((e2 + 1) * (d2 * 2 - 2) + e2) + 2) / 2;
+function resetLineTimestamps(lines) {
+  for (const line of lines) if (line.words.length === 1 && line.words[0].startTime === 0 && line.words[0].endTime === 0 && (line.startTime !== 0 || line.endTime !== 0)) {
+    line.words[0].startTime = line.startTime;
+    line.words[0].endTime = line.endTime;
+  } else if (line.words.length > 0) {
+    const firstWord = line.words[0];
+    const lastWord = line.words[line.words.length - 1];
+    line.startTime = firstWord.startTime;
+    line.endTime = lastWord.endTime;
+  }
 }
-function ps(d2) {
-  return d2 === 1 ? 1 : 1 - 2 ** (-10 * d2);
+function convertExcessiveBackgroundLines(lines) {
+  let consecutiveBgCount = 0;
+  for (const line of lines) if (line.isBG) {
+    consecutiveBgCount++;
+    if (consecutiveBgCount > 1) line.isBG = false;
+  } else consecutiveBgCount = 0;
 }
-const Q = (d2, t2, e2) => Math.max(d2, Math.min(t2, e2));
-class fs {
+function syncMainAndBackgroundLines(lines) {
+  for (let i2 = lines.length - 1; i2 >= 0; i2--) {
+    const line = lines[i2];
+    if (line.isBG) continue;
+    const nextLine = lines[i2 + 1];
+    if (nextLine == null ? void 0 : nextLine.isBG) {
+      const allWords = [...line.words, ...nextLine.words].filter((w2) => w2.word.trim().length > 0);
+      if (allWords.length > 0) {
+        const minStart = Math.min(...allWords.map((w2) => w2.startTime));
+        const maxEnd = Math.max(...allWords.map((w2) => w2.endTime));
+        const finalStart = Math.min(minStart, line.startTime, nextLine.startTime);
+        const finalEnd = Math.max(maxEnd, line.endTime, nextLine.endTime);
+        line.startTime = finalStart;
+        line.endTime = finalEnd;
+        nextLine.startTime = finalStart;
+        nextLine.endTime = finalEnd;
+      }
+    }
+  }
+}
+function cleanUnintentionalOverlaps(lines) {
+  for (let i2 = 0; i2 < lines.length - 1; i2++) {
+    const line = lines[i2];
+    if (line.isBG) continue;
+    let nextMainIndex = i2 + 1;
+    while (nextMainIndex < lines.length && lines[nextMainIndex].isBG) nextMainIndex++;
+    if (nextMainIndex < lines.length) {
+      const nextLine = lines[nextMainIndex];
+      const overlap = line.endTime - nextLine.startTime;
+      if (overlap > 0) {
+        const percentageThreshold = (nextLine.endTime - nextLine.startTime) * 0.1;
+        if (!(overlap > 100 && overlap > percentageThreshold)) {
+          line.endTime = nextLine.startTime;
+          const attachedBgLine = lines[i2 + 1];
+          if (attachedBgLine == null ? void 0 : attachedBgLine.isBG) attachedBgLine.endTime = nextLine.startTime;
+        }
+      }
+    }
+  }
+}
+function tryAdvanceStartTime(lines) {
+  const defaultAdvanceAmount = 600;
+  const fallbackAdvanceAmount = 400;
+  const fallbackAdvanceRatio = 0.3;
+  let prevLineStartTime = 0;
+  let prevLineEndTime = 0;
+  let prevMainGroupStartTime = 0;
+  let prevMainGroupEndTime = 0;
+  let hasPrevLine = false;
+  for (let i2 = 0; i2 < lines.length; i2++) {
+    const line = lines[i2];
+    if (line.isBG) continue;
+    const originalStartTime = line.startTime;
+    const originalEndTime = line.endTime;
+    let targetAdvanceAmount = 0;
+    let safeBoundary = 0;
+    if (hasPrevLine) if (originalStartTime >= prevLineEndTime) {
+      targetAdvanceAmount = defaultAdvanceAmount;
+      safeBoundary = prevMainGroupEndTime;
+    } else {
+      targetAdvanceAmount = fallbackAdvanceAmount;
+      const prevDuration = prevLineEndTime - prevLineStartTime;
+      safeBoundary = prevLineStartTime + prevDuration * fallbackAdvanceRatio;
+    }
+    else {
+      targetAdvanceAmount = defaultAdvanceAmount;
+      safeBoundary = 0;
+    }
+    const targetTime = line.startTime - targetAdvanceAmount;
+    const newStartTime = Math.max(safeBoundary, targetTime);
+    if (newStartTime < line.startTime) line.startTime = newStartTime;
+    const nextLine = lines[i2 + 1];
+    if (nextLine == null ? void 0 : nextLine.isBG) nextLine.startTime = line.startTime;
+    if (hasPrevLine) if (originalStartTime < prevMainGroupEndTime && originalEndTime > prevMainGroupStartTime) {
+      prevMainGroupStartTime = Math.min(prevMainGroupStartTime, originalStartTime);
+      prevMainGroupEndTime = Math.max(prevMainGroupEndTime, originalEndTime);
+    } else {
+      prevMainGroupStartTime = originalStartTime;
+      prevMainGroupEndTime = originalEndTime;
+    }
+    else {
+      prevMainGroupStartTime = originalStartTime;
+      prevMainGroupEndTime = originalEndTime;
+    }
+    prevLineStartTime = originalStartTime;
+    prevLineEndTime = originalEndTime;
+    hasPrevLine = true;
+  }
+}
+function optimizeLyricLines(lines, options) {
+  const config = {
+    ...DEFAULT_OPTIMIZE_OPTIONS,
+    ...options
+  };
+  if (config.normalizeSpaces) normalizeSpaces(lines);
+  if (config.resetLineTimestamps) resetLineTimestamps(lines);
+  if (config.convertExcessiveBackgroundLines) convertExcessiveBackgroundLines(lines);
+  if (config.syncMainAndBackgroundLines) syncMainAndBackgroundLines(lines);
+  if (config.cleanUnintentionalOverlaps) cleanUnintentionalOverlaps(lines);
+  if (config.tryAdvanceStartTime) tryAdvanceStartTime(lines);
+}
+function easeInOutBack(x2) {
+  const c2 = 1.70158 * 1.525;
+  return x2 < 0.5 ? (2 * x2) ** 2 * ((c2 + 1) * 2 * x2 - c2) / 2 : ((2 * x2 - 2) ** 2 * ((c2 + 1) * (x2 * 2 - 2) + c2) + 2) / 2;
+}
+function easeOutExpo(x2) {
+  return x2 === 1 ? 1 : 1 - 2 ** (-10 * x2);
+}
+var InterludeDots = class {
   constructor() {
     __publicField(this, "element", document.createElement("div"));
     __publicField(this, "dot0", document.createElement("span"));
@@ -20471,119 +22720,664 @@ class fs {
     __publicField(this, "currentInterlude");
     __publicField(this, "currentTime", 0);
     __publicField(this, "targetBreatheDuration", 1500);
-    this.element.className = W.interludeDots, this.element.appendChild(this.dot0), this.element.appendChild(this.dot1), this.element.appendChild(this.dot2);
+    this.element.className = lyric_player_module_default.interludeDots;
+    this.element.appendChild(this.dot0);
+    this.element.appendChild(this.dot1);
+    this.element.appendChild(this.dot2);
   }
   getElement() {
     return this.element;
   }
-  setTransform(t2 = this.left, e2 = this.top) {
-    this.left = t2, this.top = e2, this.update();
+  setTransform(left = this.left, top = this.top) {
+    this.left = left;
+    this.top = top;
+    this.update();
   }
-  setInterlude(t2) {
-    this.currentInterlude = t2, this.currentTime = (t2 == null ? void 0 : t2[0]) ?? 0, t2 ? this.element.classList.add(W.enabled) : this.element.classList.remove(W.enabled);
+  setInterlude(interlude) {
+    this.currentInterlude = interlude;
+    this.currentTime = (interlude == null ? void 0 : interlude[0]) ?? 0;
+    if (interlude) this.element.classList.add(lyric_player_module_default.enabled);
+    else this.element.classList.remove(lyric_player_module_default.enabled);
   }
   pause() {
-    this.playing = false, this.element.classList.remove(W.playing);
+    this.playing = false;
+    this.element.classList.remove(lyric_player_module_default.playing);
   }
   resume() {
-    this.playing = true, this.element.classList.add(W.playing);
+    this.playing = true;
+    this.element.classList.add(lyric_player_module_default.playing);
   }
-  update(t2 = 0) {
+  update(delta = 0) {
     if (!this.playing) return;
-    this.currentTime += t2;
-    let e2 = "";
-    if (e2 += `transform:translate(${this.left.toFixed(
-      2
-    )}px, ${this.top.toFixed(2)}px)`, this.currentInterlude) {
-      const s2 = this.currentInterlude[1] - this.currentInterlude[0], i2 = this.currentTime - this.currentInterlude[0];
-      if (i2 <= s2) {
-        const n2 = s2 / Math.ceil(s2 / this.targetBreatheDuration);
-        let r2 = 1, a2 = 1;
-        r2 *= Math.sin(1.5 * Math.PI - i2 / n2 * 2) / 20 + 1, i2 < 2e3 && (r2 *= ps(i2 / 2e3)), i2 < 500 ? a2 = 0 : i2 < 1e3 && (a2 *= (i2 - 500) / 500), s2 - i2 < 750 && (r2 *= 1 - ms(
-          (750 - (s2 - i2)) / 750 / 2
-        )), s2 - i2 < 375 && (a2 *= Q(
-          0,
-          (s2 - i2) / 375,
-          1
-        ));
-        const o2 = Math.max(0, s2 - 750);
-        r2 = Math.max(0, r2) * 0.7, e2 += ` scale(${r2})`;
-        const l2 = Q(
-          0.25,
-          i2 * 3 / o2 * 0.75,
-          1
-        ), c2 = Q(
-          0.25,
-          (i2 - o2 / 3) * 3 / o2 * 0.75,
-          1
-        ), h2 = Q(
-          0.25,
-          (i2 - o2 / 3 * 2) * 3 / o2 * 0.75,
-          1
-        );
-        this.dot0.style.opacity = `${Q(
-          0,
-          Math.max(0, a2 * l2),
-          1
-        )}`, this.dot1.style.opacity = `${Q(
-          0,
-          Math.max(0, a2 * c2),
-          1
-        )}`, this.dot2.style.opacity = `${Q(
-          0,
-          Math.max(0, a2 * h2),
-          1
-        )}`;
-      } else
-        e2 += " scale(0)", this.dot0.style.opacity = "0", this.dot1.style.opacity = "0", this.dot2.style.opacity = "0";
-      e2 += ";", this.lastStyle !== e2 && (this.element.setAttribute("style", e2), this.lastStyle = e2);
+    this.currentTime += delta;
+    let curStyle = "";
+    curStyle += `transform:translate(${this.left.toFixed(2)}px, ${this.top.toFixed(2)}px)`;
+    if (this.currentInterlude) {
+      const interludeDuration = this.currentInterlude[1] - this.currentInterlude[0];
+      const currentDuration = this.currentTime - this.currentInterlude[0];
+      if (currentDuration <= interludeDuration) {
+        const breatheDuration = interludeDuration / Math.ceil(interludeDuration / this.targetBreatheDuration);
+        let scale = 1;
+        let globalOpacity = 1;
+        scale *= Math.sin(1.5 * Math.PI - currentDuration / breatheDuration * 2) / 20 + 1;
+        if (currentDuration < 2e3) scale *= easeOutExpo(currentDuration / 2e3);
+        if (currentDuration < 500) globalOpacity = 0;
+        else if (currentDuration < 1e3) globalOpacity *= (currentDuration - 500) / 500;
+        if (interludeDuration - currentDuration < 750) scale *= 1 - easeInOutBack((750 - (interludeDuration - currentDuration)) / 750 / 2);
+        if (interludeDuration - currentDuration < 375) globalOpacity *= clamp01((interludeDuration - currentDuration) / 375);
+        const dotsDuration = clampPositive(interludeDuration - 750);
+        scale = clampPositive(scale) * 0.7;
+        curStyle += ` scale(${scale})`;
+        const dot0Opacity = clamp(0.25, currentDuration * 3 / dotsDuration * 0.75, 1);
+        const dot1Opacity = clamp(0.25, (currentDuration - dotsDuration / 3) * 3 / dotsDuration * 0.75, 1);
+        const dot2Opacity = clamp(0.25, (currentDuration - dotsDuration / 3 * 2) * 3 / dotsDuration * 0.75, 1);
+        this.dot0.style.opacity = `${clamp01(globalOpacity * dot0Opacity)}`;
+        this.dot1.style.opacity = `${clamp01(globalOpacity * dot1Opacity)}`;
+        this.dot2.style.opacity = `${clamp01(globalOpacity * dot2Opacity)}`;
+      } else {
+        curStyle += " scale(0)";
+        this.dot0.style.opacity = "0";
+        this.dot1.style.opacity = "0";
+        this.dot2.style.opacity = "0";
+      }
+      curStyle += ";";
+      if (this.lastStyle !== curStyle) {
+        this.element.setAttribute("style", curStyle);
+        this.lastStyle = curStyle;
+      }
     }
   }
   dispose() {
     this.element.remove();
   }
+};
+const measureTasks = [];
+const mutateTasks = [];
+let scheduled = false;
+function onFlush() {
+  let tmp = mutateTasks.shift();
+  while (tmp) {
+    try {
+      tmp.resolve(tmp.task());
+    } catch (error) {
+      tmp.reject(error);
+    }
+    tmp = mutateTasks.shift();
+  }
+  tmp = measureTasks.shift();
+  while (tmp) {
+    try {
+      tmp.resolve(tmp.task());
+    } catch (error) {
+      tmp.reject(error);
+    }
+    tmp = measureTasks.shift();
+  }
+  scheduled = false;
 }
-class Rt extends EventTarget {
-  constructor() {
+function scheduleFlush() {
+  if (!scheduled) {
+    scheduled = true;
+    requestAnimationFrame(onFlush);
+  }
+}
+function measure(callback) {
+  const task = {
+    task: callback,
+    resolve: () => {
+    },
+    reject: () => {
+    }
+  };
+  const promise = new Promise((resolve, reject) => {
+    task.resolve = resolve;
+    task.reject = reject;
+  });
+  measureTasks.push(task);
+  scheduleFlush();
+  return promise;
+}
+function derivative(f2) {
+  const h2 = 1e-3;
+  return (x2) => (f2(x2 + h2) - f2(x2 - h2)) / (2 * h2);
+}
+function getVelocity(f2) {
+  return derivative(f2);
+}
+var Spring = class {
+  constructor(currentPosition = 0) {
+    __publicField(this, "currentPosition", 0);
+    __publicField(this, "targetPosition", 0);
+    __publicField(this, "currentTime", 0);
+    __publicField(this, "params", {});
+    __publicField(this, "currentSolver");
+    __publicField(this, "getV");
+    __publicField(this, "getV2");
+    __publicField(this, "queueParams");
+    __publicField(this, "queuePosition");
+    this.targetPosition = currentPosition;
+    this.currentPosition = this.targetPosition;
+    this.currentSolver = () => this.targetPosition;
+    this.getV = () => 0;
+    this.getV2 = () => 0;
+  }
+  resetSolver() {
+    const curV = this.getV(this.currentTime);
+    this.currentTime = 0;
+    this.currentSolver = solveSpring(this.currentPosition, curV, this.targetPosition, 0, this.params);
+    this.getV = getVelocity(this.currentSolver);
+    this.getV2 = getVelocity(this.getV);
+  }
+  arrived() {
+    return Math.abs(this.targetPosition - this.currentPosition) < 0.01 && this.getV(this.currentTime) < 0.01 && this.getV2(this.currentTime) < 0.01 && this.queueParams === void 0 && this.queuePosition === void 0;
+  }
+  setPosition(targetPosition) {
+    this.targetPosition = targetPosition;
+    this.currentPosition = targetPosition;
+    this.currentSolver = () => this.targetPosition;
+    this.getV = () => 0;
+    this.getV2 = () => 0;
+  }
+  update(delta = 0) {
+    this.currentTime += delta;
+    this.currentPosition = this.currentSolver(this.currentTime);
+    if (this.queueParams) {
+      this.queueParams.time -= delta;
+      if (this.queueParams.time <= 0) this.updateParams({ ...this.queueParams });
+    }
+    if (this.queuePosition) {
+      this.queuePosition.time -= delta;
+      if (this.queuePosition.time <= 0) this.setTargetPosition(this.queuePosition.position);
+    }
+    if (this.arrived()) this.setPosition(this.targetPosition);
+  }
+  updateParams(params, delay = 0) {
+    if (delay > 0) this.queueParams = {
+      ...this.queuePosition ?? {},
+      ...params,
+      time: delay
+    };
+    else {
+      this.queuePosition = void 0;
+      this.params = {
+        ...this.params,
+        ...params
+      };
+      this.resetSolver();
+    }
+  }
+  setTargetPosition(targetPosition, delay = 0) {
+    if (delay > 0) this.queuePosition = {
+      ...this.queuePosition ?? {},
+      position: targetPosition,
+      time: delay
+    };
+    else {
+      this.queuePosition = void 0;
+      this.targetPosition = targetPosition;
+      this.resetSolver();
+    }
+  }
+  getCurrentPosition() {
+    return this.currentPosition;
+  }
+};
+function solveSpring(from, velocity, to, delay = 0, params) {
+  const soft = (params == null ? void 0 : params.soft) ?? false;
+  const stiffness = (params == null ? void 0 : params.stiffness) ?? 100;
+  const damping = (params == null ? void 0 : params.damping) ?? 10;
+  const mass = (params == null ? void 0 : params.mass) ?? 1;
+  const delta = to - from;
+  if (soft || 1 <= damping / (2 * Math.sqrt(stiffness * mass))) {
+    const angular_frequency = -Math.sqrt(stiffness / mass);
+    const leftover2 = -angular_frequency * delta - velocity;
+    return (t2) => {
+      t2 -= delay;
+      if (t2 < 0) return from;
+      return to - (delta + t2 * leftover2) * Math.E ** (t2 * angular_frequency);
+    };
+  }
+  const damping_frequency = Math.sqrt(4 * mass * stiffness - damping ** 2);
+  const leftover = (damping * delta - 2 * mass * velocity) / damping_frequency;
+  const dfm = 0.5 * damping_frequency / mass;
+  const dm = -(0.5 * damping) / mass;
+  return (t2) => {
+    t2 -= delay;
+    if (t2 < 0) return from;
+    return to - (Math.cos(t2 * dfm) * delta + Math.sin(t2 * dfm) * leftover) * Math.E ** (t2 * dm);
+  };
+}
+var BottomLineEl = class {
+  constructor(lyricPlayer) {
+    __publicField(this, "element", document.createElement("div"));
+    __publicField(this, "left", 0);
+    __publicField(this, "top", 0);
+    __publicField(this, "delay", 0);
+    __publicField(this, "lineSize", [0, 0]);
+    __publicField(this, "lineTransforms", {
+      posX: new Spring(0),
+      posY: new Spring(0)
+    });
+    __publicField(this, "isFocused", false);
+    __publicField(this, "blur", 0);
+    __publicField(this, "lastStyle", "");
+    this.lyricPlayer = lyricPlayer;
+    this.element.setAttribute("class", `${lyric_player_module_default.lyricLine} ${lyric_player_module_default.bottomLine}`);
+    this.element.dataset.bottomLine = "true";
+    this.rebuildStyle();
+  }
+  async measureSize() {
+    return await measure(() => [this.element.clientWidth, this.element.clientHeight]);
+  }
+  show() {
+    this.rebuildStyle();
+  }
+  hide() {
+    this.rebuildStyle();
+  }
+  setFocused(focused) {
+    if (this.isFocused !== focused) {
+      this.isFocused = focused;
+      if (focused) this.element.dataset.focused = "true";
+      else delete this.element.dataset.focused;
+    }
+  }
+  rebuildStyle() {
+    let style = `transform:translate(${this.lineTransforms.posX.getCurrentPosition().toFixed(2)}px,${this.lineTransforms.posY.getCurrentPosition().toFixed(2)}px);`;
+    if (!this.lyricPlayer.getEnableSpring() && this.isInSight) style += `transition-delay:${this.delay}ms;`;
+    style += `filter:blur(${Math.min(5, this.blur)}px);`;
+    if (style !== this.lastStyle) {
+      this.lastStyle = style;
+      this.element.setAttribute("style", style);
+    }
+  }
+  getElement() {
+    return this.element;
+  }
+  setTransform(left = this.left, top = this.top, blur = 0, force = false, delay = 0) {
+    this.left = left;
+    this.top = top;
+    this.delay = delay * 1e3 | 0;
+    if (force || !this.lyricPlayer.getEnableSpring()) {
+      this.blur = Math.min(32, blur);
+      if (force) this.element.classList.add(lyric_player_module_default.tmpDisableTransition);
+      this.lineTransforms.posX.setPosition(left);
+      this.lineTransforms.posY.setPosition(top);
+      if (!this.lyricPlayer.getEnableSpring()) this.show();
+      else this.rebuildStyle();
+      if (force) requestAnimationFrame(() => {
+        this.element.classList.remove(lyric_player_module_default.tmpDisableTransition);
+      });
+    } else {
+      this.blur = Math.min(5, blur);
+      this.lineTransforms.posX.setTargetPosition(left, delay);
+      this.lineTransforms.posY.setTargetPosition(top, delay);
+    }
+  }
+  update(delta = 0) {
+    if (!this.lyricPlayer.getEnableSpring()) return;
+    this.lineTransforms.posX.update(delta);
+    this.lineTransforms.posY.update(delta);
+    if (this.isInSight) this.show();
+    else this.hide();
+  }
+  get isInSight() {
+    const l2 = this.lineTransforms.posX.getCurrentPosition();
+    const t2 = this.lineTransforms.posY.getCurrentPosition();
+    const r2 = l2 + this.lineSize[0];
+    const b2 = t2 + this.lineSize[1];
+    const pr = this.lyricPlayer.size[0];
+    const pb = this.lyricPlayer.size[1];
+    return !(l2 > pr || t2 > pb || r2 < 0 || b2 < 0);
+  }
+  dispose() {
+    this.element.remove();
+  }
+};
+const MaskObsceneWordsMode = {
+  /** 禁用任何不雅用语掩码 */
+  Disabled: "",
+  /** 完全掩码所有不雅用语 */
+  FullMask: "full-mask",
+  /** 保留首尾字符，屏蔽中间字符 */
+  PartialMask: "partial-mask"
+};
+const LyricLineRenderMode = {
+  SOLID: 0,
+  GRADIENT: 1
+};
+const LayoutAlignAnchor = {
+  Top: "top",
+  Center: "center",
+  Bottom: "bottom"
+};
+function computeCurrentInterlude(input) {
+  const currentTime = input.currentTime + 20;
+  const currentIndex = input.scrollToIndex;
+  const groups = input.currentGroups;
+  const checkGap = (k2) => {
+    if (k2 < -1 || k2 >= groups.length - 1) return void 0;
+    const prevGroup = k2 === -1 ? null : groups[k2];
+    const nextGroup = groups[k2 + 1];
+    const gapStart = prevGroup ? prevGroup.endTime : 0;
+    const gapEnd = Math.max(gapStart, nextGroup.startTime - 250);
+    if (gapEnd - gapStart < 4e3) return void 0;
+    if (gapEnd > currentTime && gapStart < currentTime) return {
+      startTime: Math.max(gapStart, currentTime),
+      endTime: gapEnd,
+      anchorLineIndex: k2,
+      isNextDuet: nextGroup.mainLine.getLine().isDuet
+    };
+  };
+  return checkGap(currentIndex - 1) || checkGap(currentIndex) || checkGap(currentIndex + 1);
+}
+function computeLinePosYSpringParams(input) {
+  const { enabled, currentGroups, scrollToIndex, isSeeking, isInterludeActive } = input;
+  if (!enabled || currentGroups.length === 0) return { shouldUpdate: false };
+  if (isSeeking || isInterludeActive) return {
+    shouldUpdate: true,
+    params: {
+      stiffness: 90,
+      damping: 15
+    }
+  };
+  const currentGroup = currentGroups[scrollToIndex];
+  const prevGroup = currentGroups[scrollToIndex - 1];
+  if (!currentGroup || !prevGroup) return { shouldUpdate: false };
+  const interval = currentGroup.startTime - prevGroup.startTime;
+  const MIN_INTERVAL = 100;
+  const MAX_INTERVAL = 800;
+  const clampedInterval = clamp(interval, MIN_INTERVAL, MAX_INTERVAL);
+  const MAX_STIFFNESS = 220;
+  const MIN_STIFFNESS = 170;
+  let ratio = 1 - (clampedInterval - MIN_INTERVAL) / (MAX_INTERVAL - MIN_INTERVAL);
+  ratio = ratio ** 0.2;
+  const targetStiffness = MIN_STIFFNESS + ratio * (MAX_STIFFNESS - MIN_STIFFNESS);
+  return {
+    shouldUpdate: true,
+    params: {
+      stiffness: targetStiffness,
+      damping: Math.sqrt(targetStiffness) * 2.2
+    }
+  };
+}
+function computeGroupPresentation(input) {
+  const { groupIndex, scrollToIndex, latestIndex, hasBuffered, hidePassedLines, isPlaying, isNonDynamic, enableBlur, isUserScrolling, isCompact, interlude } = input;
+  const isActive = hasBuffered || groupIndex >= scrollToIndex && groupIndex < latestIndex;
+  const blurLevel = computeLineBlur({
+    enableBlur,
+    isUserScrolling,
+    isActive,
+    itemIndex: groupIndex,
+    scrollToIndex,
+    latestIndex,
+    isCompact
+  });
+  let targetOpacity;
+  if (hidePassedLines) if (groupIndex < (interlude ? interlude.anchorLineIndex + 1 : scrollToIndex) && isPlaying) targetOpacity = 1e-4;
+  else if (hasBuffered) targetOpacity = 0.85;
+  else targetOpacity = isNonDynamic ? 0.2 : 1;
+  else if (hasBuffered) targetOpacity = 0.85;
+  else targetOpacity = isNonDynamic ? 0.2 : 1;
+  return {
+    isActive,
+    targetOpacity,
+    blurLevel
+  };
+}
+function computeLineBlur(input) {
+  const { enableBlur, isUserScrolling, isActive, itemIndex, scrollToIndex, latestIndex, isCompact } = input;
+  if (!enableBlur || isUserScrolling || isActive) return 0;
+  let blurLevel = 1;
+  if (itemIndex < scrollToIndex) blurLevel += Math.abs(scrollToIndex - itemIndex) + 1;
+  else blurLevel += Math.abs(itemIndex - Math.max(scrollToIndex, latestIndex));
+  return isCompact ? blurLevel * 0.8 : blurLevel;
+}
+function clampPlayerScrollOffset(scrollState) {
+  scrollState.scrollOffset = clamp(scrollState.scrollOffset, scrollState.scrollBoundary.minOffset, scrollState.scrollBoundary.maxOffset);
+}
+function resetPlayerScrollState(scrollState) {
+  scrollState.isScrolled = false;
+  scrollState.scrollOffset = 0;
+  scrollState.isUserScrolling = false;
+}
+function attachPlayerScrollHandlers(element, scrollState, callbacks) {
+  let startScrollY = 0;
+  let startTouchPosY = 0;
+  let startTouchStartX = 0;
+  let startTouchStartY = 0;
+  let lastMoveY = 0;
+  let startScrollTime = 0;
+  let scrollSpeed = 0;
+  let curScrollId = 0;
+  element.addEventListener("touchstart", (evt) => {
+    if (callbacks.onBeginScroll()) {
+      scrollState.isUserScrolling = true;
+      evt.preventDefault();
+      startScrollY = scrollState.scrollOffset;
+      startTouchPosY = evt.touches[0].screenY;
+      lastMoveY = startTouchPosY;
+      startTouchStartX = evt.touches[0].screenX;
+      startTouchStartY = evt.touches[0].screenY;
+      startScrollTime = Date.now();
+      scrollSpeed = 0;
+      callbacks.onLayout(true, true);
+    }
+  });
+  element.addEventListener("touchmove", (evt) => {
+    if (callbacks.onBeginScroll()) {
+      evt.preventDefault();
+      const currentY = evt.touches[0].screenY;
+      const deltaY = currentY - startTouchPosY;
+      scrollState.scrollOffset = startScrollY - deltaY;
+      clampPlayerScrollOffset(scrollState);
+      const now = Date.now();
+      const dt = now - startScrollTime;
+      if (dt > 0) scrollSpeed = (currentY - lastMoveY) / dt;
+      lastMoveY = currentY;
+      startScrollTime = now;
+      callbacks.onLayout(true, true);
+    }
+  });
+  element.addEventListener("touchend", (evt) => {
+    if (callbacks.onBeginScroll()) {
+      evt.preventDefault();
+      const touch = evt.changedTouches[0];
+      const moveX = Math.abs(touch.screenX - startTouchStartX);
+      const moveY = Math.abs(touch.screenY - startTouchStartY);
+      if (moveX < 10 && moveY < 10) {
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (target instanceof HTMLElement && callbacks.containsTarget(target)) callbacks.clickTarget(target);
+        scrollState.isUserScrolling = false;
+        callbacks.onEndScroll();
+        return;
+      }
+      startTouchPosY = 0;
+      const scrollId = ++curScrollId;
+      if (Math.abs(scrollSpeed) < 0.1) scrollSpeed = 0;
+      let lastFrameTime = performance.now();
+      const onScrollFrame = (time) => {
+        if (scrollId !== curScrollId) return;
+        const dt = time - lastFrameTime;
+        lastFrameTime = time;
+        if (dt <= 0 || dt > 100) {
+          requestAnimationFrame(onScrollFrame);
+          return;
+        }
+        if (Math.abs(scrollSpeed) > 0.05) {
+          scrollState.scrollOffset -= scrollSpeed * dt;
+          clampPlayerScrollOffset(scrollState);
+          const frictionFactor = 0.95 ** (dt / 16);
+          scrollSpeed *= frictionFactor;
+          callbacks.onLayout(true, true);
+          requestAnimationFrame(onScrollFrame);
+        } else {
+          scrollState.isUserScrolling = false;
+          callbacks.onEndScroll();
+        }
+      };
+      requestAnimationFrame(onScrollFrame);
+    } else scrollState.isUserScrolling = false;
+  });
+  element.addEventListener("wheel", (evt) => {
+    if (callbacks.onBeginScroll()) {
+      evt.preventDefault();
+      if (evt.deltaMode === evt.DOM_DELTA_PIXEL) {
+        scrollState.scrollOffset += evt.deltaY;
+        clampPlayerScrollOffset(scrollState);
+        callbacks.onLayout(true, false);
+      } else {
+        scrollState.scrollOffset += evt.deltaY * 50;
+        clampPlayerScrollOffset(scrollState);
+        callbacks.onLayout(false, false);
+      }
+    }
+  }, { passive: false });
+}
+const eqSet = (xs, ys) => xs.size === ys.size && [...xs].every((x2) => ys.has(x2));
+function computePlayerTimeState(input) {
+  const { time, currentGroups, timelineState: { hotGroups, bufferedGroups } } = input;
+  const nextHotGroups = new Set(hotGroups);
+  const addedIds = /* @__PURE__ */ new Set();
+  const removedHotIds = /* @__PURE__ */ new Set();
+  const removedBufferedIds = /* @__PURE__ */ new Set();
+  for (const lastHotId of hotGroups) {
+    const group = currentGroups[lastHotId];
+    if (!group || time < group.startTime || group.endTime <= time) {
+      nextHotGroups.delete(lastHotId);
+      removedHotIds.add(lastHotId);
+    }
+  }
+  for (let id = 0; id < currentGroups.length; id++) {
+    const group = currentGroups[id];
+    if (!group) continue;
+    if (group.startTime <= time && group.endTime > time && !nextHotGroups.has(id)) {
+      nextHotGroups.add(id);
+      addedIds.add(id);
+    }
+  }
+  for (const id of bufferedGroups) if (!nextHotGroups.has(id)) removedBufferedIds.add(id);
+  return {
+    nextHotGroups,
+    addedIds,
+    removedHotIds,
+    removedBufferedIds
+  };
+}
+function pickScrollToIndexForSeek(time, currentGroups, bufferedGroups) {
+  if (bufferedGroups.size > 0) return Math.min(...bufferedGroups);
+  const foundIndex = currentGroups.findIndex((group) => group.startTime >= time);
+  return foundIndex === -1 ? currentGroups.length : foundIndex;
+}
+function commitPlayerTimeState(input) {
+  const { timelineState, time, currentGroups, hasBottomContent, stateResult } = input;
+  const { addedIds, removedHotIds, removedBufferedIds } = stateResult;
+  const { isSeeking } = timelineState;
+  timelineState.currentTime = time;
+  timelineState.hotGroups = stateResult.nextHotGroups;
+  let shouldLayout = false;
+  let shouldResetScroll = false;
+  const groupsToEnable = [];
+  const groupsToDisable = /* @__PURE__ */ new Set();
+  if (isSeeking) {
+    timelineState.bufferedGroups = /* @__PURE__ */ new Set([...timelineState.hotGroups]);
+    timelineState.scrollToIndex = pickScrollToIndexForSeek(time, currentGroups, timelineState.bufferedGroups);
+    for (const id of removedHotIds) groupsToDisable.add(id);
+    for (const id of timelineState.hotGroups) groupsToEnable.push(id);
+    for (const id of removedBufferedIds) groupsToDisable.add(id);
+    shouldResetScroll = true;
+    shouldLayout = true;
+  } else if (addedIds.size > 0) {
+    for (const id of addedIds) {
+      timelineState.bufferedGroups.add(id);
+      groupsToEnable.push(id);
+    }
+    for (const id of removedBufferedIds) {
+      timelineState.bufferedGroups.delete(id);
+      groupsToDisable.add(id);
+    }
+    if (timelineState.bufferedGroups.size > 0) timelineState.scrollToIndex = Math.min(...timelineState.bufferedGroups);
+    shouldLayout = true;
+  } else if (removedBufferedIds.size > 0 && eqSet(removedBufferedIds, timelineState.bufferedGroups)) {
+    for (const id of timelineState.bufferedGroups) {
+      if (timelineState.hotGroups.has(id)) continue;
+      timelineState.bufferedGroups.delete(id);
+      groupsToDisable.add(id);
+    }
+    shouldLayout = true;
+  }
+  if (timelineState.bufferedGroups.size === 0 && currentGroups.length > 0) {
+    if (time >= currentGroups[currentGroups.length - 1].endTime) {
+      const targetIndex = hasBottomContent ? currentGroups.length : currentGroups.length - 1;
+      if (timelineState.scrollToIndex !== targetIndex) {
+        timelineState.scrollToIndex = targetIndex;
+        shouldLayout = true;
+      }
+    }
+  }
+  timelineState.lastCurrentTime = time;
+  return {
+    shouldLayout,
+    shouldResetScroll,
+    groupsToEnable,
+    groupsToDisable: [...groupsToDisable]
+  };
+}
+var LyricPlayerBase = class extends EventTarget {
+  constructor(element) {
     super();
     __publicField(this, "element", document.createElement("div"));
-    __publicField(this, "currentTime", 0);
+    /** 播放时间线状态 */
+    __publicField(this, "timelineState", {
+      currentTime: 0,
+      lastCurrentTime: 0,
+      hotGroups: /* @__PURE__ */ new Set(),
+      bufferedGroups: /* @__PURE__ */ new Set(),
+      scrollToIndex: 0,
+      isSeeking: false,
+      isPlaying: true,
+      initialLayoutFinished: false
+    });
     /** @internal */
-    __publicField(this, "lyricLinesSize", /* @__PURE__ */ new WeakMap());
-    /** @internal */
-    __publicField(this, "lyricLineElementMap", /* @__PURE__ */ new WeakMap());
+    __publicField(this, "lyricGroupElementMap", /* @__PURE__ */ new WeakMap());
     __publicField(this, "currentLyricLines", []);
-    // protected currentLyricLineObjects: LyricLineBase[] = [];
     __publicField(this, "processedLines", []);
     __publicField(this, "lyricLinesIndexes", /* @__PURE__ */ new WeakMap());
-    __publicField(this, "hotLines", /* @__PURE__ */ new Set());
-    __publicField(this, "bufferedLines", /* @__PURE__ */ new Set());
     __publicField(this, "isNonDynamic", false);
     __publicField(this, "hasDuetLine", false);
-    __publicField(this, "scrollToIndex", 0);
     __publicField(this, "disableSpring", false);
-    __publicField(this, "interludeDotsSize", [0, 0]);
-    __publicField(this, "interludeDots", new fs());
-    __publicField(this, "bottomLine", new ds(this));
+    __publicField(this, "layoutState", {
+      interludeDotsSize: [0, 0],
+      targetAlignIndex: 0,
+      lastInterludeState: false,
+      alignAnchor: LayoutAlignAnchor.Center,
+      alignPosition: 0.35,
+      overscanPx: 300
+    });
+    __publicField(this, "interludeDots", new InterludeDots());
+    __publicField(this, "bottomLine", new BottomLineEl(this));
     __publicField(this, "enableBlur", true);
     __publicField(this, "enableScale", true);
+    __publicField(this, "maskObsceneWords", MaskObsceneWordsMode.Disabled);
+    __publicField(this, "maskObsceneWordChar", "*");
     __publicField(this, "hidePassedLines", false);
-    __publicField(this, "scrollBoundary", [0, 0]);
-    __publicField(this, "currentLyricLineObjects", []);
-    __publicField(this, "isSeeking", false);
-    __publicField(this, "lastCurrentTime", 0);
-    __publicField(this, "alignAnchor", "center");
-    __publicField(this, "alignPosition", 0.35);
-    __publicField(this, "scrollOffset", 0);
+    __publicField(this, "scrollState", {
+      scrollBoundary: {
+        minOffset: 0,
+        maxOffset: 0
+      },
+      scrollOffset: 0,
+      allowScroll: true,
+      isScrolled: false,
+      isUserScrolling: false
+    });
+    __publicField(this, "currentLyricGroups", []);
+    __publicField(this, "lyricGroupSize", /* @__PURE__ */ new WeakMap());
     __publicField(this, "size", [0, 0]);
-    __publicField(this, "allowScroll", true);
     __publicField(this, "isPageVisible", true);
-    __publicField(this, "initialLayoutFinished", false);
-    /**
-     * 视图额外预渲染（overscan）距离，单位：像素。
-     * 用于决定在视口之外多少距离内也认为是“可见”，以便提前创建/保留行元素。
-     */
-    __publicField(this, "overscanPx", 300);
+    __publicField(this, "optimizeOptions", {});
+    /** 是否强制让背景人声行始终后置（即始终在主歌词下方显示，不前置背景人声） */
+    __publicField(this, "alwaysPostpositionBackground", false);
     __publicField(this, "posXSpringParams", {
       mass: 1,
       damping: 10,
@@ -20605,513 +23399,771 @@ class Rt extends EventTarget {
       stiffness: 50
     });
     __publicField(this, "onPageShow", () => {
-      this.isPageVisible = true, this.setCurrentTime(this.currentTime, true);
+      this.isPageVisible = true;
+      this.setCurrentTime(this.timelineState.currentTime, true);
     });
     __publicField(this, "onPageHide", () => {
       this.isPageVisible = false;
     });
-    __publicField(this, "scrolledHandler", 0);
-    __publicField(this, "isScrolled", false);
+    __publicField(this, "scrolledHandler");
     /** @internal */
-    __publicField(this, "resizeObserver", new ResizeObserver(((t2) => {
-      let e2 = false, s2 = false;
-      for (const i2 of t2)
-        if (i2.target === this.element) {
-          const n2 = i2.contentRect;
-          this.size[0] = n2.width, this.size[1] = n2.height, s2 = true;
-        } else if (i2.target === this.interludeDots.getElement())
-          this.interludeDotsSize[0] = i2.target.clientWidth, this.interludeDotsSize[1] = i2.target.clientHeight, e2 = true;
-        else if (i2.target === this.bottomLine.getElement()) {
-          const n2 = [
-            i2.target.clientWidth,
-            i2.target.clientHeight
-          ], r2 = this.bottomLine.lineSize;
-          (n2[0] !== r2[0] || n2[1] !== r2[1]) && (this.bottomLine.lineSize = n2, e2 = true);
-        } else {
-          const n2 = this.lyricLineElementMap.get(i2.target);
-          if (n2) {
-            const r2 = [
-              i2.target.clientWidth,
-              i2.target.clientHeight
-            ], a2 = this.lyricLinesSize.get(
-              n2
-            ) ?? [0, 0];
-            (r2[0] !== a2[0] || r2[1] !== a2[1]) && (this.lyricLinesSize.set(n2, r2), n2.onLineSizeChange(r2), e2 = true);
+    __publicField(this, "resizeObserver", new ResizeObserver(((entries) => {
+      let shouldRelayout = false;
+      let shouldRebuildPlayerStyle = false;
+      for (const entry of entries) if (entry.target === this.element) {
+        const rect = entry.contentRect;
+        this.size[0] = rect.width;
+        this.size[1] = rect.height;
+        shouldRebuildPlayerStyle = true;
+      } else if (entry.target === this.interludeDots.getElement()) {
+        this.layoutState.interludeDotsSize[0] = entry.target.clientWidth;
+        this.layoutState.interludeDotsSize[1] = entry.target.clientHeight;
+        shouldRelayout = true;
+      } else if (entry.target === this.bottomLine.getElement()) {
+        const newSize = [entry.target.clientWidth, entry.target.clientHeight];
+        const oldSize = this.bottomLine.lineSize;
+        if (newSize[0] !== oldSize[0] || newSize[1] !== oldSize[1]) {
+          this.bottomLine.lineSize = newSize;
+          shouldRelayout = true;
+        }
+      } else {
+        const groupObj = this.lyricGroupElementMap.get(entry.target);
+        if (groupObj) {
+          const newSize = [entry.target.clientWidth, entry.target.clientHeight];
+          const oldSize = this.lyricGroupSize.get(groupObj) ?? [0, 0];
+          if (newSize[0] !== oldSize[0] || newSize[1] !== oldSize[1]) {
+            this.lyricGroupSize.set(groupObj, newSize);
+            groupObj.onLineSizeChange(newSize);
+            shouldRelayout = true;
           }
         }
-      e2 && this.calcLayout(true), s2 && this.onResize();
+      }
+      if (shouldRelayout) this.calcLayout(true);
+      if (shouldRebuildPlayerStyle) this.onResize();
     })));
     __publicField(this, "wordFadeWidth", 0.5);
-    __publicField(this, "targetAlignIndex", 0);
-    __publicField(this, "isPlaying", true);
-    this.resizeObserver.observe(this.element), this.resizeObserver.observe(this.interludeDots.getElement()), this.element.classList.add(W.lyricPlayer), this.element.appendChild(this.interludeDots.getElement()), this.element.appendChild(this.bottomLine.getElement()), this.interludeDots.setTransform(0, 200), window.addEventListener("pageshow", this.onPageShow), window.addEventListener("pagehide", this.onPageHide);
-    let t2 = 0, e2 = "none", s2 = 0, i2 = 0, n2 = 0, r2 = /* @__PURE__ */ Symbol("amll-scroll"), a2 = 0, o2 = 0;
-    this.element.addEventListener("touchstart", (l2) => {
-      this.beginScrollHandler() && (l2.preventDefault(), t2 = this.scrollOffset, s2 = l2.touches[0].screenY, a2 = s2, i2 = Date.now(), n2 = 0);
-    }), this.element.addEventListener("touchmove", (l2) => {
-      if (this.beginScrollHandler()) {
-        l2.preventDefault();
-        const c2 = l2.touches[0].screenY, h2 = c2 - s2, m2 = c2 - a2, u2 = m2 > 0 ? "down" : m2 < 0 ? "up" : "none";
-        e2 !== u2 ? (e2 = u2, t2 = this.scrollOffset, s2 = c2, i2 = Date.now()) : this.scrollOffset = t2 - h2, a2 = c2, o2 = Date.now(), this.limitScrollOffset(), this.calcLayout(true);
-      }
-    }), this.element.addEventListener("touchend", (l2) => {
-      if (this.beginScrollHandler()) {
-        l2.preventDefault(), s2 = 0;
-        const c2 = Date.now();
-        if (c2 - o2 > 100) return this.endScrollHandler();
-        const h2 = c2 - i2;
-        n2 = (this.scrollOffset - t2) / h2 * 1e3;
-        let m2 = 0;
-        const u2 = /* @__PURE__ */ Symbol("amll-scroll");
-        r2 = u2;
-        const f2 = (g2) => {
-          m2 || (m2 = g2), r2 === u2 && this.beginScrollHandler() && (this.scrollOffset += n2 * (g2 - m2) / 1e3, n2 *= 0.99, this.limitScrollOffset(), this.calcLayout(true), Math.abs(n2) > 1 && !this.scrollBoundary.includes(this.scrollOffset) && requestAnimationFrame(f2), this.endScrollHandler(), m2 = g2);
-        };
-        requestAnimationFrame(f2), this.endScrollHandler();
-      }
-    }), this.element.addEventListener("wheel", (l2) => {
-      this.beginScrollHandler() && (l2.deltaMode === l2.DOM_DELTA_PIXEL ? (this.scrollOffset += l2.deltaY, this.limitScrollOffset(), this.calcLayout(true)) : (this.scrollOffset += l2.deltaY * 50, this.limitScrollOffset(), this.calcLayout(false)), this.endScrollHandler());
+    if (element) this.element = element;
+    this.element.classList.add("amll-lyric-player");
+    this.resizeObserver.observe(this.element);
+    this.resizeObserver.observe(this.interludeDots.getElement());
+    this.element.appendChild(this.interludeDots.getElement());
+    this.element.appendChild(this.bottomLine.getElement());
+    this.interludeDots.setTransform(0, 200);
+    window.addEventListener("pageshow", this.onPageShow);
+    window.addEventListener("pagehide", this.onPageHide);
+    attachPlayerScrollHandlers(this.element, this.scrollState, {
+      onBeginScroll: () => this.beginScrollHandler(),
+      onEndScroll: () => this.endScrollHandler(),
+      onLayout: (sync, force) => this.calcLayout(sync, force),
+      containsTarget: (target) => this.element.contains(target),
+      clickTarget: (target) => target.click()
     });
   }
   beginScrollHandler() {
-    const t2 = this.allowScroll;
-    return t2 && (this.isScrolled = true, clearTimeout(this.scrolledHandler), this.scrolledHandler = setTimeout(() => {
-      this.isScrolled = false, this.scrollOffset = 0;
-    }, 5e3)), t2;
+    const allowed = this.scrollState.allowScroll;
+    if (allowed) {
+      this.scrollState.isScrolled = true;
+      clearTimeout(this.scrolledHandler);
+      this.scrolledHandler = setTimeout(() => {
+        this.scrollState.isScrolled = false;
+        this.scrollState.scrollOffset = 0;
+      }, 5e3);
+    }
+    return allowed;
   }
   endScrollHandler() {
   }
-  limitScrollOffset() {
-    this.scrollOffset = Math.max(
-      Math.min(this.scrollBoundary[1], this.scrollOffset),
-      this.scrollBoundary[0]
-    );
+  /**
+  * 设置文字动画的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位，默认为 0.5，即一个全角字符的一半宽度
+  *
+  * 如果要模拟 Apple Music for Android 的效果，可以设置为 1
+  *
+  * 如果要模拟 Apple Music for iPad 的效果，可以设置为 0.5
+  *
+  * 如果想要近乎禁用渐变效果，可以设置成非常接近 0 的小数（例如 `0.0001` ），但是**不可以为 0**
+  *
+  * @param value 需要设置的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位，默认为 0.5
+  */
+  setWordFadeWidth(value = 0.5) {
+    this.wordFadeWidth = Math.max(1e-4, value);
   }
   /**
-   * 设置文字动画的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位，默认为 0.5，即一个全角字符的一半宽度
-   *
-   * 如果要模拟 Apple Music for Android 的效果，可以设置为 1
-   *
-   * 如果要模拟 Apple Music for iPad 的效果，可以设置为 0.5
-   *
-   * 如果想要近乎禁用渐变效果，可以设置成非常接近 0 的小数（例如 `0.0001` ），但是**不可以为 0**
-   *
-   * @param value 需要设置的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位，默认为 0.5
-   */
-  setWordFadeWidth(t2 = 0.5) {
-    this.wordFadeWidth = Math.max(1e-4, t2);
+  * 是否启用歌词行缩放效果，默认启用
+  *
+  * 如果启用，非选中的歌词行会轻微缩小以凸显当前播放歌词行效果
+  *
+  * 此效果对性能影响微乎其微，推荐启用
+  * @param enable 是否启用歌词行缩放效果
+  */
+  setEnableScale(enable = true) {
+    this.enableScale = enable;
+    this.calcLayout();
   }
   /**
-   * 是否启用歌词行缩放效果，默认启用
-   *
-   * 如果启用，非选中的歌词行会轻微缩小以凸显当前播放歌词行效果
-   *
-   * 此效果对性能影响微乎其微，推荐启用
-   * @param enable 是否启用歌词行缩放效果
-   */
-  setEnableScale(t2 = true) {
-    this.enableScale = t2, this.calcLayout();
-  }
-  /**
-   * 获取当前是否启用了歌词行缩放效果
-   * @returns 是否启用歌词行缩放效果
-   */
+  * 获取当前是否启用了歌词行缩放效果
+  * @returns 是否启用歌词行缩放效果
+  */
   getEnableScale() {
     return this.enableScale;
   }
   /**
-   * 获取当前文字动画的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位
-   * @returns 当前文字动画的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位
-   */
+  * 获取当前文字动画的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位
+  * @returns 当前文字动画的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位
+  */
   getWordFadeWidth() {
     return this.wordFadeWidth;
   }
-  setIsSeeking(t2) {
-    this.isSeeking = t2;
+  setIsSeeking(isSeeking) {
+    this.timelineState.isSeeking = isSeeking;
   }
   /**
-   * 设置是否隐藏已经播放过的歌词行，默认不隐藏
-   * @param hide 是否隐藏已经播放过的歌词行，默认不隐藏
-   */
-  setHidePassedLines(t2) {
-    this.hidePassedLines = t2, this.calcLayout();
+  * 设置是否隐藏已经播放过的歌词行，默认不隐藏
+  * @param hide 是否隐藏已经播放过的歌词行，默认不隐藏
+  */
+  setHidePassedLines(hide) {
+    this.hidePassedLines = hide;
+    this.calcLayout();
   }
   /**
-   * 设置是否启用歌词行的模糊效果
-   * @param enable 是否启用
-   */
-  setEnableBlur(t2) {
-    this.enableBlur !== t2 && (this.enableBlur = t2, this.calcLayout());
+  * 设置是否启用歌词行的模糊效果
+  * @param enable 是否启用
+  */
+  setEnableBlur(enable) {
+    if (this.enableBlur === enable) return;
+    this.enableBlur = enable;
+    this.calcLayout();
   }
   /**
-   * 设置目标歌词行的对齐方式，默认为 `center`
-   *
-   * - 设置成 `top` 的话将会向目标歌词行的顶部对齐
-   * - 设置成 `bottom` 的话将会向目标歌词行的底部对齐
-   * - 设置成 `center` 的话将会向目标歌词行的垂直中心对齐
-   * @param alignAnchor 歌词行对齐方式，详情见函数说明
-   */
-  setAlignAnchor(t2) {
-    this.alignAnchor = t2;
+  * 设置歌词中不雅用语的掩码模式
+  * @param mode 掩码模式
+  * @see {@link MaskObsceneWordsMode}
+  */
+  setMaskObsceneWords(mode) {
+    if (this.maskObsceneWords === mode) return;
+    this.maskObsceneWords = mode;
+    this.rebuildLyricLines();
+    this.calcLayout();
   }
   /**
-   * 设置默认的歌词行对齐位置，相对于整个歌词播放组件的大小位置，默认为 `0.5`
-   * @param alignPosition 一个 `[0.0-1.0]` 之间的任意数字，代表组件高度由上到下的比例位置
-   */
-  setAlignPosition(t2) {
-    this.alignPosition = t2;
+  * 设置不雅用语掩码使用的字符，默认为 `*`
+  * @param char 单个字符，用于替换不雅用语中的字符
+  */
+  setMaskObsceneWordChar(char) {
+    const c2 = char.charAt(0) || "*";
+    if (this.maskObsceneWordChar === c2) return;
+    this.maskObsceneWordChar = c2;
+    if (this.maskObsceneWords !== MaskObsceneWordsMode.Disabled) {
+      this.rebuildLyricLines();
+      this.calcLayout();
+    }
+  }
+  rebuildLyricLines() {
+    for (const group of this.currentLyricGroups) group.rebuildAllLines();
   }
   /**
-   * 设置 overscan（视图上下额外缓冲渲染区）距离，单位：像素。
-   * @param px 像素值，默认 300
-   */
-  setOverscanPx(t2) {
-    this.overscanPx = Math.max(0, t2 | 0);
+  * 根据当前配置处理不雅用语单词
+  * @param word 单词对象
+  * @internal
+  */
+  processObsceneWord(word) {
+    const text = word.word;
+    if (!word.obscene || this.maskObsceneWords === MaskObsceneWordsMode.Disabled) return text;
+    const maskChar = this.maskObsceneWordChar;
+    if (this.maskObsceneWords === MaskObsceneWordsMode.FullMask) return text.replace(/\S/g, maskChar);
+    if (this.maskObsceneWords === MaskObsceneWordsMode.PartialMask) {
+      const trimmed = text.trim();
+      if (trimmed.length <= 2) return text.replace(/\S/g, maskChar);
+      const startPos = text.indexOf(trimmed);
+      const endPos = startPos + trimmed.length - 1;
+      return text.slice(0, startPos + 1) + text.slice(startPos + 1, endPos).replace(/\S/g, maskChar) + text.slice(endPos);
+    }
+    return text;
+  }
+  /**
+  * 设置目标歌词行的对齐方式，默认为 `center`
+  *
+  * - 设置成 `top` 的话将会向目标歌词行的顶部对齐
+  * - 设置成 `bottom` 的话将会向目标歌词行的底部对齐
+  * - 设置成 `center` 的话将会向目标歌词行的垂直中心对齐
+  * @param alignAnchor 歌词行对齐方式，详情见函数说明
+  */
+  setAlignAnchor(alignAnchor) {
+    this.layoutState.alignAnchor = alignAnchor;
+  }
+  /**
+  * 设置默认的歌词行对齐位置，相对于整个歌词播放组件的大小位置，默认为 `0.5`
+  * @param alignPosition 一个 `[0.0-1.0]` 之间的任意数字，代表组件高度由上到下的比例位置
+  */
+  setAlignPosition(alignPosition) {
+    this.layoutState.alignPosition = alignPosition;
+  }
+  /**
+  * 设置 overscan（视图上下额外缓冲渲染区）距离，单位：像素。
+  * @param px 像素值，默认 300
+  */
+  setOverscanPx(px) {
+    this.layoutState.overscanPx = clampPositive(px | 0);
   }
   /** 获取当前 overscan 像素距离 */
   getOverscanPx() {
-    return this.overscanPx;
+    return this.layoutState.overscanPx;
   }
   /**
-   * 设置是否使用物理弹簧算法实现歌词动画效果，默认启用
-   *
-   * 如果启用，则会通过弹簧算法实时处理歌词位置，但是需要性能足够强劲的电脑方可流畅运行
-   *
-   * 如果不启用，则会回退到基于 `transition` 的过渡效果，对低性能的机器比较友好，但是效果会比较单一
-   */
-  setEnableSpring(t2 = true) {
-    this.disableSpring = !t2, t2 ? this.element.classList.remove(W.disableSpring) : this.element.classList.add(W.disableSpring), this.calcLayout(true);
+  * 设置是否使用物理弹簧算法实现歌词动画效果，默认启用
+  *
+  * 如果启用，则会通过弹簧算法实时处理歌词位置，但是需要性能足够强劲的电脑方可流畅运行
+  *
+  * 如果不启用，则会回退到基于 `transition` 的过渡效果，对低性能的机器比较友好，但是效果会比较单一
+  */
+  setEnableSpring(enable = true) {
+    this.disableSpring = !enable;
+    if (enable) this.element.classList.remove(lyric_player_module_default.disableSpring);
+    else this.element.classList.add(lyric_player_module_default.disableSpring);
+    this.calcLayout(true);
   }
   /**
-   * 获取当前是否启用了物理弹簧
-   * @returns 是否启用物理弹簧
-   */
+  * 获取当前是否启用了物理弹簧
+  * @returns 是否启用物理弹簧
+  */
   getEnableSpring() {
     return !this.disableSpring;
   }
   /**
-   * 获取当前播放时间里是否处于间奏区间
-   * 如果是则会返回单位为毫秒的始末时间
-   * 否则返回 undefined
-   *
-   * 这个只允许内部调用
-   * @returns [开始时间,结束时间,大概处于的歌词行ID,下一句是否为对唱歌词] 或 undefined 如果不处于间奏区间
-   */
-  getCurrentInterlude() {
-    var _a, _b, _c, _d;
-    if (this.bufferedLines.size > 0) return;
-    const t2 = this.currentTime + 20, e2 = this.scrollToIndex;
-    if (e2 === 0) {
-      if ((_a = this.processedLines[0]) == null ? void 0 : _a.startTime) {
-        if (this.processedLines[0].startTime > t2)
-          return [
-            t2,
-            Math.max(t2, this.processedLines[0].startTime - 250),
-            -2,
-            this.processedLines[0].isDuet
-          ];
-        if (this.processedLines[1].startTime > t2 && this.processedLines[0].endTime < t2)
-          return [
-            Math.max(this.processedLines[0].endTime, t2),
-            this.processedLines[1].startTime,
-            0,
-            this.processedLines[1].isDuet
-          ];
-      }
-    } else if (((_b = this.processedLines[e2]) == null ? void 0 : _b.endTime) && ((_c = this.processedLines[e2 + 1]) == null ? void 0 : _c.startTime)) {
-      if (this.processedLines[e2 + 1].startTime > t2 && this.processedLines[e2].endTime < t2)
-        return [
-          Math.max(this.processedLines[e2].endTime, t2),
-          this.processedLines[e2 + 1].startTime,
-          e2,
-          this.processedLines[e2 + 1].isDuet
-        ];
-      if (((_d = this.processedLines[e2 + 2]) == null ? void 0 : _d.startTime) && this.processedLines[e2 + 2].startTime > t2 && this.processedLines[e2 + 1].endTime < t2)
-        return [
-          Math.max(this.processedLines[e2 + 1].endTime, t2),
-          this.processedLines[e2 + 2].startTime,
-          e2 + 1,
-          this.processedLines[e2 + 2].isDuet
-        ];
-    }
+  * 设置歌词的优化配置项，这些配置项默认全部开启
+  *
+  * 注意，如果在 `setLyricLines` 之后修改此配置，需要重新调用 `setLyricLines()` 才能对当前歌词生效
+  * @param options 优化配置选项
+  * @see {@link OptimizeLyricOptions}
+  */
+  setOptimizeOptions(options) {
+    this.optimizeOptions = {
+      ...this.optimizeOptions,
+      ...options
+    };
   }
   /**
-   * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
-   * @param lines 歌词数组
-   * @param initialTime 初始时间，默认为 0
-   */
-  setLyricLines(t2, e2 = 0) {
-    this.initialLayoutFinished = true;
-    for (const s2 of t2)
-      for (const i2 of s2.words)
-        i2.word = i2.word.replace(/\s+/g, " ");
-    this.lastCurrentTime = e2, this.currentTime = e2, this.currentLyricLines = Gt(t2), this.processedLines = Gt(t2), this.isNonDynamic = true;
-    for (const s2 of this.processedLines)
-      if (s2.words.length > 1) {
-        this.isNonDynamic = false;
-        break;
-      }
-    this.hasDuetLine = this.processedLines.some((s2) => s2.isDuet);
-    for (let s2 = this.processedLines.length - 1; s2 >= 0; s2--) {
-      const i2 = this.processedLines[s2];
-      if (i2.isBG) continue;
-      const n2 = this.processedLines[s2 - 1];
-      n2 ? i2.startTime = Math.max(
-        Math.min(n2.endTime, i2.startTime),
-        i2.startTime - 1e3
-      ) : i2.startTime = Math.max(0, i2.startTime - 1e3);
+  * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
+  * @param lines 歌词数组
+  * @param initialTime 初始时间，默认为 0
+  */
+  setLyricLines(lines, initialTime = 0) {
+    console.log("\u8BBE\u7F6E\u6B4C\u8BCD\u884C", lines, initialTime);
+    this.timelineState.initialLayoutFinished = true;
+    this.timelineState.lastCurrentTime = initialTime;
+    this.timelineState.currentTime = initialTime;
+    this.currentLyricLines = structuredClone$1(lines);
+    this.processedLines = structuredClone$1(this.currentLyricLines);
+    optimizeLyricLines(this.processedLines, this.optimizeOptions);
+    this.isNonDynamic = true;
+    for (const line of this.processedLines) if (line.words.length > 1) {
+      this.isNonDynamic = false;
+      break;
     }
-    for (let s2 = this.processedLines.length - 1; s2 >= 0; s2--) {
-      const i2 = this.processedLines[s2];
-      if (i2.isBG) continue;
-      const n2 = this.processedLines[s2 + 1];
-      if (n2 == null ? void 0 : n2.isBG) {
-        const r2 = Math.min(
-          ...n2.words.filter((c2) => c2.word.trim().length > 0).map((c2) => c2.startTime),
-          i2.startTime
-        ), a2 = Math.max(
-          ...n2.words.filter((c2) => c2.word.trim().length > 0).map((c2) => c2.endTime),
-          i2.endTime
-        ), o2 = Math.min(r2, i2.startTime), l2 = Math.max(a2, i2.endTime);
-        n2.startTime = o2, n2.endTime = l2;
-      }
-    }
-    for (const s2 of this.currentLyricLineObjects)
-      s2.dispose();
-    this.interludeDots.setInterlude(void 0), this.hotLines.clear(), this.bufferedLines.clear(), this.setCurrentTime(0, true);
+    this.hasDuetLine = this.processedLines.some((line) => line.isDuet);
+    for (const group of this.currentLyricGroups) group.dispose();
+    this.currentLyricGroups = [];
+    this.interludeDots.setInterlude(void 0);
+    this.timelineState.hotGroups.clear();
+    this.timelineState.bufferedGroups.clear();
+    console.log("\u6B4C\u8BCD\u5904\u7406\u5B8C\u6210", this);
   }
   /**
-   * 设置当前播放进度，单位为毫秒且**必须是整数**，此时将会更新内部的歌词进度信息
-   * 内部会根据调用间隔和播放进度自动决定如何滚动和显示歌词，所以这个的调用频率越快越准确越好
-   *
-   * 调用完成后，可以每帧调用 `update` 函数来执行歌词动画效果
-   * @param time 当前播放进度，单位为毫秒
-   */
-  setCurrentTime(t2, e2 = false) {
-    var _a, _b, _c, _d, _e2, _f, _g, _h, _i;
-    if (this.currentTime = t2, !this.initialLayoutFinished && !e2) return;
-    const s2 = /* @__PURE__ */ new Set(), i2 = /* @__PURE__ */ new Set(), n2 = /* @__PURE__ */ new Set();
-    for (const r2 of this.hotLines) {
-      const a2 = this.processedLines[r2];
-      if (a2) {
-        if (a2.isBG) continue;
-        const o2 = this.processedLines[r2 + 1];
-        if (o2 == null ? void 0 : o2.isBG) {
-          const l2 = this.processedLines[r2 + 2], c2 = Math.min(a2.startTime, o2 == null ? void 0 : o2.startTime), h2 = Math.min(
-            Math.max(a2.endTime, (l2 == null ? void 0 : l2.startTime) ?? Number.MAX_VALUE),
-            Math.max(a2.endTime, o2 == null ? void 0 : o2.endTime)
-          );
-          (c2 > t2 || h2 <= t2) && (this.hotLines.delete(r2), s2.add(r2), this.hotLines.delete(r2 + 1), s2.add(r2 + 1), e2 && ((_a = this.currentLyricLineObjects[r2]) == null ? void 0 : _a.disable(), (_b = this.currentLyricLineObjects[r2 + 1]) == null ? void 0 : _b.disable()));
-        } else (a2.startTime > t2 || a2.endTime <= t2) && (this.hotLines.delete(r2), s2.add(r2), e2 && ((_c = this.currentLyricLineObjects[r2]) == null ? void 0 : _c.disable()));
-      } else
-        this.hotLines.delete(r2), s2.add(r2), e2 && ((_d = this.currentLyricLineObjects[r2]) == null ? void 0 : _d.disable());
-    }
-    this.currentLyricLineObjects.forEach((r2, a2, o2) => {
-      var _a2, _b2;
-      const l2 = r2.getLine();
-      !l2.isBG && l2.startTime <= t2 && l2.endTime > t2 && (this.hotLines.has(a2) || (this.hotLines.add(a2), n2.add(a2), e2 && r2.enable(), ((_b2 = (_a2 = o2[a2 + 1]) == null ? void 0 : _a2.getLine()) == null ? void 0 : _b2.isBG) && (this.hotLines.add(a2 + 1), n2.add(a2 + 1), e2 && o2[a2 + 1].enable())));
+  * 获取当前是否在播放
+  * @returns 当前是否在播放
+  */
+  getIsPlaying() {
+    return this.timelineState.isPlaying;
+  }
+  /**
+  * 设置当前播放进度，此时将会更新内部的歌词进度信息。
+  *
+  * 内部会根据调用间隔和播放进度自动决定如何滚动和显示歌词，所以这个的调用频率越快越准确越好。
+  * 调用完成后，应每帧调用 {@link update} 方法来执行歌词动画效果。**此函数本身不会触发动画效果**。
+  *
+  * @param time 当前播放进度，单位为毫秒
+  */
+  setCurrentTime(time, isSeek = false) {
+    var _a2, _b;
+    time = Math.round(time);
+    const { timelineState } = this;
+    timelineState.isSeeking = Boolean(isSeek);
+    timelineState.currentTime = time;
+    if (!timelineState.initialLayoutFinished && !timelineState.isSeeking) return;
+    const stateResult = computePlayerTimeState({
+      time,
+      currentGroups: this.currentLyricGroups,
+      timelineState
     });
-    for (const r2 of this.bufferedLines)
-      this.hotLines.has(r2) || (i2.add(r2), e2 && ((_e2 = this.currentLyricLineObjects[r2]) == null ? void 0 : _e2.disable()));
-    if (e2) {
-      this.bufferedLines.size > 0 ? this.scrollToIndex = Math.min(...this.bufferedLines) : this.scrollToIndex = this.processedLines.findIndex(
-        (r2) => r2.startTime >= t2
-      ), this.bufferedLines.clear();
-      for (const r2 of this.hotLines)
-        this.bufferedLines.add(r2);
-      this.calcLayout();
-    } else if (i2.size > 0 || n2.size > 0)
-      if (i2.size === 0 && n2.size > 0) {
-        for (const r2 of n2)
-          this.bufferedLines.add(r2), (_f = this.currentLyricLineObjects[r2]) == null ? void 0 : _f.enable();
-        this.scrollToIndex = Math.min(...this.bufferedLines), this.calcLayout();
-      } else if (n2.size === 0 && i2.size > 0) {
-        if (as(i2, this.bufferedLines)) {
-          for (const r2 of this.bufferedLines)
-            this.hotLines.has(r2) || (this.bufferedLines.delete(r2), (_g = this.currentLyricLineObjects[r2]) == null ? void 0 : _g.disable());
-          this.calcLayout();
-        }
-      } else {
-        for (const r2 of n2)
-          this.bufferedLines.add(r2), (_h = this.currentLyricLineObjects[r2]) == null ? void 0 : _h.enable();
-        for (const r2 of i2)
-          this.bufferedLines.delete(r2), (_i = this.currentLyricLineObjects[r2]) == null ? void 0 : _i.disable();
-        this.bufferedLines.size > 0 && (this.scrollToIndex = Math.min(...this.bufferedLines)), this.calcLayout();
-      }
-    this.lastCurrentTime = t2;
+    const hasBottomContent = this.bottomLine.getElement().innerHTML.trim().length > 0;
+    const commitResult = commitPlayerTimeState({
+      timelineState,
+      time,
+      currentGroups: this.currentLyricGroups,
+      hasBottomContent,
+      stateResult
+    });
+    for (const id of commitResult.groupsToDisable) (_a2 = this.currentLyricGroups[id]) == null ? void 0 : _a2.disable();
+    for (const id of commitResult.groupsToEnable) (_b = this.currentLyricGroups[id]) == null ? void 0 : _b.enable();
+    if (commitResult.shouldResetScroll) this.resetScroll();
+    if (commitResult.shouldLayout) this.calcLayout();
   }
   /**
-   * 重新布局定位歌词行的位置，调用完成后再逐帧调用 `update`
-   * 函数即可让歌词通过动画移动到目标位置。
-   *
-   * 函数有一个 `force` 参数，用于指定是否强制修改布局，也就是不经过动画直接调整元素位置和大小。
-   *
-   * 此函数还有一个 `reflow` 参数，用于指定是否需要重新计算布局
-   *
-   * 因为计算布局必定会导致浏览器重排布局，所以会大幅度影响流畅度和性能，故请只在以下情况下将其​设置为 true：
-   *
-   * 1. 歌词页面大小发生改变时（这个组件会自行处理）
-   * 2. 加载了新的歌词时（不论前后歌词是否完全一样）
-   * 3. 用户自行跳转了歌曲播放位置（不论距离远近）
-   *
-   * @param force 是否不经过动画直接修改布局定位
-   * @param reflow 是否进行重新布局（重新计算每行歌词大小）
-   */
-  async calcLayout(t2 = false) {
-    var _a;
-    const e2 = this.getCurrentInterlude();
-    let s2 = -this.scrollOffset, i2 = this.scrollToIndex, n2 = 0;
-    e2 ? (n2 = e2[1] - e2[0], n2 >= 4e3 && this.currentLyricLineObjects[e2[2] + 1] && (i2 = e2[2] + 1)) : this.interludeDots.setInterlude(void 0);
-    const r2 = this.size[1] / 5, a2 = this.currentLyricLineObjects.slice(0, i2).reduce(
-      (u2, f2) => {
-        var _a2;
-        return u2 + (f2.getLine().isBG && this.isPlaying ? 0 : ((_a2 = this.lyricLinesSize.get(f2)) == null ? void 0 : _a2[1]) ?? r2);
-      },
-      0
-    );
-    this.scrollBoundary[0] = -a2, s2 -= a2, s2 += this.size[1] * this.alignPosition;
-    const o2 = this.currentLyricLineObjects[i2];
-    if (this.targetAlignIndex = i2, o2) {
-      const u2 = ((_a = this.lyricLinesSize.get(o2)) == null ? void 0 : _a[1]) ?? r2;
-      switch (this.alignAnchor) {
-        case "bottom":
-          s2 -= u2;
-          break;
-        case "center":
-          s2 -= u2 / 2;
-          break;
-      }
+  * 重新布局定位歌词行的位置，调用完成后再逐帧调用 `update`
+  * 函数即可让歌词通过动画移动到目标位置。
+  *
+  * 函数有一个 `force` 参数，用于指定是否强制修改布局，也就是不经过动画直接调整元素位置和大小。
+  *
+  * 此函数还有一个 `reflow` 参数，用于指定是否需要重新计算布局
+  *
+  * 因为计算布局必定会导致浏览器重排布局，所以会大幅度影响流畅度和性能，故请只在以下情况下将其​设置为 true：
+  *
+  * 1. 歌词页面大小发生改变时（这个组件会自行处理）
+  * 2. 加载了新的歌词时（不论前后歌词是否完全一样）
+  * 3. 用户自行跳转了歌曲播放位置（不论距离远近）
+  *
+  * @param sync 是否同步执行，通常用于初始化或 Resize 时立即布局
+  * @param force 是否绕过弹簧效果强制更新位置
+  */
+  async calcLayout(sync = false, force = false) {
+    var _a2;
+    const interlude = computeCurrentInterlude({
+      currentTime: this.timelineState.currentTime,
+      scrollToIndex: this.timelineState.scrollToIndex,
+      currentGroups: this.currentLyricGroups
+    });
+    const isInterludeActive = !!interlude;
+    if (this.layoutState.targetAlignIndex !== this.timelineState.scrollToIndex || this.layoutState.lastInterludeState !== isInterludeActive) {
+      this.layoutState.lastInterludeState = isInterludeActive;
+      const springParams = computeLinePosYSpringParams({
+        enabled: this.getEnableSpring(),
+        currentGroups: this.currentLyricGroups,
+        scrollToIndex: this.timelineState.scrollToIndex,
+        isSeeking: this.timelineState.isSeeking,
+        isInterludeActive
+      });
+      if (springParams.shouldUpdate && springParams.params) this.setLinePosYSpringParams(springParams.params);
     }
-    const l2 = Math.max(...this.bufferedLines);
-    let c2 = 0, h2 = t2 ? 0 : 0.05, m2 = false;
-    this.currentLyricLineObjects.forEach((u2, f2) => {
-      var _a2, _b;
-      const g2 = this.bufferedLines.has(f2), p2 = g2 || f2 >= this.scrollToIndex && f2 < l2, y2 = u2.getLine();
-      !m2 && n2 >= 4e3 && (f2 === this.scrollToIndex && (e2 == null ? void 0 : e2[2]) === -2 || f2 === this.scrollToIndex + 1) && (m2 = true, this.interludeDots.setTransform(0, s2), e2 && this.interludeDots.setInterlude([e2[0], e2[1]]), s2 += this.interludeDotsSize[1]);
-      let L;
-      this.hidePassedLines ? f2 < (e2 ? e2[2] + 1 : this.scrollToIndex) && this.isPlaying ? L = 1e-5 : g2 ? L = 0.85 : L = this.isNonDynamic ? 0.2 : 1 : g2 ? L = 0.85 : L = this.isNonDynamic ? 0.2 : 1;
-      let x2 = 0;
-      this.enableBlur && (p2 ? x2 = 0 : (x2 = 1, f2 < this.scrollToIndex ? x2 += Math.abs(this.scrollToIndex - f2) + 1 : x2 += Math.abs(
-        f2 - Math.max(this.scrollToIndex, l2)
-      )));
-      const M2 = this.enableScale ? 97 : 100;
-      let b2 = 100;
-      !p2 && this.isPlaying && (y2.isBG ? b2 = 75 : b2 = M2), u2.setTransform(
-        s2,
-        b2,
-        L,
-        window.innerWidth <= 1024 ? x2 * 0.8 : x2,
-        false,
-        c2
-      ), y2.isBG && (p2 || !this.isPlaying) ? s2 += ((_a2 = this.lyricLinesSize.get(u2)) == null ? void 0 : _a2[1]) ?? r2 : y2.isBG || (s2 += ((_b = this.lyricLinesSize.get(u2)) == null ? void 0 : _b[1]) ?? r2), s2 >= 0 && !this.isSeeking && (y2.isBG || (c2 += h2), f2 >= this.scrollToIndex && (h2 /= 1.05));
-    }), this.scrollBoundary[1] = s2 + this.scrollOffset - this.size[1] / 2, this.bottomLine.setTransform(0, s2, false, c2);
+    let curPos = -this.scrollState.scrollOffset;
+    const targetAlignIndex = this.timelineState.scrollToIndex;
+    let isNextDuet = false;
+    if (interlude) isNextDuet = interlude.isNextDuet;
+    else this.interludeDots.setInterlude(void 0);
+    const dotMargin = (this.baseFontSize || 24) * 0.4;
+    const totalInterludeHeight = this.layoutState.interludeDotsSize[1] + dotMargin * 2;
+    if (interlude) {
+      if (interlude.anchorLineIndex !== -1) curPos -= totalInterludeHeight;
+    }
+    const LINE_HEIGHT_FALLBACK = this.size[1] / 5;
+    const scrollOffset = this.currentLyricGroups.slice(0, targetAlignIndex).reduce((acc, group) => {
+      var _a3;
+      return acc + (((_a3 = this.lyricGroupSize.get(group)) == null ? void 0 : _a3[1]) ?? LINE_HEIGHT_FALLBACK);
+    }, 0);
+    this.scrollState.scrollBoundary.minOffset = -scrollOffset;
+    curPos -= scrollOffset;
+    curPos += this.size[1] * this.layoutState.alignPosition;
+    const curGroup = this.currentLyricGroups[targetAlignIndex];
+    this.layoutState.targetAlignIndex = targetAlignIndex;
+    const isBottomFocused = targetAlignIndex === this.currentLyricGroups.length;
+    this.bottomLine.setFocused(isBottomFocused);
+    const targetLineHeight = curGroup ? ((_a2 = this.lyricGroupSize.get(curGroup)) == null ? void 0 : _a2[1]) ?? LINE_HEIGHT_FALLBACK : isBottomFocused ? this.bottomLine.lineSize[1] : 0;
+    if (targetLineHeight > 0) switch (this.layoutState.alignAnchor) {
+      case LayoutAlignAnchor.Bottom:
+        curPos -= targetLineHeight;
+        break;
+      case LayoutAlignAnchor.Center:
+        curPos -= targetLineHeight / 2;
+        break;
+      case LayoutAlignAnchor.Top:
+        break;
+    }
+    const latestIndex = Math.max(...this.timelineState.bufferedGroups);
+    let delay = 0;
+    let baseDelay = sync ? 0 : 0.05;
+    let setDots = false;
+    this.currentLyricGroups.forEach((group, i2) => {
+      var _a3;
+      const hasBuffered = this.timelineState.bufferedGroups.has(i2);
+      const shouldShowDots = interlude && i2 === interlude.anchorLineIndex + 1;
+      if (!setDots && shouldShowDots) {
+        setDots = true;
+        curPos += dotMargin;
+        let targetX = 0;
+        if (interlude && isNextDuet) targetX = this.size[0] - this.layoutState.interludeDotsSize[0];
+        this.interludeDots.setTransform(targetX, curPos);
+        if (interlude) this.interludeDots.setInterlude([interlude.startTime, interlude.endTime]);
+        curPos += this.layoutState.interludeDotsSize[1];
+        curPos += dotMargin;
+      }
+      const presentation = computeGroupPresentation({
+        groupIndex: i2,
+        scrollToIndex: this.timelineState.scrollToIndex,
+        latestIndex,
+        hasBuffered,
+        hidePassedLines: this.hidePassedLines,
+        isPlaying: this.timelineState.isPlaying,
+        isNonDynamic: this.isNonDynamic,
+        enableBlur: this.enableBlur,
+        isUserScrolling: this.scrollState.isUserScrolling,
+        isCompact: window.innerWidth <= 1024,
+        interlude
+      });
+      group.setTransform(curPos, force, delay, presentation.isActive, presentation.targetOpacity, presentation.blurLevel);
+      curPos += ((_a3 = this.lyricGroupSize.get(group)) == null ? void 0 : _a3[1]) ?? LINE_HEIGHT_FALLBACK;
+      if (curPos >= 0 && !this.timelineState.isSeeking) {
+        delay += baseDelay;
+        if (i2 >= this.timelineState.scrollToIndex) baseDelay /= 1.05;
+      }
+    });
+    this.scrollState.scrollBoundary.maxOffset = curPos + this.scrollState.scrollOffset - this.size[1] / 2;
+    const bottomIndex = this.currentLyricGroups.length;
+    const finalBottomBlur = computeLineBlur({
+      enableBlur: this.enableBlur,
+      isUserScrolling: this.scrollState.isUserScrolling,
+      isActive: isBottomFocused,
+      itemIndex: bottomIndex,
+      scrollToIndex: this.timelineState.scrollToIndex,
+      latestIndex,
+      isCompact: window.innerWidth <= 1024
+    });
+    this.bottomLine.setTransform(0, curPos, finalBottomBlur, force, delay);
   }
   /**
-   * 设置所有歌词行在横坐标上的弹簧属性，包括重量、弹力和阻力。
-   *
-   * @param params 需要设置的弹簧属性，提供的属性将会覆盖原来的属性，未提供的属性将会保持原样
-   * @deprecated 考虑到横向弹簧效果并不常见，所以这个函数将会在未来的版本中移除
-   */
-  setLinePosXSpringParams(t2 = {}) {
+  * 设置所有歌词行在横坐标上的弹簧属性，包括重量、弹力和阻力。
+  *
+  * @param params 需要设置的弹簧属性，提供的属性将会覆盖原来的属性，未提供的属性将会保持原样
+  * @deprecated 考虑到横向弹簧效果并不常见，所以这个函数将会在未来的版本中移除
+  */
+  setLinePosXSpringParams(_params = {}) {
   }
   /**
-   * 设置所有歌词行在​纵坐标上的弹簧属性，包括重量、弹力和阻力。
-   *
-   * @param params 需要设置的弹簧属性，提供的属性将会覆盖原来的属性，未提供的属性将会保持原样
-   */
-  setLinePosYSpringParams(t2 = {}) {
+  * 设置所有歌词行在​纵坐标上的弹簧属性，包括重量、弹力和阻力。
+  *
+  * @param params 需要设置的弹簧属性，提供的属性将会覆盖原来的属性，未提供的属性将会保持原样
+  */
+  setLinePosYSpringParams(params = {}) {
     this.posYSpringParams = {
       ...this.posYSpringParams,
-      ...t2
-    }, this.bottomLine.lineTransforms.posY.updateParams(this.posYSpringParams);
-    for (const e2 of this.currentLyricLineObjects)
-      e2.lineTransforms.posY.updateParams(this.posYSpringParams);
+      ...params
+    };
+    this.bottomLine.lineTransforms.posY.updateParams(this.posYSpringParams);
+    for (const group of this.currentLyricGroups) {
+      group.posY.updateParams(this.posYSpringParams);
+      group.bgSlideY.updateParams(this.posYSpringParams);
+    }
   }
   /**
-   * 设置所有歌词行在​缩放大小上的弹簧属性，包括重量、弹力和阻力。
-   *
-   * @param params 需要设置的弹簧属性，提供的属性将会覆盖原来的属性，未提供的属性将会保持原样
-   */
-  setLineScaleSpringParams(t2 = {}) {
+  * 设置所有歌词行在​缩放大小上的弹簧属性，包括重量、弹力和阻力。
+  *
+  * @param params 需要设置的弹簧属性，提供的属性将会覆盖原来的属性，未提供的属性将会保持原样
+  */
+  setLineScaleSpringParams(params = {}) {
+    var _a2;
     this.scaleSpringParams = {
       ...this.scaleSpringParams,
-      ...t2
-    }, this.scaleForBGSpringParams = {
-      ...this.scaleForBGSpringParams,
-      ...t2
+      ...params
     };
-    for (const e2 of this.currentLyricLineObjects)
-      e2.getLine().isBG ? e2.lineTransforms.scale.updateParams(this.scaleForBGSpringParams) : e2.lineTransforms.scale.updateParams(this.scaleSpringParams);
+    this.scaleForBGSpringParams = {
+      ...this.scaleForBGSpringParams,
+      ...params
+    };
+    for (const group of this.currentLyricGroups) {
+      group.mainLine.lineTransforms.scale.updateParams(this.scaleSpringParams);
+      (_a2 = group.bgLine) == null ? void 0 : _a2.lineTransforms.scale.updateParams(this.scaleForBGSpringParams);
+    }
   }
   /**
-   * 暂停部分效果演出，目前会暂停播放间奏点的动画，且将背景歌词显示出来
-   */
+  * 暂停部分效果演出，目前会暂停播放间奏点的动画，且将背景歌词显示出来
+  */
   pause() {
-    this.interludeDots.pause(), this.isPlaying && (this.isPlaying = false, this.calcLayout());
+    this.interludeDots.pause();
+    if (this.timelineState.isPlaying) {
+      this.timelineState.isPlaying = false;
+      this.calcLayout();
+    }
   }
   /**
-   * 恢复部分效果演出，目前会恢复播放间奏点的动画
-   */
+  * 恢复部分效果演出，目前会恢复播放间奏点的动画
+  */
   resume() {
-    this.interludeDots.resume(), this.isPlaying || (this.isPlaying = true, this.calcLayout());
+    this.interludeDots.resume();
+    if (!this.timelineState.isPlaying) {
+      this.timelineState.isPlaying = true;
+      this.calcLayout();
+    }
   }
   /**
-   * 更新动画，这个函数应该被逐帧调用或者在以下情况下调用一次：
-   *
-   * 1. 刚刚调用完设置歌词函数的时候
-   * @param delta 距离上一次被调用到现在的时长，单位为毫秒（可为浮点数）
-   */
-  update(t2 = 0) {
-    this.bottomLine.update(t2 / 1e3), this.interludeDots.update(t2 / 1e3);
+  * 更新动画，这个函数应该被逐帧调用或者在以下情况下调用一次：
+  *
+  * 1. 刚刚调用完设置歌词函数的时候
+  * @param delta 距离上一次被调用到现在的时长，单位为毫秒（可为浮点数）
+  */
+  update(delta = 0) {
+    this.bottomLine.update(delta / 1e3);
+    this.interludeDots.update(delta);
   }
   onResize() {
   }
   /**
-   * 获取一个特殊的底栏元素，默认是空白的，可以往内部添加任意元素
-   *
-   * 这个元素始终在歌词的底部，可以用于显示歌曲创作者等信息
-   *
-   * 但是请勿删除该元素，只能在内部存放元素
-   *
-   * @returns 一个元素，可以往内部添加任意元素
-   */
+  * 获取一个特殊的底栏元素，默认是空白的，可以往内部添加任意元素
+  *
+  * 这个元素始终在歌词的底部，可以用于显示歌曲创作者等信息
+  *
+  * 但是请勿删除该元素，只能在内部存放元素
+  *
+  * @returns 一个元素，可以往内部添加任意元素
+  */
   getBottomLineElement() {
     return this.bottomLine.getElement();
   }
   /**
-   * 重置用户滚动状态
-   *
-   * 请在用户完成滚动点击跳转歌词时调用本事件再调用 `calcLayout` 以正确滚动到目标位置
-   */
+  * 重置用户滚动状态
+  *
+  * 请在用户完成滚动点击跳转歌词时调用本事件再调用 `calcLayout` 以正确滚动到目标位置
+  */
   resetScroll() {
-    this.isScrolled = false, this.scrollOffset = 0, clearTimeout(this.scrolledHandler), this.scrolledHandler = 0;
+    resetPlayerScrollState(this.scrollState);
+    clearTimeout(this.scrolledHandler);
   }
   /**
-   * 获取当前歌词数组
-   *
-   * 一般和最后调用 `setLyricLines` 给予的参数一样
-   * @returns 当前歌词数组
-   */
+  * 获取当前歌词数组
+  *
+  * 一般和最后调用 `setLyricLines` 给予的参数一样
+  * @returns 当前歌词数组
+  */
   getLyricLines() {
     return this.currentLyricLines;
   }
   /**
-   * 获取当前歌词的播放位置
-   *
-   * 一般和最后调用 `setCurrentTime` 给予的参数一样
-   * @returns 当前播放位置
-   */
+  * 获取当前歌词的播放位置
+  *
+  * 一般和最后调用 `setCurrentTime` 给予的参数一样
+  * @returns 当前播放位置
+  */
   getCurrentTime() {
-    return this.currentTime;
+    return this.timelineState.currentTime;
+  }
+  /**
+  * 设置是否让背景人声行始终后置显示
+  *
+  * 默认情况下，如果背景歌词开始时间早于主歌词，会在主歌词上方展示；
+  * 如果设置为 `true`，则无论时间顺序如何，背景歌词都会始终在主歌词下方展示
+  * @param enable 是否启用始终后置
+  */
+  setAlwaysPostpositionBackground(enable) {
+    if (this.alwaysPostpositionBackground === enable) return;
+    this.alwaysPostpositionBackground = enable;
+    this.rebuildLyricLines();
+    this.calcLayout();
+  }
+  /** 获取当前是否设置了让背景人声行始终后置显示 */
+  getAlwaysPostpositionBackground() {
+    return this.alwaysPostpositionBackground;
   }
   getElement() {
     return this.element;
   }
   dispose() {
-    this.element.remove(), window.removeEventListener("pageshow", this.onPageShow), window.removeEventListener("pagehide", this.onPageHide);
+    this.element.remove();
+    window.removeEventListener("pageshow", this.onPageShow);
+    window.removeEventListener("pagehide", this.onPageHide);
   }
-}
-class q extends EventTarget {
+};
+var LyricLineGroupBase = class {
+  constructor(mainLine, bgLine) {
+    __publicField(this, "posY", new Spring(0));
+    __publicField(this, "bgSlideY", new Spring(-80));
+    __publicField(this, "top", 0);
+    __publicField(this, "delay", 0);
+    __publicField(this, "isActive", false);
+    __publicField(this, "opacity", 1);
+    __publicField(this, "blur", 0);
+    __publicField(this, "isBgFirst", false);
+    this.mainLine = mainLine;
+    this.bgLine = bgLine;
+  }
+  get startTime() {
+    return this.mainLine.getLine().startTime;
+  }
+  get endTime() {
+    return this.mainLine.getLine().endTime;
+  }
+  onLineSizeChange(size) {
+    var _a2;
+    this.mainLine.onLineSizeChange(size);
+    (_a2 = this.bgLine) == null ? void 0 : _a2.onLineSizeChange(size);
+  }
+  setTransform(top, force, delay, isActive, opacity, blur) {
+    this.top = top;
+    this.delay = delay;
+    this.isActive = isActive;
+    this.opacity = opacity;
+    this.blur = blur;
+    this.setLineTransformations(force, delay);
+    const enableSpring = this.lyricPlayer.getEnableSpring();
+    const hiddenSlideY = (this.lyricPlayer.getAlwaysPostpositionBackground() ? false : this.isBgFirst) ? 80 : -80;
+    const isPlaying = this.lyricPlayer.getIsPlaying();
+    const targetBgSlideY = isActive || !isPlaying ? 0 : hiddenSlideY;
+    if (force || !enableSpring) {
+      this.posY.setPosition(top);
+      this.bgSlideY.setPosition(targetBgSlideY);
+      this.renderStyles();
+    } else {
+      this.posY.setTargetPosition(top, delay);
+      this.bgSlideY.setTargetPosition(targetBgSlideY, delay);
+    }
+  }
+  setLineTransformations(force, delay) {
+    var _a2;
+    const enableScale = this.lyricPlayer.getEnableScale();
+    const isPlaying = this.lyricPlayer.getIsPlaying();
+    const renderMode = this.isActive ? LyricLineRenderMode.GRADIENT : LyricLineRenderMode.SOLID;
+    const SCALE_ASPECT = enableScale ? 97 : 100;
+    let mainScale = 100;
+    if (!this.isActive && isPlaying) mainScale = SCALE_ASPECT;
+    this.mainLine.setTransform(mainScale, 1, 0, force, delay, renderMode);
+    let bgScale = 100;
+    if (!this.isActive && isPlaying) bgScale = 75;
+    (_a2 = this.bgLine) == null ? void 0 : _a2.setTransform(bgScale, 1, 0, force, delay, renderMode);
+  }
+  update(delta) {
+    var _a2;
+    if (this.lyricPlayer.getEnableSpring()) {
+      this.posY.update(delta);
+      this.bgSlideY.update(delta);
+      this.renderStyles();
+    }
+    this.mainLine.update(delta);
+    (_a2 = this.bgLine) == null ? void 0 : _a2.update(delta);
+  }
+  rebuildAllLines() {
+    var _a2;
+    this.mainLine.rebuildElement();
+    (_a2 = this.bgLine) == null ? void 0 : _a2.rebuildElement();
+  }
+  enable(time, shouldPlay) {
+    var _a2;
+    this.mainLine.enable(time, shouldPlay);
+    (_a2 = this.bgLine) == null ? void 0 : _a2.enable(time, shouldPlay);
+  }
+  disable() {
+    var _a2;
+    this.mainLine.disable();
+    (_a2 = this.bgLine) == null ? void 0 : _a2.disable();
+  }
+  dispose() {
+    var _a2;
+    this.mainLine.dispose();
+    (_a2 = this.bgLine) == null ? void 0 : _a2.dispose();
+  }
+};
+var LyricLineGroup = class extends LyricLineGroupBase {
+  constructor(lyricPlayer, mainLine) {
+    super(mainLine);
+    __publicField(this, "element");
+    __publicField(this, "bgWrapper");
+    __publicField(this, "lastIsActive");
+    this.lyricPlayer = lyricPlayer;
+    this.element = document.createElement("div");
+    this.element.className = lyric_player_module_default.lyricLineWrapper;
+    this.element.appendChild(mainLine.getElement());
+    this.posY.setPosition(window.innerHeight * 2);
+    lyricPlayer.resizeObserver.observe(this.element);
+  }
+  get isInSight() {
+    var _a2, _b;
+    const t2 = this.posY.getCurrentPosition();
+    let h2 = (_b = (_a2 = this.lyricPlayer.lyricGroupSize) == null ? void 0 : _a2.get(this)) == null ? void 0 : _b[1];
+    if (h2 === void 0 || h2 === 0) h2 = this.element.clientHeight || 0;
+    const pb = this.lyricPlayer.size[1];
+    const ov = this.lyricPlayer.getOverscanPx();
+    return !(t2 > pb + h2 + ov || t2 < -h2 - ov);
+  }
+  show() {
+    var _a2;
+    if (!this.element.parentElement) {
+      const playerEl = this.lyricPlayer.getElement();
+      const groups = this.lyricPlayer.currentLyricGroups;
+      const myIndex = groups.indexOf(this);
+      let referenceNode = null;
+      if (myIndex !== -1) {
+        for (let i2 = myIndex + 1; i2 < groups.length; i2++) if (groups[i2].element.parentElement === playerEl) {
+          referenceNode = groups[i2].element;
+          break;
+        }
+      }
+      playerEl.insertBefore(this.element, referenceNode);
+      this.lyricPlayer.resizeObserver.observe(this.element);
+    }
+    this.mainLine.show();
+    (_a2 = this.bgLine) == null ? void 0 : _a2.show();
+  }
+  hide() {
+    var _a2;
+    if (this.element.parentElement) {
+      this.lyricPlayer.resizeObserver.unobserve(this.element);
+      this.element.remove();
+      this.mainLine.teardownContent();
+      (_a2 = this.bgLine) == null ? void 0 : _a2.teardownContent();
+    }
+  }
+  update(delta) {
+    if (this.isInSight) this.show();
+    else this.hide();
+    super.update(delta);
+  }
+  addBgLine(bgLine) {
+    var _a2, _b;
+    if (this.bgLine) this.bgLine.dispose();
+    if (this.bgWrapper) this.bgWrapper.remove();
+    this.bgLine = bgLine;
+    const bgStartTime = ((_a2 = bgLine.getLine().words[0]) == null ? void 0 : _a2.startTime) ?? bgLine.getLine().startTime;
+    const mainStartTime = ((_b = this.mainLine.getLine().words[0]) == null ? void 0 : _b.startTime) ?? this.mainLine.getLine().startTime;
+    this.isBgFirst = bgStartTime < mainStartTime;
+    if (this.mainLine.getLine().isDuet) bgLine.getElement().classList.add(lyric_player_module_default.lyricDuetLine);
+    this.bgWrapper = document.createElement("div");
+    this.bgWrapper.className = lyric_player_module_default.bgWrapper;
+    this.bgWrapper.appendChild(bgLine.getElement());
+    if (!this.lyricPlayer.getAlwaysPostpositionBackground() && this.isBgFirst) {
+      this.bgWrapper.classList.add(lyric_player_module_default.bgWrapperTop);
+      this.element.insertBefore(this.bgWrapper, this.mainLine.getElement());
+      this.bgSlideY.setPosition(80);
+    } else this.element.appendChild(this.bgWrapper);
+  }
+  renderStyles() {
+    const y2 = this.posY.getCurrentPosition().toFixed(1);
+    this.element.style.transform = `translateY(${y2}px)`;
+    this.element.style.opacity = this.opacity.toString();
+    this.element.style.filter = `blur(${Math.min(5, this.blur)}px)`;
+    if (!this.lyricPlayer.getEnableSpring()) this.element.style.transitionDelay = `${this.delay}ms`;
+    if (this.bgWrapper) {
+      if (this.lastIsActive !== this.isActive) {
+        this.lastIsActive = this.isActive;
+        this.bgWrapper.classList.toggle(lyric_player_module_default.bgWrapperActive, this.isActive);
+      }
+      const slideY = this.bgSlideY.getCurrentPosition();
+      const slideYStr = slideY.toFixed(1);
+      const activeProgress = clamp01(1 - Math.abs(slideY) / 80);
+      const scaleStr = (0.8 + activeProgress * 0.2).toFixed(3);
+      this.bgWrapper.style.transform = `translateY(${slideYStr}%) scale(${scaleStr})`;
+      const shouldBgFirst = !this.lyricPlayer.getAlwaysPostpositionBackground() && this.isBgFirst;
+      if (shouldBgFirst) {
+        const currentMarginTop = -(this.bgWrapper.clientHeight || 0) * (1 - activeProgress);
+        this.bgWrapper.style.marginTop = `${currentMarginTop.toFixed(1)}px`;
+      } else this.bgWrapper.style.marginTop = "";
+      const isHidden = slideYStr === (shouldBgFirst ? "80.0" : "-80.0") && !this.isActive;
+      this.bgWrapper.classList.toggle(lyric_player_module_default.bgWrapperHidden, isHidden);
+    }
+  }
+  dispose() {
+    super.dispose();
+    this.lyricPlayer.resizeObserver.unobserve(this.element);
+    this.element.remove();
+  }
+};
+const isCJK = (char) => {
+  return /^[\p{Unified_Ideograph}\u0800-\u9FFC]+$/u.test(char);
+};
+var LyricLineBase = (_a = class extends EventTarget {
   constructor() {
     super(...arguments);
     __publicField(this, "top", 0);
@@ -21119,140 +24171,350 @@ class q extends EventTarget {
     __publicField(this, "blur", 0);
     __publicField(this, "opacity", 1);
     __publicField(this, "delay", 0);
-    __publicField(this, "lineTransforms", {
-      posY: new Tt(0),
-      scale: new Tt(100)
-    });
+    __publicField(this, "lineTransforms", { scale: new Spring(100) });
   }
-  onLineSizeChange(t2) {
+  setTransform(scale = this.scale, opacity = this.opacity, blur = this.blur, _force = false, delay = 0, _mode = LyricLineRenderMode.SOLID) {
+    this.scale = scale;
+    this.opacity = opacity;
+    this.blur = blur;
+    this.delay = delay;
   }
-  setTransform(t2 = this.top, e2 = this.scale, s2 = this.opacity, i2 = this.blur, n2 = false, r2 = 0) {
-    this.top = t2, this.scale = e2, this.opacity = s2, this.blur = i2, this.delay = r2;
+  rebuildElement() {
   }
   /**
-   * 判定歌词是否可以应用强调辉光效果
-   *
-   * 果子在对辉光效果的解释是一种强调（emphasized）效果
-   *
-   * 条件是一个单词时长大于等于 1s 且长度小于等于 7
-   *
-   * @param word 单词
-   * @returns 是否可以应用强调辉光效果
-   */
-  static shouldEmphasize(t2) {
-    return os(t2.word) ? t2.endTime - t2.startTime >= 1e3 : t2.endTime - t2.startTime >= 1e3 && t2.word.trim().length <= 7 && t2.word.trim().length > 1;
+  * 判定歌词是否可以应用强调辉光效果
+  *
+  * 果子在对辉光效果的解释是一种强调（emphasized）效果
+  *
+  * 条件是一个单词时长大于等于 1s 且长度小于等于 7
+  *
+  * @param word 单词
+  * @returns 是否可以应用强调辉光效果
+  */
+  static shouldEmphasize(word) {
+    if (isCJK(word.word)) return word.endTime - word.startTime >= 1e3;
+    return word.endTime - word.startTime >= 1e3 && word.word.trim().length <= 7 && word.word.trim().length > 1;
   }
   dispose() {
   }
-}
-function us(d2) {
-  return d2 && d2.__esModule && Object.prototype.hasOwnProperty.call(d2, "default") ? d2.default : d2;
-}
-var Pt, Jt;
-function gs() {
-  if (Jt) return Pt;
-  Jt = 1;
-  var d2 = 4, t2 = 1e-3, e2 = 1e-7, s2 = 10, i2 = 11, n2 = 1 / (i2 - 1), r2 = typeof Float32Array == "function";
-  function a2(g2, p2) {
-    return 1 - 3 * p2 + 3 * g2;
-  }
-  function o2(g2, p2) {
-    return 3 * p2 - 6 * g2;
-  }
-  function l2(g2) {
-    return 3 * g2;
-  }
-  function c2(g2, p2, y2) {
-    return ((a2(p2, y2) * g2 + o2(p2, y2)) * g2 + l2(p2)) * g2;
-  }
-  function h2(g2, p2, y2) {
-    return 3 * a2(p2, y2) * g2 * g2 + 2 * o2(p2, y2) * g2 + l2(p2);
-  }
-  function m2(g2, p2, y2, L, x2) {
-    var M2, b2, w2 = 0;
-    do
-      b2 = p2 + (y2 - p2) / 2, M2 = c2(b2, L, x2) - g2, M2 > 0 ? y2 = b2 : p2 = b2;
-    while (Math.abs(M2) > e2 && ++w2 < s2);
-    return b2;
-  }
-  function u2(g2, p2, y2, L) {
-    for (var x2 = 0; x2 < d2; ++x2) {
-      var M2 = h2(p2, y2, L);
-      if (M2 === 0)
-        return p2;
-      var b2 = c2(p2, y2, L) - g2;
-      p2 -= b2 / M2;
+}, /**
+* 用于 CJK 词语边界检测的分词器
+*/
+__publicField(_a, "wordSegmenter", typeof Intl !== "undefined" && Intl.Segmenter ? new Intl.Segmenter(void 0, { granularity: "word" }) : null), /**
+* Unicode 标准的全局 Grapheme Cluster 分词器
+* 用于正确处理 emoji、复合字符等
+*/
+__publicField(_a, "graphemeSegmenter", typeof Intl !== "undefined" && Intl.Segmenter ? new Intl.Segmenter(void 0, { granularity: "grapheme" }) : null), _a);
+const OVERFLOW_PENALTY_MULTIPLIER = 1e3;
+const CJK_BREAK_PENALTY_RATIO = 0.15;
+const NORMAL_BREAK_PENALTY_RATIO = 0.5;
+const SPACE_BREAK_REWARD_RATIO = 0.4;
+const PUNCTUATION_BREAK_REWARD_RATIO = 0.6;
+const PUNCTUATION_REGEX = /[,.;:!?，。；：！？、）】》」』’”)[\]}>~…]$/;
+function calcBalancedBreaks(children, containerWidth, fullText, segmenter) {
+  const n2 = children.length;
+  if (n2 === 0 || containerWidth <= 0) return [];
+  const cjkBoundaries = /* @__PURE__ */ new Set();
+  let offset = 0;
+  for (const { segment, isWordLike } of segmenter.segment(fullText)) {
+    if (offset > 0 && isWordLike) {
+      if ([...segment].some((ch) => isCJK(ch))) cjkBoundaries.add(offset);
     }
-    return p2;
+    offset += segment.length;
   }
-  function f2(g2) {
-    return g2;
+  const charOffsets = new Int32Array(n2 + 1);
+  const prefixWidth = new Float64Array(n2 + 1);
+  for (let i2 = 0; i2 < n2; i2++) {
+    charOffsets[i2 + 1] = charOffsets[i2] + children[i2].text.length;
+    prefixWidth[i2 + 1] = prefixWidth[i2] + children[i2].width;
   }
-  return Pt = function(p2, y2, L, x2) {
-    if (!(0 <= p2 && p2 <= 1 && 0 <= L && L <= 1))
-      throw new Error("bezier x values must be in [0, 1] range");
-    if (p2 === y2 && L === x2)
-      return f2;
-    for (var M2 = r2 ? new Float32Array(i2) : new Array(i2), b2 = 0; b2 < i2; ++b2)
-      M2[b2] = c2(b2 * n2, p2, L);
-    function w2(T) {
-      for (var v2 = 0, P = 1, z = i2 - 1; P !== z && M2[P] <= T; ++P)
-        v2 += n2;
-      --P;
-      var E = (T - M2[P]) / (M2[P + 1] - M2[P]), F = v2 + E * n2, _ = h2(F, p2, L);
-      return _ >= t2 ? u2(T, F, p2, L) : _ === 0 ? F : m2(T, v2, v2 + n2, p2, L);
+  if (prefixWidth[n2] <= containerWidth) return [];
+  const dp = new Float64Array(n2 + 1).fill(Number.POSITIVE_INFINITY);
+  const nextBreak = new Int32Array(n2 + 1).fill(-1);
+  dp[n2] = 0;
+  const PENALTY_CJK = (containerWidth * CJK_BREAK_PENALTY_RATIO) ** 2;
+  const PENALTY_NORMAL = (containerWidth * NORMAL_BREAK_PENALTY_RATIO) ** 2;
+  for (let i2 = n2 - 1; i2 >= 0; i2--) for (let j2 = i2 + 1; j2 <= n2; j2++) {
+    const w2 = prefixWidth[j2] - prefixWidth[i2];
+    let lineCost = 0;
+    if (w2 > containerWidth) if (j2 === i2 + 1) lineCost = (w2 - containerWidth) ** 2 * OVERFLOW_PENALTY_MULTIPLIER;
+    else continue;
+    else lineCost = (containerWidth - w2) ** 2;
+    let breakPenalty = 0;
+    if (j2 < n2) {
+      const prevChild = children[j2 - 1];
+      if (PUNCTUATION_REGEX.test(prevChild.text)) breakPenalty = -((containerWidth * PUNCTUATION_BREAK_REWARD_RATIO) ** 2);
+      else if (prevChild.isSpace) breakPenalty = -((containerWidth * SPACE_BREAK_REWARD_RATIO) ** 2);
+      else if (cjkBoundaries.has(charOffsets[j2])) breakPenalty = PENALTY_CJK;
+      else breakPenalty = PENALTY_NORMAL;
     }
-    return function(v2) {
-      return v2 === 0 ? 0 : v2 === 1 ? 1 : c2(w2(v2), y2, x2);
-    };
-  }, Pt;
+    const totalCost = lineCost + breakPenalty + dp[j2];
+    if (totalCost < dp[i2]) {
+      dp[i2] = totalCost;
+      nextBreak[i2] = j2;
+    }
+  }
+  const breaks = [];
+  let curr = 0;
+  while (curr < n2) {
+    curr = nextBreak[curr];
+    if (curr > 0 && curr < n2) breaks.push(curr);
+  }
+  return breaks;
 }
-var ys = gs();
-const St = /* @__PURE__ */ us(ys), Ls = /^[\p{Unified_Ideograph}\u0800-\u9FFC]+$/u;
-function Ot(d2) {
-  const t2 = [];
-  for (const n2 of d2) {
-    const r2 = n2.word.replace(/\s/g, "").length, a2 = n2.word.split(" ").filter((o2) => o2.trim().length > 0);
-    if (a2.length > 1) {
-      n2.word.startsWith(" ") && t2.push({
-        word: " ",
-        romanWord: "",
-        startTime: 0,
-        endTime: 0,
-        obscene: false
-      });
-      let o2 = 0;
-      for (const l2 of a2) {
-        const c2 = {
-          word: l2,
-          romanWord: "",
-          obscene: n2.obscene,
-          startTime: n2.startTime + o2 / r2 * (n2.endTime - n2.startTime),
-          endTime: n2.startTime + (o2 + l2.length) / r2 * (n2.endTime - n2.startTime)
-        };
-        t2.push(c2), t2.push({
-          word: " ",
-          romanWord: "",
-          startTime: 0,
-          endTime: 0,
-          obscene: false
-        }), o2 += l2.length;
+let sharedCanvasCtx = null;
+function getMeasurementContext() {
+  if (!sharedCanvasCtx) sharedCanvasCtx = document.createElement("canvas").getContext("2d");
+  return sharedCanvasCtx;
+}
+var LineBalancer = class {
+  constructor(mainElement) {
+    __publicField(this, "isBalancing", false);
+    __publicField(this, "lastBalancedContainerWidth", -1);
+    this.mainElement = mainElement;
+  }
+  balanceLineBreaks(isNonDynamic, hasSplittedWords, wordSegmenter) {
+    if (this.isBalancing || !this.mainElement) return;
+    const computedStyle = getComputedStyle(this.mainElement);
+    const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
+    const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
+    const containerWidth = this.mainElement.clientWidth - paddingLeft - paddingRight;
+    if (containerWidth <= 0) return;
+    if (isNonDynamic) {
+      this.balanceNonDynamicLineBreaks(containerWidth, computedStyle, wordSegmenter);
+      return;
+    }
+    if (!hasSplittedWords) return;
+    this.balanceDynamicLineBreaks(containerWidth, wordSegmenter);
+  }
+  reset() {
+    this.lastBalancedContainerWidth = -1;
+  }
+  executeLineBalance(containerWidth, adapter, wordSegmenter) {
+    const existingBrs = this.mainElement.querySelectorAll("br");
+    if (containerWidth === this.lastBalancedContainerWidth && existingBrs.length > 0) return;
+    adapter.resetDOM();
+    const prevWhiteSpace = this.mainElement.style.whiteSpace;
+    this.mainElement.style.whiteSpace = "nowrap";
+    const parentElement = this.mainElement.parentElement;
+    let prevTransform = "";
+    let transformChanged = false;
+    if (parentElement) {
+      prevTransform = parentElement.style.transform;
+      if (prevTransform && prevTransform !== "none") {
+        parentElement.style.transform = "none";
+        transformChanged = true;
       }
-      n2.word.endsWith(" ") || t2.pop();
-    } else
-      t2.push({
-        ...n2
-      });
+    }
+    let lockAcquired = false;
+    try {
+      const { childInfos, fullText } = adapter.buildChildInfos();
+      let layoutWidth = childInfos.reduce((sum, c2) => sum + c2.width, 0);
+      if (adapter.needsCalibration) {
+        const range2 = document.createRange();
+        range2.selectNodeContents(this.mainElement);
+        const visualWidth = range2.getBoundingClientRect().width;
+        if (layoutWidth > 0 && visualWidth > 0) {
+          const scale = visualWidth / layoutWidth;
+          for (const info of childInfos) info.width *= scale;
+        }
+        layoutWidth = visualWidth;
+      }
+      const safeContainerWidth = Math.max(1, containerWidth);
+      if (layoutWidth <= safeContainerWidth) {
+        this.lastBalancedContainerWidth = containerWidth;
+        return;
+      }
+      const breaks = calcBalancedBreaks(childInfos, safeContainerWidth, fullText, wordSegmenter);
+      if (breaks.length === 0) {
+        this.lastBalancedContainerWidth = containerWidth;
+        return;
+      }
+      this.isBalancing = true;
+      lockAcquired = true;
+      adapter.applyBreaks(breaks, childInfos);
+      this.lastBalancedContainerWidth = containerWidth;
+      this.isBalancing = false;
+    } finally {
+      this.mainElement.style.whiteSpace = prevWhiteSpace;
+      if (transformChanged && parentElement) parentElement.style.transform = prevTransform;
+      if (lockAcquired) this.isBalancing = false;
+    }
   }
-  let e2 = [], s2 = [];
-  const i2 = [];
-  for (const n2 of t2) {
-    const r2 = n2.word;
-    e2.push(r2), s2.push(n2), r2.length > 0 && r2.trim().length === 0 ? (e2.pop(), s2.pop(), s2.length === 1 ? i2.push(s2[0]) : s2.length > 1 && i2.push(s2), i2.push(n2), e2 = [], s2 = []) : (!/^\s*[^\s]*\s*$/.test(e2.join("")) || Ls.test(r2)) && (e2.pop(), s2.pop(), s2.length === 1 ? i2.push(s2[0]) : s2.length > 1 && i2.push(s2), e2 = [r2], s2 = [n2]);
+  balanceDynamicLineBreaks(containerWidth, wordSegmenter) {
+    const infoToNode = [];
+    this.executeLineBalance(containerWidth, {
+      resetDOM: () => {
+        this.mainElement.querySelectorAll("br").forEach((br) => {
+          br.remove();
+        });
+      },
+      buildChildInfos: () => {
+        infoToNode.length = 0;
+        const childNodes = Array.from(this.mainElement.childNodes);
+        const childInfos = [];
+        const range2 = document.createRange();
+        for (const node of childNodes) if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.textContent ?? "";
+          if (text.length === 0) continue;
+          range2.selectNodeContents(node);
+          childInfos.push({
+            width: range2.getBoundingClientRect().width,
+            text,
+            isSpace: text.trim().length === 0
+          });
+          infoToNode.push(node);
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          const el = node;
+          const rect = el.getBoundingClientRect();
+          const elStyle = getComputedStyle(el);
+          const marginLeft = Number.parseFloat(elStyle.marginLeft) || 0;
+          const marginRight = Number.parseFloat(elStyle.marginRight) || 0;
+          childInfos.push({
+            width: clampPositive(rect.width + marginLeft + marginRight),
+            text: el.textContent ?? "",
+            isSpace: false
+          });
+          infoToNode.push(node);
+        }
+        return {
+          childInfos,
+          fullText: childInfos.map((c2) => c2.text).join("")
+        };
+      },
+      applyBreaks: (breaks) => {
+        for (let i2 = breaks.length - 1; i2 >= 0; i2--) {
+          const breakIndex = breaks[i2];
+          if (breakIndex >= 0 && breakIndex < infoToNode.length) this.mainElement.insertBefore(document.createElement("br"), infoToNode[breakIndex]);
+        }
+      },
+      needsCalibration: false
+    }, wordSegmenter);
   }
-  return s2.length === 1 ? i2.push(s2[0]) : i2.push(s2), i2;
+  balanceNonDynamicLineBreaks(containerWidth, computedStyle, wordSegmenter) {
+    const fullText = this.mainElement.textContent ?? "";
+    if (fullText.trim().length === 0) return;
+    this.executeLineBalance(containerWidth, {
+      resetDOM: () => {
+        this.mainElement.innerHTML = "";
+        this.mainElement.textContent = fullText;
+      },
+      buildChildInfos: () => {
+        const ctx = getMeasurementContext();
+        if (!ctx) {
+          console.debug("Canvas 2D context is not supported, skipping line balancing");
+          return {
+            childInfos: [],
+            fullText
+          };
+        }
+        ctx.font = `${computedStyle.fontWeight} ${computedStyle.fontSize} ${computedStyle.fontFamily}`;
+        if ("letterSpacing" in ctx) ctx.letterSpacing = computedStyle.letterSpacing !== "normal" ? computedStyle.letterSpacing : "0px";
+        if ("wordSpacing" in ctx) ctx.wordSpacing = computedStyle.wordSpacing !== "normal" ? computedStyle.wordSpacing : "0px";
+        const childInfos = [];
+        for (const { segment } of wordSegmenter.segment(fullText)) childInfos.push({
+          width: ctx.measureText(segment).width,
+          text: segment,
+          isSpace: segment.trim().length === 0
+        });
+        return {
+          childInfos,
+          fullText
+        };
+      },
+      applyBreaks: (breaks, childInfos) => {
+        this.mainElement.innerHTML = "";
+        const breakSet = new Set(breaks);
+        const fragment2 = document.createDocumentFragment();
+        for (let i2 = 0; i2 < childInfos.length; i2++) {
+          if (breakSet.has(i2)) fragment2.appendChild(document.createElement("br"));
+          fragment2.appendChild(document.createTextNode(childInfos[i2].text));
+        }
+        this.mainElement.appendChild(fragment2);
+      },
+      needsCalibration: true
+    }, wordSegmenter);
+  }
+};
+const SPLIT_WHITESPACE_RE = /(\s+)/;
+const WHITESPACE_RE = /\s/g;
+function chunkAndSplitLyricWords(words) {
+  var _a2;
+  const result = [];
+  let currentGroup = [];
+  const flushGroup = () => {
+    if (currentGroup.length > 0) {
+      result.push(currentGroup.length === 1 ? currentGroup[0] : [...currentGroup]);
+      currentGroup = [];
+    }
+  };
+  const processAtom = (atom) => {
+    var _a3;
+    const isSpace = atom.word.trim().length === 0;
+    const hasRuby = (((_a3 = atom.ruby) == null ? void 0 : _a3.length) ?? 0) > 0;
+    const isCJKChar = isCJK(atom.word);
+    if (!isSpace && !hasRuby && !isCJKChar) currentGroup.push(atom);
+    else {
+      flushGroup();
+      result.push(atom);
+    }
+  };
+  for (const w2 of words) {
+    const isSpace = w2.word.trim().length === 0;
+    const romanWord = w2.romanWord ?? "";
+    const obscene = w2.obscene ?? false;
+    const hasRuby = (((_a2 = w2.ruby) == null ? void 0 : _a2.length) ?? 0) > 0;
+    if (isSpace || hasRuby) {
+      processAtom({ ...w2 });
+      continue;
+    }
+    const parts = w2.word.split(SPLIT_WHITESPACE_RE).filter((p2) => p2.length > 0);
+    const totalLength = w2.word.replace(WHITESPACE_RE, "").length || 1;
+    const timePerUnit = (w2.endTime - w2.startTime) / totalLength;
+    let currentOffset = 0;
+    for (const part of parts) {
+      if (!part.trim()) {
+        const startTime = w2.startTime + currentOffset * timePerUnit;
+        processAtom({
+          word: part,
+          romanWord: "",
+          startTime,
+          endTime: startTime,
+          obscene
+        });
+        continue;
+      }
+      if (isCJK(part) && part.length > 1 && romanWord.trim().length === 0) {
+        const chars = part.split("");
+        for (const char of chars) {
+          const startTime = w2.startTime + currentOffset * timePerUnit;
+          processAtom({
+            word: char,
+            romanWord: "",
+            startTime,
+            endTime: startTime + timePerUnit,
+            obscene
+          });
+          currentOffset += 1;
+        }
+      } else {
+        const partRealLen = part.length;
+        const startTime = w2.startTime + currentOffset * timePerUnit;
+        processAtom({
+          word: part,
+          romanWord,
+          startTime,
+          endTime: startTime + partRealLen * timePerUnit,
+          obscene
+        });
+        currentOffset += partRealLen;
+      }
+    }
+  }
+  flushGroup();
+  return result;
 }
-function le() {
+function createMatrix4() {
   return [
     1,
     0,
@@ -21272,54 +24534,58 @@ function le() {
     1
   ];
 }
-function he(d2, t2 = 1, e2 = { x: 0, y: 0 }) {
-  const [s2, i2] = [e2.x, e2.y];
+function scaleMatrix4(m2, scale = 1, origin = {
+  x: 0,
+  y: 0
+}) {
+  const [ox, oy] = [origin.x, origin.y];
   return [
-    d2[0] * t2,
-    d2[1] * t2,
-    d2[2] * t2,
-    d2[3],
-    d2[4] * t2,
-    d2[5] * t2,
-    d2[6] * t2,
-    d2[7],
-    d2[8] * t2,
-    d2[9] * t2,
-    d2[10] * t2,
-    d2[11],
-    d2[12] - s2 * t2 + s2,
-    d2[13] - i2 * t2 + i2,
-    d2[14],
-    d2[15]
+    m2[0] * scale,
+    m2[1] * scale,
+    m2[2] * scale,
+    m2[3],
+    m2[4] * scale,
+    m2[5] * scale,
+    m2[6] * scale,
+    m2[7],
+    m2[8] * scale,
+    m2[9] * scale,
+    m2[10] * scale,
+    m2[11],
+    m2[12] - ox * scale + ox,
+    m2[13] - oy * scale + oy,
+    m2[14],
+    m2[15]
   ];
 }
-function de(d2, t2 = 4) {
-  const e2 = (s2, i2) => s2.toFixed(t2);
-  return `matrix3d(${d2.map(e2).join(", ")})`;
+function matrix4ToCSS(m2, fractionDigits = 4) {
+  const format = (n2, _) => n2.toFixed(fractionDigits);
+  return `matrix3d(${m2.map(format).join(", ")})`;
 }
-const Mt = 32, me = (d2, t2) => (e2) => Math.min(1, Math.max(0, (e2 - d2) / (t2 - d2))), Wt = 0.5, Ms = me(0, Wt), bs = me(Wt, 1), xs = St(0.2, 0.4, 0.58, 1), Ts = St(0.3, 0, 0.58, 1), ws = (d2) => (t2) => t2 < d2 ? xs(Ms(t2)) : 1 - Ts(bs(t2));
-function Qt(d2, t2 = 0, e2 = "rgba(0,0,0,var(--bright-mask-alpha, 1.0))", s2 = "rgba(0,0,0,var(--dark-mask-alpha, 1.0))") {
-  const i2 = 2 + d2 + t2, n2 = d2 / i2, r2 = (1 - n2) / 2;
-  return [
-    `linear-gradient(to right,${e2} ${r2 * 100}%,${s2} ${(r2 + n2) * 100}%)`,
-    i2
-  ];
+const ANIMATION_FRAME_QUANTITY = 32;
+const norNum = (min2, max2) => (x2) => clamp01((x2 - min2) / (max2 - min2));
+const EMP_EASING_MID = 0.5;
+const beginNum = norNum(0, EMP_EASING_MID);
+const endNum = norNum(EMP_EASING_MID, 1);
+const bezIn = bezier(0.2, 0.4, 0.58, 1);
+const bezOut = bezier(0.3, 0, 0.58, 1);
+const makeEmpEasing = (mid) => {
+  return (x2) => x2 < mid ? bezIn(beginNum(x2)) : 1 - bezOut(endNum(x2));
+};
+function generateFadeGradient(width, padding = 0, bright = "rgba(0,0,0,var(--bright-mask-alpha, 1.0))", dark = "rgba(0,0,0,var(--dark-mask-alpha, 1.0))") {
+  const totalAspect = 2 + width + padding;
+  const widthInTotal = width / totalAspect;
+  const leftPos = (1 - widthInTotal) / 2;
+  return [`linear-gradient(to right,${bright} ${leftPos * 100}%,${dark} ${(leftPos + widthInTotal) * 100}%)`, totalAspect];
 }
-let Ss = class extends MouseEvent {
-  constructor(t2, e2) {
-    super(e2.type, e2), this.line = t2;
+var RawLyricLineMouseEvent = class extends MouseEvent {
+  constructor(line, event) {
+    super(event.type, event);
+    this.line = line;
   }
 };
-function Es(d2) {
-  const t2 = d2.match(/matrix\(([^)]+)\)/);
-  if (t2) {
-    const e2 = t2[1].split(", "), s2 = Number.parseFloat(e2[0]), i2 = Number.parseFloat(e2[3]);
-    return (s2 + i2) / 2;
-  }
-  return 1;
-}
-let vs = class extends q {
-  constructor(t2, e2 = {
+var LyricLineEl = class extends LyricLineBase {
+  constructor(lyricPlayer, lyricLine = {
     words: [],
     translatedLyric: "",
     romanLyric: "",
@@ -21331,401 +24597,587 @@ let vs = class extends q {
     super();
     __publicField(this, "element", document.createElement("div"));
     __publicField(this, "splittedWords", []);
-    // 标记是否已经构建了行内的实际 DOM（单词与动画等）
     __publicField(this, "built", false);
-    // 由 LyricPlayer 来设置
     __publicField(this, "lineSize", [0, 0]);
+    __publicField(this, "renderMode", LyricLineRenderMode.SOLID);
+    __publicField(this, "currentBrightAlpha", 1);
+    __publicField(this, "currentDarkAlpha", 0.2);
+    __publicField(this, "targetBrightAlpha", 1);
+    __publicField(this, "targetDarkAlpha", 0.2);
+    /**
+    * 用于平衡换行、尽量减少各行长度差异的类
+    */
+    __publicField(this, "balancer");
     __publicField(this, "listenersMap", /* @__PURE__ */ new Map());
-    __publicField(this, "onMouseEvent", (t2) => {
-      const e2 = new Ss(this, t2);
-      for (const s2 of this.listenersMap.get(t2.type) ?? [])
-        s2.call(this, e2);
-      if (!this.dispatchEvent(e2) || e2.defaultPrevented)
-        return t2.preventDefault(), t2.stopPropagation(), t2.stopImmediatePropagation(), false;
+    __publicField(this, "onMouseEvent", (e2) => {
+      const wrapped = new RawLyricLineMouseEvent(this, e2);
+      for (const listener of this.listenersMap.get(e2.type) ?? []) listener.call(this, wrapped);
+      if (!this.dispatchEvent(wrapped) || wrapped.defaultPrevented) {
+        e2.preventDefault();
+        e2.stopPropagation();
+        e2.stopImmediatePropagation();
+      }
     });
     __publicField(this, "isEnabled", false);
     __publicField(this, "lastWord");
-    __publicField(this, "_hide", true);
-    __publicField(this, "_prevParentEl");
     __publicField(this, "lastStyle", "");
-    this.lyricPlayer = t2, this.lyricLine = e2, this._prevParentEl = t2.getElement(), t2.resizeObserver.observe(this.element), this.element.setAttribute("class", W.lyricLine), this.lyricLine.isBG && this.element.classList.add(W.lyricBgLine), this.lyricLine.isDuet && this.element.classList.add(W.lyricDuetLine), this.lineTransforms.posY.setPosition(window.innerHeight * 2), this.element.appendChild(document.createElement("div")), this.element.appendChild(document.createElement("div")), this.element.appendChild(document.createElement("div"));
-    const s2 = this.element.children[0], i2 = this.element.children[1], n2 = this.element.children[2];
-    s2.setAttribute("class", W.lyricMainLine), i2.setAttribute("class", W.lyricSubLine), n2.setAttribute("class", W.lyricSubLine), this.rebuildStyle();
+    this.lyricPlayer = lyricPlayer;
+    this.lyricLine = lyricLine;
+    this.element.setAttribute("class", lyric_player_module_default.lyricLine);
+    if (this.lyricLine.isBG) this.element.classList.add(lyric_player_module_default.lyricBgLine);
+    if (this.lyricLine.isDuet) this.element.classList.add(lyric_player_module_default.lyricDuetLine);
+    this.element.appendChild(document.createElement("div"));
+    this.element.appendChild(document.createElement("div"));
+    this.element.appendChild(document.createElement("div"));
+    const main = this.element.children[0];
+    const trans = this.element.children[1];
+    const roman = this.element.children[2];
+    main.setAttribute("class", lyric_player_module_default.lyricMainLine);
+    trans.setAttribute("class", lyric_player_module_default.lyricSubLine);
+    roman.setAttribute("class", lyric_player_module_default.lyricSubLine);
+    if (LyricLineBase.wordSegmenter) this.balancer = new LineBalancer(main);
+    this.rebuildStyle();
   }
-  addMouseEventListener(t2, e2, s2) {
-    if (e2) {
-      const i2 = this.listenersMap.get(t2) ?? /* @__PURE__ */ new Set();
-      i2.size === 0 && this.element.addEventListener(t2, this.onMouseEvent, s2), i2.add(e2), this.listenersMap.set(t2, i2);
+  addMouseEventListener(type2, callback, options) {
+    if (callback) {
+      const listeners = this.listenersMap.get(type2) ?? /* @__PURE__ */ new Set();
+      if (listeners.size === 0) this.element.addEventListener(type2, this.onMouseEvent, options);
+      listeners.add(callback);
+      this.listenersMap.set(type2, listeners);
     }
   }
-  removeMouseEventListener(t2, e2, s2) {
-    if (e2) {
-      const i2 = this.listenersMap.get(t2);
-      i2 && (i2.delete(e2), i2.size === 0 && this.element.removeEventListener(t2, this.onMouseEvent, s2));
+  removeMouseEventListener(type2, callback, options) {
+    if (callback) {
+      const listeners = this.listenersMap.get(type2);
+      if (listeners) {
+        listeners.delete(callback);
+        if (listeners.size === 0) this.element.removeEventListener(type2, this.onMouseEvent, options);
+      }
     }
   }
-  areWordsOnSameLine(t2, e2) {
-    if ((t2 == null ? void 0 : t2.mainElement) && (e2 == null ? void 0 : e2.mainElement)) {
-      const s2 = t2.mainElement, i2 = e2.mainElement, n2 = s2.getBoundingClientRect(), r2 = i2.getBoundingClientRect();
-      return Math.abs(n2.top - r2.top) < 10;
+  areWordsOnSameLine(word1, word2) {
+    if ((word1 == null ? void 0 : word1.mainElement) && (word2 == null ? void 0 : word2.mainElement)) {
+      const word1el = word1.mainElement;
+      const word2el = word2.mainElement;
+      const rect1 = word1el.getBoundingClientRect();
+      const rect2 = word2el.getBoundingClientRect();
+      return Math.abs(rect1.top - rect2.top) < 10;
     }
     return true;
   }
-  async enable(t2 = this.lyricLine.startTime) {
-    this.isEnabled = true, this.element.classList.add(W.active);
-    const e2 = this.element.children[0];
-    for (const s2 of this.splittedWords) {
-      for (const i2 of s2.elementAnimations)
-        i2.currentTime = 0, i2.playbackRate = 1, i2.play();
-      for (const i2 of s2.maskAnimations)
-        i2.currentTime = Math.min(
-          this.totalDuration,
-          Math.max(0, t2 - this.lyricLine.startTime)
-        ), i2.playbackRate = 1, i2.play();
+  async enable(maskAnimationTime = this.lyricPlayer.getCurrentTime(), shouldPlay = this.lyricPlayer.getIsPlaying()) {
+    var _a2, _b;
+    this.isEnabled = true;
+    this.element.classList.add(lyric_player_module_default.active);
+    const main = this.element.children[0];
+    const relativeTime = clampPositive(maskAnimationTime - this.lyricLine.startTime);
+    for (const word of this.splittedWords) {
+      for (const a2 of word.elementAnimations) {
+        a2.currentTime = relativeTime;
+        a2.playbackRate = 1;
+        const timing = (_a2 = a2.effect) == null ? void 0 : _a2.getComputedTiming();
+        const duration = Number((timing == null ? void 0 : timing.duration) ?? 0);
+        const endTime = Number((timing == null ? void 0 : timing.delay) ?? 0) + duration;
+        if (shouldPlay && relativeTime < endTime) a2.play();
+        else a2.pause();
+      }
+      for (const a2 of word.maskAnimations) {
+        const t2 = Math.min(this.totalDuration, relativeTime);
+        a2.currentTime = t2;
+        a2.playbackRate = 1;
+        const timing = (_b = a2.effect) == null ? void 0 : _b.getComputedTiming();
+        const duration = Number((timing == null ? void 0 : timing.duration) ?? 0);
+        const endTime = Number((timing == null ? void 0 : timing.delay) ?? 0) + duration;
+        if (shouldPlay && t2 < endTime) a2.play();
+        else a2.pause();
+      }
     }
-    e2.classList.add(W.active);
+    main.classList.add(lyric_player_module_default.active);
   }
   disable() {
-    this.isEnabled = false, this.element.classList.remove(W.active);
-    const t2 = this.element.children[0];
-    for (const e2 of this.splittedWords)
-      for (const s2 of e2.elementAnimations)
-        (s2.id === "float-word" || s2.id.includes("emphasize-word-float-only")) && (s2.playbackRate = -1, s2.play());
-    t2.classList.remove(W.active);
+    this.isEnabled = false;
+    this.element.classList.remove(lyric_player_module_default.active);
+    this.renderMode = LyricLineRenderMode.SOLID;
+    const main = this.element.children[0];
+    for (const word of this.splittedWords) {
+      for (const a2 of word.elementAnimations) if (a2.id === "float-word" || a2.id.includes("emphasize-word-float-only")) {
+        a2.playbackRate = -1;
+        a2.play();
+      }
+      for (const a2 of word.maskAnimations) a2.pause();
+    }
+    main.classList.remove(lyric_player_module_default.active);
   }
   async resume() {
-    if (this.isEnabled)
-      for (const t2 of this.splittedWords) {
-        for (const e2 of t2.elementAnimations)
-          (!this.lastWord || this.splittedWords.indexOf(this.lastWord) < this.splittedWords.indexOf(t2)) && e2.play();
-        for (const e2 of t2.maskAnimations)
-          (!this.lastWord || this.splittedWords.indexOf(this.lastWord) < this.splittedWords.indexOf(t2)) && e2.play();
+    var _a2, _b;
+    if (!this.isEnabled) return;
+    for (const word of this.splittedWords) {
+      for (const a2 of word.elementAnimations) if (!this.lastWord || this.splittedWords.indexOf(this.lastWord) < this.splittedWords.indexOf(word)) {
+        const timing = (_a2 = a2.effect) == null ? void 0 : _a2.getComputedTiming();
+        const duration = (timing == null ? void 0 : timing.duration) || 0;
+        const endTime = ((timing == null ? void 0 : timing.delay) || 0) + duration;
+        const currentTime = a2.currentTime || 0;
+        if (a2.playState !== "finished" && currentTime < endTime) a2.play();
       }
+      for (const a2 of word.maskAnimations) if (!this.lastWord || this.splittedWords.indexOf(this.lastWord) < this.splittedWords.indexOf(word)) {
+        const timing = (_b = a2.effect) == null ? void 0 : _b.getComputedTiming();
+        const duration = (timing == null ? void 0 : timing.duration) || 0;
+        const endTime = ((timing == null ? void 0 : timing.delay) || 0) + duration;
+        const currentTime = a2.currentTime || 0;
+        if (a2.playState !== "finished" && currentTime < endTime) a2.play();
+      }
+    }
   }
   async pause() {
-    if (this.isEnabled)
-      for (const t2 of this.splittedWords) {
-        for (const e2 of t2.elementAnimations)
-          e2.pause();
-        for (const e2 of t2.maskAnimations)
-          e2.pause();
-      }
+    if (!this.isEnabled) return;
+    for (const word of this.splittedWords) {
+      for (const a2 of word.elementAnimations) a2.pause();
+      for (const a2 of word.maskAnimations) a2.pause();
+    }
   }
-  setMaskAnimationState(t2 = 0) {
-    const e2 = t2 - this.lyricLine.startTime;
-    for (const s2 of this.splittedWords)
-      for (const i2 of s2.maskAnimations)
-        i2.currentTime = Math.min(this.totalDuration, Math.max(0, e2)), i2.playbackRate = 1, e2 >= 0 && e2 < this.totalDuration ? i2.play() : i2.pause();
+  setMaskAnimationState(maskAnimationTime = 0) {
+    const t2 = maskAnimationTime - this.lyricLine.startTime;
+    for (const word of this.splittedWords) for (const a2 of word.maskAnimations) {
+      a2.currentTime = clamp(t2, 0, this.totalDuration);
+      a2.playbackRate = 1;
+      if (t2 >= 0 && t2 < this.totalDuration) a2.play();
+      else a2.pause();
+    }
   }
   getLine() {
     return this.lyricLine;
   }
   show() {
-    this._hide = false, this.element.parentElement || (this._prevParentEl.appendChild(this.element), this.lyricPlayer.resizeObserver.observe(this.element)), this.built || (this.rebuildElement(), this.built = true, this.updateMaskImageSync()), this.rebuildStyle();
-  }
-  hide() {
-    this._hide = true, this.element.parentElement && (this._prevParentEl.removeChild(this.element), this.lyricPlayer.resizeObserver.unobserve(this.element)), this.built && (this.disposeElements(), this.built = false);
+    if (!this.built) {
+      this.rebuildElement();
+      this.built = true;
+      this.updateMaskImageSync();
+    }
   }
   rebuildStyle() {
-    let t2 = "";
-    t2 += `transform:translateY(${this.lineTransforms.posY.getCurrentPosition().toFixed(
-      1
-    )}px) scale(${(this.lineTransforms.scale.getCurrentPosition() / 100).toFixed(4)});`, !this.lyricPlayer.getEnableSpring() && this.isInSight && (t2 += `transition-delay:${this.delay}ms;`), t2 += `filter:blur(${Math.min(32, this.blur)}px);`, t2 !== this.lastStyle && (this.lastStyle = t2, this.element.setAttribute("style", t2));
+    let style = "";
+    style += `transform: scale(${(this.lineTransforms.scale.getCurrentPosition() / 100).toFixed(4)});`;
+    if (!this.lyricPlayer.getEnableSpring()) style += `transition-delay:${this.delay}ms;`;
+    style += `filter:blur(${Math.min(5, this.blur)}px);`;
+    if (style !== this.lastStyle) {
+      this.lastStyle = style;
+      this.element.setAttribute("style", style);
+    }
   }
   rebuildElement() {
     this.disposeElements();
-    const t2 = this.element.children[0], e2 = this.element.children[1], s2 = this.element.children[2];
+    const main = this.element.children[0];
+    const trans = this.element.children[1];
+    const roman = this.element.children[2];
     if (this.lyricPlayer._getIsNonDynamic()) {
-      t2.innerText = this.lyricLine.words.map((n2) => n2.word).join(""), this.setSubLinesText(e2, s2);
+      main.innerText = this.lyricLine.words.map((w2) => this.lyricPlayer.processObsceneWord(w2)).join("");
+      this.setSubLinesText(trans, roman);
       return;
     }
-    const i2 = Ot(this.lyricLine.words);
-    t2.innerHTML = "";
-    for (const n2 of i2)
-      if (Array.isArray(n2)) {
-        if (n2.length === 0) continue;
-        this.buildChunkGroup(n2, t2);
-      } else n2.word.trim().length === 0 ? t2.appendChild(document.createTextNode(" ")) : this.buildSingleWord(n2, t2);
-    this.setSubLinesText(e2, s2);
+    const chunkedWords = chunkAndSplitLyricWords(this.lyricLine.words);
+    const hasRubyLine = this.lyricLine.words.some((word) => {
+      var _a2;
+      return (((_a2 = word.ruby) == null ? void 0 : _a2.length) ?? 0) > 0;
+    });
+    const hasRomanLine = this.lyricLine.words.some((word) => {
+      var _a2;
+      return (((_a2 = word.romanWord) == null ? void 0 : _a2.trim().length) ?? 0) > 0;
+    });
+    main.innerHTML = "";
+    for (const chunk of chunkedWords) this.buildWord(chunk, main, hasRubyLine, hasRomanLine);
+    this.setSubLinesText(trans, roman);
   }
   /** 设置翻译与音译行文本 */
-  setSubLinesText(t2, e2) {
-    t2.innerText = this.lyricLine.translatedLyric, e2.innerText = this.lyricLine.romanLyric;
+  setSubLinesText(trans, roman) {
+    trans.innerText = this.lyricLine.translatedLyric;
+    roman.innerText = this.lyricLine.romanLyric;
   }
-  /** 处理一组连写（无空格）单词，包含强调效果 */
-  buildChunkGroup(t2, e2) {
-    const s2 = t2.reduce(
-      (a2, o2) => (a2.endTime = Math.max(a2.endTime, o2.endTime), a2.startTime = Math.min(a2.startTime, o2.startTime), a2.word += o2.word, a2),
-      {
-        word: "",
-        romanWord: "",
-        startTime: Number.POSITIVE_INFINITY,
-        endTime: Number.NEGATIVE_INFINITY,
-        wordType: "normal",
-        obscene: false
+  getRubyCharCount(word) {
+    return (word.ruby ?? []).reduce((total, ruby) => total + ruby.word.length, 0);
+  }
+  getRubySegments(word) {
+    return (word.ruby ?? []).filter((ruby) => {
+      var _a2;
+      return (((_a2 = ruby == null ? void 0 : ruby.word) == null ? void 0 : _a2.trim().length) ?? 0) > 0;
+    });
+  }
+  createWord(word, shouldEmphasize, hasRubyLine, hasRomanLine) {
+    var _a2;
+    const mainWordEl = document.createElement("span");
+    const subElements = [];
+    const romanWord = ((_a2 = word.romanWord) == null ? void 0 : _a2.trim()) ?? "";
+    const wordContainer = hasRubyLine ? document.createElement("div") : mainWordEl;
+    if (hasRubyLine) {
+      const rubyWordEl = document.createElement("div");
+      const rubySegments = this.getRubySegments(word);
+      for (const ruby of rubySegments) {
+        const rubyPartEl = document.createElement("span");
+        rubyPartEl.innerText = ruby.word;
+        rubyPartEl.dataset.startTime = String(ruby.startTime);
+        rubyPartEl.dataset.endTime = String(ruby.endTime);
+        rubyWordEl.appendChild(rubyPartEl);
       }
-    ), i2 = t2.map((a2) => q.shouldEmphasize(a2)).reduce((a2, o2) => a2 || o2, q.shouldEmphasize(s2)), n2 = document.createElement("span");
-    n2.classList.add(W.emphasizeWrapper);
-    const r2 = [];
-    for (const a2 of t2) {
-      const o2 = document.createElement("span");
-      if (i2) {
-        o2.classList.add(W.emphasize);
-        const l2 = [];
-        for (const h2 of a2.word.trim()) {
-          const m2 = document.createElement("span");
-          m2.innerText = h2, l2.push(m2), r2.push(m2), o2.appendChild(m2);
-        }
-        const c2 = {
-          ...a2,
-          mainElement: o2,
-          subElements: l2,
-          elementAnimations: [this.initFloatAnimation(a2, o2)],
-          maskAnimations: [],
-          width: 0,
-          height: 0,
-          padding: 0,
-          shouldEmphasize: i2
-        };
-        this.splittedWords.push(c2);
-      } else {
-        if (a2.romanWord && a2.romanWord.trim().length > 0) {
-          const l2 = document.createElement("div"), c2 = document.createElement("div");
-          l2.innerText = a2.word, c2.innerText = a2.romanWord, c2.classList.add(W.romanWord), o2.appendChild(l2), o2.appendChild(c2);
-        } else
-          o2.innerText = a2.word;
-        this.splittedWords.push({
-          ...a2,
-          mainElement: o2,
-          subElements: [],
-          elementAnimations: [this.initFloatAnimation(a2, o2)],
-          maskAnimations: [],
-          width: 0,
-          height: 0,
-          padding: 0,
-          shouldEmphasize: i2
-        });
-      }
-      n2.appendChild(o2);
+      rubyWordEl.classList.add(lyric_player_module_default.rubyWord);
+      mainWordEl.classList.add(lyric_player_module_default.wordWithRuby);
+      wordContainer.classList.add(lyric_player_module_default.wordBody);
+      mainWordEl.appendChild(rubyWordEl);
+      mainWordEl.appendChild(wordContainer);
     }
-    i2 && this.splittedWords[this.splittedWords.length - 1].elementAnimations.push(
-      ...this.initEmphasizeAnimation(
-        s2,
-        r2,
-        s2.endTime - s2.startTime,
-        s2.startTime - this.lyricLine.startTime
-      )
-    ), s2.word.trimStart() !== s2.word && e2.appendChild(document.createTextNode(" ")), e2.appendChild(n2), s2.word.trimEnd() !== s2.word && q.shouldEmphasize(s2) && e2.appendChild(document.createTextNode(" "));
-  }
-  /** 渲染单个词（含强调与音译处理） */
-  buildSingleWord(t2, e2) {
-    const s2 = q.shouldEmphasize(t2), i2 = document.createElement("span"), n2 = {
-      ...t2,
-      mainElement: i2,
-      subElements: [],
-      elementAnimations: [this.initFloatAnimation(t2, i2)],
+    const displayWord = this.lyricPlayer.processObsceneWord(word);
+    if (shouldEmphasize) {
+      mainWordEl.classList.add(lyric_player_module_default.emphasize);
+      const trimmedWord = displayWord.trim();
+      if (LyricLineBase.graphemeSegmenter) for (const { segment } of LyricLineBase.graphemeSegmenter.segment(trimmedWord)) {
+        const charEl = document.createElement("span");
+        charEl.innerText = segment;
+        subElements.push(charEl);
+        wordContainer.appendChild(charEl);
+      }
+      else for (const segment of Array.from(trimmedWord)) {
+        const charEl = document.createElement("span");
+        charEl.innerText = segment;
+        subElements.push(charEl);
+        wordContainer.appendChild(charEl);
+      }
+    } else if (hasRomanLine) {
+      const wordEl = document.createElement("div");
+      wordEl.innerText = displayWord.trim();
+      wordContainer.appendChild(wordEl);
+    } else if (romanWord.length === 0) wordContainer.innerText = displayWord.trim();
+    if (hasRomanLine) {
+      const romanWordEl = document.createElement("div");
+      romanWordEl.innerText = romanWord.length > 0 ? romanWord : "\xA0";
+      romanWordEl.classList.add(lyric_player_module_default.romanWord);
+      wordContainer.appendChild(romanWordEl);
+    }
+    return {
+      ...word,
+      mainElement: mainWordEl,
+      subElements,
+      elementAnimations: [this.initFloatAnimation(word, mainWordEl)],
       maskAnimations: [],
       width: 0,
       height: 0,
       padding: 0,
-      shouldEmphasize: s2
+      shouldEmphasize
     };
-    if (s2) {
-      i2.classList.add(W.emphasize);
-      const r2 = [];
-      for (const o2 of t2.word.trim()) {
-        const l2 = document.createElement("span");
-        l2.innerText = o2, r2.push(l2), i2.appendChild(l2);
-      }
-      if (t2.romanWord && t2.romanWord.trim().length > 0) {
-        const o2 = document.createElement("div");
-        o2.innerText = t2.romanWord, o2.classList.add(W.romanWord), i2.appendChild(o2);
-      }
-      n2.subElements = r2;
-      const a2 = Math.abs(n2.endTime - n2.startTime);
-      n2.elementAnimations.push(
-        ...this.initEmphasizeAnimation(
-          t2,
-          r2,
-          a2,
-          n2.startTime - this.lyricLine.startTime
-        )
-      );
-    } else if (t2.romanWord && t2.romanWord.trim().length > 0) {
-      const r2 = document.createElement("div"), a2 = document.createElement("div");
-      r2.innerText = t2.word, a2.innerText = t2.romanWord, a2.classList.add(W.romanWord), i2.appendChild(r2), i2.appendChild(a2);
-    } else
-      i2.innerText = t2.word.trim();
-    t2.word.trimStart() !== t2.word && e2.appendChild(document.createTextNode(" ")), e2.appendChild(i2), t2.word.trimEnd() !== t2.word && e2.appendChild(document.createTextNode(" ")), this.splittedWords.push(n2);
   }
-  initFloatAnimation(t2, e2) {
-    const s2 = t2.startTime - this.lyricLine.startTime, i2 = Math.max(1e3, t2.endTime - t2.startTime);
-    let n2 = 0.05;
-    this.lyricLine.isBG && (n2 *= 2);
-    const r2 = e2.animate(
-      [
-        {
-          transform: "translateY(0px)"
-        },
-        {
-          transform: `translateY(${-n2}em)`
-        }
-      ],
-      {
-        duration: Number.isFinite(i2) ? i2 : 0,
-        delay: Number.isFinite(s2) ? s2 : 0,
-        id: "float-word",
-        composite: "add",
-        fill: "both",
-        easing: "ease-out"
+  buildWord(input, main, hasRubyLine, hasRomanLine) {
+    const chunk = Array.isArray(input) ? input : [input];
+    if (chunk.length === 0) return;
+    if (chunk.every((w2) => !w2.word.trim())) {
+      const textContent = chunk.map((w2) => w2.word).join("");
+      main.appendChild(document.createTextNode(textContent));
+      return;
+    }
+    const merged = chunk.reduce((a2, b2) => {
+      a2.endTime = Math.max(a2.endTime, b2.endTime);
+      a2.startTime = Math.min(a2.startTime, b2.startTime);
+      a2.word += b2.word;
+      return a2;
+    }, {
+      word: "",
+      romanWord: "",
+      startTime: Number.POSITIVE_INFINITY,
+      endTime: Number.NEGATIVE_INFINITY,
+      wordType: "normal",
+      obscene: false
+    });
+    let emp = chunk.some((word) => LyricLineBase.shouldEmphasize(word));
+    if (!isCJK(merged.word)) emp = emp || LyricLineBase.shouldEmphasize(merged);
+    const wrapperWordEl = document.createElement("span");
+    wrapperWordEl.classList.add(lyric_player_module_default.emphasizeWrapper);
+    const characterElements = [];
+    for (const word of chunk) {
+      if (!word.word.trim()) {
+        wrapperWordEl.appendChild(document.createTextNode(word.word));
+        continue;
       }
-    );
-    return r2.pause(), r2;
+      const realWord = this.createWord(word, emp, hasRubyLine, hasRomanLine);
+      if (emp) characterElements.push(...realWord.subElements);
+      this.splittedWords.push(realWord);
+      wrapperWordEl.appendChild(realWord.mainElement);
+    }
+    if (emp && this.splittedWords.length > 0) {
+      const lastWordOfChunk = this.splittedWords[this.splittedWords.length - 1];
+      const rubyCharCount = chunk.reduce((total, word) => total + this.getRubyCharCount(word), 0);
+      lastWordOfChunk.elementAnimations.push(...this.initEmphasizeAnimation(merged, characterElements, merged.endTime - merged.startTime, merged.startTime - this.lyricLine.startTime, rubyCharCount));
+    }
+    main.appendChild(wrapperWordEl);
   }
-  // 按照原 Apple Music 参考，强调效果只应用缩放、轻微左右位移和辉光效果，原主要的悬浮位移效果不变
-  // 为了避免产生锯齿抖动感，使用 matrix3d 来实现缩放和位移
-  initEmphasizeAnimation(t2, e2, s2, i2) {
-    const n2 = Math.max(0, i2);
-    let r2 = Math.max(1e3, s2), a2 = [], o2 = r2 / 2e3;
-    o2 = o2 > 1 ? Math.sqrt(o2) : o2 ** 3;
-    let l2 = r2 / 3e3;
-    l2 = l2 > 1 ? Math.sqrt(l2) : l2 ** 3, o2 *= 0.6, l2 *= 0.5, this.lyricLine.words.length > 0 && t2.word.includes(
-      this.lyricLine.words[this.lyricLine.words.length - 1].word
-    ) && (o2 *= 1.6, l2 *= 1.5, r2 *= 1.2), o2 = Math.min(1.2, o2), l2 = Math.min(0.8, l2);
-    const c2 = Number.isFinite(r2) ? r2 : 0, h2 = ws(Wt);
-    return a2 = e2.flatMap((m2, u2, f2) => {
-      const g2 = n2 + r2 / 2.5 / f2.length * u2, p2 = [], y2 = new Array(Mt).fill(0).map((b2, w2) => {
-        const T = (w2 + 1) / Mt, v2 = h2(T), P = h2(T) * l2, z = he(le(), 1 + v2 * 0.1 * o2), E = -v2 * 0.03 * o2 * (f2.length / 2 - u2), F = -v2 * 0.025 * o2;
+  initFloatAnimation(word, wordEl) {
+    const delay = word.startTime - this.lyricLine.startTime;
+    const duration = Math.max(1e3, word.endTime - word.startTime);
+    let up = 0.05;
+    if (this.lyricLine.isBG) up *= 2;
+    const a2 = wordEl.animate([{ transform: "translateY(0px)" }, { transform: `translateY(${-up}em)` }], {
+      duration: Number.isFinite(duration) ? duration : 0,
+      delay: Number.isFinite(delay) ? delay : 0,
+      id: "float-word",
+      composite: "add",
+      fill: "both",
+      easing: "ease-out"
+    });
+    a2.pause();
+    return a2;
+  }
+  initEmphasizeAnimation(word, characterElements, duration, delay, rubyCharCount) {
+    const de = clampPositive(delay);
+    let du = Math.max(1e3, duration);
+    const anchorCharCount = rubyCharCount > 0 ? rubyCharCount : Math.max(1, characterElements.length);
+    let result = [];
+    let amount = du / 2e3;
+    amount = amount > 1 ? Math.sqrt(amount) : amount ** 3;
+    let blur = du / 3e3;
+    blur = blur > 1 ? Math.sqrt(blur) : blur ** 3;
+    amount *= 0.6;
+    blur *= 0.5;
+    if (this.lyricLine.words.length > 0 && word.word.includes(this.lyricLine.words[this.lyricLine.words.length - 1].word)) {
+      amount *= 1.6;
+      blur *= 1.5;
+      du *= 1.2;
+    }
+    amount = Math.min(1.2, amount);
+    blur = Math.min(0.8, blur);
+    const animateDu = Number.isFinite(du) ? du : 0;
+    const empEasing = makeEmpEasing(EMP_EASING_MID);
+    result = characterElements.flatMap((el, i2, arr) => {
+      const wordDe = de + du / 2.5 / anchorCharCount * i2;
+      const result2 = [];
+      const frames = new Array(ANIMATION_FRAME_QUANTITY).fill(0).map((_, j2) => {
+        const x2 = (j2 + 1) / ANIMATION_FRAME_QUANTITY;
+        const transX = empEasing(x2);
+        const glowLevel = empEasing(x2) * blur;
+        const mat = scaleMatrix4(createMatrix4(), 1 + transX * 0.1 * amount);
+        const offsetX = -transX * 0.03 * amount * (arr.length / 2 - i2);
+        const offsetY = -transX * 0.025 * amount;
         return {
-          offset: T,
-          transform: `${de(
-            z,
-            4
-          )} translate(${E}em, ${F}em)`,
-          textShadow: `0 0 ${Math.min(
-            0.3,
-            l2 * 0.3
-          )}em rgba(255, 255, 255, ${P})`
+          offset: x2,
+          transform: `${matrix4ToCSS(mat, 4)} translate(${offsetX}em, ${offsetY}em)`,
+          textShadow: `0 0 ${Math.min(0.3, blur * 0.3)}em rgba(255, 255, 255, ${glowLevel})`
         };
-      }), L = m2.animate(y2, {
-        duration: c2,
-        delay: Number.isFinite(g2) ? g2 : 0,
-        id: `emphasize-word-${m2.innerText}-${u2}`,
+      });
+      const glow = el.animate(frames, {
+        duration: animateDu,
+        delay: Number.isFinite(wordDe) ? wordDe : 0,
+        id: `emphasize-word-${el.innerText}-${i2}`,
         iterations: 1,
         composite: "replace",
         fill: "both"
       });
-      L.onfinish = () => {
-        L.pause();
-      }, L.pause(), p2.push(L);
-      const x2 = new Array(Mt).fill(0).map((b2, w2) => {
-        const T = (w2 + 1) / Mt;
-        let v2 = Math.sin(T * Math.PI);
-        return this.lyricLine.isBG && (v2 *= 2), {
-          offset: T,
-          transform: `translateY(${-v2 * 0.05}em)`
+      glow.onfinish = () => {
+        glow.pause();
+      };
+      glow.pause();
+      result2.push(glow);
+      const floatFrame = new Array(ANIMATION_FRAME_QUANTITY).fill(0).map((_, j2) => {
+        const x2 = (j2 + 1) / ANIMATION_FRAME_QUANTITY;
+        let y2 = Math.sin(x2 * Math.PI);
+        if (this.lyricLine.isBG) y2 *= 2;
+        return {
+          offset: x2,
+          transform: `translateY(${-y2 * 0.05}em)`
         };
-      }), M2 = m2.animate(x2, {
-        duration: c2 * 1.4,
-        delay: Number.isFinite(g2) ? g2 - 400 : 0,
+      });
+      const float = el.animate(floatFrame, {
+        duration: animateDu * 1.4,
+        delay: Number.isFinite(wordDe) ? wordDe - 400 : 0,
         id: "emphasize-word-float",
         iterations: 1,
         composite: "add",
         fill: "both"
       });
-      return M2.onfinish = () => {
-        M2.pause();
-      }, M2.pause(), p2.push(M2), p2;
-    }), a2;
+      float.onfinish = () => {
+        float.pause();
+      };
+      float.pause();
+      result2.push(float);
+      return result2;
+    });
+    return result;
   }
   get totalDuration() {
     return this.lyricLine.endTime - this.lyricLine.startTime;
   }
-  onLineSizeChange(t2) {
+  onLineSizeChange(_size) {
     this.updateMaskImageSync();
   }
   updateMaskImageSync() {
-    for (const t2 of this.splittedWords) {
-      const e2 = t2.mainElement;
-      e2 ? (t2.padding = Number.parseFloat(getComputedStyle(e2).paddingLeft), t2.width = e2.clientWidth - t2.padding * 2, t2.height = e2.clientHeight - t2.padding * 2) : (t2.width = 0, t2.height = 0, t2.padding = 0);
+    var _a2, _b;
+    for (const word of this.splittedWords) {
+      const el = word.mainElement;
+      if (el) {
+        word.padding = Number.parseFloat(getComputedStyle(el).paddingLeft);
+        word.width = el.clientWidth - word.padding * 2;
+        word.height = el.clientHeight - word.padding * 2;
+      } else {
+        word.width = 0;
+        word.height = 0;
+        word.padding = 0;
+      }
     }
-    this.lyricPlayer.supportMaskImage ? this.generateWebAnimationBasedMaskImage() : this.generateCalcBasedMaskImage(), this.isEnabled && this.enable(this.lyricPlayer.getCurrentTime());
+    if (this.balancer && LyricLineBase.wordSegmenter) this.balancer.balanceLineBreaks(this.lyricPlayer._getIsNonDynamic(), this.splittedWords.length > 0, LyricLineBase.wordSegmenter);
+    if (this.lyricPlayer.supportMaskImage) this.generateWebAnimationBasedMaskImage();
+    else this.generateCalcBasedMaskImage();
+    if (this.isEnabled) {
+      const isPlayerRunning = ((_b = (_a2 = this.lyricPlayer).getIsPlaying) == null ? void 0 : _b.call(_a2)) ?? true;
+      this.enable(this.lyricPlayer.getCurrentTime(), isPlayerRunning);
+    }
   }
   generateCalcBasedMaskImage() {
-    for (const t2 of this.splittedWords) {
-      const e2 = t2.mainElement;
-      if (e2) {
-        t2.width = e2.clientWidth, t2.height = e2.clientHeight;
-        const s2 = t2.height * this.lyricPlayer.getWordFadeWidth(), [i2, n2] = Qt(
-          s2 / t2.width
-        ), r2 = `${n2 * 100}% 100%`;
-        this.lyricPlayer.supportMaskImage ? (e2.style.maskImage = i2, e2.style.maskRepeat = "no-repeat", e2.style.maskOrigin = "left", e2.style.maskSize = r2) : (e2.style.webkitMaskImage = i2, e2.style.webkitMaskRepeat = "no-repeat", e2.style.webkitMaskOrigin = "left", e2.style.webkitMaskSize = r2);
-        const a2 = t2.width + s2, o2 = `clamp(${-a2}px,calc(${-a2}px + (var(--amll-player-time) - ${t2.startTime})*${a2 / Math.abs(t2.endTime - t2.startTime)}px),0px) 0px, left top`;
-        e2.style.maskPosition = o2, e2.style.webkitMaskPosition = o2;
+    for (const word of this.splittedWords) {
+      const wordEl = word.mainElement;
+      if (wordEl) {
+        word.width = wordEl.clientWidth;
+        word.height = wordEl.clientHeight;
+        const fadeWidth = word.height * this.lyricPlayer.getWordFadeWidth();
+        const [maskImage, totalAspect] = generateFadeGradient(fadeWidth / word.width);
+        const totalAspectStr = `${totalAspect * 100}% 100%`;
+        if (this.lyricPlayer.supportMaskImage) {
+          wordEl.style.maskImage = maskImage;
+          wordEl.style.maskRepeat = "no-repeat";
+          wordEl.style.maskOrigin = "left";
+          wordEl.style.maskSize = totalAspectStr;
+        } else {
+          wordEl.style.webkitMaskImage = maskImage;
+          wordEl.style.webkitMaskRepeat = "no-repeat";
+          wordEl.style.webkitMaskOrigin = "left";
+          wordEl.style.webkitMaskSize = totalAspectStr;
+        }
+        const w2 = word.width + fadeWidth;
+        const maskPos = `clamp(${-w2}px,calc(${-w2}px + (var(--amll-player-time) - ${word.startTime})*${w2 / Math.abs(word.endTime - word.startTime)}px),0px) 0px, left top`;
+        wordEl.style.maskPosition = maskPos;
+        wordEl.style.webkitMaskPosition = maskPos;
       }
     }
   }
   generateWebAnimationBasedMaskImage() {
-    const t2 = Math.max(
-      this.splittedWords.reduce((e2, s2) => Math.max(s2.endTime, e2), 0),
-      this.lyricLine.endTime
-    ) - this.lyricLine.startTime;
-    this.splittedWords.forEach((e2, s2) => {
-      const i2 = e2.mainElement;
-      if (i2) {
-        const n2 = e2.height * this.lyricPlayer.getWordFadeWidth(), [r2, a2] = Qt(
-          n2 / (e2.width + e2.padding * 2)
-        ), o2 = `${a2 * 100}% 100%`;
-        this.lyricPlayer.supportMaskImage ? (i2.style.maskImage = r2, i2.style.maskRepeat = "no-repeat", i2.style.maskOrigin = "left", i2.style.maskSize = o2) : (i2.style.webkitMaskImage = r2, i2.style.webkitMaskRepeat = "no-repeat", i2.style.webkitMaskOrigin = "left", i2.style.webkitMaskSize = o2);
-        const l2 = this.splittedWords.slice(0, s2).reduce((x2, M2) => x2 + M2.width, 0) + (this.splittedWords[0] ? n2 : 0), c2 = -(e2.width + e2.padding * 2 + n2), h2 = (x2) => Math.max(c2, Math.min(0, x2));
-        let m2 = -l2 - e2.width - e2.padding - n2, u2 = 0;
-        const f2 = [];
-        let g2 = m2, p2 = 0;
-        const y2 = () => {
-          const x2 = m2 - g2, M2 = Math.max(0, Math.min(1, u2)), b2 = M2 - p2, w2 = Math.abs(b2 / x2);
-          if (m2 > c2 && g2 < c2) {
-            const P = Math.abs(g2 - c2) * w2, z = `${h2(g2)}px 0`, E = {
-              offset: p2 + P,
-              maskPosition: z
+    const totalFadeDuration = Math.max(0, ...this.splittedWords.map((w2) => w2.endTime), this.lyricLine.endTime) - this.lyricLine.startTime;
+    this.splittedWords.forEach((word, i2) => {
+      const wordEl = word.mainElement;
+      if (wordEl) {
+        const fadeWidth = word.height * this.lyricPlayer.getWordFadeWidth();
+        const [maskImage, totalAspect] = generateFadeGradient(fadeWidth / (word.width + word.padding * 2));
+        const totalAspectStr = `${totalAspect * 100}% 100%`;
+        if (this.lyricPlayer.supportMaskImage) {
+          wordEl.style.maskImage = maskImage;
+          wordEl.style.maskRepeat = "no-repeat";
+          wordEl.style.maskOrigin = "left";
+          wordEl.style.maskSize = totalAspectStr;
+        } else {
+          wordEl.style.webkitMaskImage = maskImage;
+          wordEl.style.webkitMaskRepeat = "no-repeat";
+          wordEl.style.webkitMaskOrigin = "left";
+          wordEl.style.webkitMaskSize = totalAspectStr;
+        }
+        const widthBeforeSelf = this.splittedWords.slice(0, i2).reduce((a2, b2) => a2 + b2.width, 0) + (this.splittedWords[0] ? fadeWidth : 0);
+        const minOffset = -(word.width + word.padding * 2 + fadeWidth);
+        const clampOffset = (x2) => clamp(x2, minOffset, 0);
+        let curPos = -widthBeforeSelf - word.width - word.padding - fadeWidth;
+        let timeOffset = 0;
+        const frames = [];
+        let lastPos = curPos;
+        let lastTime = 0;
+        const pushFrame = () => {
+          const moveOffset = curPos - lastPos;
+          const time = clamp01(timeOffset);
+          const duration = time - lastTime;
+          const d2 = Math.abs(duration / moveOffset);
+          if (curPos > minOffset && lastPos < minOffset) {
+            const staticTime = Math.abs(lastPos - minOffset) * d2;
+            const value = `${clampOffset(lastPos)}px 0`;
+            const frame2 = {
+              offset: lastTime + staticTime,
+              maskPosition: value
             };
-            f2.push(E);
+            frames.push(frame2);
           }
-          if (m2 > 0 && g2 < 0) {
-            const P = Math.abs(g2) * w2, z = `${h2(m2)}px 0`, E = {
-              offset: p2 + P,
-              maskPosition: z
+          if (curPos > 0 && lastPos < 0) {
+            const staticTime = Math.abs(lastPos) * d2;
+            const value = `${clampOffset(curPos)}px 0`;
+            const frame2 = {
+              offset: lastTime + staticTime,
+              maskPosition: value
             };
-            f2.push(E);
+            frames.push(frame2);
           }
-          const T = `${h2(m2)}px 0`, v2 = {
-            offset: M2,
-            maskPosition: T
+          const frame = {
+            offset: time,
+            maskPosition: `${clampOffset(curPos)}px 0`
           };
-          f2.push(v2), g2 = m2, p2 = M2;
+          frames.push(frame);
+          lastPos = curPos;
+          lastTime = time;
         };
-        y2();
-        let L = 0;
-        this.splittedWords.forEach((x2, M2) => {
+        pushFrame();
+        let lastTimeStamp = 0;
+        this.splittedWords.forEach((otherWord, j2) => {
           {
-            const b2 = x2.startTime - this.lyricLine.startTime, w2 = b2 - L;
-            u2 += w2 / t2, w2 > 0 && y2(), L = b2;
+            const curTimeStamp = otherWord.startTime - this.lyricLine.startTime;
+            const staticDuration = curTimeStamp - lastTimeStamp;
+            timeOffset += staticDuration / totalFadeDuration;
+            if (staticDuration > 0) pushFrame();
+            lastTimeStamp = curTimeStamp;
           }
           {
-            const b2 = x2.endTime - x2.startTime;
-            u2 += b2 / t2, m2 += x2.width, M2 === 0 && (m2 += n2 * 1.5), M2 === this.splittedWords.length - 1 && (m2 += n2 * 0.5), b2 > 0 && y2(), L += b2;
+            const fadeDuration = clampPositive(otherWord.endTime - otherWord.startTime);
+            const rubySegments = this.getRubySegments(otherWord);
+            const rubyCharCount = rubySegments.reduce((total, ruby) => total + ruby.word.length, 0);
+            if (rubyCharCount > 0) {
+              const widthPerChar = otherWord.width / rubyCharCount;
+              let charIndex = 0;
+              for (const ruby of rubySegments) {
+                const rubyStartTime = Number.isFinite(ruby.startTime) ? ruby.startTime : otherWord.startTime;
+                const rubyEndTime = Number.isFinite(ruby.endTime) ? ruby.endTime : otherWord.endTime;
+                const rubyStart = Math.max(rubyStartTime, otherWord.startTime);
+                const rubyEnd = Math.min(Math.max(rubyEndTime, rubyStart), otherWord.endTime);
+                const rubyStartStamp = rubyStart - this.lyricLine.startTime;
+                const rubyStaticDuration = rubyStartStamp - lastTimeStamp;
+                timeOffset += rubyStaticDuration / totalFadeDuration;
+                if (rubyStaticDuration > 0) pushFrame();
+                lastTimeStamp = rubyStartStamp;
+                const perCharDuration = clampPositive(rubyEnd - rubyStart) / ruby.word.length;
+                for (let rubyCharIndex = 0; rubyCharIndex < ruby.word.length; rubyCharIndex++) {
+                  timeOffset += perCharDuration / totalFadeDuration;
+                  curPos += widthPerChar;
+                  if (j2 === 0 && charIndex === 0) curPos += fadeWidth * 1.5;
+                  if (j2 === this.splittedWords.length - 1 && charIndex === rubyCharCount - 1) curPos += fadeWidth * 0.5;
+                  if (perCharDuration > 0) pushFrame();
+                  lastTimeStamp += perCharDuration;
+                  charIndex++;
+                }
+              }
+              const wordEndStamp = Math.max(otherWord.endTime - this.lyricLine.startTime, lastTimeStamp);
+              const wordTailDuration = wordEndStamp - lastTimeStamp;
+              timeOffset += wordTailDuration / totalFadeDuration;
+              if (wordTailDuration > 0) pushFrame();
+              lastTimeStamp = wordEndStamp;
+            } else {
+              const segmentCount = 1;
+              const segmentWidth = otherWord.width / segmentCount;
+              const segmentDuration = fadeDuration / segmentCount;
+              for (let segmentIndex = 0; segmentIndex < segmentCount; segmentIndex++) {
+                timeOffset += segmentDuration / totalFadeDuration;
+                curPos += segmentWidth;
+                if (j2 === 0 && segmentIndex === 0) curPos += fadeWidth * 1.5;
+                if (j2 === this.splittedWords.length - 1 && segmentIndex === segmentCount - 1) curPos += fadeWidth * 0.5;
+                if (segmentDuration > 0) pushFrame();
+                lastTimeStamp += segmentDuration;
+              }
+            }
           }
         });
-        for (const x2 of e2.maskAnimations)
-          x2.cancel();
+        for (const a2 of word.maskAnimations) a2.cancel();
         try {
-          const x2 = i2.animate(f2, {
-            duration: t2 || 1,
-            id: `fade-word-${e2.word}-${s2}`,
+          const ani = wordEl.animate(frames, {
+            duration: totalFadeDuration || 1,
+            id: `fade-word-${word.word}-${i2}`,
             fill: "both"
           });
-          x2.pause(), e2.maskAnimations = [x2];
-        } catch (x2) {
-          console.warn("\u5E94\u7528\u6E10\u53D8\u52A8\u753B\u53D1\u751F\u9519\u8BEF", f2, t2, x2);
+          ani.pause();
+          word.maskAnimations = [ani];
+        } catch (err) {
+          console.warn("\u5E94\u7528\u6E10\u53D8\u52A8\u753B\u53D1\u751F\u9519\u8BEF", frames, totalFadeDuration, err);
         }
       }
     });
@@ -21733,996 +25185,142 @@ let vs = class extends q {
   getElement() {
     return this.element;
   }
-  setTransform(t2 = this.top, e2 = this.scale, s2 = 1, i2 = 0, n2 = false, r2 = 0) {
-    super.setTransform(t2, e2, s2, i2, n2, r2);
-    const a2 = this.isInSight, o2 = this.lyricPlayer.getEnableSpring();
-    this.top = t2, this.scale = e2, this.delay = r2 * 1e3 | 0;
-    const l2 = this.element.children[0];
-    if (l2.style.opacity = `${s2}`, n2 || !o2)
-      if (this.blur = Math.min(32, i2), this.lineTransforms.posY.setPosition(t2), this.lineTransforms.scale.setPosition(e2), o2)
-        this.rebuildStyle();
-      else {
-        const c2 = this.isInSight;
-        a2 || c2 ? this.show() : this.hide();
-      }
-    else if (this.lineTransforms.posY.setTargetPosition(t2, r2), this.lineTransforms.scale.setTargetPosition(e2), this.blur !== Math.min(32, i2)) {
-      this.blur = Math.min(32, i2);
-      const c2 = i2.toFixed(3);
-      this.element.style.filter = `blur(${c2}px)`;
+  updateMaskAlphaTargets(scale) {
+    const factor = clamp01((scale - 0.97) / 0.03);
+    const dynamicDarkAlpha = factor * 0.2 + 0.2;
+    const dynamicBrightAlpha = factor * 0.8 + 0.2;
+    if (this.renderMode === LyricLineRenderMode.SOLID) {
+      this.targetBrightAlpha = dynamicDarkAlpha;
+      this.targetDarkAlpha = dynamicDarkAlpha;
+    } else {
+      this.targetBrightAlpha = dynamicBrightAlpha;
+      this.targetDarkAlpha = dynamicDarkAlpha;
     }
   }
-  update(t2 = 0) {
-    if (this.lyricPlayer.getEnableSpring())
-      if (this.lineTransforms.posY.update(t2), this.lineTransforms.scale.update(t2), this.isInSight ? this.show() : this.hide(), this.lyricPlayer.getEnableSpring())
-        this.element.style.setProperty(
-          "--bright-mask-alpha",
-          `${Math.max(
-            0,
-            Math.min(
-              1,
-              this.lineTransforms.scale.getCurrentPosition() / 100 - 0.97
-            ) / 0.03
-          ) * 0.8 + 0.2}`
-        ), this.element.style.setProperty(
-          "--dark-mask-alpha",
-          `${Math.max(
-            0,
-            Math.min(
-              1,
-              this.lineTransforms.scale.getCurrentPosition() / 100 - 0.97
-            ) / 0.03
-          ) * 0.2 + 0.2}`
-        );
-      else {
-        const s2 = window.getComputedStyle(this.element).transform, i2 = Es(s2);
-        this.element.style.setProperty(
-          "--bright-mask-alpha",
-          `${Math.max(0, Math.min(1, (i2 - 0.97) / 0.03)) * 0.8 + 0.2}`
-        ), this.element.style.setProperty(
-          "--dark-mask-alpha",
-          `${Math.max(0, Math.min(1, (i2 - 0.97) / 0.03)) * 0.2 + 0.2}`
-        );
+  applyAlphaToDom(delta) {
+    const dt = delta || 0.016;
+    const ATTACK_SPEED = 50;
+    const RELEASE_SPEED = 7;
+    const getFactor = (speed) => 1 - Math.exp(-speed * dt);
+    const brightFactor = getFactor(this.targetBrightAlpha > this.currentBrightAlpha ? ATTACK_SPEED : RELEASE_SPEED);
+    if (Math.abs(this.targetBrightAlpha - this.currentBrightAlpha) < 1e-3) this.currentBrightAlpha = this.targetBrightAlpha;
+    else this.currentBrightAlpha += (this.targetBrightAlpha - this.currentBrightAlpha) * brightFactor;
+    const darkFactor = getFactor(this.targetDarkAlpha > this.currentDarkAlpha ? ATTACK_SPEED : RELEASE_SPEED);
+    if (Math.abs(this.targetDarkAlpha - this.currentDarkAlpha) < 1e-3) this.currentDarkAlpha = this.targetDarkAlpha;
+    else this.currentDarkAlpha += (this.targetDarkAlpha - this.currentDarkAlpha) * darkFactor;
+    this.element.style.setProperty("--bright-mask-alpha", this.currentBrightAlpha.toFixed(3));
+    this.element.style.setProperty("--dark-mask-alpha", this.currentDarkAlpha.toFixed(3));
+  }
+  setTransform(scale = this.scale, opacity = 1, blur = 0, force = false, delay = 0, mode = LyricLineRenderMode.SOLID) {
+    super.setTransform(scale, opacity, blur, force, delay);
+    this.renderMode = mode;
+    const enableSpring = this.lyricPlayer.getEnableSpring();
+    this.top = 0;
+    this.scale = scale;
+    this.delay = delay * 1e3 | 0;
+    const main = this.element.children[0];
+    main.style.opacity = `${opacity}`;
+    if (force || !enableSpring) {
+      this.blur = Math.min(32, blur);
+      this.lineTransforms.scale.setPosition(scale);
+      this.rebuildStyle();
+      const currentScale = this.lineTransforms.scale.getCurrentPosition();
+      this.updateMaskAlphaTargets(currentScale / 100);
+      this.currentBrightAlpha = this.targetBrightAlpha;
+      this.currentDarkAlpha = this.targetDarkAlpha;
+      this.element.style.setProperty("--bright-mask-alpha", String(this.currentBrightAlpha));
+      this.element.style.setProperty("--dark-mask-alpha", String(this.currentDarkAlpha));
+    } else {
+      this.lineTransforms.scale.setTargetPosition(scale);
+      if (this.blur !== Math.min(5, blur)) {
+        this.blur = Math.min(5, blur);
+        this.element.style.filter = `blur(${blur.toFixed(3)}px)`;
       }
+    }
+  }
+  update(delta = 0) {
+    if (!this.lyricPlayer.getEnableSpring()) return;
+    this.lineTransforms.scale.update(delta);
+    this.rebuildStyle();
+    if (!this.built) return;
+    const currentScale = this.lineTransforms.scale.getCurrentPosition() / 100;
+    this.updateMaskAlphaTargets(currentScale);
+    this.applyAlphaToDom(delta);
   }
   _getDebugTargetPos() {
     return `[\u4F4D\u79FB: ${this.top}; \u7F29\u653E: ${this.scale}; \u5EF6\u65F6: ${this.delay}]`;
   }
-  get isInSight() {
-    var _a;
-    const t2 = this.lineTransforms.posY.getCurrentPosition(), e2 = ((_a = this.lyricPlayer.lyricLinesSize.get(this)) == null ? void 0 : _a[1]) ?? 0, s2 = t2 + e2, i2 = this.lyricPlayer.size[1], n2 = this.lyricPlayer.getOverscanPx();
-    return !(t2 > i2 + e2 + n2 || s2 < -e2 - n2);
+  teardownContent() {
+    if (this.built) {
+      this.disposeElements();
+      this.built = false;
+    }
   }
   disposeElements() {
-    var _a, _b;
-    for (const i2 of this.splittedWords) {
-      for (const n2 of i2.elementAnimations)
-        n2.cancel();
-      for (const n2 of i2.maskAnimations)
-        n2.cancel();
-      for (const n2 of i2.subElements)
-        n2.remove(), (_a = n2.parentNode) == null ? void 0 : _a.removeChild(n2);
-      i2.elementAnimations = [], i2.maskAnimations = [], i2.subElements = [], ((_b = i2.mainElement) == null ? void 0 : _b.parentNode) && i2.mainElement.parentNode.removeChild(i2.mainElement);
+    var _a2, _b, _c;
+    (_a2 = this.balancer) == null ? void 0 : _a2.reset();
+    for (const realWord of this.splittedWords) {
+      for (const a2 of realWord.elementAnimations) a2.cancel();
+      for (const a2 of realWord.maskAnimations) a2.cancel();
+      for (const sub of realWord.subElements) {
+        sub.remove();
+        (_b = sub.parentNode) == null ? void 0 : _b.removeChild(sub);
+      }
+      realWord.elementAnimations = [];
+      realWord.maskAnimations = [];
+      realWord.subElements = [];
+      if ((_c = realWord.mainElement) == null ? void 0 : _c.parentNode) realWord.mainElement.parentNode.removeChild(realWord.mainElement);
     }
     this.splittedWords = [];
-    const t2 = this.element.children[0], e2 = this.element.children[1], s2 = this.element.children[2];
-    t2 && (t2.innerHTML = ""), e2 && (e2.innerHTML = ""), s2 && (s2.innerHTML = "");
+    const main = this.element.children[0];
+    const trans = this.element.children[1];
+    const roman = this.element.children[2];
+    if (main) main.innerHTML = "";
+    if (trans) trans.innerHTML = "";
+    if (roman) roman.innerHTML = "";
   }
   dispose() {
-    this.disposeElements(), this.lyricPlayer.resizeObserver.unobserve(this.element), this.element.remove();
+    this.disposeElements();
+    this.lyricPlayer.resizeObserver.unobserve(this.element);
+    this.element.remove();
   }
 };
-class pe extends MouseEvent {
-  constructor(t2, e2, s2) {
-    super(`line-${s2.type}`, s2), this.lineIndex = t2, this.line = e2;
+var LyricLineMouseEvent = class extends MouseEvent {
+  constructor(lineIndex, line, event) {
+    super(`line-${event.type}`, event);
+    this.lineIndex = lineIndex;
+    this.line = line;
   }
-}
-class ai extends Rt {
+};
+var DomLyricPlayer = class extends LyricPlayerBase {
   constructor() {
     super();
-    __publicField(this, "currentLyricLineObjects", []);
+    __publicField(this, "currentLyricGroups", []);
     __publicField(this, "supportPlusLighter", CSS.supports("mix-blend-mode", "plus-lighter"));
     __publicField(this, "supportMaskImage", CSS.supports("mask-image", "none"));
     __publicField(this, "innerSize", [0, 0]);
-    __publicField(this, "onLineClickedHandler", (t2) => {
-      const e2 = new pe(
-        this.lyricLinesIndexes.get(t2.line) ?? -1,
-        t2.line,
-        t2
-      );
-      this.dispatchEvent(e2) || (t2.preventDefault(), t2.stopPropagation(), t2.stopImmediatePropagation());
+    __publicField(this, "onLineClickedHandler", (e2) => {
+      const evt = new LyricLineMouseEvent(this.lyricLinesIndexes.get(e2.line) ?? -1, e2.line, e2);
+      if (!this.dispatchEvent(evt)) {
+        e2.preventDefault();
+        e2.stopPropagation();
+        e2.stopImmediatePropagation();
+      }
     });
-    __publicField(this, "_baseFontSize", Number.parseFloat(
-      getComputedStyle(this.element).fontSize
-    ));
-    this.onResize(), this.element.classList.add("amll-lyric-player", "dom"), this.disableSpring && this.element.classList.add(W.disableSpring);
+    __publicField(this, "_baseFontSize", Number.parseFloat(getComputedStyle(this.element).fontSize));
+    this.onResize();
+    this.element.classList.add("amll-lyric-player", "dom");
+    if (this.disableSpring) this.element.classList.add(lyric_player_module_default.disableSpring);
   }
   onResize() {
-    const t2 = getComputedStyle(this.element);
-    this._baseFontSize = Number.parseFloat(t2.fontSize), this.rebuildStyle();
-  }
-  /**
-   * 是否为非逐词歌词
-   * @internal
-   */
-  _getIsNonDynamic() {
-    return this.isNonDynamic;
-  }
-  get baseFontSize() {
-    return this._baseFontSize;
-  }
-  rebuildStyle() {
-  }
-  setWordFadeWidth(t2 = 0.5) {
-    super.setWordFadeWidth(t2);
-    for (const e2 of this.currentLyricLineObjects)
-      e2.updateMaskImageSync();
-  }
-  /**
-   * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
-   * @param lines 歌词数组
-   * @param initialTime 初始时间，默认为 0
-   */
-  setLyricLines(t2, e2 = 0) {
-    super.setLyricLines(t2, e2), this.hasDuetLine ? this.element.classList.add(W.hasDuetLine) : this.element.classList.remove(W.hasDuetLine), this.supportMaskImage || this.element.style.setProperty("--amll-player-time", `${e2}`);
-    for (const s2 of this.currentLyricLineObjects)
-      s2.removeMouseEventListener("click", this.onLineClickedHandler), s2.removeMouseEventListener("contextmenu", this.onLineClickedHandler), s2.dispose();
-    this.currentLyricLineObjects = this.processedLines.map((s2, i2) => {
-      const n2 = new vs(this, s2);
-      return n2.addMouseEventListener("click", this.onLineClickedHandler), n2.addMouseEventListener("contextmenu", this.onLineClickedHandler), this.lyricLinesIndexes.set(n2, i2), this.lyricLineElementMap.set(n2.getElement(), n2), n2;
-    }), this.setLinePosXSpringParams({}), this.setLinePosYSpringParams({}), this.setLineScaleSpringParams({}), this.calcLayout(true), this.update(0);
-  }
-  pause() {
-    super.pause(), this.element.classList.remove("playing"), this.interludeDots.pause();
-    for (const t2 of this.currentLyricLineObjects)
-      t2.pause();
-  }
-  resume() {
-    super.resume(), this.element.classList.add("playing"), this.interludeDots.resume();
-    for (const t2 of this.currentLyricLineObjects)
-      t2.resume();
-  }
-  update(t2 = 0) {
-    if (!this.initialLayoutFinished || (super.update(t2), this.supportMaskImage || this.element.style.setProperty(
-      "--amll-player-time",
-      `${this.currentTime}`
-    ), !this.isPageVisible)) return;
-    const e2 = t2 / 1e3;
-    this.interludeDots.update(t2), this.bottomLine.update(e2);
-    for (const s2 of this.currentLyricLineObjects)
-      s2.update(e2);
-  }
-  dispose() {
-    super.dispose(), this.element.remove();
-    for (const t2 of this.currentLyricLineObjects)
-      t2.dispose();
-    this.bottomLine.dispose(), this.interludeDots.dispose();
-  }
-}
-const Ps = /^\s+/, zs = /^[\p{L}0-9!"#$%&’()*+,-./:;<=>?@\[\]^_`\{|\}~]+/iu;
-function* Is(d2, t2, e2, s2 = 0) {
-  let i2 = s2, n2 = 0, r2 = 0, a2 = 0, o2 = false, l2 = null;
-  const c2 = d2.measureText(" ");
-  for (; a2 < t2.length; ) {
-    const h2 = t2.substring(a2);
-    if (l2 = h2.match(Ps), l2) {
-      o2 = true, r2 = a2, a2 += l2[0].length;
-      continue;
-    }
-    if (l2 = h2.match(zs), l2) {
-      a2 += l2[0].length;
-      const m2 = l2[0], u2 = d2.measureText(m2);
-      i2 + u2.width > e2.maxWidth && (i2 = 0, n2++, o2 = false), o2 && (o2 = false, yield {
-        text: " ",
-        index: r2,
-        lineIndex: n2,
-        width: 0,
-        height: e2.fontSize,
-        x: i2
-      }, i2 += c2.width);
-      let f2 = "", g2 = null;
-      for (const p2 of m2) {
-        const y2 = d2.measureText(`${f2}${p2}`), L = d2.measureText(p2);
-        f2 !== "" && (i2 = i2 + y2.width - L.width), i2 + L.width > e2.maxWidth && (i2 = 0, n2++), yield {
-          text: p2,
-          index: a2,
-          lineIndex: n2,
-          width: L.width,
-          height: e2.fontSize,
-          x: i2
-        }, f2 = p2, g2 = L;
-      }
-      g2 && (i2 += g2.width);
-      continue;
-    }
-    {
-      o2 && (o2 = false, yield {
-        text: " ",
-        index: r2,
-        lineIndex: n2,
-        width: 0,
-        height: e2.fontSize,
-        x: i2
-      }, i2 += c2.width);
-      const m2 = d2.measureText(t2[a2]);
-      i2 + m2.width > e2.maxWidth && (i2 = 0, n2++), yield {
-        text: t2[a2],
-        index: a2,
-        lineIndex: n2,
-        width: m2.width,
-        height: e2.fontSize,
-        x: i2
-      }, i2 += m2.width;
-    }
-    a2++;
-  }
-  return { x: i2, lineIndex: n2 };
-}
-function* zt(d2, t2, e2, s2 = 0) {
-  let i2 = {
-    text: "",
-    index: 0,
-    lineIndex: 0,
-    width: 0,
-    height: 0,
-    x: 0
-  };
-  for (const n2 of Is(d2, t2, e2, s2))
-    n2.lineIndex !== i2.lineIndex ? (i2.text.length && (yield i2), i2 = {
-      ...n2
-    }) : (i2.text += n2.text, i2.width = n2.x + n2.width);
-  i2.text.length && (yield i2);
-}
-class ks extends q {
-  constructor(t2, e2 = {
-    words: [],
-    translatedLyric: "",
-    romanLyric: "",
-    startTime: 0,
-    endTime: 0,
-    isBG: false,
-    isDuet: false
-  }) {
-    super();
-    __publicField(this, "lineSize", [0, 0]);
-    __publicField(this, "layoutWords", []);
-    __publicField(this, "translatedLayoutWords", []);
-    __publicField(this, "romanLayoutWords", []);
-    __publicField(this, "lineCanvas", document.createElement("canvas"));
-    __publicField(this, "enabled", false);
-    this.player = t2, this.line = e2, this.relayout();
-  }
-  getLine() {
-    return this.line;
-  }
-  measureSize() {
-    const t2 = Math.max(
-      0,
-      ...this.layoutWords.flat().map((n2) => n2.lineIndex + 1)
-    ), e2 = Math.max(
-      0,
-      ...this.translatedLayoutWords.map((n2) => n2.lineIndex + 1)
-    ), s2 = Math.max(
-      0,
-      ...this.romanLayoutWords.map((n2) => n2.lineIndex + 1)
-    ), i2 = this.player.baseFontSize;
-    return this.lineSize = [
-      this.player.size[0],
-      (t2 + e2 + s2) * i2 + this.player.size[1] * 0.04
-    ], [...this.lineSize];
-  }
-  /** @internal */
-  relayout() {
-    const t2 = {
-      fontSize: this.player.baseFontSize,
-      maxWidth: this.player.size[0] - 50,
-      lineHeight: this.player.baseFontSize
-    }, e2 = this.player.ctx;
-    this.player.setFontSize(1);
-    for (const n2 of Ot(this.line.words))
-      Array.isArray(n2) && n2.length;
-    this.layoutWords = [
-      [...zt(e2, this.line.words.map((n2) => n2.word).join(""), t2)]
-    ], this.player.setFontSize(0.5), this.translatedLayoutWords = [
-      ...zt(e2, this.line.translatedLyric, t2)
-    ], this.romanLayoutWords = [...zt(e2, this.line.romanLyric, t2)], this.measureSize(), this.lineCanvas.width = this.player.ctx.canvas.width, this.lineCanvas.height = this.lineSize[1] * devicePixelRatio;
-    const s2 = this.lineCanvas.getContext("2d");
-    s2.globalAlpha = 1, this.player.setFontSize(1), s2.font = e2.font, s2.scale(devicePixelRatio, devicePixelRatio), s2.fillStyle = "white", s2.textBaseline = "top", s2.textAlign = "left", s2.font = `${this.player.baseFontSize}px ${this.player.baseFontFamily}`;
-    let i2 = 0;
-    for (const n2 of this.layoutWords)
-      for (const r2 of n2)
-        s2.fillText(
-          r2.text,
-          r2.x,
-          r2.lineIndex * this.player.baseFontSize * this.player.baseLineHeight
-        ), i2 = r2.lineIndex;
-    s2.translate(0, (i2 + 1) * this.player.baseFontSize), this.player.setFontSize(0.5), s2.font = e2.font, s2.globalAlpha = 0.5, i2 = 0;
-    for (const n2 of this.translatedLayoutWords)
-      s2.fillText(
-        n2.text,
-        n2.x,
-        n2.lineIndex * this.player.baseFontSize * this.player.baseLineHeight
-      ), i2 = n2.lineIndex;
-    s2.translate(0, (i2 + 1) * this.player.baseFontSize);
-    for (const n2 of this.romanLayoutWords)
-      s2.fillText(
-        n2.text,
-        n2.x,
-        n2.lineIndex * this.player.baseFontSize * this.player.baseLineHeight
-      );
-  }
-  enable() {
-    this.enabled = true;
-  }
-  disable() {
-    this.enabled = false;
-  }
-  resume() {
-  }
-  pause() {
-  }
-  setTransform(t2 = this.top, e2 = this.scale, s2 = this.opacity, i2 = this.blur, n2 = false, r2 = this.delay) {
-    const a2 = Math.min(32, i2);
-    this.blur = a2, this.opacity = s2, n2 ? (this.lineTransforms.posY.setPosition(t2), this.lineTransforms.scale.setPosition(e2)) : (this.lineTransforms.posY.setTargetPosition(t2, r2), this.lineTransforms.scale.setTargetPosition(e2));
-  }
-  get isInSight() {
-    const t2 = this.lineTransforms.posY.getCurrentPosition(), e2 = this.lineSize[0], s2 = t2 + this.lineSize[1], i2 = this.player.size[1];
-    return !(t2 > i2 || e2 < 0 || s2 < 0);
-  }
-  update(t2) {
-    if (this.lineTransforms.posY.update(t2), this.lineTransforms.scale.update(t2), !this.isInSight) return;
-    const e2 = this.player.ctx;
-    e2.save(), e2.fillStyle = "white", e2.filter = `blur(${this.blur}px)`, e2.textRendering = "geometricPrecision", e2.globalAlpha = this.opacity, e2.translate(0, this.lineTransforms.posY.getCurrentPosition()), e2.scale(1 / devicePixelRatio, 1 / devicePixelRatio), this.lineCanvas.width * this.lineCanvas.height > 0 && e2.drawImage(this.lineCanvas, 0, 0), e2.restore();
-  }
-}
-class oi extends Rt {
-  constructor() {
-    super();
-    __publicField(this, "canvasElement", document.createElement("canvas"));
-    __publicField(this, "currentLyricLineObjects", []);
-    /** @internal */
-    __publicField(this, "ctx", this.canvasElement.getContext("2d"));
-    /** @internal */
-    __publicField(this, "baseLineHeight", 1);
-    /** @internal */
-    __publicField(this, "baseFontSize", 30);
-    /** @internal */
-    __publicField(this, "baseFontFamily", "sans-serif");
-    this.element.classList.add("amll-lyric-player", "dom"), this.canvasElement.style.width = "100%", this.canvasElement.style.height = "100%", this.canvasElement.style.display = "block", this.canvasElement.style.position = "absolute", this.onResize(), this.update(), this.element.addEventListener("mousemove", (t2) => {
-      t2.preventDefault();
-    }), this.element.addEventListener("click", (t2) => {
-      t2.preventDefault();
-    }), this.element.addEventListener("contextmenu", (t2) => {
-      t2.preventDefault();
-    }), this.element.appendChild(this.canvasElement), this.element.appendChild(this.interludeDots.getElement()), this.element.appendChild(this.bottomLine.getElement());
-  }
-  setLyricLines(t2, e2) {
-    super.setLyricLines(t2, e2), this.currentLyricLineObjects = this.processedLines.map(
-      (s2) => new ks(this, s2)
-    ), this.setLinePosYSpringParams({}), this.setLineScaleSpringParams({}), this.calcLayout(true);
-  }
-  onResize() {
-    const t2 = getComputedStyle(this.element);
-    this.baseFontSize = Number.parseFloat(t2.fontSize) || 30, this.baseFontFamily = t2.fontFamily;
-    const e2 = this.canvasElement.clientWidth, s2 = this.canvasElement.clientHeight;
-    this.size[0] = e2 - this.baseFontSize * 2, this.size[1] = s2, this.canvasElement.width = e2 * devicePixelRatio, this.canvasElement.height = s2 * devicePixelRatio;
-    for (const i2 of this.currentLyricLineObjects)
-      i2.relayout();
-    console.log("CanvasLyricPlayer.onResize", this.size), this.calcLayout(true);
-  }
-  /**
-   * @internal
-   * @param size
-   */
-  setFontSize(t2) {
-    this.ctx.font = `${this.baseFontSize * t2}px ${this.baseFontFamily}`;
-  }
-  update(t2 = 0) {
-    super.update(t2);
-    const e2 = this.ctx, s2 = this.size[0], i2 = this.size[1];
-    e2.resetTransform(), e2.scale(devicePixelRatio, devicePixelRatio), e2.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height), e2.fillStyle = "currentColor", e2.font = `${this.baseFontSize}px ${this.baseFontFamily}`, e2.textRendering = "optimizeSpeed", e2.textAlign = "left", e2.save(), e2.translate(this.baseFontSize, 0);
-    for (const n2 of this.currentLyricLineObjects)
-      n2.update(t2 / 1e3);
-    e2.restore(), e2.font = `15px ${this.baseFontFamily}`, e2.fillStyle = "#FFFFFF55", e2.textAlign = "right", e2.fillText("CanvasLyricPlayer \u64AD\u653E\u5668", s2 - 16, i2 - 16);
-  }
-}
-function Ds(d2, t2 = 20) {
-  let e2 = 0;
-  return (...i2) => {
-    clearTimeout(e2), e2 = setTimeout(() => d2(...i2), t2);
-  };
-}
-const Fs = "_lyricLine_1jop6_6", As = "_lyricBgLine_1jop6_36", _s = "_active_1jop6_49", Cs = "_hasDuetLine_1jop6_65", Rs = "_lyricDuetLine_1jop6_66", Os = "_lyricMainLine_1jop6_80", Ws = "_lyricSubLine_1jop6_90", Ns = "_tmpDisableTransition_1jop6_134", N = {
-  lyricLine: Fs,
-  lyricBgLine: As,
-  active: _s,
-  hasDuetLine: Cs,
-  lyricDuetLine: Rs,
-  lyricMainLine: Os,
-  lyricSubLine: Ws,
-  tmpDisableTransition: Ns
-};
-function Bs(d2) {
-  const t2 = [];
-  function e2() {
-    const s2 = t2[0];
-    s2 && d2(...s2.args).then((i2) => {
-      s2.resolve(i2);
-    }).catch((i2) => {
-      s2.reject(i2);
-    }).finally(() => {
-      t2.shift(), t2.length > 0 && e2();
-    });
-  }
-  return ((...s2) => new Promise((i2, n2) => {
-    t2.push({ resolve: i2, reject: n2, args: s2 }), t2.length === 1 && e2();
-  }));
-}
-const bt = 32, fe = (d2, t2) => (e2) => Math.min(1, Math.max(0, (e2 - d2) / (t2 - d2))), Nt = 0.5, $s = fe(0, Nt), qs = fe(Nt, 1), Vs = St(0.2, 0.4, 0.58, 1), Hs = St(0.3, 0, 0.58, 1), Us = (d2) => (t2) => t2 < d2 ? Vs($s(t2)) : 1 - Hs(qs(t2));
-function Kt(d2, t2 = 0, e2 = "rgba(0,0,0,var(--bright-mask-alpha, 1.0))", s2 = "rgba(0,0,0,var(--dark-mask-alpha, 1.0))") {
-  const i2 = 2 + d2 + t2, n2 = d2 / i2, r2 = (1 - n2) / 2;
-  return [
-    `linear-gradient(to right,${e2} ${r2 * 100}%,${s2} ${(r2 + n2) * 100}%)`,
-    i2
-  ];
-}
-class Ys extends MouseEvent {
-  constructor(t2, e2) {
-    super(e2.type, e2), this.line = t2;
-  }
-}
-function js(d2) {
-  const t2 = d2.match(/matrix\(([^)]+)\)/);
-  if (t2) {
-    const e2 = t2[1].split(", "), s2 = Number.parseFloat(e2[0]), i2 = Number.parseFloat(e2[3]);
-    return (s2 + i2) / 2;
-  }
-  return 1;
-}
-class Gs extends q {
-  constructor(t2, e2 = {
-    words: [],
-    translatedLyric: "",
-    romanLyric: "",
-    startTime: 0,
-    endTime: 0,
-    isBG: false,
-    isDuet: false
-  }) {
-    super();
-    __publicField(this, "element", document.createElement("div"));
-    __publicField(this, "splittedWords", []);
-    // 由 LyricPlayer 来设置
-    __publicField(this, "lineSize", [0, 0]);
-    __publicField(this, "listenersMap", /* @__PURE__ */ new Map());
-    __publicField(this, "onMouseEvent", (t2) => {
-      const e2 = new Ys(this, t2);
-      for (const s2 of this.listenersMap.get(t2.type) ?? [])
-        s2.call(this, e2);
-      if (!this.dispatchEvent(e2) || e2.defaultPrevented)
-        return t2.preventDefault(), t2.stopPropagation(), t2.stopImmediatePropagation(), false;
-    });
-    __publicField(this, "isEnabled", false);
-    __publicField(this, "lastWord");
-    __publicField(this, "measureLockMark", false);
-    __publicField(this, "measureLock", Bs(
-      async (t2) => {
-        this.measureLockMark || (this.measureLockMark = true, await t2(), this.measureLockMark = false);
-      }
-    ));
-    __publicField(this, "_prevParentEl");
-    __publicField(this, "lastStyle", "");
-    __publicField(this, "maskImageDirty", false);
-    __publicField(this, "markImageDirtyPromiseResolve", /* @__PURE__ */ new Set());
-    __publicField(this, "markImageDirtyPromise", new Promise((t2) => {
-      this.markImageDirtyPromiseResolve.add(t2);
-    }));
-    this.lyricPlayer = t2, this.lyricLine = e2, this._prevParentEl = t2.getElement(), this.element.setAttribute("class", N.lyricLine), this.lyricLine.isBG && this.element.classList.add(N.lyricBgLine), this.lyricLine.isDuet && this.element.classList.add(N.lyricDuetLine), this.element.appendChild(document.createElement("div")), this.element.appendChild(document.createElement("div")), this.element.appendChild(document.createElement("div"));
-    const s2 = this.element.children[0], i2 = this.element.children[1], n2 = this.element.children[2];
-    s2.setAttribute("class", N.lyricMainLine), i2.setAttribute("class", N.lyricSubLine), n2.setAttribute("class", N.lyricSubLine), this.rebuildElement(), this.rebuildStyle(), this.markMaskImageDirty("Initial construction");
-  }
-  addMouseEventListener(t2, e2, s2) {
-    if (e2) {
-      const i2 = this.listenersMap.get(t2) ?? /* @__PURE__ */ new Set();
-      i2.size === 0 && this.element.addEventListener(t2, this.onMouseEvent, s2), i2.add(e2), this.listenersMap.set(t2, i2);
-    }
-  }
-  removeMouseEventListener(t2, e2, s2) {
-    if (e2) {
-      const i2 = this.listenersMap.get(t2);
-      i2 && (i2.delete(e2), i2.size === 0 && this.element.removeEventListener(t2, this.onMouseEvent, s2));
-    }
-  }
-  areWordsOnSameLine(t2, e2) {
-    if ((t2 == null ? void 0 : t2.mainElement) && (e2 == null ? void 0 : e2.mainElement)) {
-      const s2 = t2.mainElement, i2 = e2.mainElement, n2 = s2.getBoundingClientRect(), r2 = i2.getBoundingClientRect();
-      return Math.abs(n2.top - r2.top) < 10;
-    }
-    return true;
-  }
-  async enable(t2 = this.lyricLine.startTime) {
-    this.isEnabled = true, this.element.classList.add(N.active), await this.waitMaskImageUpdated();
-    const e2 = this.element.children[0];
-    for (const s2 of this.splittedWords) {
-      for (const i2 of s2.elementAnimations)
-        i2.currentTime = 0, i2.playbackRate = 1, i2.play();
-      for (const i2 of s2.maskAnimations)
-        i2.currentTime = Math.min(
-          this.totalDuration,
-          Math.max(0, t2 - this.lyricLine.startTime)
-        ), i2.playbackRate = 1, i2.play();
-    }
-    e2.classList.add(N.active);
-  }
-  disable() {
-    this.isEnabled = false, this.element.classList.remove(N.active);
-    const t2 = this.element.children[0];
-    for (const e2 of this.splittedWords)
-      for (const s2 of e2.elementAnimations)
-        (s2.id === "float-word" || s2.id.includes("emphasize-word-float-only")) && (s2.playbackRate = -1, s2.play());
-    t2.classList.remove(N.active);
-  }
-  async resume() {
-    if (await this.waitMaskImageUpdated(), !!this.isEnabled)
-      for (const t2 of this.splittedWords) {
-        for (const e2 of t2.elementAnimations)
-          (!this.lastWord || this.splittedWords.indexOf(this.lastWord) < this.splittedWords.indexOf(t2)) && e2.play();
-        for (const e2 of t2.maskAnimations)
-          (!this.lastWord || this.splittedWords.indexOf(this.lastWord) < this.splittedWords.indexOf(t2)) && e2.play();
-      }
-  }
-  async pause() {
-    if (await this.waitMaskImageUpdated(), !!this.isEnabled)
-      for (const t2 of this.splittedWords) {
-        for (const e2 of t2.elementAnimations)
-          e2.pause();
-        for (const e2 of t2.maskAnimations)
-          e2.pause();
-      }
-  }
-  setMaskAnimationState(t2 = 0) {
-    const e2 = t2 - this.lyricLine.startTime;
-    for (const s2 of this.splittedWords)
-      for (const i2 of s2.maskAnimations)
-        i2.currentTime = Math.min(this.totalDuration, Math.max(0, e2)), i2.playbackRate = 1, e2 >= 0 && e2 < this.totalDuration ? i2.play() : i2.pause();
-  }
-  getLine() {
-    return this.lyricLine;
-  }
-  show() {
+    const computedStyles = getComputedStyle(this.element);
+    this._baseFontSize = Number.parseFloat(computedStyles.fontSize);
     this.rebuildStyle();
   }
-  hide() {
-  }
-  rebuildStyle() {
-  }
-  rebuildElement() {
-    this.disposeElements();
-    const t2 = this.element.children[0], e2 = this.element.children[1], s2 = this.element.children[2];
-    if (this.lyricPlayer._getIsNonDynamic()) {
-      t2.innerText = this.lyricLine.words.map((n2) => n2.word).join(""), e2.innerText = this.lyricLine.translatedLyric, s2.innerText = this.lyricLine.romanLyric;
-      return;
-    }
-    const i2 = Ot(this.lyricLine.words);
-    t2.innerHTML = "";
-    for (const n2 of i2)
-      if (Array.isArray(n2)) {
-        if (n2.length === 0) continue;
-        const r2 = n2.reduce(
-          (c2, h2) => (c2.endTime = Math.max(c2.endTime, h2.endTime), c2.startTime = Math.min(c2.startTime, h2.startTime), c2.word += h2.word, c2),
-          {
-            word: "",
-            romanWord: "",
-            startTime: Number.POSITIVE_INFINITY,
-            endTime: Number.NEGATIVE_INFINITY,
-            wordType: "normal",
-            obscene: false
-          }
-        ), a2 = n2.map((c2) => q.shouldEmphasize(c2)).reduce((c2, h2) => c2 || h2, q.shouldEmphasize(r2)), o2 = document.createElement("span");
-        o2.classList.add(N.emphasizeWrapper);
-        const l2 = [];
-        for (const c2 of n2) {
-          const h2 = document.createElement("span");
-          if (a2) {
-            h2.classList.add(N.emphasize);
-            const m2 = [];
-            for (const f2 of c2.word.trim()) {
-              const g2 = document.createElement("span");
-              g2.innerText = f2, m2.push(g2), l2.push(g2), h2.appendChild(g2);
-            }
-            const u2 = {
-              ...c2,
-              mainElement: h2,
-              subElements: m2,
-              // elementAnimations: [this.initFloatAnimation(word, mainWordEl)],
-              elementAnimations: [],
-              // this.initFloatAnimation(word, mainWordEl)
-              maskAnimations: [],
-              width: 0,
-              height: 0,
-              padding: 0,
-              shouldEmphasize: a2
-            };
-            this.splittedWords.push(u2);
-          } else
-            h2.innerText = c2.word, this.splittedWords.push({
-              ...c2,
-              mainElement: h2,
-              subElements: [],
-              // elementAnimations: [this.initFloatAnimation(word, mainWordEl)],
-              elementAnimations: [],
-              // this.initFloatAnimation(word, mainWordEl)
-              maskAnimations: [],
-              width: 0,
-              height: 0,
-              padding: 0,
-              shouldEmphasize: a2
-            });
-          o2.appendChild(h2);
-        }
-        a2 && this.splittedWords[this.splittedWords.length - 1].elementAnimations.push(
-          ...this.initEmphasizeAnimation(
-            r2,
-            l2,
-            r2.endTime - r2.startTime,
-            r2.startTime - this.lyricLine.startTime
-          )
-        ), r2.word.trimStart() !== r2.word && t2.appendChild(document.createTextNode(" ")), t2.appendChild(o2), r2.word.trimEnd() !== r2.word && q.shouldEmphasize(r2) && t2.appendChild(document.createTextNode(" "));
-      } else if (n2.word.trim().length === 0)
-        t2.appendChild(document.createTextNode(" "));
-      else {
-        const r2 = q.shouldEmphasize(n2), a2 = document.createElement("span"), o2 = {
-          ...n2,
-          mainElement: a2,
-          subElements: [],
-          // elementAnimations: [this.initFloatAnimation(chunk, mainWordEl)],
-          elementAnimations: [],
-          // this.initFloatAnimation(chunk, mainWordEl)
-          maskAnimations: [],
-          width: 0,
-          height: 0,
-          padding: 0,
-          shouldEmphasize: r2
-        };
-        if (q.shouldEmphasize(n2)) {
-          a2.classList.add(N.emphasize);
-          const l2 = [];
-          for (const h2 of n2.word.trim()) {
-            const m2 = document.createElement("span");
-            m2.innerText = h2, l2.push(m2), a2.appendChild(m2);
-          }
-          o2.subElements = l2;
-          const c2 = Math.abs(o2.endTime - o2.startTime);
-          o2.elementAnimations.push(
-            ...this.initEmphasizeAnimation(
-              n2,
-              l2,
-              c2,
-              o2.startTime - this.lyricLine.startTime
-            )
-          );
-        } else
-          a2.innerText = n2.word.trim();
-        n2.word.trimStart() !== n2.word && t2.appendChild(document.createTextNode(" ")), t2.appendChild(a2), n2.word.trimEnd() !== n2.word && t2.appendChild(document.createTextNode(" ")), this.splittedWords.push(o2);
-      }
-    e2.innerText = this.lyricLine.translatedLyric, s2.innerText = this.lyricLine.romanLyric;
-  }
-  initFloatAnimation(t2, e2) {
-    const s2 = t2.startTime - this.lyricLine.startTime, i2 = Math.max(1e3, t2.endTime - t2.startTime);
-    let n2 = 0.05;
-    this.lyricLine.isBG && (n2 *= 2);
-    const r2 = e2.animate(
-      [
-        {
-          transform: "translateY(0px)"
-        },
-        {
-          transform: `translateY(${-n2}em)`
-        }
-      ],
-      {
-        duration: Number.isFinite(i2) ? i2 : 0,
-        delay: Number.isFinite(s2) ? s2 : 0,
-        id: "float-word",
-        composite: "add",
-        fill: "both",
-        easing: "ease-out"
-      }
-    );
-    return r2.pause(), r2;
-  }
-  // 按照原 Apple Music 参考，强调效果只应用缩放、轻微左右位移和辉光效果，原主要的悬浮位移效果不变
-  // 为了避免产生锯齿抖动感，使用 matrix3d 来实现缩放和位移
-  initEmphasizeAnimation(t2, e2, s2, i2) {
-    const n2 = Math.max(0, i2);
-    let r2 = Math.max(1e3, s2), a2 = [], o2 = r2 / 2e3;
-    o2 = o2 > 1 ? Math.sqrt(o2) : o2 ** 3;
-    let l2 = r2 / 3e3;
-    l2 = l2 > 1 ? Math.sqrt(l2) : l2 ** 3, o2 *= 0.6, l2 *= 0.5, this.lyricLine.words.length > 0 && t2.word.includes(
-      this.lyricLine.words[this.lyricLine.words.length - 1].word
-    ) && (o2 *= 1.6, l2 *= 1.5, r2 *= 1.2), o2 = Math.min(1.2, o2), l2 = Math.min(0.8, l2);
-    const c2 = Number.isFinite(r2) ? r2 : 0, h2 = Us(Nt);
-    return a2 = e2.flatMap((m2, u2, f2) => {
-      const g2 = n2 + r2 / 2.5 / f2.length * u2, p2 = [], y2 = new Array(bt).fill(0).map((b2, w2) => {
-        const T = (w2 + 1) / bt, v2 = h2(T), P = h2(T) * l2, z = he(le(), 1 + v2 * 0.1 * o2), E = -v2 * 0.03 * o2 * (f2.length / 2 - u2), F = -v2 * 0.025 * o2;
-        return {
-          offset: T,
-          transform: `${de(
-            z,
-            4
-          )} translate(${E}em, ${F}em)`,
-          textShadow: `0 0 ${Math.min(
-            0.3,
-            l2 * 0.3
-          )}em rgba(255, 255, 255, ${P})`
-        };
-      }), L = m2.animate(y2, {
-        duration: c2,
-        delay: Number.isFinite(g2) ? g2 : 0,
-        id: `emphasize-word-${m2.innerText}-${u2}`,
-        iterations: 1,
-        composite: "replace",
-        fill: "both"
-      });
-      L.onfinish = () => {
-        L.pause();
-      }, L.pause(), p2.push(L);
-      const x2 = new Array(bt).fill(0).map((b2, w2) => {
-        const T = (w2 + 1) / bt;
-        let v2 = Math.sin(T * Math.PI);
-        return this.lyricLine.isBG && (v2 *= 2), {
-          offset: T,
-          transform: `translateY(${-v2 * 0.05}em)`
-        };
-      }), M2 = m2.animate(x2, {
-        duration: c2 * 1.4,
-        delay: Number.isFinite(g2) ? g2 - 400 : 0,
-        id: "emphasize-word-float",
-        iterations: 1,
-        composite: "add",
-        fill: "both"
-      });
-      return M2.onfinish = () => {
-        M2.pause();
-      }, M2.pause(), p2.push(M2), p2;
-    }), a2;
-  }
-  get totalDuration() {
-    return this.lyricLine.endTime - this.lyricLine.startTime;
-  }
-  markMaskImageDirty(t2 = "") {
-    this.maskImageDirty = true, this.element.classList.contains(N.dirty) || this.element.classList.add(N.dirty);
-    const e2 = Promise.all([
-      this.markImageDirtyPromise,
-      new Promise((s2) => {
-        this.markImageDirtyPromiseResolve.add(s2);
-      })
-    ]).then(() => {
-    });
-    return this.markImageDirtyPromise = e2, e2;
-  }
-  waitMaskImageUpdated() {
-    return this.markImageDirtyPromise;
-  }
-  async updateMaskImage() {
-    if (this.element.checkVisibility({
-      contentVisibilityAuto: true
-    })) {
-      this.maskImageDirty = false, await this.measureLock(async () => {
-        await Promise.all(
-          this.splittedWords.map(async (t2) => {
-            const e2 = t2.mainElement;
-            e2 ? await ce(() => {
-              t2.padding = Number.parseFloat(
-                getComputedStyle(e2).paddingLeft
-              ), t2.width = e2.clientWidth - t2.padding * 2, t2.height = e2.clientHeight - t2.padding * 2;
-            }) : (t2.width = 0, t2.height = 0, t2.padding = 0), t2.width * t2.height === 0 && console.warn("Word size is zero");
-          })
-        ), await Zt(() => {
-          this.lyricPlayer.supportMaskImage ? this.generateWebAnimationBasedMaskImage() : this.generateCalcBasedMaskImage();
-        });
-      });
-      for (const t2 of this.markImageDirtyPromiseResolve)
-        t2(), this.markImageDirtyPromiseResolve.delete(t2);
-      await Zt(() => {
-        this.element.classList.remove(N.dirty);
-      });
-    }
-  }
-  generateCalcBasedMaskImage() {
-    for (const t2 of this.splittedWords) {
-      const e2 = t2.mainElement;
-      if (e2) {
-        t2.width = e2.clientWidth, t2.height = e2.clientHeight;
-        const s2 = t2.height * this.lyricPlayer.getWordFadeWidth(), [i2, n2] = Kt(
-          s2 / t2.width
-        ), r2 = `${n2 * 100}% 100%`;
-        this.lyricPlayer.supportMaskImage ? (e2.style.maskImage = i2, e2.style.maskRepeat = "no-repeat", e2.style.maskOrigin = "left", e2.style.maskSize = r2) : (e2.style.webkitMaskImage = i2, e2.style.webkitMaskRepeat = "no-repeat", e2.style.webkitMaskOrigin = "left", e2.style.webkitMaskSize = r2);
-        const a2 = t2.width + s2, o2 = `clamp(${-a2}px,calc(${-a2}px + (var(--amll-player-time) - ${t2.startTime})*${a2 / Math.abs(t2.endTime - t2.startTime)}px),0px) 0px, left top`;
-        e2.style.maskPosition = o2, e2.style.webkitMaskPosition = o2;
-      }
-    }
-  }
-  generateWebAnimationBasedMaskImage() {
-    const t2 = Math.max(
-      this.splittedWords.reduce((e2, s2) => Math.max(s2.endTime, e2), 0),
-      this.lyricLine.endTime
-    ) - this.lyricLine.startTime;
-    this.splittedWords.forEach((e2, s2) => {
-      const i2 = e2.mainElement;
-      if (i2) {
-        const n2 = e2.height * this.lyricPlayer.getWordFadeWidth(), [r2, a2] = Kt(
-          n2 / (e2.width + e2.padding * 2)
-        ), o2 = `${a2 * 100}% 100%`;
-        this.lyricPlayer.supportMaskImage ? (i2.style.maskImage = r2, i2.style.maskRepeat = "no-repeat", i2.style.maskOrigin = "left", i2.style.maskSize = o2) : (i2.style.webkitMaskImage = r2, i2.style.webkitMaskRepeat = "no-repeat", i2.style.webkitMaskOrigin = "left", i2.style.webkitMaskSize = o2);
-        const l2 = this.splittedWords.slice(0, s2).reduce((x2, M2) => x2 + M2.width, 0) + (this.splittedWords[0] ? n2 : 0), c2 = -(e2.width + e2.padding * 2 + n2), h2 = (x2) => Math.max(c2, Math.min(0, x2));
-        let m2 = -l2 - e2.width - e2.padding - n2, u2 = 0;
-        const f2 = [];
-        let g2 = m2, p2 = 0;
-        const y2 = () => {
-          const x2 = m2 - g2, M2 = Math.max(0, Math.min(1, u2)), b2 = M2 - p2, w2 = Math.abs(b2 / x2);
-          if (m2 > c2 && g2 < c2) {
-            const P = Math.abs(g2 - c2) * w2, z = `${h2(g2)}px 0`, E = {
-              offset: p2 + P,
-              maskPosition: z
-            };
-            f2.push(E);
-          }
-          if (m2 > 0 && g2 < 0) {
-            const P = Math.abs(g2) * w2, z = `${h2(m2)}px 0`, E = {
-              offset: p2 + P,
-              maskPosition: z
-            };
-            f2.push(E);
-          }
-          const T = `${h2(m2)}px 0`, v2 = {
-            offset: M2,
-            maskPosition: T
-          };
-          f2.push(v2), g2 = m2, p2 = M2;
-        };
-        y2();
-        let L = 0;
-        this.splittedWords.forEach((x2, M2) => {
-          {
-            const b2 = x2.startTime - this.lyricLine.startTime, w2 = b2 - L;
-            u2 += w2 / t2, w2 > 0 && y2(), L = b2;
-          }
-          {
-            const b2 = x2.endTime - x2.startTime;
-            u2 += b2 / t2, m2 += x2.width, M2 === 0 && (m2 += n2 * 1.5), M2 === this.splittedWords.length - 1 && (m2 += n2 * 0.5), b2 > 0 && y2(), L += b2;
-          }
-        });
-        for (const x2 of e2.maskAnimations)
-          x2.cancel();
-        try {
-          const x2 = i2.animate(f2, {
-            duration: t2 || 1,
-            id: `fade-word-${e2.word}-${s2}`,
-            fill: "both"
-          });
-          x2.pause(), e2.maskAnimations = [x2];
-        } catch (x2) {
-          console.warn("\u5E94\u7528\u6E10\u53D8\u52A8\u753B\u53D1\u751F\u9519\u8BEF", f2, t2, x2);
-        }
-      }
-    });
-  }
-  getElement() {
-    return this.element;
-  }
-  setTransform(t2 = this.top, e2 = this.scale, s2 = 1, i2 = 0, n2 = false, r2 = 0) {
-    super.setTransform(t2, e2, s2, i2, n2, r2);
-    const a2 = this.isInSight, o2 = this.lyricPlayer.getEnableSpring();
-    this.top = t2, this.scale = e2, this.delay = r2 * 1e3 | 0;
-    const l2 = this.element.children[0];
-    if (l2.style.opacity = `${s2}`, n2 || !o2) {
-      if (n2 && this.element.classList.add(N.tmpDisableTransition), this.lineTransforms.posY.setPosition(t2), this.lineTransforms.scale.setPosition(e2), o2)
-        this.rebuildStyle();
-      else {
-        const c2 = this.isInSight;
-        a2 || c2 ? this.show() : this.hide();
-      }
-      n2 && requestAnimationFrame(() => {
-        this.element.classList.remove(N.tmpDisableTransition);
-      });
-    } else
-      this.lineTransforms.posY.setTargetPosition(t2, r2), this.lineTransforms.scale.setTargetPosition(e2);
-  }
-  update(t2 = 0) {
-    if (this.lyricPlayer.getEnableSpring())
-      if (this.lineTransforms.posY.update(t2), this.lineTransforms.scale.update(t2), this.isInSight ? (this.show(), this.maskImageDirty && this.updateMaskImage()) : this.hide(), this.lyricPlayer.getEnableSpring())
-        this.element.style.setProperty(
-          "--bright-mask-alpha",
-          `${Math.max(
-            0,
-            Math.min(
-              1,
-              this.lineTransforms.scale.getCurrentPosition() / 100 - 0.97
-            ) / 0.03
-          ) * 0.8 + 0.2}`
-        ), this.element.style.setProperty(
-          "--dark-mask-alpha",
-          `${Math.max(
-            0,
-            Math.min(
-              1,
-              this.lineTransforms.scale.getCurrentPosition() / 100 - 0.97
-            ) / 0.03
-          ) * 0.2 + 0.2}`
-        );
-      else {
-        const s2 = window.getComputedStyle(this.element).transform, i2 = js(s2);
-        this.element.style.setProperty(
-          "--bright-mask-alpha",
-          `${Math.max(0, Math.min(1, (i2 - 0.97) / 0.03)) * 0.8 + 0.2}`
-        ), this.element.style.setProperty(
-          "--dark-mask-alpha",
-          `${Math.max(0, Math.min(1, (i2 - 0.97) / 0.03)) * 0.2 + 0.2}`
-        );
-      }
-  }
-  _getDebugTargetPos() {
-    return `[\u4F4D\u79FB: ${this.top}; \u7F29\u653E: ${this.scale}; \u5EF6\u65F6: ${this.delay}]`;
-  }
-  get isInSight() {
-    const t2 = this.lineTransforms.posY.getCurrentPosition(), e2 = this.lineSize[1], s2 = t2 + e2, i2 = this.lyricPlayer.size[1];
-    return !(t2 > i2 + e2 || s2 < -e2);
-  }
-  disposeElements() {
-    var _a, _b;
-    for (const t2 of this.splittedWords) {
-      for (const e2 of t2.elementAnimations)
-        e2.cancel();
-      for (const e2 of t2.maskAnimations)
-        e2.cancel();
-      for (const e2 of t2.subElements)
-        e2.remove(), (_a = e2.parentNode) == null ? void 0 : _a.removeChild(e2);
-      t2.elementAnimations = [], t2.maskAnimations = [], t2.subElements = [], t2.mainElement.remove(), (_b = t2.mainElement.parentNode) == null ? void 0 : _b.removeChild(t2.mainElement);
-    }
-    this.splittedWords = [];
-  }
-  dispose() {
-    this.disposeElements(), this.element.remove();
-  }
-}
-class ci extends Rt {
-  constructor() {
-    super();
-    __publicField(this, "currentLyricLineObjects", []);
-    __publicField(this, "debounceCalcLayout", Ds(
-      () => this.calcLayout(true).then(
-        () => this.currentLyricLineObjects.map(async (t2, e2) => {
-          t2.markMaskImageDirty("DomLyricPlayer onResize"), await t2.waitMaskImageUpdated(), this.hotLines.has(e2) && (t2.enable(this.currentTime), t2.resume());
-        })
-      ),
-      1e3
-    ));
-    __publicField(this, "supportPlusLighter", CSS.supports("mix-blend-mode", "plus-lighter"));
-    __publicField(this, "supportMaskImage", CSS.supports("mask-image", "none"));
-    __publicField(this, "innerSize", [0, 0]);
-    __publicField(this, "onLineClickedHandler", (t2) => {
-      const e2 = new pe(
-        this.lyricLinesIndexes.get(t2.line) ?? -1,
-        t2.line,
-        t2
-      );
-      this.dispatchEvent(e2) || (t2.preventDefault(), t2.stopPropagation(), t2.stopImmediatePropagation());
-    });
-    __publicField(this, "_baseFontSize", Number.parseFloat(
-      getComputedStyle(this.element).fontSize
-    ));
-    this.onResize(), this.element.classList.add("amll-lyric-player", "dom-slim"), this.disableSpring && this.element.classList.add(N.disableSpring);
-  }
-  onResize() {
-    const t2 = getComputedStyle(this.element);
-    this._baseFontSize = Number.parseFloat(t2.fontSize);
-    const e2 = this.element.clientWidth - Number.parseFloat(t2.paddingLeft) - Number.parseFloat(t2.paddingRight), s2 = this.element.clientHeight - Number.parseFloat(t2.paddingTop) - Number.parseFloat(t2.paddingBottom);
-    this.innerSize[0] = e2, this.innerSize[1] = s2, this.rebuildStyle(), this.debounceCalcLayout();
-  }
   /**
-   * 是否为非逐词歌词
-   * @internal
-   */
+  * 是否为非逐词歌词
+  * @internal
+  */
   _getIsNonDynamic() {
     return this.isNonDynamic;
   }
@@ -22730,99 +25328,108 @@ class ci extends Rt {
     return this._baseFontSize;
   }
   rebuildStyle() {
-    const t2 = this.innerSize[0], e2 = this.innerSize[1];
-    this.element.style.setProperty("--amll-lp-width", `${t2.toFixed(4)}px`), this.element.style.setProperty(
-      "--amll-lp-height",
-      `${e2.toFixed(4)}px`
-    );
   }
-  setWordFadeWidth(t2 = 0.5) {
-    super.setWordFadeWidth(t2);
-    for (const e2 of this.currentLyricLineObjects)
-      e2.markMaskImageDirty("DomLyricPlayer setWordFadeWidth");
+  setWordFadeWidth(value = 0.5) {
+    var _a2;
+    super.setWordFadeWidth(value);
+    for (const group of this.currentLyricGroups) {
+      group.mainLine.updateMaskImageSync();
+      (_a2 = group.bgLine) == null ? void 0 : _a2.updateMaskImageSync();
+    }
   }
   /**
-   * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
-   * @param lines 歌词数组
-   * @param initialTime 初始时间，默认为 0
-   */
-  setLyricLines(t2, e2 = 0) {
-    super.setLyricLines(t2, e2), this.hasDuetLine ? this.element.classList.add(N.hasDuetLine) : this.element.classList.remove(N.hasDuetLine);
-    for (const s2 of this.currentLyricLineObjects)
-      s2.removeMouseEventListener("click", this.onLineClickedHandler), s2.removeMouseEventListener("contextmenu", this.onLineClickedHandler), s2.dispose();
-    this.currentLyricLineObjects = this.processedLines.map((s2, i2) => {
-      const n2 = new Gs(this, s2);
-      return n2.addMouseEventListener("click", this.onLineClickedHandler), n2.addMouseEventListener("contextmenu", this.onLineClickedHandler), this.element.appendChild(n2.getElement()), this.lyricLinesIndexes.set(n2, i2), n2.markMaskImageDirty("DomLyricPlayer setLyricLines"), n2;
-    }), this.setLinePosXSpringParams({}), this.setLinePosYSpringParams({}), this.setLineScaleSpringParams({}), this.calcLayout(true).then(() => {
-      this.initialLayoutFinished = true;
-    });
+  * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
+  * @param lines 歌词数组
+  * @param initialTime 初始时间，默认为 0
+  */
+  setLyricLines(lines, initialTime = 0) {
+    super.setLyricLines(lines, initialTime);
+    if (this.hasDuetLine) this.element.classList.add(lyric_player_module_default.hasDuetLine);
+    else this.element.classList.remove(lyric_player_module_default.hasDuetLine);
+    if (!this.supportMaskImage) this.element.style.setProperty("--amll-player-time", `${initialTime}`);
+    for (const group of this.currentLyricGroups) {
+      const linesToDispose = [group.mainLine, group.bgLine].filter((line) => !!line);
+      for (const line of linesToDispose) {
+        line.removeMouseEventListener("click", this.onLineClickedHandler);
+        line.removeMouseEventListener("contextmenu", this.onLineClickedHandler);
+      }
+      group.dispose();
+    }
+    this.currentLyricGroups = [];
+    let currentGroup = null;
+    for (let i2 = 0; i2 < this.processedLines.length; i2++) {
+      const line = this.processedLines[i2];
+      const lineEl = new LyricLineEl(this, line);
+      lineEl.addMouseEventListener("click", this.onLineClickedHandler);
+      lineEl.addMouseEventListener("contextmenu", this.onLineClickedHandler);
+      this.lyricLinesIndexes.set(lineEl, i2);
+      if (!line.isBG || !currentGroup) {
+        currentGroup = new LyricLineGroup(this, lineEl);
+        this.currentLyricGroups.push(currentGroup);
+        this.lyricGroupElementMap.set(currentGroup.element, currentGroup);
+      } else currentGroup.addBgLine(lineEl);
+    }
+    this.setLinePosXSpringParams({});
+    this.setLinePosYSpringParams({});
+    this.setLineScaleSpringParams({});
+    this.setCurrentTime(initialTime, true);
+    this.calcLayout(true);
+    this.update(0);
   }
   pause() {
-    super.pause(), this.interludeDots.pause();
-    for (const t2 of this.currentLyricLineObjects)
-      t2.pause();
+    var _a2;
+    super.pause();
+    this.element.classList.remove(lyric_player_module_default.playing);
+    this.interludeDots.pause();
+    for (const group of this.currentLyricGroups) {
+      group.mainLine.pause();
+      (_a2 = group.bgLine) == null ? void 0 : _a2.pause();
+    }
   }
   resume() {
-    super.resume(), this.interludeDots.resume();
-    for (const t2 of this.currentLyricLineObjects)
-      t2.resume();
+    var _a2;
+    super.resume();
+    this.element.classList.add(lyric_player_module_default.playing);
+    this.interludeDots.resume();
+    for (const group of this.currentLyricGroups) {
+      group.mainLine.resume();
+      (_a2 = group.bgLine) == null ? void 0 : _a2.resume();
+    }
   }
-  update(t2 = 0) {
-    if (!this.initialLayoutFinished || (super.update(t2), !this.isPageVisible)) return;
-    const e2 = t2 / 1e3;
-    this.interludeDots.update(t2), this.bottomLine.update(e2);
-    for (const s2 of this.currentLyricLineObjects)
-      s2.update(e2);
-  }
-  async calcLayout(t2) {
-    await super.calcLayout(t2);
-    const e2 = this.currentLyricLineObjects[this.targetAlignIndex], s2 = e2.getElement(), i2 = s2.checkVisibility({
-      contentVisibilityAuto: true
-    }), n2 = this.element.getBoundingClientRect().top;
-    i2 || s2.scrollIntoView({
-      block: "center",
-      behavior: "instant"
-    });
-    const r2 = s2.clientHeight;
-    let o2 = s2.getBoundingClientRect().top - n2 - this.size[1] * this.alignPosition;
-    if (e2)
-      switch (this.alignAnchor) {
-        case "bottom":
-          o2 += r2;
-          break;
-        case "center":
-          o2 += r2 / 2;
-          break;
-      }
-    this.element.scrollBy({
-      top: o2,
-      behavior: "smooth"
-    });
+  update(delta = 0) {
+    if (!this.timelineState.initialLayoutFinished) return;
+    super.update(delta);
+    if (!this.supportMaskImage) this.element.style.setProperty("--amll-player-time", `${this.timelineState.currentTime}`);
+    if (!this.isPageVisible) return;
+    const deltaS = delta / 1e3;
+    for (const group of this.currentLyricGroups) group.update(deltaS);
   }
   dispose() {
-    super.dispose(), this.element.remove();
-    for (const t2 of this.currentLyricLineObjects)
-      t2.dispose();
-    this.bottomLine.dispose(), this.interludeDots.dispose();
+    super.dispose();
+    this.element.remove();
+    for (const group of this.currentLyricGroups) group.dispose();
+    this.bottomLine.dispose();
+    this.interludeDots.dispose();
   }
-}
+};
 const AMLLCore = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  AbstractBaseRenderer: Le,
-  BackgroundRender: ie,
-  BaseRenderer: te,
-  CanvasLyricPlayer: oi,
-  DomLyricPlayer: ai,
-  DomSlimLyricPlayer: ci,
-  LyricLineMouseEvent: pe,
-  LyricPlayer: ai,
-  LyricPlayerBase: Rt,
-  MeshGradientRenderer: si,
-  PixiRenderer: ii
+  AbstractBaseRenderer,
+  BackgroundRender,
+  BaseRenderer,
+  DomLyricPlayer,
+  LayoutAlignAnchor,
+  LyricLineMouseEvent,
+  LyricLineRenderMode,
+  LyricPlayer: DomLyricPlayer,
+  LyricPlayerBase,
+  MaskObsceneWordsMode,
+  MeshGradientRenderer,
+  PixiRenderer
 }, Symbol.toStringTag, { value: "Module" }));
 function logToAndroid(message, level = "debug") {
-  var _a, _b;
-  (_b = (_a = window.Android) == null ? void 0 : _a.log) == null ? void 0 : _b.call(_a, message, level);
+  var _a2, _b;
+  (_b = (_a2 = window.Android) == null ? void 0 : _a2.log) == null ? void 0 : _b.call(_a2, message, level);
 }
 const state = {
   player: null,
@@ -22888,42 +25495,8 @@ function createBackgroundRenderer(core, root, selectedRenderer) {
   }
   return null;
 }
-function forceRebuildLyricsDom(reason = "manual refresh") {
-  var _a, _b;
-  try {
-    const p2 = state.player;
-    if (!p2) return false;
-    const lineObjects = Array.isArray(p2.currentLyricLineObjects) ? p2.currentLyricLineObjects : [];
-    if (lineObjects.length === 0) {
-      if (typeof p2.setLyricLines === "function" && state.lyricLines.length > 0) {
-        p2.setLyricLines(state.lyricLines, state.currentTime);
-        (_a = p2.update) == null ? void 0 : _a.call(p2, state.currentTime);
-        log(`forceRebuildLyricsDom: full rebuild (${reason})`, "debug");
-        return true;
-      }
-      return false;
-    }
-    lineObjects.forEach((line) => {
-      var _a2, _b2;
-      if (!line) return;
-      (_a2 = line.rebuildElement) == null ? void 0 : _a2.call(line);
-      if (line.markMaskImageDirty) {
-        line.markMaskImageDirty(reason);
-      } else if (line.updateMaskImageSync) {
-        line.updateMaskImageSync();
-      } else {
-        (_b2 = line.rebuildStyle) == null ? void 0 : _b2.call(line);
-      }
-    });
-    (_b = p2.update) == null ? void 0 : _b.call(p2, state.currentTime);
-    log(`forceRebuildLyricsDom: rebuilt ${lineObjects.length} lines (${reason})`, "debug");
-    return true;
-  } catch (err) {
-    log(`forceRebuildLyricsDom error: ${err.message}`, "error");
-    return false;
-  }
-}
 function initAMLL() {
+  var _a2, _b, _c, _d;
   try {
     document.documentElement.style.background = "transparent";
     document.body.style.background = "transparent";
@@ -22934,10 +25507,10 @@ function initAMLL() {
     }
     Object.assign(root.style, { position: "relative", width: "100%", height: "100vh" });
     const Core = AMLLCore;
-    const DomLyricPlayer = Core.DomLyricPlayer || Core.DOMLyricPlayer || Core.LyricPlayer;
-    if (DomLyricPlayer) {
+    const DomLyricPlayer2 = Core.DomLyricPlayer;
+    if (DomLyricPlayer2) {
       try {
-        state.player = new DomLyricPlayer({
+        state.player = new DomLyricPlayer2({
           container: root,
           album: state.albumUri
           // 可以在此处添加更多初始化参数
@@ -22948,8 +25521,19 @@ function initAMLL() {
       }
     }
     window.__amll = { player: state.player, backgroundRender: state.background };
+    let lastTime = performance.now();
+    const tick = (now) => {
+      var _a3, _b2, _c2, _d2;
+      const delta = now - lastTime;
+      lastTime = now;
+      (_b2 = (_a3 = state.player) == null ? void 0 : _a3.update) == null ? void 0 : _b2.call(_a3, delta);
+      (_d2 = (_c2 = state.background) == null ? void 0 : _c2.update) == null ? void 0 : _d2.call(_c2, delta);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
     if (state.lyricLines.length > 0) {
-      requestAnimationFrame(() => forceRebuildLyricsDom("initAMLL"));
+      (_b = (_a2 = state.player) == null ? void 0 : _a2.calcLayout) == null ? void 0 : _b.call(_a2);
+      (_d = (_c = state.player) == null ? void 0 : _c.update) == null ? void 0 : _d.call(_c, 0);
     }
     log("AMLL core WebView initialized", "info");
   } catch (error) {
@@ -22962,6 +25546,7 @@ if (document.readyState === "loading") {
   setTimeout(initAMLL, 0);
 }
 window.updateLyrics = async (payload) => {
+  var _a2, _b;
   try {
     const normalized = await processLyricsPayload(payload);
     state.lyricLines = normalized;
@@ -22971,7 +25556,8 @@ window.updateLyrics = async (payload) => {
       const setter = p2.setLyricLines || p2.setLyrics || p2.updateLyrics;
       if (setter) {
         setter.call(p2, normalized);
-        requestAnimationFrame(() => forceRebuildLyricsDom("updateLyrics"));
+        (_a2 = p2.calcLayout) == null ? void 0 : _a2.call(p2);
+        (_b = p2.update) == null ? void 0 : _b.call(p2, 0);
       } else {
         log("playerInstance does not expose lyric setter", "warn");
       }
@@ -22981,7 +25567,7 @@ window.updateLyrics = async (payload) => {
   }
 };
 window.updateTime = (timeMs) => {
-  var _a;
+  var _a2;
   if (state.hasPlaybackState && !state.isPlaying) return;
   const t2 = Math.trunc(timeMs);
   if (state.currentTime === t2) return;
@@ -22994,13 +25580,13 @@ window.updateTime = (timeMs) => {
     } else if (p2.seek) {
       p2.seek(t2);
     }
-    (_a = p2.update) == null ? void 0 : _a.call(p2, t2);
+    (_a2 = p2.update) == null ? void 0 : _a2.call(p2, 0);
   } catch (e2) {
     log(`updateTime error: ${e2.message}`, "error");
   }
 };
 window.updateAlbumArt = async (uri2) => {
-  var _a;
+  var _a2, _b, _c;
   if (!uri2 || uri2.trim().length === 0) {
     state.albumUri = state.lastAlbumArt = "";
     return;
@@ -23020,9 +25606,10 @@ window.updateAlbumArt = async (uri2) => {
       });
     }
     state.albumUri = finalUri;
-    if ((_a = state.background) == null ? void 0 : _a.setAlbum) {
+    if ((_a2 = state.background) == null ? void 0 : _a2.setAlbum) {
       try {
         await state.background.setAlbum(state.albumUri);
+        (_c = (_b = state.background).update) == null ? void 0 : _c.call(_b, 0);
       } catch (err) {
         log(`setAlbum error: ${err.message}. `, "warn");
       }
@@ -23032,24 +25619,27 @@ window.updateAlbumArt = async (uri2) => {
   }
 };
 window.setPaused = (paused) => {
-  var _a, _b;
-  state.isPlaying = !paused;
+  var _a2, _b, _c;
+  const isPlaying = !paused;
+  if (state.hasPlaybackState && state.isPlaying === isPlaying) return;
+  state.isPlaying = isPlaying;
   state.hasPlaybackState = true;
   const p2 = state.player;
   if (!p2) return;
   try {
     if (paused) {
-      (_a = p2.pause) == null ? void 0 : _a.call(p2);
+      (_a2 = p2.pause) == null ? void 0 : _a2.call(p2);
     } else {
       ;
-      (_b = p2.resume || p2.play) == null ? void 0 : _b.call(p2);
+      (_b = p2.resume) == null ? void 0 : _b.call(p2);
     }
+    (_c = p2.update) == null ? void 0 : _c.call(p2, 0);
   } catch (e2) {
     log(`setPaused error: ${e2.message}`, "error");
   }
 };
 window.configureLyricMotion = (options) => {
-  var _a;
+  var _a2, _b;
   state.pendingLyricOptions = { ...state.pendingLyricOptions, ...options };
   const lp = state.player;
   if (!lp) return;
@@ -23062,49 +25652,52 @@ window.configureLyricMotion = (options) => {
     if (enableBlur !== void 0 && lp.setEnableBlur) lp.setEnableBlur(enableBlur);
     if (hidePassedLines !== void 0 && lp.setHidePassedLines) lp.setHidePassedLines(hidePassedLines);
     if (wordFadeWidth !== void 0 && lp.setWordFadeWidth) lp.setWordFadeWidth(wordFadeWidth);
-    (_a = lp.calcLayout) == null ? void 0 : _a.call(lp);
+    (_a2 = lp.calcLayout) == null ? void 0 : _a2.call(lp);
+    (_b = lp.update) == null ? void 0 : _b.call(lp, 0);
   } catch (e2) {
     log(`configureLyricMotion error: ${e2.message}`, "error");
   }
 };
 window.configureBackgroundEffect = (options) => {
-  var _a, _b, _c, _d, _e2;
+  var _a2, _b, _c, _d, _e, _f;
   const bg = state.background;
   if (!bg) return;
   try {
-    if (options.flowSpeed !== void 0) (_a = bg.setFlowSpeed) == null ? void 0 : _a.call(bg, options.flowSpeed);
+    if (options.flowSpeed !== void 0) (_a2 = bg.setFlowSpeed) == null ? void 0 : _a2.call(bg, options.flowSpeed);
     if (options.renderScale !== void 0) (_b = bg.setRenderScale) == null ? void 0 : _b.call(bg, options.renderScale);
     if (options.lowFreqVolume !== void 0) (_c = bg.setLowFreqVolume) == null ? void 0 : _c.call(bg, options.lowFreqVolume);
     if (options.fps !== void 0) (_d = bg.setFPS) == null ? void 0 : _d.call(bg, options.fps);
-    if (options.staticMode !== void 0) (_e2 = bg.setStaticMode) == null ? void 0 : _e2.call(bg, options.staticMode);
+    if (options.staticMode !== void 0) (_e = bg.setStaticMode) == null ? void 0 : _e.call(bg, options.staticMode);
+    (_f = bg.update) == null ? void 0 : _f.call(bg, 0);
   } catch (e2) {
     log(`configureBackgroundEffect error: ${e2.message}`, "error");
   }
 };
 window.configureLyricBackground = (options) => {
-  var _a, _b, _c, _d, _e2, _f, _g, _h;
+  var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j;
   try {
     const isCssBg = options.renderer === "css-bg";
     if (!state.background && !isCssBg) {
       state.background = createBackgroundRenderer(AMLLCore, document.getElementById("app"), options.renderer);
     }
-    const bgElement = (_b = (_a = state.background) == null ? void 0 : _a.getElement) == null ? void 0 : _b.call(_a);
+    const bgElement = (_b = (_a2 = state.background) == null ? void 0 : _a2.getElement) == null ? void 0 : _b.call(_a2);
     if (bgElement) {
       bgElement.style.display = isCssBg ? "none" : "block";
     }
     if (state.background) {
       const { fps, renderScale, staticMode } = options;
       if (fps !== void 0) (_d = (_c = state.background).setFPS) == null ? void 0 : _d.call(_c, fps);
-      if (renderScale !== void 0) (_f = (_e2 = state.background).setRenderScale) == null ? void 0 : _f.call(_e2, renderScale);
+      if (renderScale !== void 0) (_f = (_e = state.background).setRenderScale) == null ? void 0 : _f.call(_e, renderScale);
       if (staticMode !== void 0) (_h = (_g = state.background).setStaticMode) == null ? void 0 : _h.call(_g, staticMode);
+      (_j = (_i = state.background).update) == null ? void 0 : _j.call(_i, 0);
     }
     document.body.style.background = isCssBg && options.cssProperty ? options.cssProperty : "transparent";
   } catch (e2) {
     log(`configureLyricBackground error: ${e2.message}`, "error");
   }
 };
-window.setLyricSizePreset = (preset) => {
-  if (preset !== void 0) setCSSVar("--amll-lp-font-size-preset", preset);
+window.setLyricSizePreset = (preset2) => {
+  if (preset2 !== void 0) setCSSVar("--amll-lp-font-size-preset", preset2);
 };
 window.setEnableTranslationLine = (enabled) => {
   if (enabled !== void 0) setCSSVar("--amll-show-translation", enabled);
@@ -23123,4 +25716,10 @@ window.setAdvanceLyricDynamicLyricTime = (enabled) => {
 };
 window.setRenderMode = (mode) => log(`setRenderMode: ${mode}`, "debug");
 window.setLyricPlayerImplementation = (imp) => log(`setLyricPlayerImplementation: ${imp}`, "debug");
-window.rebuildLyricsDom = (reason) => forceRebuildLyricsDom(reason);
+window.rebuildLyricsDom = (reason) => {
+  var _a2, _b, _c, _d;
+  log(`rebuildLyricsDom: ${reason}`, "debug");
+  (_b = (_a2 = state.player) == null ? void 0 : _a2.calcLayout) == null ? void 0 : _b.call(_a2);
+  (_d = (_c = state.player) == null ? void 0 : _c.update) == null ? void 0 : _d.call(_c, 0);
+  return true;
+};

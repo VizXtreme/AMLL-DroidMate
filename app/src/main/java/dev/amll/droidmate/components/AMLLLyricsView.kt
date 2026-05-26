@@ -11,9 +11,12 @@ import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.webkit.WebViewAssetLoader
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -102,7 +105,6 @@ fun AMLLLyricsView(
     // Cache last applied render-mode (dom/dom-lite) and lyric player implementation
     var lastRenderModeValue by remember { mutableStateOf<String?>(null) }
     var lastLyricPlayerImplValue by remember { mutableStateOf<String?>(null) }
-    var lastBackgroundProfileValue by remember { mutableStateOf<String?>(null) }
     var lastLyricSizePreset by remember { mutableStateOf<String?>(null) }
     var lastEnableAdvanceDynamicTime by remember { mutableStateOf<Boolean?>(null) }
     
@@ -143,6 +145,30 @@ fun AMLLLyricsView(
             // 启用 WebView 调试功能（可在 Chrome DevTools 中调试）
             WebView.setWebContentsDebuggingEnabled(true)
             
+            // 配置 WebViewAssetLoader 以安全地加载本地资源
+            // 将 assets 目录映射到 https://appassets.androidplatform.net/assets/
+            // 将外部字体文件映射到 https://appassets.androidplatform.net/fonts/
+            val assetLoader = WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
+                .addPathHandler("/fonts/") { path ->
+                    // 根据路径中的 ID 查找对应的字体文件
+                    val fontId = path.substringBefore('/')
+                    val fontFile = AMLLSettings.getAmllFontFiles(context).find { it.id == fontId }
+                    if (fontFile != null) {
+                        val file = File(fontFile.absolutePath)
+                        if (file.exists()) {
+                            try {
+                                // 统一以 font/ttf 类型返回，现代浏览器通常能自动识别具体格式
+                                WebResourceResponse("font/ttf", null, file.inputStream())
+                            } catch (e: Exception) {
+                                Timber.e("[AMLLLyrics] Failed to load font through AssetLoader: $path $e")
+                                null
+                            }
+                        } else null
+                    } else null
+                }
+                .build()
+
             WebView(context).apply {
                 // 设置 WebView 的 LayoutParams 为 MATCH_PARENT（填满父容器）
                 layoutParams = ViewGroup.LayoutParams(
@@ -154,12 +180,21 @@ fun AMLLLyricsView(
                 // 监听 WebView 页面加载事件
                 webViewClient = object : WebViewClient() {
                     /**
+                     * 拦截请求并交给 AssetLoader 处理
+                     */
+                    override fun shouldInterceptRequest(
+                        view: WebView,
+                        request: WebResourceRequest
+                    ): WebResourceResponse? {
+                        return assetLoader.shouldInterceptRequest(request.url)
+                    }
+
+                    /**
                      * 页面开始加载时回调
                      * - 重置所有就绪状态
                      * - 清空上一次配置的缓存
                      */
                     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
-                        isPageReady = false
                         lastLyrics = null
                         lastLyricsPayload = null
                         Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView page started: $url")
@@ -172,7 +207,6 @@ fun AMLLLyricsView(
                      * - 注入 WebSocket 桥接代码
                      */
                     override fun onPageFinished(view: WebView, url: String) {
-                        isPageReady = true
                         // Force one re-sync after page finishes to avoid losing early bridge calls.
                         // 页面刷新结束时不主动清空 lastLyrics，让我们知道是否还有有效歌词
                         // lastLyrics = null
@@ -208,23 +242,15 @@ fun AMLLLyricsView(
                     }
                 }
                 // ==================== WebView 安全配置 ====================
-                // 已弃用的 WebView 配置，但为了保持兼容性暂时保留
+                // 使用 WebViewAssetLoader 以现代且安全的方式加载本地资源
                 settings.apply {
                     javaScriptEnabled = true       // 启用 JavaScript
                     domStorageEnabled = true       // 启用 DOM 存储（localStorage 等）
-                    allowFileAccess = true         // 允许访问文件
+                    allowFileAccess = false        // 禁用直接文件访问（更安全，使用 AssetLoader 代持）
                     allowContentAccess = true      // 允许访问内容提供者
-                    // 仅允许从本地文件 URI 读取资源（用于专辑封面）
-                    // NOTE: 在部分 Android WebView/Chromium 版本下，file:// 原点会阻止对同源或跨源本地资源的请求，
-                    // 导致静态脚本（amll.bundle.js）或 module import 被阻塞并报错：
-                    // "requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https"。
-                    // 在可控的调试环境中将下面两个选项设为 true 可允许 file:// 页面访问 file:// 下的资源并加载本地脚本。
-                    // 请在完成验证后考虑恢复为 false 以减少攻击面。
-                    allowFileAccessFromFileURLs = true
-                    allowUniversalAccessFromFileURLs = true
+                    
                     // 禁用缓存确保每次加载最新的文件
                     cacheMode = WebSettings.LOAD_NO_CACHE
-                    setRenderPriority(WebSettings.RenderPriority.HIGH)
                 }
 
                 // 透明 WebView 配置，允许宿主 Compose 层的专辑图背景透出
@@ -280,16 +306,15 @@ fun AMLLLyricsView(
                 // ==================== 点击事件监听 ====================
                 // 使用 GestureDetector 辅助检测点击，避免 WebView 内部消费导致 setOnClickListener 失效
                 val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
-                    override fun onSingleTapUp(e: MotionEvent): Boolean {
-                        Timber.d("[AMLLLyrics] [$debugSource#$instanceId] GestureDetector single tap up, performing click")
-                        this@apply.performClick()
-                        return true
-                    }
+                    override fun onDown(e: MotionEvent): Boolean = true
+                    override fun onSingleTapUp(e: MotionEvent): Boolean = true
                 })
 
-                setOnTouchListener { _, event ->
+                setOnTouchListener { v, event ->
                     // 将触摸事件传递给 GestureDetector
-                    gestureDetector.onTouchEvent(event)
+                    if (gestureDetector.onTouchEvent(event) && event.action == MotionEvent.ACTION_UP) {
+                        v.performClick()
+                    }
                     // 始终返回 false，允许 WebView 处理滚动、长按选择等原生行为
                     false
                 }
@@ -301,15 +326,16 @@ fun AMLLLyricsView(
                 }
 
                 // ==================== 加载本地 HTML 资源 ====================
-                // 从 assets 目录加载 AMLL 前端页面
-                loadUrl("file:///android_asset/amll/index.html")
+                // 使用 WebViewAssetLoader 提供的安全虚拟域名加载本地 HTML 资源
+                // 这解决了 file:// 协议下的跨域限制问题（如 ES Module 加载）
+                loadUrl("https://appassets.androidplatform.net/assets/amll/index.html")
 
                 // 在消息队列中发布延迟任务，获取 WebView 的实际尺寸
                 post {
                     Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView size after layout: width=$width, height=$height, measuredWidth=$measuredWidth, measuredHeight=$measuredHeight")
                 }
 
-                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView initialized with URL: file:///android_asset/amll/index.html")
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView initialized with URL: https://appassets.androidplatform.net/assets/amll/index.html")
             }
         },
         // ==================== WebView 更新逻辑 ====================
@@ -317,7 +343,6 @@ fun AMLLLyricsView(
         update = { view ->
             // 如果页面还未就绪，跳过本次更新
             if (!isPageReady) {
-                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge skipped: page not ready")
                 return@AndroidView
             }
 
@@ -474,7 +499,7 @@ fun AMLLLyricsView(
             
             // 字符间距 - 通过 CSS 应用
             val letterSpacing = AMLLSettings.getAmllLetterSpacing(view.context)
-            if (letterSpacing != null && letterSpacing.isNotBlank()) {
+            if (!letterSpacing.isNullOrBlank()) {
               val escapedLetterSpacing = escapeJsString(letterSpacing)
               Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyLetterSpacing('$escapedLetterSpacing')")
               view.evaluateJavascript(
@@ -490,7 +515,6 @@ fun AMLLLyricsView(
                 if (lyrics != null && lyrics.lines.isNotEmpty()) {
                     // 构建歌词 JSON 数据结构
                     val lyricsJson = buildLyricsJson(lyrics)
-                    lastLyricsPayload = lyricsJson
                     Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: updateLyrics(lines=${lyrics.lines.size})")
                     // 添加详细日志，显示前几行歌词内容
                     lyrics.lines.take(3).forEachIndexed { idx, line ->
@@ -549,7 +573,9 @@ fun AMLLLyricsView(
                         id = item.id,
                         sortKey = item.fontFamilyName,
                         familyName = buildRuntimeFontFamilyName(item.fontFamilyName),
-                        uri = file.toURI().toString()
+                        // 使用 WebViewAssetLoader 的虚拟域名来加载本地字体文件，
+                        // 避免从 https://appassets.androidplatform.net 访问 file:// 协议导致的跨域错误。
+                        uri = "https://appassets.androidplatform.net/fonts/${item.id}"
                     )
                 }
 

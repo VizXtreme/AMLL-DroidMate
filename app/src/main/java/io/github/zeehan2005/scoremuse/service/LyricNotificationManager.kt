@@ -36,6 +36,12 @@ import io.github.zeehan2005.scoremuse.global.LyricLine
  */
 open class LyricNotificationManager(private val context: Context) {
 
+    // 缓存上一次显示的通知内容和状态，用于去重以避免触发系统频率限制
+    private var lastNotificationText: String? = null
+    private var lastOngoingState: Boolean? = null
+    // null 表示状态未知（新实例），true 表示通知已显示，false 表示通知已取消
+    private var isNotificationActive: Boolean? = null
+
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     open fun showOrUpdate(currentLine: LyricLine?, ongoing: Boolean = true) {
         // 检查通知权限（Android 13+ 需要动态申请）
@@ -47,6 +53,12 @@ open class LyricNotificationManager(private val context: Context) {
         // 构建通知文本（可能包含多行：主歌词 + 翻译 + 音译）
         val safeLine = buildNotificationText(currentLine)
         
+        // 性能优化：如果内容和 ongoing 状态都没有改变，且通知当前处于激活状态，则跳过本次更新
+        // 这可以防止因频繁更新（如 100ms 一次）触发系统的 NotificationManager 频率限制
+        if (isNotificationActive == true && safeLine == lastNotificationText && ongoing == lastOngoingState) {
+            return
+        }
+
         // 创建点击通知时打开应用的 PendingIntent
         val contentIntent = createOpenAppIntent()
 
@@ -73,6 +85,11 @@ open class LyricNotificationManager(private val context: Context) {
 
         val notification = builder.build()
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+
+        // 更新缓存状态
+        lastNotificationText = safeLine
+        lastOngoingState = ongoing
+        isNotificationActive = true
     }
 
     /**
@@ -100,7 +117,16 @@ open class LyricNotificationManager(private val context: Context) {
     }
 
     open fun cancel() {
+        // 如果通知已经不处于激活状态，则跳过取消操作，避免频繁调用 cancel() 触发频率限制
+        // 如果状态为 null (未知)，则执行一次取消以确保安全
+        if (isNotificationActive == false) return
+        
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+        
+        // 重置状态
+        isNotificationActive = false
+        lastNotificationText = null
+        lastOngoingState = null
     }
 
     private fun createDeleteIntent(): PendingIntent {
