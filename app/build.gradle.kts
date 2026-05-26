@@ -97,7 +97,7 @@ abstract class BuildFrontendTask @Inject constructor(
 
         // Step 2: 执行构建命令
         logger.info("Building frontend in ${frontendDir.absolutePath}")
-        val buildCommand = if (isWindows) listOf("cmd", "/c", "npm run build:android") else listOf("npm", "run", "build:android")
+        val buildCommand = if (isWindows) listOf("cmd", "/c", "npm run build") else listOf("npm", "run", "build")
 
         execOperations.exec {
             workingDir(frontendDir)
@@ -117,6 +117,12 @@ abstract class BuildFrontendTask @Inject constructor(
             val sourceIndex = File(frontendDir, "index.html")
             if (sourceIndex.exists()) {
                 sourceIndex.copyTo(File(assetsDir, "index.html"), overwrite = true)
+            }
+            
+            // 同时复制 styles.css (用于 WebView 的初始样式加载)
+            val sourceStyles = File(frontendDir, "styles.css")
+            if (sourceStyles.exists()) {
+                sourceStyles.copyTo(File(assetsDir, "styles.css"), overwrite = true)
             }
 
             logger.info("Successfully synced frontend build to assets")

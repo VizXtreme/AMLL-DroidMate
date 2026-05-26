@@ -6,262 +6,31 @@
   
   这个 HTML 文件是嵌入到 Android WebView 中的歌词界面的入口点。
   它负责加载前端 bundle（AMLL core）和所有必要的资源，用于在 WebView 中渲染歌词界面。
-
-  **关键功能**：
-  1. 加载样式表（frontend.css）
-  2. 禁用浏览器缓存（确保最新代码生效）
-  3. 定义应用的挂载点（#app）
-  4. 加载打包后的 JavaScript bundle（amll.bundle.js），本 bundle 使用 AMLL core（非 React 运行时）
-
-  **构建流程**：
-  - 开发时：通过 Vite 开发服务器提供热更新
-  - 生产时：打包到 app/src/main/assets/amll/ 目录
   ========================================================================== -->
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <!-- 字符编码：使用 UTF-8 支持多语言 -->
     <meta charset="UTF-8" />
     
     <!-- 视口设置：响应式布局，适配不同屏幕尺寸 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- 加载构建生成的 CSS -->
-    <link rel="stylesheet" href="./frontend.css" />
 
     <!-- 页面标题：显示在浏览器标签页上 -->
     <title>AMLL DroidMate Frontend WebView</title>
 
-    <!-- ==================== 内联样式 ==================== -->
-    <!-- 覆盖浏览器默认的用户代理样式表，确保与 Android 原生样式一致 -->
-    <style>
-        /* Body 元素：强制设置为 block，移除边距和内边距 */
-        body {
-            display: block !important;  /* 使用 !important 覆盖库默认值 */
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        /* HTML 根元素：移除所有边距和内边距 */
-        html {
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        /* 错误提示样式，保持清晰可见 */
-        .err {
-            color: #b00020;
-            background: #fff6f6;
-            padding: 12px;
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-            white-space: pre-wrap;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+
 </head>
 <body>
     <!-- React 应用挂载点 -->
     <!-- AMLL React 组件会渲染到这个 div 中 -->
     <div id="app"></div>
     
-    <!-- JavaScript: load AMLL UMD/global bundle (avoid dynamic module import on file:// which is blocked by CORS) -->
+    <!-- JavaScript: load AMLL bundle -->
     <script>
         (function () {
-            console.log('[INDEX] attempting to load AMLL core (UMD/global)')
-            var mountPoint = document.getElementById('app')
-
-            function showError(msg) {
-                var d = document.getElementById('app')
-                if (d) {
-                    d.className = 'err'
-                    d.textContent = '加载失败：' + msg
-                }
-                console.error('[INDEX]', msg)
-            }
-
-            function loadScript(src) {
-                return new Promise(function (resolve, reject) {
-                    var s = document.createElement('script')
-                    s.src = src
-                    s.onload = function () { resolve(src) }
-                    s.onerror = function (e) { reject(new Error('script load error: ' + src)) }
-                    document.body.appendChild(s)
-                })
-            }
-
-            function findCore() {
-                if (window.AMLLCore) return window.AMLLCore
-                if (window.AMLLBundle) return window.AMLLBundle
-                if (window.__amll && window.__amll.core) return window.__amll.core
-                if (window.__amll && (window.__amll.init || window.__amll.mount || window.__amll.run)) return window.__amll
-
-                var tryNames = ['amll', 'AMLL', 'amllCore', 'Core', 'core', 'default']
-                for (var i = 0; i < tryNames.length; i++) {
-                    var n = tryNames[i]
-                    if (window[n]) return window[n]
-                }
-                return null
-            }
-
-            function initCore(core) {
-                try {
-                    if (!core) return showError('找不到 core 全局对象（initCore）')
-                    // normalize default export
-                    core = core.default || core
-
-                    // Common initialization hooks
-                    if (typeof core.init === 'function') {
-                        core.init(mountPoint)
-                        console.log('[INDEX] core.init() called')
-                        return
-                    }
-                    if (typeof core.mount === 'function') {
-                        core.mount(mountPoint)
-                        console.log('[INDEX] core.mount() called')
-                        return
-                    }
-                    if (typeof core.run === 'function') {
-                        core.run({ el: mountPoint })
-                        console.log('[INDEX] core.run() called')
-                        return
-                    }
-                } catch (e) {
-                    showError('初始化 core 时抛出异常：' + (e && e.message || e))
-                    console.error(e)
-                }
-            }
-
-            // If running over http(s) we can try an ES module core first; on file: this will fail due to CORS
-            var triedModule = false
-            try {
-                if (location.protocol && location.protocol.indexOf('http') === 0) {
-                    // dynamic import of module only on http(s)
-                    triedModule = true
-                    import('./amll.core.js')
-                        .then(function (m) {
-                            window.__amll = window.__amll || {}
-                            window.__amll.core = m
-                            console.log('[INDEX] loaded amll.core.js as module')
-                            initCore(m)
-                        })
-                        .catch(function (err) {
-                            console.warn('[INDEX] amll.core.js module import failed, falling back to bundle', err)
-                            // continue to UMD loading below
-                        })
-                }
-            } catch (e) {
-                console.warn('[INDEX] skipping module import due to environment', e)
-            }
-
-            // Always attempt to load a UMD/global bundle which works with file:// origins
-            var bundleCandidates = ['./amll.bundle.js', 'amll.bundle.js']
-            var loaded = false
-            ;(function tryNext(i) {
-                if (i >= bundleCandidates.length) {
-                    // after trying bundles, wait a short time for any module attempt to finish
-                    setTimeout(function () {
-                        var core = findCore()
-                        if (core) {
-                            initCore(core)
-                            return
-                        }
-                        showError('未检测到 core 全局对象。请确认 amll.bundle.js 是否随 index.html 一起打包到 assets，并且路径正确。')
-                    }, 1000) // 增加等待时间以确保 Wasm 初始化完成
-                    return
-                }
-                var src = bundleCandidates[i]
-
-                // 优先使用 import() 加载 ES 模块
-                console.log('[INDEX] attempting to import bundle as module:', src)
-                import(src)
-                    .then(function (m) {
-                        console.log('[INDEX] bundle imported as module', src)
-                        loaded = true
-
-                        // 循环检查直到 core 对象出现，最长等待 3 秒
-                        var startTime = Date.now()
-                        var checkTimer = setInterval(function() {
-                            var core = findCore() || m.AMLLBundle || m.default || m
-                            var elapsed = Date.now() - startTime
-
-                            if (core) {
-                                clearInterval(checkTimer)
-                                initCore(core)
-                            } else if (elapsed > 3000) {
-                                clearInterval(checkTimer)
-                                showError('模块加载成功，但 3 秒内未检测到有效的 core 对象（Top-level init 缓慢或失败）。')
-                            }
-                        }, 100)
-                    })
-                    .catch(function (err) {
-                        console.warn('[INDEX] bundle module import failed, falling back to script tag', src, err)
-                        // 回退到传统的 script 标签加载
-                        loadScript(src)
-                            .then(function () {
-                                console.log('[INDEX] loaded bundle via script tag', src)
-                                loaded = true
-                                setTimeout(function() {
-                                    var core = findCore()
-                                    if (core) initCore(core)
-                                    else tryNext(i + 1)
-                                }, 200)
-                            })
-                            .catch(function (err) {
-                                console.warn('[INDEX] bundle load failed', src, err)
-                                tryNext(i + 1)
-                            })
-                    })
-            })(0)
+            import('./amll.bundle.js');
         })();
-    </script>
-    <!-- Debug helper: log runtime state and show a visible hint inside #app when nothing is rendered -->
-    <script>
-        console.log('[INDEX] index.html loaded')
-        window.addEventListener('load', () => {
-            // Delay slightly to allow the bundle to initialize
-            setTimeout(() => {
-                const app = document.getElementById('app')
-                console.log('[INDEX] #app exists?', !!app, 'innerHTML length=', app?.innerHTML.length)
-                console.log('[INDEX] window.__amll', !!window.__amll, window.__amll)
-                console.log('[INDEX] window.updateLyrics typeof', typeof window.updateLyrics)
-
-                if (app && app.innerHTML.trim() === '') {
-                    // Create a lightweight visible notice for debugging
-                    const notice = document.createElement('div')
-                    notice.id = 'amll-debug-notice'
-                    notice.style.position = 'absolute'
-                    notice.style.left = '8px'
-                    notice.style.top = '8px'
-                    notice.style.padding = '8px 10px'
-                    notice.style.background = 'rgba(0,0,0,0.6)'
-                    notice.style.color = '#fff'
-                    notice.style.zIndex = '10000'
-                    notice.style.borderRadius = '6px'
-                    notice.style.fontFamily = 'sans-serif'
-                    notice.style.fontSize = '13px'
-                    notice.textContent = 'AMLL: no renderer detected — click "Show fallback" to render a debug line.'
-
-                    const btn = document.createElement('button')
-                    btn.textContent = 'Show fallback'
-                    btn.style.marginLeft = '8px'
-                    btn.onclick = () => {
-                        try {
-                            if (typeof window.updateLyrics === 'function') {
-                                window.updateLyrics({ lines: [{ text: 'Debug lyric line', startTime: 0 }] })
-                            } else {
-                                // if updateLyrics not present, create a simple debug DOM ourselves
-                                const fallback = document.createElement('div')
-                                fallback.textContent = 'Fallback debug lyric line'
-                                fallback.style.color = '#fff'
-                                app.appendChild(fallback)
-                            }
-                        } catch (e) {
-                            console.error('[INDEX] show fallback error', e)
-                        }
-                    }
-
-                    notice.appendChild(btn)
-                    // Ensure the notice is visible even if the renderer uses full-screen canvas
-                    document.body.appendChild(notice)
-                }
-            }, 500)
-        })
     </script>
 </body>
 </html>

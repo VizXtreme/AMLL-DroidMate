@@ -1,0 +1,34 @@
+/* ============================================================================
+   AMLL Android 核心兼容性补丁
+   ============================================================================ */
+
+/* ==================== 根元素适配 ==================== */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* ==================== 兼容性修复 ==================== */
+
+/* 强制启用硬件加速，防止滚动动画掉帧 */
+.amll-lp-line {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform, opacity;
+
+/* ==================== 滚动条隐藏 ==================== */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}

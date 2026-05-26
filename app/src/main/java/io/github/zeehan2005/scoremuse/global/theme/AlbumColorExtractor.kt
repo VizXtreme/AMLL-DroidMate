@@ -102,8 +102,8 @@ object AlbumColorExtractor {
         // 2. 根据种子颜色生成对应的 MD3 Tonal Palette 并构建 ColorScheme
         return if (isDarkTheme) {
             darkColorScheme(
-                primary = primarySeed.toTone(80),
-                onPrimary = primarySeed.toTone(20),
+                primary = primarySeed.toTone(40),
+                onPrimary = primarySeed.toTone(100),
                 primaryContainer = primarySeed.toTone(30),
                 onPrimaryContainer = primarySeed.toTone(90),
                 secondary = secondarySeed.toTone(80),
@@ -126,8 +126,7 @@ object AlbumColorExtractor {
                 errorContainer = Color(0xFF8C1D18),
                 onErrorContainer = Color(0xFFF9DEDC)
             )
-        } else {
-            lightColorScheme(
+        } else { lightColorScheme(
                 primary = primarySeed.toTone(40),
                 onPrimary = primarySeed.toTone(100),
                 primaryContainer = primarySeed.toTone(90),
@@ -151,8 +150,7 @@ object AlbumColorExtractor {
                 onError = Color(0xFFFFFFFF),
                 errorContainer = Color(0xFFF9DEDC),
                 onErrorContainer = Color(0xFF410E0B)
-            )
-        }
+            )}
     }
 
     /**

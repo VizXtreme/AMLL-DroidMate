@@ -1,482 +1,451 @@
 /**
- * AMLL React 前端主入口
- * 
- * 这个文件是嵌入到 Android 应用中的 Web 歌词界面的入口点。
- * 它负责 UI 初始化、背景渲染以及与 Android 原生代码的桥接通信。
- * 
- * 主要功能：
- * - 初始化 AMLL Core 渲染器
- * - 处理播放器实例和背景效果
- * - 暴露全局 API 供 Android 调用
- * - 处理 UI 补丁和布局适配
+ * AMLL 前端主入口 (Main Entry Point)
+ *
+ * 这个文件是嵌入到 Android WebView 中的 Web 歌词界面的核心逻辑。
+ * 它充当了 @applemusic-like-lyrics/core (核心渲染库) 与 Android 原生代码之间的桥梁。
+ *
+ * 主要职责：
+ * 1. 初始化渲染引擎 (LyricPlayer) 和背景效果 (BackgroundRender)。
+ * 2. 暴露全局 API (挂载到 window)，供 Android 端通过 `evaluateJavascript` 调用。
+ * 3. 管理歌词状态、播放进度、专辑封面以及 UI 配置。
+ * 4. 处理布局适配和针对 WebView 环境的性能优化。
  */
+
 import * as AMLLCore from '@applemusic-like-lyrics/core'
 import '@applemusic-like-lyrics/core/style.css'
-import './styles.css'
+import '../styles.css'
 import { logToAndroid } from './utils/bridge_utils'
-import {
-  LyricLine,
-  LyricsPayload,
-  processLyricsPayload
-} from './utils/lyricProcessor'
 
-// Ensure core module is accessible on window in all bundling scenarios
-;(window as any).AMLLCore = AMLLCore
-console.log('[AMLL] core assigned to window.AMLLCore')
-
-let playerInstance: any = null
-let backgroundRender: any = null
-let lastAlbumArt = ''
-let albumArtRetryCount = 0
-const MAX_ALBUM_ART_RETRIES = 3
-
-let pendingLyricOptions: any = {}
-
+// --- 全局类型声明 (Global Type Declarations) ---
+// 声明挂载在 window 对象上的 API，以便 Android 端和 TypeScript 类型检查使用
 declare global {
   interface Window {
-    __amll?: any
-    updateLyrics?: (payload: LyricsPayload) => void
-    updateTime?: (timeMs: number) => void
-    updateAlbumArt?: (uri: string) => Promise<void>
-    setPaused?: (paused: boolean) => void
-    configureLyricMotion?: (options: any) => void
-    configureBackgroundEffect?: (options: any) => void
-    setRenderMode?: (mode: string) => void
-    setLyricPlayerImplementation?: (implementation: string) => void
-    setLyricSizePreset?: (preset: string) => void
-    setEnableTranslationLine?: (enabled: boolean) => void
-    setEnableRomanLine?: (enabled: boolean) => void
-    setEnableSwapTransRomanLine?: (enabled: boolean) => void
-    setAdvanceLyricDynamicLyricTime?: (enabled: boolean) => void
-    rebuildLyricsDom?: (reason?: string) => boolean
+    __amll?: any // 暴露给调试用的内部实例
+    updateLyrics?: (payload: LyricsPayload) => void // 更新歌词数据
+    updateTime?: (timeMs: number) => void // 更新当前播放时间
+    updateAlbumArt?: (uri: string) => Promise<void> // 更新专辑封面
+    setPaused?: (paused: boolean) => void // 设置播放/暂停状态
+    configureLyricMotion?: (options: any) => void // 配置歌词滚动/动画效果
+    configureBackgroundEffect?: (options: any) => void // 配置背景渲染参数
+    configureLyricBackground?: (options: any) => void // 配置底色或渲染器切换
+    setRenderMode?: (mode: string) => void // 设置渲染模式（如流式、静态）
+    setLyricPlayerImplementation?: (implementation: string) => void // 切换播放器实现
+    setLyricSizePreset?: (preset: string) => void // 设置歌词字体大小预设
+    setEnableTranslationLine?: (enabled: boolean) => void // 启用/禁用翻译行
+    setEnableRomanLine?: (enabled: boolean) => void // 启用/禁用罗马音行
+    setEnableSwapTransRomanLine?: (enabled: boolean) => void // 交换翻译和罗马音的位置
+    setAdvanceLyricDynamicLyricTime?: (enabled: boolean) => void // 启用歌词提前量优化
+    rebuildLyricsDom?: (reason?: string) => boolean // 强制重构歌词 DOM（处理布局异常）
+
+    // Android 原生通过 JavascriptInterface 注入的对象
     Android?: {
-      log?: (message: string, level: string) => void
-      isPlaying?: () => boolean
-      onLineClick?: (index: number, startTime: number) => void
+      log?: (message: string, level: string) => void // 向原生发送日志
+      isPlaying?: () => boolean // 查询原生播放状态
+      onLineClick?: (index: number, startTime: number) => void // 歌词行点击回调
     }
+    AMLLCore: typeof AMLLCore
   }
 }
 
-/**
- * 应用 AMLL 库的补丁
- */
-function applyAMLLPatch() {
-  logToAndroid('AMLL CSS patch handled via styles.css', 'info')
+// --- 内部状态管理 (Internal State Management) ---
+const state = {
+  player: null as any, // LyricPlayer 实例
+  background: null as any, // BackgroundRender 实例
+  currentTime: -1, // 当前毫秒级播放时间
+  lyricLines: [] as LyricLine[], // 当前加载的歌词行数据
+  // 默认占位图 (SVG Base64)
+  albumUri: '',
+  lastAlbumArt: '', // 上一次设置的封面 URI，用于去重
+  isPlaying: false, // 播放状态缓存
+  hasPlaybackState: false, // 是否已接收过播放状态
+  pendingLyricOptions: {} as Record<string, any>, // 待应用的配置项
 }
 
+// 将 Core 挂载到 window 确保全局可用（方便 HMR 或调试）
+;(window as any).AMLLCore = AMLLCore
+
+// --- 工具函数 (Utility Functions) ---
+
+/**
+ * 统一日志输出，如果 Android 接口可用则发送给原生，否则输出到控制台
+ */
+const log = (msg: string, level: 'info' | 'debug' | 'warn' | 'error' = 'info') => logToAndroid(msg, level)
+
+/**
+ * 设置 CSS 全局变量，用于响应式修改样式
+ */
+const setCSSVar = (name: string, value: string | number | boolean) => {
+  const val = typeof value === 'boolean' ? (value ? '1' : '0') : String(value)
+  document.documentElement.style.setProperty(name, val)
+}
+
+/**
+ * 将 HTML 元素挂载到根节点，并应用基础全屏样式
+ */
 function attachElementToRoot(root: HTMLElement, el: HTMLElement, zIndex: string) {
-  el.style.position = el.style.position || 'absolute'
-  el.style.inset = el.style.inset || '0'
-  el.style.width = el.style.width || '100%'
-  el.style.height = el.style.height || '100%'
-  el.style.pointerEvents = el.style.pointerEvents || 'none'
-  el.style.zIndex = el.style.zIndex || zIndex
+  Object.assign(el.style, {
+    position: 'absolute',
+    inset: '0',
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none', // 默认不拦截点击事件
+    zIndex
+  })
   if (el.parentElement !== root) {
     root.appendChild(el)
   }
 }
 
-function createBackgroundRenderer(core: any, root: HTMLElement) {
+// --- 核心初始化逻辑 (Core Initialization) ---
+
+/**
+ * 创建背景渲染器
+ * 尝试按优先级初始化不同的渲染引擎 (如 MeshGradient 或 Pixi)
+ */
+function createBackgroundRenderer(core: any, root: HTMLElement, selectedRenderer?: string) {
   const Background = core.BackgroundRender
   if (!Background?.new) {
-    logToAndroid('BackgroundRender factory not found on core', 'debug')
+    log('BackgroundRender factory not found on core', 'debug')
     return null
   }
 
-  const rendererCandidates = [
-    core.MeshGradientRenderer,
-    core.PixiRenderer,
-  ].filter(Boolean)
+  // 定义可用的候选渲染器映射
+  const allCandidates: Record<string, any> = {
+    'mesh': core.MeshGradientRenderer,
+    'pixi': core.PixiRenderer
+  }
+
+  // 如果显式选定了存在的渲染器，则只尝试那一个；否则使用默认的优先级列表
+  const rendererCandidates = (selectedRenderer && allCandidates[selectedRenderer])
+    ? [allCandidates[selectedRenderer]]
+    : [core.MeshGradientRenderer, core.PixiRenderer].filter(Boolean)
 
   for (const RendererCtor of rendererCandidates) {
     try {
       const instance = Background.new(RendererCtor)
       const element = instance.getElement()
-      attachElementToRoot(root, element, '-1')
-      logToAndroid(`Created BackgroundRender with ${RendererCtor?.name || 'renderer'}`, 'info')
+      attachElementToRoot(root, element, '-1') // 放在最底层
+      log(`Created BackgroundRender with ${RendererCtor?.name || 'renderer'}`, 'info')
       return instance
     } catch (e) {
-      logToAndroid(`BackgroundRender init failed with ${RendererCtor?.name || 'renderer'}: ${(e as Error).message}`, 'warn')
+      log(`BackgroundRender init failed with ${RendererCtor?.name || 'renderer'}: ${(e as Error).message}`, 'warn')
     }
   }
-
   return null
 }
 
-const demoAlbumArt = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJyZ2JhKDAsMCwwLDAuMSkiLz48L3N2Zz4='
 
-let currentTime = 0
-let lyricLines: LyricLine[] = []
-let albumUri = demoAlbumArt
-let isPlaying = true
-let hasPlaybackState = false
 
-function attachCoreInstances(container: HTMLElement) {
-  try {
-    const Core: any = (AMLLCore as any) || (window as any).AMLLCore
-    if (!Core) {
-      logToAndroid('AMLL core module not found at runtime', 'warn')
-      return
-    }
-
-    const DomLyricPlayer = Core.DomLyricPlayer || Core.DOMLyricPlayer || Core.DomLyricPlayerClass || Core.LyricPlayer
-    if (DomLyricPlayer) {
-      try {
-        playerInstance = new DomLyricPlayer({ container, album: albumUri })
-        logToAndroid('Created DomLyricPlayer from core', 'info')
-      } catch (e) {
-        logToAndroid(`Failed to instantiate DomLyricPlayer: ${(e as Error).message}`, 'error')
-      }
-    } else {
-      logToAndroid('DomLyricPlayer constructor not found on core', 'debug')
-    }
-
-    backgroundRender = createBackgroundRenderer(Core, container)
-
-    window.__amll = window.__amll || {}
-    window.__amll.player = playerInstance
-    window.__amll.backgroundRender = backgroundRender
-  } catch (error) {
-    logToAndroid(`attachCoreInstances error: ${(error as Error).message}`, 'error')
-  }
-}
 
 /**
- * 调试 / 备用渲染器
+ * 强制重构歌词 DOM 结构
+ * 解决 WebView 在后台恢复或尺寸改变时可能出现的遮罩渲染错误或布局偏移
  */
-function renderFallbackLyrics(root: HTMLElement | null, lines: LyricLine[]) {
+function forceRebuildLyricsDom(reason: string = 'manual refresh'): boolean {
   try {
-    if (!root) return
-    let container = document.getElementById('amll-debug-lyrics') as HTMLElement | null
-    if (!container) {
-      container = document.createElement('div')
-      container.id = 'amll-debug-lyrics'
-      container.style.pointerEvents = 'none'
-      container.style.position = 'absolute'
-      container.style.left = '0'
-      container.style.top = '0'
-      container.style.width = '100%'
-      container.style.zIndex = '9999'
-      root.appendChild(container)
-    }
-
-    container.innerHTML = ''
-    lines.forEach((line, idx) => {
-      const el = document.createElement('div')
-      el.className = 'amll-debug-line'
-      const text = (line.words && line.words.length > 0)
-        ? line.words.map(w => w.word).join(' ')
-        : (line.translatedLyric || line.romanLyric || '')
-      el.textContent = text || `[line ${idx}]`
-      el.setAttribute('data-start', String(line.startTime))
-      el.setAttribute('data-end', String(line.endTime))
-      container!.appendChild(el)
-    })
-  } catch (err) {
-    logToAndroid(`renderFallbackLyrics error: ${(err as Error).message}`, 'error')
-  }
-}
-
-function forceRebuildLyricsDom(reason: string = 'manual refresh') {
-  try {
-    const p = (window.__amll && window.__amll.player) || playerInstance
+    const p = state.player
     if (!p) return false
 
     const lineObjects = Array.isArray(p.currentLyricLineObjects) ? p.currentLyricLineObjects : []
+
+    // 如果当前没有行对象，尝试重新注入歌词
     if (lineObjects.length === 0) {
-      if (typeof p.setLyricLines === 'function' && lyricLines.length > 0) {
-        p.setLyricLines(lyricLines, currentTime)
-        if (typeof p.update === 'function') {
-          p.update(currentTime)
-        }
-        logToAndroid(`forceRebuildLyricsDom: rebuilt via setLyricLines (${reason})`, 'debug')
+      if (typeof p.setLyricLines === 'function' && state.lyricLines.length > 0) {
+        p.setLyricLines(state.lyricLines, state.currentTime)
+        p.update?.(state.currentTime)
+        log(`forceRebuildLyricsDom: full rebuild (${reason})`, 'debug')
         return true
       }
       return false
     }
 
-    let rebuiltCount = 0
-    for (const line of lineObjects) {
-      if (!line) continue
-
-      if (typeof line.rebuildElement === 'function') {
-        line.rebuildElement()
-        rebuiltCount++
-      }
-
-      if (typeof line.markMaskImageDirty === 'function') {
+    // 遍历所有行，调用重构方法
+    lineObjects.forEach(line => {
+      if (!line) return
+      line.rebuildElement?.()
+      // 更新遮罩图以确保逐词动画效果正确
+      if (line.markMaskImageDirty) {
         line.markMaskImageDirty(reason)
-      } else if (typeof line.updateMaskImageSync === 'function') {
+      } else if (line.updateMaskImageSync) {
         line.updateMaskImageSync()
-      } else if (typeof line.rebuildStyle === 'function') {
-        line.rebuildStyle()
+      } else {
+        line.rebuildStyle?.()
       }
-    }
+    })
 
-    if (typeof p.update === 'function') {
-      p.update(currentTime)
-    }
-
-    logToAndroid(`forceRebuildLyricsDom: rebuilt=${rebuiltCount} (${reason})`, 'debug')
-    return rebuiltCount > 0
+    p.update?.(state.currentTime)
+    log(`forceRebuildLyricsDom: rebuilt ${lineObjects.length} lines (${reason})`, 'debug')
+    return true
   } catch (err) {
-    logToAndroid(`forceRebuildLyricsDom error: ${(err as Error).message}`, 'error')
+    log(`forceRebuildLyricsDom error: ${(err as Error).message}`, 'error')
     return false
   }
 }
 
+/**
+ * 初始化 AMLL 核心环境
+ */
 function initAMLL() {
   try {
+    // 设置页面背景透明，以便 Android 底层背景可见
     document.documentElement.style.background = 'transparent'
     document.body.style.background = 'transparent'
-
-    applyAMLLPatch()
 
     const root = document.getElementById('app') || document.createElement('div')
     if (!document.getElementById('app')) {
       root.id = 'app'
       document.body.appendChild(root)
     }
-    root.style.position = 'relative'
-    root.style.width = '100%'
-    root.style.height = '100vh'
+    Object.assign(root.style, { position: 'relative', width: '100%', height: '100vh' })
 
-    attachCoreInstances(root as HTMLElement)
+    const Core = AMLLCore as any
+    // 获取播放器类（支持不同版本的命名习惯）
+    const DomLyricPlayer = Core.DomLyricPlayer || Core.DOMLyricPlayer || Core.LyricPlayer
 
-    try {
-      const p = (window.__amll && window.__amll.player) || playerInstance
-      const el = p?.element || p?.rootElement || null
-      if (el && el instanceof HTMLElement) {
-        if (el.parentElement !== root) {
-          el.style.position = el.style.position || 'relative'
-          el.style.width = el.style.width || '100%'
-          el.style.height = el.style.height || '100%'
-          root.appendChild(el)
-        }
+    if (DomLyricPlayer) {
+      try {
+        state.player = new DomLyricPlayer({
+          container: root,
+          album: state.albumUri,
+          // 可以在此处添加更多初始化参数
+        })
+        log('Created DomLyricPlayer', 'info')
+      } catch (e) {
+        log(`Failed to instantiate DomLyricPlayer: ${(e as Error).message}`, 'error')
       }
-    } catch (e) {
-      logToAndroid(`player append fallback error: ${(e as Error).message}`, 'error')
     }
 
-    if (lyricLines.length > 0) {
-      requestAnimationFrame(() => {
-        forceRebuildLyricsDom('initAMLL')
-      })
+    // 默认不主动创建背景渲染器，由 Android 端通过 configureLyricBackground 按需初始化
+    // 这可以避免在已经有原生背景的情况下产生冗余的 Canvas 节点
+    // state.background = createBackgroundRenderer(Core, root as HTMLElement)
+
+    // 暴露内部实例以便调试
+    window.__amll = { player: state.player, backgroundRender: state.background }
+
+    // 如果初始化时已有歌词，立即渲染
+    if (state.lyricLines.length > 0) {
+      requestAnimationFrame(() => forceRebuildLyricsDom('initAMLL'))
     }
 
-    logToAndroid('AMLL core WebView initialized', 'info')
+    log('AMLL core WebView initialized', 'info')
   } catch (error) {
-    logToAndroid(`Initialization error: ${(error as Error).message}`, 'error')
+    log(`Initialization error: ${(error as Error).message}`, 'error')
   }
 }
 
+// --- 启动初始化进程 ---
 if (document.readyState === 'loading') {
   window.addEventListener('DOMContentLoaded', initAMLL)
 } else {
   setTimeout(initAMLL, 0)
 }
 
-// Global API implementations
-window.updateLyrics = async function (payload: LyricsPayload) {
+// --- 全局 API 实现 (供 Android 端调用) ---
+
+/**
+ * 更新歌词数据
+ * @param payload 包含原始歌词文本或结构化歌词的对象
+ */
+window.updateLyrics = async (payload: LyricsPayload) => {
   try {
+    // 预处理歌词（解析 LRC/TTML 等）
     const normalized = await processLyricsPayload(payload)
-    lyricLines = normalized
-    logToAndroid(`updateLyrics: ${normalized.length} lines`, 'debug')
+    state.lyricLines = normalized
+    log(`updateLyrics: ${normalized.length} lines`, 'debug')
 
-    if (playerInstance) {
-      if (playerInstance.setLyricLines) {
-        playerInstance.setLyricLines(normalized)
-      } else if (playerInstance.setLyrics) {
-        playerInstance.setLyrics(normalized)
-      } else if (playerInstance.updateLyrics) {
-        playerInstance.updateLyrics(normalized)
+    const p = state.player
+    if (p) {
+      const setter = p.setLyricLines || p.setLyrics || p.updateLyrics
+      if (setter) {
+        setter.call(p, normalized)
+        // 数据更新后请求下一帧重构 DOM
+        requestAnimationFrame(() => forceRebuildLyricsDom('updateLyrics'))
       } else {
-        logToAndroid('playerInstance does not expose setLyricLines', 'warn')
-        renderFallbackLyrics(document.getElementById('app'), normalized)
-      }
-
-      requestAnimationFrame(() => {
-        forceRebuildLyricsDom('updateLyrics')
-      })
-    } else {
-      renderFallbackLyrics(document.getElementById('app'), normalized)
-    }
-  } catch (e) {
-    logToAndroid(`updateLyrics error: ${(e as Error).message}`, 'error')
-  }
-}
-
-window.updateTime = function (timeMs: number) {
-  try {
-    const t = Number(timeMs)
-    if (hasPlaybackState && !isPlaying) return
-    currentTime = t
-    if (playerInstance) {
-      if (playerInstance.setCurrentTime) {
-        playerInstance.setCurrentTime(Math.trunc(t), false)
-      } else if (playerInstance.seek) {
-        playerInstance.seek(Math.trunc(t))
-      }
-      if (typeof playerInstance.update === 'function') {
-        playerInstance.update(Math.trunc(t))
+        log('playerInstance does not expose lyric setter', 'warn')
       }
     }
   } catch (e) {
-    logToAndroid(`updateTime error: ${(e as Error).message}`, 'error')
+    log(`updateLyrics error: ${(e as Error).message}`, 'error')
   }
 }
 
-window.updateAlbumArt = async function (uri: string) {
-  try {
-    const isValidUri = uri && typeof uri === 'string' && uri.trim().length > 0
-    if (!isValidUri) {
-      albumUri = demoAlbumArt
-      lastAlbumArt = ''
-      return
-    }
+/**
+ * 同步播放时间
+ * @param timeMs 当前播放位置（毫秒）
+ */
+window.updateTime = (timeMs: number) => {
+  // 性能优化：如果处于暂停状态，且已经同步过状态，则忽略细微的时间波动
+  if (state.hasPlaybackState && !state.isPlaying) return
 
+  const t = Math.trunc(timeMs)
+  if (state.currentTime === t) return
+  state.currentTime = t
+
+  const p = state.player
+  if (!p) return
+
+  try {
+    // 更新播放器时间
+    if (p.setCurrentTime) {
+      p.setCurrentTime(t, false)
+    } else if (p.seek) {
+      p.seek(t)
+    }
+    // 触发渲染更新
+    p.update?.(t)
+  } catch (e) {
+    log(`updateTime error: ${(e as Error).message}`, 'error')
+  }
+}
+
+/**
+ * 更新专辑封面
+ * 支持 URL 或 base64，会自动处理 file:// 协议的本地文件
+ */
+window.updateAlbumArt = async (uri: string) => {
+  if (!uri || uri.trim().length === 0) {
+    state.albumUri = state.lastAlbumArt = ''
+    return
+  }
+
+  if (state.lastAlbumArt === uri) return
+  state.lastAlbumArt = uri
+
+  try {
     let finalUri = uri
+    // 如果是本地文件协议，尝试转换成 Data URL 以规避 WebView 的跨域限制
     if (uri.startsWith('file:')) {
-      try {
-        const response = await fetch(uri)
-        const blob = await response.blob()
+      const response = await fetch(uri)
+      const blob = await response.blob()
+      finalUri = await new Promise((resolve, reject) => {
         const reader = new FileReader()
-        finalUri = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string)
-          reader.onerror = () => reject(reader.error)
-          reader.readAsDataURL(blob)
-        })
-      } catch (err) {
-        logToAndroid(`Failed to load file URI: ${(err as Error).message}`, 'error')
-        albumUri = demoAlbumArt
-        lastAlbumArt = ''
-        return
-      }
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(blob)
+      })
     }
 
-    if (lastAlbumArt === uri) return
+    state.albumUri = finalUri
 
-    albumUri = finalUri || demoAlbumArt
-    lastAlbumArt = uri
-    albumArtRetryCount = 0
-
-    if (backgroundRender && backgroundRender.setAlbum) {
+    // 通知背景渲染器更新封面
+    if (state.background?.setAlbum) {
       try {
-        await backgroundRender.setAlbum(albumUri)
+        await state.background.setAlbum(state.albumUri)
       } catch (err) {
-        logToAndroid(`setAlbum error: ${(err as Error).message}`, 'error')
-        albumArtRetryCount++
-        if (albumArtRetryCount < MAX_ALBUM_ART_RETRIES) {
-          setTimeout(() => window.updateAlbumArt?.(uri), 500 * albumArtRetryCount)
-        }
+        log(`setAlbum error: ${(err as Error).message}. `, 'warn')
       }
     }
   } catch (e) {
-    logToAndroid(`updateAlbumArt error: ${(e as Error).message}`, 'error')
+    log(`updateAlbumArt error: ${(e as Error).message}`, 'error')
   }
 }
 
-window.setPaused = function (paused: boolean) {
-  isPlaying = !paused
-  hasPlaybackState = true
+/**
+ * 控制播放/暂停
+ */
+window.setPaused = (paused: boolean) => {
+  state.isPlaying = !paused
+  state.hasPlaybackState = true
+  const p = state.player
+  if (!p) return
+
   try {
-    if (!playerInstance) return
-    if (paused && typeof playerInstance.pause === 'function') {
-      playerInstance.pause()
-    } else if (!paused && typeof playerInstance.resume === 'function') {
-      playerInstance.resume()
-    } else if (!paused && typeof playerInstance.play === 'function') {
-      playerInstance.play()
-    }
-  } catch (e) {
-    logToAndroid(`setPaused error: ${(e as Error).message}`, 'error')
-  }
-}
-
-window.configureLyricMotion = function (options: any) {
-  pendingLyricOptions = { ...pendingLyricOptions, ...options }
-  try {
-    if (!playerInstance) return
-    const lp = playerInstance
-    if (options.springPosY && lp.setLinePosYSpringParams) lp.setLinePosYSpringParams(options.springPosY)
-    if (options.enableSpring !== undefined && lp.setEnableSpring) lp.setEnableSpring(options.enableSpring)
-    if (options.springScale && lp.setLineScaleSpringParams) lp.setLineScaleSpringParams(options.springScale)
-    if (options.enableScale !== undefined && lp.setEnableScale) lp.setEnableScale(options.enableScale)
-    if (options.enableBlur !== undefined && lp.setEnableBlur) lp.setEnableBlur(options.enableBlur)
-    if (options.hidePassedLines !== undefined && lp.setHidePassedLines) lp.setHidePassedLines(options.hidePassedLines)
-    if (options.wordFadeWidth !== undefined && lp.setWordFadeWidth) lp.setWordFadeWidth(options.wordFadeWidth)
-    if (lp.calcLayout) lp.calcLayout()
-  } catch (e) {
-    logToAndroid(`configureLyricMotion error: ${(e as Error).message}`, 'error')
-  }
-}
-
-window.configureBackgroundEffect = function (options: any) {
-  try {
-    if (!backgroundRender) return
-    if (options.flowSpeed !== undefined && backgroundRender.setFlowSpeed) backgroundRender.setFlowSpeed(options.flowSpeed)
-    if (options.renderScale !== undefined && backgroundRender.setRenderScale) backgroundRender.setRenderScale(options.renderScale)
-    if (options.lowFreqVolume !== undefined && backgroundRender.setLowFreqVolume) backgroundRender.setLowFreqVolume(options.lowFreqVolume)
-    if (options.fps !== undefined && backgroundRender.setFPS) backgroundRender.setFPS(options.fps)
-    if (options.staticMode !== undefined && backgroundRender.setStaticMode) backgroundRender.setStaticMode(options.staticMode)
-  } catch (e) {
-    logToAndroid(`configureBackgroundEffect error: ${(e as Error).message}`, 'error')
-  }
-}
-
-window.configureLyricBackground = function (options: any) {
-  try {
-    const renderer = options.renderer
-    const bgElement = backgroundRender?.getElement?.()
-    if (bgElement) {
-      bgElement.style.display = (renderer === 'css-bg') ? 'none' : 'block'
-    }
-
-    if (backgroundRender) {
-      if (options.fps !== undefined && backgroundRender.setFPS) backgroundRender.setFPS(options.fps)
-      if (options.renderScale !== undefined && backgroundRender.setRenderScale) backgroundRender.setRenderScale(options.renderScale)
-      if (options.staticMode !== undefined && backgroundRender.setStaticMode) backgroundRender.setStaticMode(options.staticMode)
-    }
-
-    if (renderer === 'css-bg' && options.cssProperty) {
-      document.body.style.background = options.cssProperty
+    if (paused) {
+      p.pause?.()
     } else {
-      document.body.style.background = 'transparent'
+      ;(p.resume || p.play)?.call(p)
     }
   } catch (e) {
-    logToAndroid(`configureLyricBackground error: ${(e as Error).message}`, 'error')
+    log(`setPaused error: ${(e as Error).message}`, 'error')
   }
 }
 
-window.setRenderMode = function (mode: string) {
-  logToAndroid(`setRenderMode: ${mode}`, 'debug')
+/**
+ * 配置歌词动态效果
+ * 包含弹性滚动、缩放、模糊等高级参数
+ */
+window.configureLyricMotion = (options: any) => {
+  state.pendingLyricOptions = { ...state.pendingLyricOptions, ...options }
+  const lp = state.player
+  if (!lp) return
+
+  try {
+    const { springPosY, enableSpring, springScale, enableScale, enableBlur, hidePassedLines, wordFadeWidth } = options
+    if (springPosY && lp.setLinePosYSpringParams) lp.setLinePosYSpringParams(springPosY)
+    if (enableSpring !== undefined && lp.setEnableSpring) lp.setEnableSpring(enableSpring)
+    if (springScale && lp.setLineScaleSpringParams) lp.setLineScaleSpringParams(springScale)
+    if (enableScale !== undefined && lp.setEnableScale) lp.setEnableScale(enableScale)
+    if (enableBlur !== undefined && lp.setEnableBlur) lp.setEnableBlur(enableBlur)
+    if (hidePassedLines !== undefined && lp.setHidePassedLines) lp.setHidePassedLines(hidePassedLines)
+    if (wordFadeWidth !== undefined && lp.setWordFadeWidth) lp.setWordFadeWidth(wordFadeWidth)
+    lp.calcLayout?.() // 重新计算布局
+  } catch (e) {
+    log(`configureLyricMotion error: ${(e as Error).message}`, 'error')
+  }
 }
 
-window.setLyricPlayerImplementation = function (implementation: string) {
-  logToAndroid(`setLyricPlayerImplementation: ${implementation}`, 'debug')
+/**
+ * 配置背景特效参数
+ * 如流动速度、渲染缩放（性能优化）、帧率等
+ */
+window.configureBackgroundEffect = (options: any) => {
+  const bg = state.background
+  if (!bg) return
+  try {
+    if (options.flowSpeed !== undefined) bg.setFlowSpeed?.(options.flowSpeed)
+    if (options.renderScale !== undefined) bg.setRenderScale?.(options.renderScale)
+    if (options.lowFreqVolume !== undefined) bg.setLowFreqVolume?.(options.lowFreqVolume)
+    if (options.fps !== undefined) bg.setFPS?.(options.fps)
+    if (options.staticMode !== undefined) bg.setStaticMode?.(options.staticMode)
+  } catch (e) {
+    log(`configureBackgroundEffect error: ${(e as Error).message}`, 'error')
+  }
 }
 
-window.setLyricSizePreset = function (preset: string) {
-  document.documentElement.style.setProperty('--amll-lp-font-size-preset', preset)
+/**
+ * 配置歌词底色背景
+ * 可以在 Canvas 渲染背景和 CSS 纯色/渐变背景之间切换
+ */
+window.configureLyricBackground = (options: any) => {
+  try {
+    const isCssBg = options.renderer === 'css-bg'
+
+    // 如果当前没有背景实例，且没有显式要求关闭(css-bg)，则根据 options.renderer 尝试初始化
+    if (!state.background && !isCssBg) {
+      state.background = createBackgroundRenderer(AMLLCore, document.getElementById('app')!, options.renderer)
+    }
+
+    const bgElement = state.background?.getElement?.()
+    if (bgElement) {
+      bgElement.style.display = isCssBg ? 'none' : 'block'
+    }
+
+    if (state.background) {
+      const { fps, renderScale, staticMode } = options
+      if (fps !== undefined) state.background.setFPS?.(fps)
+      if (renderScale !== undefined) state.background.setRenderScale?.(renderScale)
+      if (staticMode !== undefined) state.background.setStaticMode?.(staticMode)
+    }
+
+    document.body.style.background = (isCssBg && options.cssProperty) ? options.cssProperty : 'transparent'
+  } catch (e) {
+    log(`configureLyricBackground error: ${(e as Error).message}`, 'error')
+  }
 }
 
-window.setEnableTranslationLine = function (enabled: boolean) {
-  document.documentElement.style.setProperty('--amll-show-translation', enabled ? '1' : '0')
+// --- CSS 变量设置项 (CSS Variable Setters) ---
+window.setLyricSizePreset = (preset: string) => { if (preset !== undefined) setCSSVar('--amll-lp-font-size-preset', preset) }
+window.setEnableTranslationLine = (enabled: boolean) => { if (enabled !== undefined) setCSSVar('--amll-show-translation', enabled) }
+window.setEnableRomanLine = (enabled: boolean) => { if (enabled !== undefined) setCSSVar('--amll-show-roman', enabled) }
+window.setEnableSwapTransRomanLine = (enabled: boolean) => { if (enabled !== undefined) setCSSVar('--amll-swap-trans-roman', enabled) }
+window.setAdvanceLyricDynamicLyricTime = (enabled: boolean) => {
+  if (enabled !== undefined) {
+    setCSSVar('--amll-advance-dynamic-time', enabled)
+    state.pendingLyricOptions.advanceDynamicTime = enabled
+  }
 }
 
-window.setEnableRomanLine = function (enabled: boolean) {
-  document.documentElement.style.setProperty('--amll-show-roman', enabled ? '1' : '0')
-}
-
-window.setEnableSwapTransRomanLine = function (enabled: boolean) {
-  document.documentElement.style.setProperty('--amll-swap-trans-roman', enabled ? '1' : '0')
-}
-
-window.setAdvanceLyricDynamicLyricTime = function (enabled: boolean) {
-  document.documentElement.style.setProperty('--amll-advance-dynamic-time', enabled ? '1' : '0')
-  pendingLyricOptions = { ...pendingLyricOptions, advanceDynamicTime: enabled }
-}
-
-window.rebuildLyricsDom = function (reason: string = 'manual refresh') {
-  return forceRebuildLyricsDom(reason)
-}
+// --- 其他占位或转发接口 ---
+window.setRenderMode = (mode: string) => log(`setRenderMode: ${mode}`, 'debug')
+window.setLyricPlayerImplementation = (imp: string) => log(`setLyricPlayerImplementation: ${imp}`, 'debug')
+window.rebuildLyricsDom = (reason?: string) => forceRebuildLyricsDom(reason)
