@@ -2,6 +2,10 @@
 >
 >本项目的维护可能时有时无，并且不做任何稳定性保证，望您知悉。
 
+>[!Note]
+>
+>当前 Alpha 开发版与 Latest 稳定版已经有较大的差异，但部分功能仍未完工，达不到稳定版的要求。如欲体验新功能，请前往 [Releases](https://github.com/Zeehan2005/AMLL-DroidMate/releases) 中的 Pre-Release 下载 Alpha 开发版。
+
 # AMLL DroidMate
 
 Android 端外置歌词显示器：AMLL + ScoreMuse
