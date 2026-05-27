@@ -1,12 +1,12 @@
->[!Warning]
+>[!Important]
 >
->鉴于本仓库主各项水平有限，没有能力（即 AMLL 部分维护者称“智商太低”）。对本项目的维护可能时有时无，并且不做任何稳定性保证，望您知悉。
+>本项目的维护可能时有时无，并且不做任何稳定性保证，望您知悉。
 
 # AMLL DroidMate
 
 Android 端外置歌词显示器：AMLL + ScoreMuse
 
-<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/43114e82-f439-4e40-9ed6-2090ccd5b0e9" />
+<img width="640" height="1339" alt="Image" src="https://github.com/user-attachments/assets/b28b17e9-f73b-426e-b1aa-8b6ed8eb487d" />
 
 
 
