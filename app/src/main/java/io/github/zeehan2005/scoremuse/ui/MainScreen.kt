@@ -123,6 +123,7 @@ import io.github.zeehan2005.scoremuse.global.CardClickAction
 import io.github.zeehan2005.scoremuse.global.NowPlayingMusic
 import io.github.zeehan2005.scoremuse.global.SongStructure
 import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
+import dev.amll.droidmate.global.AMLLSettings
 import io.github.zeehan2005.scoremuse.ui.components.WavySlider
 import io.github.zeehan2005.scoremuse.ui.components.WavySliderDefaults
 import io.github.zeehan2005.scoremuse.ui.settings.SettingsActivity
@@ -230,7 +231,7 @@ fun MainScreen() {
         val uri = nowPlaying?.albumArtUri
         if (!uri.isNullOrBlank()) {
             try {
-                // 优化：将颜色提取移到后台线程，避免阻塞UI线程
+                // 优化：将颜色提取移���后台线程，避免阻塞UI线程
                 val colors = withContext(Dispatchers.Default) {
                     AlbumColorExtractor.extractColorsFromAlbumArt(context, uri, isDarkTheme)
                 }
@@ -318,10 +319,11 @@ fun MainScreen() {
 
     BackHandler(enabled = isLyricsFullscreen) { isLyricsFullscreen = false }
 
+    // 减少轮询频率以降低主线程负担：从每秒一次改为每 5 秒一次。
     LaunchedEffect(Unit) {
         while (true) {
             notificationAccessGranted = isNotificationAccessGranted(context)
-            delay(1000)
+            delay(5000)
         }
     }
 
@@ -804,7 +806,7 @@ fun MainScreen() {
 
 
 @Composable
-private fun LyricsVisualLayer(
+fun LyricsVisualLayer(
     modifier: Modifier = Modifier,
     nowPlaying: NowPlayingMusic?,
     lyrics: UnifiedLyrics?,
@@ -812,7 +814,21 @@ private fun LyricsVisualLayer(
     webViewReloadKey: Int,
     onLineSeek: (Long) -> Unit,
     onFullscreenTap: (() -> Unit)? = null,
+    debugSource: String = "MainScreen",
+    useAndroidBlurOverride: Boolean? = null,
 ) {
+    val context = LocalContext.current
+    val useAndroidBlur = useAndroidBlurOverride
+        ?: !(AMLLSettings.isAmllBackgroundRendererEnabled(context) ?: true)
+    val fallbackAlbumArtUri = remember(context) {
+        "android.resource://${context.packageName}/drawable/background_blue_black_light_1591226"
+    }
+    val effectiveAlbumArtUri = if (nowPlaying == null) {
+        null
+    } else {
+        nowPlaying.albumArtUri ?: fallbackAlbumArtUri
+    }
+
     // 优化：使用更高效的状态管理，减少不必要的内存分配
     val boxHeight = remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
@@ -827,7 +843,7 @@ private fun LyricsVisualLayer(
                 // 防抖处理，避免频繁的尺寸变化触发重组
                 sizeChangeJob.value?.cancel()
                 sizeChangeJob.value = scope.launch {
-                    delay(300) // 进一步增加延迟时间，减少触发频率
+                    delay(500) // 增加防抖延迟，进一步减少触发频率
                     if (size.height != boxHeight.intValue && size.height > 0) {
                         boxHeight.intValue = size.height
                     }
@@ -845,17 +861,22 @@ private fun LyricsVisualLayer(
             }
     ) {
         // 背景图和叠加效果
-        if (nowPlaying?.albumArtUri != null) {
+        if (useAndroidBlur && effectiveAlbumArtUri != null) {
+            // 减小模糊半径以降低渲染成本
             AsyncImage(
-                model = nowPlaying.albumArtUri,
+                model = effectiveAlbumArtUri,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize().blur(28.dp).alpha(0.75f)
+                modifier = Modifier.fillMaxSize().blur(12.dp).alpha(0.75f)
             )
             // 添加主题色叠加效果
             Box(
                 modifier = Modifier.fillMaxSize()
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+            )
+            Box(
+                modifier = Modifier.fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.2f))
             )
         }
 
@@ -864,9 +885,9 @@ private fun LyricsVisualLayer(
             AMLLLyricsView(
                 lyrics = lyrics,
                 currentTime = currentTime,
-                albumArtUri = nowPlaying?.albumArtUri,
+                albumArtUri = effectiveAlbumArtUri,
                 renderMode = AMLLRenderMode.DOM,
-                debugSource = "MainScreen",
+                debugSource = debugSource,
                 onLyricsClick = onFullscreenTap,
                 onLineSeek = onLineSeek,
                 isPlaying = nowPlaying?.isPlaying ?: false,
@@ -906,13 +927,14 @@ fun NowPlayingCard(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             if (nowPlaying?.albumArtUri != null) {
+                // 减少背景模糊强度以避免每帧高成本的模糊计算。
                 AsyncImage(
                     model = nowPlaying.albumArtUri,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .matchParentSize()
-                        .blur(40.dp)
+                        .blur(16.dp)
                         .alpha(0.2f)
                 )
                 Box(
@@ -1083,7 +1105,7 @@ fun NowPlayingCard(
                             waveSpeed = if (nowPlaying.isPlaying) WavySliderDefaults.WaveSpeed else 0.dp,
                         )
 
-                        // 其次：时间显示模式（总时长 vs 剩余时长）
+                        // 其次：时间显示模式（总时长 vs 剩���时长）
                         val rightTimeText = if (isRemainingTimeMode) {
                             "-${formatTime((nowPlaying.duration - sliderValue.toLong()).coerceAtLeast(0L))}"
                         } else {
@@ -1185,7 +1207,7 @@ fun PermissionStatusCard(onOpenNotificationAccessSettings: () -> Unit, modifier:
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
             Text(
-                "滥用通知使用权危及安全，因此系统可能会弹窗阻止。本应用是开源软件，您可以查看本应用的执行逻辑，因此在应用来源可靠的情况下无需感到担忧。",
+                "滥用通��使用权危及安���，因此系统可能会弹窗阻止。本应用是开源软件，您可以查看本应用的执行逻辑，因此在应用来源可靠的情况下无需感到担忧。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
             )

@@ -118,14 +118,18 @@ fun AMLLLyricsView(
     // 字体配置相关状态
     var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
     var lastMotionConfigValue by remember { mutableStateOf<String?>(null) }
-    var lastPlaybackStateValue by remember { mutableStateOf<Boolean?>(null) }
     var lastBackgroundConfigValue by remember { mutableStateOf<String?>(null) }
 
-    // ==================== 时间更新节流 ====================
+    // ==================== 时间���新节流 ====================
     // 记录上一次更新时间的时间戳（用于节流，避免每帧都更新）
     var lastTimeUpdateTimestamp by remember { mutableLongStateOf(0L) }
     // 时间更新间隔（毫秒）- 减少频繁的 JS 调用
-    val timeUpdateIntervalMs = 50L
+    // 优化：增加到 100ms，因为人眼难以感知 10fps 以下的差异
+    val timeUpdateIntervalMs = 100L
+    
+    // ==================== 播放状态节流 ====================
+    // 避免每次 recompose 都调用 JS
+    var lastIsPlayingValue by remember { mutableStateOf<Boolean?>(null) }
     
     // ==================== 歌词开关状态缓存（用于去重） ====================
     var lastTranslationLineEnabled by remember { mutableStateOf<Boolean?>(null) }
@@ -235,7 +239,7 @@ fun AMLLLyricsView(
                     allowFileAccess = false        // 禁用直接文件访问（更安全，使用 AssetLoader 代持）
                     allowContentAccess = true      // 允许访问内容提供者
                     
-                    // 禁用缓存确保每次加载最新的文件
+                    // 禁用缓存确保每次加������新的文件
                     cacheMode = WebSettings.LOAD_NO_CACHE
                 }
 
@@ -336,11 +340,16 @@ fun AMLLLyricsView(
             }
 
             // ==================== 播放状态同步 ====================
-            // 先同步播放/暂停状态，确保后续 updateTime() 以正确状态运行
-            if (lastPlaybackStateValue != isPlayingState.value) {
-                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setPaused(${!isPlayingState.value})")
-                view.evaluateJavascript("window.setPaused && window.setPaused(${!isPlayingState.value});", null)
-                lastPlaybackStateValue = isPlayingState.value
+            // 优化：使用节流机制，只有真正变化时才更新
+            // 避免因 recompose 频繁调用 JS 导致 UI 线程阻塞
+            val currentIsPlaying = isPlayingState.value
+            if (lastIsPlayingValue != currentIsPlaying) {
+                lastIsPlayingValue = currentIsPlaying
+                // 只在状态真正变化时触发 JS 调用
+                view.evaluateJavascript(
+                    "window.setPaused && window.setPaused(${!currentIsPlaying});",
+                    null
+                )
             }
 
 
@@ -367,11 +376,32 @@ fun AMLLLyricsView(
             val userFps = AMLLSettings.getAmllAnimationFps(view.context)
 
             // ==================== 歌词背景配置 ====================
-            val backgroundRenderer = AMLLSettings.getAmllBackgroundRenderer(view.context)
-            val cssBackgroundProperty = AMLLSettings.getAmllCssBackgroundProperty(view.context)
-            val backgroundFps = AMLLSettings.getAmllBackgroundFps(view.context) ?: userFps
-            val backgroundRenderScale = AMLLSettings.getAmllBackgroundRenderScale(view.context)
-            val enableBackgroundStaticMode = AMLLSettings.isAmllBackgroundStaticModeEnabled(view.context)
+            val backgroundRendererEnabled = AMLLSettings.isAmllBackgroundRendererEnabled(view.context) ?: true
+            val backgroundRenderer = if (backgroundRendererEnabled) {
+                AMLLSettings.getAmllBackgroundRenderer(view.context)
+            } else {
+                "css-bg"
+            }
+            val cssBackgroundProperty = if (backgroundRendererEnabled) {
+                AMLLSettings.getAmllCssBackgroundProperty(view.context)
+            } else {
+                "transparent"
+            }
+            val backgroundFps = if (backgroundRendererEnabled) {
+                AMLLSettings.getAmllBackgroundFps(view.context) ?: userFps
+            } else {
+                null
+            }
+            val backgroundRenderScale = if (backgroundRendererEnabled) {
+                AMLLSettings.getAmllBackgroundRenderScale(view.context)
+            } else {
+                null
+            }
+            val enableBackgroundStaticMode = if (backgroundRendererEnabled) {
+                AMLLSettings.isAmllBackgroundStaticModeEnabled(view.context)
+            } else {
+                null
+            }
 
             // 根据渲染器类型构建背景配置
             val backgroundConfigObj = JSONObject().apply {
@@ -514,8 +544,8 @@ fun AMLLLyricsView(
 
                 } else {
                     // 如果 lyrics 为空或 null，注入测试歌词以便调试
-                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] No lyrics provided, injecting test lyrics")
-                    val testLyricsJson = """{"metadata":{"title":"Test","artist":"AMLL"},"lines":[{"startTime":0,"endTime":3000,"text":"测试歌词","translatedLyric":"","romanLyric":"","words":[{"word":"测试","startTime":0,"endTime":1500},{"word":"歌词","startTime":1500,"endTime":3000}],"isBG":false,"isDuet":false},{"startTime":3000,"endTime":6000,"text":"第二行歌词","translatedLyric":"","romanLyric":"","words":[{"word":"第二行","startTime":3000,"endTime":4500},{"word":"歌词","startTime":4500,"endTime":6000}],"isBG":false,"isDuet":false}]}"""
+                    Timber.d("[AMLLLyrics] [$debugSource#$instanceId] No lyrics provided, injecting empty lyrics")
+                    val testLyricsJson = ""
                     view.evaluateJavascript("window.updateLyrics && window.updateLyrics($testLyricsJson);", null)
                 }
                 lastLyrics = lyrics
@@ -829,8 +859,8 @@ private fun buildLyricsJson(lyrics: UnifiedLyrics): String {
  * AMLL JavaScript 接口类
  * 
  * 这个类通过 JavascriptInterface 暴露给 WebView 中的 JavaScript 调用，
- * 实现了前端页面与 Android 原生代码之间的双向通信。
- * 
+ * 实现了前端页面与 Android 原生代码之间的双向通信���
+ *
  * **主要功能**：
  * 1. 日志转发：将前端日志转发到 Timber
  * 2. 歌词点击处理：响应用户点击歌词行的操作
@@ -927,7 +957,7 @@ class AMLLInterface(
  * 
  * @param context Android Context
  * @param uriString 要转换的 URI 字符串
- * @return 转换后的 data URL（格式：data:image/jpeg;base64,...），失败返回 null
+ * @return 转换���的 data URL（格式：data:image/jpeg;base64,...），失败返回 null
  */
 private fun convertFileUriToDataUrl(context: Context, uriString: String?): String? {
     // URI 为空时直接返回 null
@@ -943,8 +973,8 @@ private fun convertFileUriToDataUrl(context: Context, uriString: String?): Strin
                 val path = uriString.removePrefix("file://")
                 File(path).inputStream()
             }
-            uriString.startsWith("content://") -> {
-                // content:// URI：通过 ContentResolver 读取
+            uriString.startsWith("content://") || uriString.startsWith("android.resource://") -> {
+                // content:// 或 android.resource:// URI：通过 ContentResolver 读取
                 val uri = uriString.toUri()
                 context.contentResolver.openInputStream(uri)
             }

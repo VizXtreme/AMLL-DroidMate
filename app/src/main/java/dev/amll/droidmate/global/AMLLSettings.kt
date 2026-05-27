@@ -42,6 +42,7 @@ object AMLLSettings {
 
     // 歌词背景相关设置
     private const val KEY_AMLL_BACKGROUND_RENDERER = "amll_background_renderer"  // 背景渲染器类型
+    private const val KEY_AMLL_BACKGROUND_RENDERER_ENABLED = "amll_background_renderer_enabled"  // 背景渲染开关
     private const val KEY_AMLL_CSS_BACKGROUND_PROPERTY = "amll_css_background_property"  // CSS 背景属性
     private const val KEY_AMLL_BACKGROUND_FPS = "amll_background_fps"  // 背景帧率
     private const val KEY_AMLL_BACKGROUND_RENDER_SCALE = "amll_background_render_scale"  // 背景渲染倍率
@@ -202,11 +203,19 @@ object AMLLSettings {
     fun isAmllAnimationSpringEnabled(context: Context): Boolean? =
         getBooleanOrNull(context, KEY_AMLL_ANIMATION_ENABLE_SPRING)
 
+    fun setAmllAnimationSpringEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBooleanAsync(KEY_AMLL_ANIMATION_ENABLE_SPRING, enabled)
+    }
+
     fun isAmllAnimationScaleEnabled(context: Context): Boolean? =
         getBooleanOrNull(context, KEY_AMLL_ANIMATION_ENABLE_SCALE)
 
     fun isAmllAnimationBlurEnabled(context: Context): Boolean? =
         getBooleanOrNull(context, KEY_AMLL_ANIMATION_ENABLE_BLUR)
+
+    fun setAmllAnimationBlurEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBooleanAsync(KEY_AMLL_ANIMATION_ENABLE_BLUR, enabled)
+    }
 
     fun isAmllAnimationHidePassedLinesEnabled(context: Context): Boolean? =
         getBooleanOrNull(context, KEY_AMLL_ANIMATION_HIDE_PASSED_LINES)
@@ -298,11 +307,26 @@ object AMLLSettings {
     fun getAmllBackgroundRenderer(context: Context): String? =
         getStringOrNull(context, KEY_AMLL_BACKGROUND_RENDERER)
 
+    fun setAmllBackgroundRenderer(context: Context, renderer: String?) {
+        prefs(context).putStringAsync(KEY_AMLL_BACKGROUND_RENDERER, renderer)
+    }
+
+    fun isAmllBackgroundRendererEnabled(context: Context): Boolean? =
+        getBooleanOrNull(context, KEY_AMLL_BACKGROUND_RENDERER_ENABLED)
+
+    fun setAmllBackgroundRendererEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBooleanAsync(KEY_AMLL_BACKGROUND_RENDERER_ENABLED, enabled)
+    }
+
     /**
      * 获取 CSS 背景属性值（当使用 css-bg 渲染器时）
      */
     fun getAmllCssBackgroundProperty(context: Context): String? =
         getStringOrNull(context, KEY_AMLL_CSS_BACKGROUND_PROPERTY)
+
+    fun setAmllCssBackgroundProperty(context: Context, cssProperty: String?) {
+        prefs(context).putStringAsync(KEY_AMLL_CSS_BACKGROUND_PROPERTY, cssProperty)
+    }
 
     /**
      * 获取歌词背景最高帧率

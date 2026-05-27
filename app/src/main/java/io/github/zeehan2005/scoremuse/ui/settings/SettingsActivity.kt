@@ -60,6 +60,7 @@ import io.github.zeehan2005.scoremuse.global.AppSettings
 import io.github.zeehan2005.scoremuse.global.CardClickAction
 import io.github.zeehan2005.scoremuse.global.UpdateChannel
 import io.github.zeehan2005.scoremuse.ui.components.SwitchWithIcon
+import dev.amll.droidmate.ui.settings.GraphicSettings
 import io.github.zeehan2005.scoremuse.global.theme.DynamicThemeManager
 import io.github.zeehan2005.scoremuse.global.theme.ScoreMuseTheme
 import io.github.zeehan2005.scoremuse.components.GitHubUpdateChecker
@@ -67,6 +68,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlin.jvm.java
 
 /**
  * 应用主设置界面
@@ -317,6 +319,42 @@ private fun SettingsPage(
                     )
                 }
             }
+
+            Text(
+                text = "图形设置",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        context.startActivity(
+                            Intent(
+                                context,
+                                GraphicSettings::class.java
+                            )
+                        )
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("图形设置", color = MaterialTheme.colorScheme.onSurface)
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "进入",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
             Text(
                 text = "“正在播放”卡片点击行为",
                 style = MaterialTheme.typography.labelMedium,
@@ -436,7 +474,7 @@ private fun SettingsPage(
 //                        colors = switchColors
 //                    )
 //                }
-//            }
+//            )
 //
 //            Card(
 //                modifier = Modifier

@@ -70,11 +70,14 @@ class PreferenceHelper(context: Context, name: String) {
      * @param value 要存储的值
      */
     fun putStringAsync(key: String, value: String?) {
-        pendingWrites[key] = value as Any
-        
+        if (value == null) {
+            pendingWrites.remove(key)
+            prefs.edit { remove(key) }
+            return
+        }
+        pendingWrites[key] = value
         // 取消之前的定时保存
         saveJob?.cancel()
-        
         // 调度新的保存任务，100ms 防抖延迟
         saveJob = CoroutineScope(dispatcher).launch {
             delay(100)

@@ -116,6 +116,12 @@
             android:exported="false"
             android:theme="@style/Theme.ScoreMuse" />
 
+        <!-- 动画设置：AMLL 动画与背景渲染开关 -->
+        <activity
+            android:name="dev.amll.droidmate.ui.settings.GraphicSettings"
+            android:exported="false"
+            android:theme="@style/Theme.ScoreMuse" />
+
         <!-- 歌词偏移设置：为当前歌曲和设备配置时间偏移 -->
         <activity
             android:name="io.github.zeehan2005.scoremuse.ui.settings.LyricOffsetSettingsActivity"
