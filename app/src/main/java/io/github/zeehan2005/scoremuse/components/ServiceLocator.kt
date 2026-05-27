@@ -1,6 +1,7 @@
 package io.github.zeehan2005.scoremuse.components
 
 import android.content.Context
+import io.ktor.client.HttpClient
 import io.github.zeehan2005.scoremuse.data.repository.LyricsCacheRepository
 import io.github.zeehan2005.scoremuse.data.repository.LyricsRepository
 
@@ -22,15 +23,29 @@ import io.github.zeehan2005.scoremuse.data.repository.LyricsRepository
  * ```
  */
 object ServiceLocator {
+    private var httpClient: HttpClient? = null
+
     /**
-     * 提供 HTTP 客户端实例
+     * 提供单例 HTTP 客户端实例
      *
-     * 所有网络请求都通过这个工厂方法创建，确保统一的配置（缓存、超时等）
-     *
-     * @param context Android 上下文
-     * @return 配置好的 HttpClient 实例
+     * 性能优化：全局复用同一个客户端，避免重复创建资源（如连接池、缓存等），
+     * 同时解决了因未关闭客户端导致的资源泄漏问题。
      */
-    fun provideHttpClient(context: Context) = HttpClientFactory.create(context)
+    @Synchronized
+    fun provideHttpClient(context: Context): HttpClient {
+        if (httpClient == null) {
+            httpClient = HttpClientFactory.create(context.applicationContext)
+        }
+        return httpClient!!
+    }
+
+    /**
+     * 关闭全局 HTTP 客户端，释放资源
+     */
+    fun closeHttpClient() {
+        httpClient?.close()
+        httpClient = null
+    }
 
     /**
      * 提供歌词仓库实例

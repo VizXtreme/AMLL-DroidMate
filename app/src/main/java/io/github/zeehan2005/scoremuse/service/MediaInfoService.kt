@@ -150,7 +150,6 @@ class MediaInfoService(private val context: Context) {
                     // 只有数据真正变化时才更新 Flow
                     if (shouldUpdateBasicInfo(oldMusic, updatedMusic)) {
                         _nowPlayingMusic.value = updatedMusic
-                        finalAlbumArtUri != currentAlbumArtUri
                     }
                 }
             } else {

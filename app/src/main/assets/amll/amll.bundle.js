@@ -25496,7 +25496,7 @@ function createBackgroundRenderer(core, root, selectedRenderer) {
   return null;
 }
 function initAMLL() {
-  var _a2, _b, _c, _d;
+  var _a2, _b, _c, _d, _e, _f;
   try {
     document.documentElement.style.background = "transparent";
     document.body.style.background = "transparent";
@@ -25513,9 +25513,13 @@ function initAMLL() {
         state.player = new DomLyricPlayer2({
           container: root,
           album: state.albumUri
-          // 可以在此处添加更多初始化参数
         });
-        log("Created DomLyricPlayer", "info");
+        const el = ((_b = (_a2 = state.player).getElement) == null ? void 0 : _b.call(_a2)) || state.player.element;
+        if (el && el.parentElement !== root) {
+          root.appendChild(el);
+          Object.assign(el.style, { position: "absolute", inset: "0", zIndex: "1" });
+        }
+        log("Created and attached DomLyricPlayer", "info");
       } catch (e2) {
         log(`Failed to instantiate DomLyricPlayer: ${e2.message}`, "error");
       }
@@ -25531,11 +25535,18 @@ function initAMLL() {
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-    if (state.lyricLines.length > 0) {
-      (_b = (_a2 = state.player) == null ? void 0 : _a2.calcLayout) == null ? void 0 : _b.call(_a2);
-      (_d = (_c = state.player) == null ? void 0 : _c.update) == null ? void 0 : _d.call(_c, 0);
+    if (state.lyricLines.length > 0 && state.player) {
+      const p2 = state.player;
+      const setter = p2.setLyricLines || p2.setLyrics || p2.updateLyrics;
+      if (setter) {
+        setter.call(p2, state.lyricLines);
+        (_c = p2.calcLayout) == null ? void 0 : _c.call(p2);
+        (_d = p2.update) == null ? void 0 : _d.call(p2, 0);
+        log(`Applied ${state.lyricLines.length} pending lines to new player`, "info");
+      }
     }
     log("AMLL core WebView initialized", "info");
+    (_f = (_e = window.Android) == null ? void 0 : _e.onPageReady) == null ? void 0 : _f.call(_e);
   } catch (error) {
     log(`Initialization error: ${error.message}`, "error");
   }
@@ -25545,17 +25556,17 @@ if (document.readyState === "loading") {
 } else {
   setTimeout(initAMLL, 0);
 }
-window.updateLyrics = async (payload) => {
+window.updateLyrics = (payload) => {
   var _a2, _b;
   try {
-    const normalized = await processLyricsPayload(payload);
-    state.lyricLines = normalized;
-    log(`updateLyrics: ${normalized.length} lines`, "debug");
+    const lines = Array.isArray(payload == null ? void 0 : payload.lines) ? payload.lines : [];
+    state.lyricLines = lines;
+    log(`updateLyrics: ${lines.length} lines`, "debug");
     const p2 = state.player;
     if (p2) {
       const setter = p2.setLyricLines || p2.setLyrics || p2.updateLyrics;
       if (setter) {
-        setter.call(p2, normalized);
+        setter.call(p2, lines);
         (_a2 = p2.calcLayout) == null ? void 0 : _a2.call(p2);
         (_b = p2.update) == null ? void 0 : _b.call(p2, 0);
       } else {

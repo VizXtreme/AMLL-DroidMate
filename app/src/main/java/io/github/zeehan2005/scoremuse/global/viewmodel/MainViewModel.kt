@@ -476,8 +476,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         lyricNotificationManager.cancel()
         mediaInfoService.stopListening()
         
-
-        httpClient.close()
+        // 注意：不在这里调用 httpClient.close()，因为该客户端是由 ServiceLocator 提供的全局单例，
+        // 应该在应用整个生命周期内保持开启。
     }
 
 

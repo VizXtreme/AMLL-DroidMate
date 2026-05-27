@@ -42,6 +42,7 @@ declare global {
       log?: (message: string, level: string) => void // 向原生发送日志
       isPlaying?: () => boolean // 查询原生播放状态
       onLineClick?: (index: number, startTime: number) => void // 歌词行点击回调
+      onPageReady?: () => void // 页面就绪回调
     }
     AMLLCore: typeof AMLLCore
   }
@@ -52,7 +53,7 @@ const state = {
   player: null as any, // LyricPlayer 实例
   background: null as any, // BackgroundRender 实例
   currentTime: -1, // 当前毫秒级播放时间
-  lyricLines: [] as LyricLine[], // 当前加载的歌词行数据
+  lyricLines: [] as any[], // 当前加载的歌词行数据
   // 默认占位图 (SVG Base64)
   albumUri: '',
   lastAlbumArt: '', // 上一次设置的封面 URI，用于去重
@@ -163,9 +164,14 @@ function initAMLL() {
         state.player = new DomLyricPlayer({
           container: root,
           album: state.albumUri,
-          // 可以在此处添加更多初始化参数
         })
-        log('Created DomLyricPlayer', 'info')
+        // 显式挂载播放器元素（如果库没有自动挂载）
+        const el = state.player.getElement?.() || state.player.element
+        if (el && el.parentElement !== root) {
+          root.appendChild(el)
+          Object.assign(el.style, { position: 'absolute', inset: '0', zIndex: '1' })
+        }
+        log('Created and attached DomLyricPlayer', 'info')
       } catch (e) {
         log(`Failed to instantiate DomLyricPlayer: ${(e as Error).message}`, 'error')
       }
@@ -185,13 +191,21 @@ function initAMLL() {
     }
     requestAnimationFrame(tick)
 
-    // 如果初始化时已有歌词，执行一次完整的布局计算和渲染更新
-    if (state.lyricLines.length > 0) {
-      state.player?.calcLayout?.()
-      state.player?.update?.(0)
+    // 如果初始化时已有歌词，同步给播放器并执行一次完整的布局计算
+    if (state.lyricLines.length > 0 && state.player) {
+      const p = state.player
+      const setter = p.setLyricLines || p.setLyrics || p.updateLyrics
+      if (setter) {
+        setter.call(p, state.lyricLines)
+        p.calcLayout?.()
+        p.update?.(0)
+        log(`Applied ${state.lyricLines.length} pending lines to new player`, 'info')
+      }
     }
 
     log('AMLL core WebView initialized', 'info')
+    // 通知 Android 端页面已就绪
+    window.Android?.onPageReady?.()
   } catch (error) {
     log(`Initialization error: ${(error as Error).message}`, 'error')
   }
@@ -210,18 +224,17 @@ if (document.readyState === 'loading') {
  * 更新歌词数据
  * @param payload 包含原始歌词文本或结构化歌词的对象
  */
-window.updateLyrics = async (payload: LyricsPayload) => {
+window.updateLyrics = (payload: any) => {
   try {
-    // 预处理歌词（解析 LRC/TTML 等）
-    const normalized = await processLyricsPayload(payload)
-    state.lyricLines = normalized
-    log(`updateLyrics: ${normalized.length} lines`, 'debug')
+    const lines = Array.isArray(payload?.lines) ? payload.lines : []
+    state.lyricLines = lines
+    log(`updateLyrics: ${lines.length} lines`, 'debug')
 
     const p = state.player
     if (p) {
       const setter = p.setLyricLines || p.setLyrics || p.updateLyrics
       if (setter) {
-        setter.call(p, normalized)
+        setter.call(p, lines)
         // 歌词更新后，重新计算布局并刷新显示帧
         p.calcLayout?.()
         p.update?.(0)

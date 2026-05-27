@@ -100,6 +100,7 @@ fun AMLLLyricsView(
     
     // 页面就绪状态（WebView 加载完成后设为 true）
     var isPageReady by remember { mutableStateOf(false) }
+    val onPageReady = remember { { isPageReady = true } }
     
     // 上一次配置值的缓存（用于去重，避免重复调用 JavaScript）
     // Cache last applied render-mode (dom/dom-lite) and lyric player implementation
@@ -110,8 +111,6 @@ fun AMLLLyricsView(
     
     // 上一次的歌词数据引用（用于检测歌词是否变化）
     var lastLyrics by remember { mutableStateOf<UnifiedLyrics?>(null) }
-    // 上一次生成的歌词 JSON 字符串（用于页面刷新后重新注入）
-    var lastLyricsPayload by remember { mutableStateOf<String?>(null) }
     
     // 上一次设置的专辑封面 URI（用于去重）
     var lastAlbumArtUri by remember { mutableStateOf<String?>(null) }
@@ -195,8 +194,8 @@ fun AMLLLyricsView(
                      * - 清空上一次配置的缓存
                      */
                     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+                        isPageReady = false
                         lastLyrics = null
-                        lastLyricsPayload = null
                         Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView page started: $url")
                     }
 
@@ -207,21 +206,8 @@ fun AMLLLyricsView(
                      * - 注入 WebSocket 桥接代码
                      */
                     override fun onPageFinished(view: WebView, url: String) {
-                        // Force one re-sync after page finishes to avoid losing early bridge calls.
-                        // 页面刷新结束时不主动清空 lastLyrics，让我们知道是否还有有效歌词
-                        // lastLyrics = null
-                        // 页面刷新完成后如果我们之前有歌词 JSON 且当前仍然有 lyrics（不是因歌曲切换而清空），先立刻重新下发
-                        if (lastLyricsPayload != null && lastLyrics != null) {
-                            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] reapplying lyrics payload after page finish")
-                            view.evaluateJavascript("window.updateLyrics && window.updateLyrics($lastLyricsPayload);", null)
-                        }
-                        // 不清空 payload，让 update() 继续根据 lyrics 对象决定重新生成
-                        // lastLyricsPayload = null
                         // 确保页面加载后背景仍然透明
                         view.setBackgroundColor(AndroidColor.TRANSPARENT)
-                        
-
-                        
                         Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView page finished: $url")
                     }
                 }
@@ -297,7 +283,10 @@ fun AMLLLyricsView(
                                 )
                             }
                         },
-                        isPlayingProvider = { isPlayingState.value }
+                        isPlayingProvider = { isPlayingState.value },
+                        onPageReady = {
+                            webViewRef.post { onPageReady() }
+                        }
                     ),
                     "Android"  // 在前端通过 window.Android 访问
                 )
@@ -859,8 +848,18 @@ class AMLLInterface(
     private val instanceId: Int,
     private val onLineSeek: ((Long) -> Unit)? = null,
     private val onSeekRequested: ((Long) -> Unit)? = null,
-    private val isPlayingProvider: () -> Boolean = { true }
+    private val isPlayingProvider: () -> Boolean = { true },
+    private val onPageReady: (() -> Unit)? = null
 ) {
+    /**
+     * 页面初始化完成通知
+     */
+    @JavascriptInterface
+    fun onPageReady() {
+        Timber.i("[AMLLLyrics] [$debugSource#$instanceId] JS reported page ready")
+        onPageReady?.invoke()
+    }
+
     /**
      * 日志输出接口（供 JavaScript 调用）
      * 

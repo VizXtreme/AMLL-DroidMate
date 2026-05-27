@@ -859,21 +859,19 @@ private fun LyricsVisualLayer(
             )
         }
 
-        // 使用 ScoreMuseLyricsDisplay 组件显示歌词
-        if (lyrics != null) {
-            key(lyrics.hashCode(), webViewReloadKey) {
-                AMLLLyricsView(
-                    lyrics = lyrics,
-                    currentTime = currentTime,
-                    albumArtUri = nowPlaying?.albumArtUri,
-                    renderMode = AMLLRenderMode.DOM,
-                    debugSource = "MainScreen",
-                    onLyricsClick = onFullscreenTap,
-                    onLineSeek = onLineSeek,
-                    isPlaying = nowPlaying?.isPlaying ?: false,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+        // 使用 AMLLLyricsView 组件显示歌词和背景
+        key(webViewReloadKey) {
+            AMLLLyricsView(
+                lyrics = lyrics,
+                currentTime = currentTime,
+                albumArtUri = nowPlaying?.albumArtUri,
+                renderMode = AMLLRenderMode.DOM,
+                debugSource = "MainScreen",
+                onLyricsClick = onFullscreenTap,
+                onLineSeek = onLineSeek,
+                isPlaying = nowPlaying?.isPlaying ?: false,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }

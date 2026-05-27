@@ -138,8 +138,6 @@ object GitHubUpdateChecker {
                 selectedChannel = channel,
                 reason = "检查失败: ${e.message ?: "未知错误"}"
             )
-        } finally {
-            client.close()
         }
     }
 
