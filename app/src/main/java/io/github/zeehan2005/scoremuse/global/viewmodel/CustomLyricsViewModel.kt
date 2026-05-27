@@ -115,9 +115,6 @@ class CustomLyricsViewModel @JvmOverloads constructor(
         "qqmusic" to 3   // QQ 音乐别名
     )
 
-    // HTTP client from ServiceLocator (can be overridden in tests)
-    private val httpClient = ServiceLocator.provideHttpClient(application.applicationContext)
-
     // 当前正在播放的来源名称（用于打破平局）
     // 当多个歌词候选的置信度和特性完全相同时，优先显示当前播放源的歌词
     private var currentSourceName: String? = null
@@ -586,7 +583,6 @@ class CustomLyricsViewModel @JvmOverloads constructor(
 
 
     override fun onCleared() {
-        onCleared()
-        httpClient.close()
+        // Do not close the shared httpClient here as it's a global singleton from ServiceLocator
     }
 }

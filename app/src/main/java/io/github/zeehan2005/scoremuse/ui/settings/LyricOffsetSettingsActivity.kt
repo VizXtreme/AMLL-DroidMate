@@ -93,6 +93,23 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
     val nowPlaying by mediaInfoService.nowPlayingMusic.collectAsState()
     val currentDeviceName = AudioDeviceHelper.getCurrentOutputDeviceName(context)
 
+    // 转换设备名称用于显示
+    val displayDeviceName = when {
+        currentDeviceName.startsWith("Bluetooth") -> currentDeviceName.replaceFirst("Bluetooth", "蓝牙")
+        currentDeviceName == "Wired" -> "有线音频"
+        currentDeviceName == "Speaker" -> "扬声器"
+        else -> currentDeviceName
+    }
+
+    // 获取应用名称
+    val appName = remember(nowPlaying?.packageName) {
+        nowPlaying?.packageName?.let { pkg ->
+            try {
+                context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(pkg, 0)).toString()
+            } catch (e: Exception) { null }
+        }
+    }
+
     var songOffsetText by remember { mutableStateOf("0") }
     var songOffsetError by remember { mutableStateOf<String?>(null) }
     var deviceOffsetText by remember { mutableStateOf("0") }
@@ -220,7 +237,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            "来源：${nowPlaying?.packageName ?: "*"}",
+                            "来源：${appName ?: nowPlaying?.packageName ?: "*"}",
                             style = MaterialTheme.typography.bodySmall
                         )
 
@@ -257,7 +274,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "当前设备：$currentDeviceName",
+                            "当前设备：$displayDeviceName",
                             style = MaterialTheme.typography.bodySmall
                         )
 

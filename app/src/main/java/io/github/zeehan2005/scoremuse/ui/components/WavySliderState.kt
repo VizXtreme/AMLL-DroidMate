@@ -24,8 +24,8 @@ import kotlin.math.abs
 class WavySliderState(
     initialValue: Float,
     customSteps: List<Float> = emptyList(),
-    val onValueChange: (Float) -> Unit = {},
-    val onValueChangeFinished: (() -> Unit)? = null,
+    var onValueChange: (Float) -> Unit = {},
+    var onValueChangeFinished: (() -> Unit)? = null,
     /**
      * Attraction radius for snap-to-step behavior.
      * When the finger is within this distance of a step, the thumb will snap to it.
@@ -144,7 +144,7 @@ class WavySliderState(
 }
 
 /**
- * Creates a [WavySliderState] that is remembered across compositions.
+ * Creates a [WavySlider] that is remembered across compositions.
  */
 @Composable
 fun rememberWavySliderState(
@@ -163,6 +163,8 @@ fun rememberWavySliderState(
             attractionRadius = attractionRadius,
         )
     }.also { state ->
+        state.onValueChange = onValueChange
+        state.onValueChangeFinished = onValueChangeFinished
         state.customSteps.clear()
         state.customSteps.addAll(customSteps.map { it.coerceIn(0f, 1f) }.sorted())
     }

@@ -474,7 +474,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
 @Composable
 private fun LogEntryItem(entry: LogHelper.LogEntry) {
     val (bgColor, textColor) = when (entry.level) {
-        "V" -> Color(0xFFE1BEE7).copy(alpha = 0.15f) to Color(0xFF8E24AA) // 紫色，更醒目
+        "V" -> Color(0xFFC5C5C5).copy(alpha = 0.15f) to Color(0xFF9D9D9D) // 紫色，更醒目
         "D" -> Color(0xFF2196F3).copy(alpha = 0.1f) to Color(0xFF1976D2)
         "I" -> Color(0xFF4CAF50).copy(alpha = 0.1f) to Color(0xFF388E3C)
         "W" -> Color(0xFFFF9800).copy(alpha = 0.1f) to Color(0xFFF57C00)

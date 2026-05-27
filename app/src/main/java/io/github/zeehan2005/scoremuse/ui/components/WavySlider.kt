@@ -116,23 +116,23 @@ fun WavySlider(
                         Key.DirectionLeft, Key.DirectionUp -> {
                             val newValue = (state.value - delta).fastCoerceIn(0f, 1f)
                             state.value = newValue
-                            onValueChange(newValue)
+                            state.onValueChange(newValue)
                             true
                         }
                         Key.DirectionRight, Key.DirectionDown -> {
                             val newValue = (state.value + delta).fastCoerceIn(0f, 1f)
                             state.value = newValue
-                            onValueChange(newValue)
+                            state.onValueChange(newValue)
                             true
                         }
                         Key.MoveHome -> {
                             state.value = 0f
-                            onValueChange(0f)
+                            state.onValueChange(0f)
                             true
                         }
                         Key.MoveEnd -> {
                             state.value = 1f
-                            onValueChange(1f)
+                            state.onValueChange(1f)
                             true
                         }
                         else -> false
@@ -143,7 +143,7 @@ fun WavySlider(
                         Key.DirectionLeft, Key.DirectionRight,
                         Key.DirectionUp, Key.DirectionDown,
                         Key.MoveHome, Key.MoveEnd -> {
-                            onValueChangeFinished?.invoke()
+                            state.onValueChangeFinished?.invoke()
                             true
                         }
                         else -> false
@@ -162,12 +162,13 @@ fun WavySlider(
         Modifier
     }
     
-    val availableTrackWidth = remember { mutableFloatStateOf(0f) }
-    
     // Touch/drag handling
     val dragModifier = if (enabled) {
-        Modifier.pointerInput(state, availableTrackWidth.floatValue) {
+        Modifier.pointerInput(state, thumbWidthPx, thumbSideGapPx) {
             awaitEachGesture {
+                val trackWidth = size.width.toFloat()
+                val availableWidth = (trackWidth - thumbWidthPx - thumbSideGapPx * 2).coerceAtLeast(1f)
+                
                 val down = awaitFirstDown(requireUnconsumed = false)
                 val lastX = down.position.x
                 
@@ -175,25 +176,24 @@ fun WavySlider(
                 // Thumb center moves from (thumbSideGapPx + thumbWidthPx/2) to (trackWidth - thumbSideGapPx - thumbWidthPx/2)
                 // Position 0 in value space corresponds to (thumbSideGapPx + thumbWidthPx/2) in pixel space
                 val touchOffset = lastX - (thumbSideGapPx + thumbWidthPx / 2)
-                val relativeX = touchOffset.coerceIn(0f, availableTrackWidth.floatValue)
-                val initialValue = (relativeX / availableTrackWidth.floatValue).fastCoerceIn(0f, 1f)
+                val initialValue = (touchOffset / availableWidth).fastCoerceIn(0f, 1f)
                 state.value = initialValue
-                onValueChange(initialValue)
+                state.onValueChange(initialValue)
                 
-                horizontalDrag(down.id) { change ->
-                    val currentX = change.position.x
-                    // Use absolute positioning instead of relative delta
-                    val touchOffset = currentX - (thumbSideGapPx + thumbWidthPx / 2)
-                    val relativeX = touchOffset.coerceIn(0f, availableTrackWidth.floatValue)
-                    val newValue = (relativeX / availableTrackWidth.floatValue).fastCoerceIn(0f, 1f)
-                    state.value = newValue
-                    onValueChange(newValue)
-                    change.consume()
+                try {
+                    horizontalDrag(down.id) { change ->
+                        val currentX = change.position.x
+                        // Use absolute positioning instead of relative delta
+                        val offset = currentX - (thumbSideGapPx + thumbWidthPx / 2)
+                        val newValue = (offset / availableWidth).fastCoerceIn(0f, 1f)
+                        state.value = newValue
+                        state.onValueChange(newValue)
+                        change.consume()
+                    }
+                } finally {
+                    // Notify when drag is finished or cancelled
+                    state.onDragStopped()
                 }
-                
-                // Notify when drag is finished
-                state.onDragStopped()
-                onValueChangeFinished?.invoke()
             }
         }
     } else {
@@ -216,7 +216,7 @@ fun WavySlider(
                 setProgress {
                     val newValue = it.fastCoerceIn(0f, 1f)
                     state.value = newValue
-                    onValueChange(newValue)
+                    state.onValueChange(newValue)
                     true
                 }
                 contentDescription = "Wavy Slider, value ${state.value}"
@@ -231,10 +231,7 @@ fun WavySlider(
             waveSpeedPx = waveSpeedPx,
             waveAmplitudePx = with(density) { waveAmplitude.toPx() },
             thumbWidthPx = thumbWidthPx,
-            thumbHeightPx = thumbHeightPx,
-            onTrackWidthCalculated = { availableWidth ->
-                availableTrackWidth.floatValue = availableWidth
-            }
+            thumbHeightPx = thumbHeightPx
         )
     }
 }
@@ -249,8 +246,7 @@ private fun WavySliderDrawing(
     waveSpeedPx: Float,
     waveAmplitudePx: Float,
     thumbWidthPx: Float,
-    thumbHeightPx: Float,
-    onTrackWidthCalculated: (Float) -> Unit = {},
+    thumbHeightPx: Float
 ) {
     val density = LocalDensity.current
     val trackHeightPx = with(density) { WavySliderDefaults.TrackHeight.toPx() }
@@ -314,9 +310,8 @@ private fun WavySliderDrawing(
         state.updateDimensions(trackWidth, trackHeightPx)
         state.updateThumbDimensions(thumbWidthPx, thumbHeightPx)
         
-        // Calculate available track width for thumb movement and notify parent
+        // Calculate available track width for thumb movement
         val availableWidth = trackWidth - thumbWidthPx - thumbSideGapPx * 2
-        onTrackWidthCalculated(availableWidth)
         
         // Calculate thumb center position
         // Thumb center moves from (thumbSideGapPx + thumbWidthPx/2) to (trackWidth - thumbSideGapPx - thumbWidthPx/2)

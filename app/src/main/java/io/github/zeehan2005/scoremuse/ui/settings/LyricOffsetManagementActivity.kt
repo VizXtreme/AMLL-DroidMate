@@ -327,7 +327,11 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
-
+                        Text(
+                            "对于输出设备，请按照引号规则填写。\n扬声器: \"Speaker\"\n有线音频: \"Wired\"\n蓝牙设备: \"Bluetooth (设备名称)\"\n英文括号，括号前有空格。",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
                         OutlinedTextField(
                             value = title,
                             onValueChange = { title = it },
@@ -343,13 +347,13 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                         OutlinedTextField(
                             value = device,
                             onValueChange = { device = it },
-                            label = { Text("输出设备 (如: Bluetooth, Speaker)") },
+                            label = { Text("输出设备") },
                             modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
                             value = source,
                             onValueChange = { source = it },
-                            label = { Text("来源 (如: com.tencent.qqmusic)") },
+                            label = { Text("来源包名 (如: com.netease.cloudmusic、com.tencent.qqmusic)") },
                             modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
