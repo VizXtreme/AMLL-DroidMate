@@ -79,9 +79,7 @@ private fun GraphicSettingsPage(onBack: () -> Unit) {
         mutableStateOf(AMLLSettings.isAmllBackgroundRendererEnabled(context) ?: true)
     }
 
-    val previewWordDurationMs = 500L
-    val previewLongWordDurationMs = 1000L
-    val previewDurationMs = 4 * previewWordDurationMs + 2 * previewLongWordDurationMs
+    val previewDurationMs = 6000L
     var previewTimeMs by remember { mutableLongStateOf(0L) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -103,22 +101,20 @@ private fun GraphicSettingsPage(onBack: () -> Unit) {
             lines = listOf(
                 LyricLine(
                     startTime = 0L,
-                    endTime = 2 * previewWordDurationMs + previewLongWordDurationMs,
-                    text = "欢迎使用 DroidMate",
+                    endTime = 3000L,
+                    text = "预览歌词第一句",
                     words = listOf(
-                        LyricWord("欢迎", 0L, previewWordDurationMs),
-                        LyricWord("使用 ", previewWordDurationMs, 2 * previewWordDurationMs),
-                        LyricWord("DroidMate", 2 * previewWordDurationMs, 2 * previewWordDurationMs + previewLongWordDurationMs)
+                        LyricWord("预览", 0L, 1500L),
+                        LyricWord("歌词", 1500L, 3000L)
                     )
                 ),
                 LyricLine(
-                    startTime = 2 * previewWordDurationMs + previewLongWordDurationMs,
-                    endTime = 4 * previewWordDurationMs + 2 * previewLongWordDurationMs,
-                    text = "Welcome to DroidMate",
+                    startTime = 3000L,
+                    endTime = 6000L,
+                    text = "第二句随效果变化",
                     words = listOf(
-                        LyricWord("Welcome ", 2 * previewWordDurationMs + previewLongWordDurationMs, 3 * previewWordDurationMs + previewLongWordDurationMs),
-                        LyricWord("to ", 3 * previewWordDurationMs + previewLongWordDurationMs, 4 * previewWordDurationMs + previewLongWordDurationMs),
-                        LyricWord("DroidMate", 4 * previewWordDurationMs + previewLongWordDurationMs,4 * previewWordDurationMs + 2 * previewLongWordDurationMs )
+                        LyricWord("第二句", 3000L, 4500L),
+                        LyricWord("变化", 4500L, 6000L)
                     )
                 )
             )
@@ -188,6 +184,7 @@ private fun GraphicSettingsPage(onBack: () -> Unit) {
                     onLineSeek = {},
                     debugSource = "GraphicSettingsPreview",
                     useAndroidBlurOverride = !backgroundRendererEnabled,
+                    isInteractive = false,
                     modifier = Modifier.fillMaxSize()
                 )
             }

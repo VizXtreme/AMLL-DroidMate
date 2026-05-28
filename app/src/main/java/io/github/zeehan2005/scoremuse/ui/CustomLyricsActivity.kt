@@ -326,7 +326,8 @@ private fun CustomLyricsPage(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 shape = CircleShape,
-                minLines = 1 // 减少行数以进一步降低高度
+                minLines = 1,  // 减少行数以进一步降低高度
+                maxLines = 5
             )
 
             Row(

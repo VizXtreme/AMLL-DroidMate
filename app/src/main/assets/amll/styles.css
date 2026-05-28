@@ -26,6 +26,12 @@ html, body {
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   will-change: transform, opacity;
+  pointer-events: auto;
+}
+
+.amll-lyric-player {
+  pointer-events: auto;
+}
 
 /* ==================== 滚动条隐藏 ==================== */
 ::-webkit-scrollbar {

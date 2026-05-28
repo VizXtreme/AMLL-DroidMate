@@ -24,10 +24,12 @@ import io.github.zeehan2005.scoremuse.global.AppSettings
 import io.github.zeehan2005.scoremuse.ui.getAppNameFromPackage
 import io.github.zeehan2005.scoremuse.components.AudioDeviceHelper
 import io.github.zeehan2005.scoremuse.data.parser.global.LyricsFormat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.Locale
 
@@ -361,6 +363,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun wasmFormatFor(format: LyricsFormat): String? = when (format) {
+        LyricsFormat.LRC -> "lrc"
+        LyricsFormat.ENHANCED_LRC -> "enhanced_lrc"
+        LyricsFormat.QRC -> "qrc"
+        LyricsFormat.KRC -> "krc"
+        LyricsFormat.YRC -> "yrc"
+        LyricsFormat.TTML -> "ttml"
+        LyricsFormat.SCOREMUSE_XML, LyricsFormat.PLAIN_TEXT -> null
+    }
+
+    private suspend fun parseWithWasmPreferred(
+        raw: String,
+        format: LyricsFormat,
+        title: String,
+        artist: String
+    ): UnifiedLyrics? {
+        val wasmFormat = wasmFormatFor(format) ?: return null
+        return try {
+            val parser = ServiceLocator.provideWasmLyricParser(context)
+            val lines = parser.parse(raw, wasmFormat)
+            if (lines.isNullOrEmpty()) {
+                null
+            } else {
+                TTMLConverter.fromLyricLines(lines, title = title, artist = artist)
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "[CustomLyrics] WASM parse failed (format=$format), falling back to Kotlin parser")
+            null
+        }
+    }
+
 
 
     /**
@@ -374,40 +407,53 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _errorMessage.value = "歌词内容为空"
                     return@launch
                 }
-    
+
                 // ✅ 检测歌词格式
                 val format = LyricsFormat.detect(trimmed)
-                
+
                 var parsed: UnifiedLyrics?
                 var cachedXmlContent: String
-                
+
                 when (format) {
                     // ✅ ScoreMuse XML 格式直接解析，保留完整的歌曲结构信息
-                    LyricsFormat.SCOREMUSE_XML -> {
-                        Timber.d("[SongStructure] ScoreMuse XML format detected, parsing directly to preserve song structures")
+                    LyricsFormat.SCOREMUSE_XML, LyricsFormat.TTML -> {
+                        Timber.d("[SongStructure] TTML/XML format detected, parsing directly to preserve metadata")
                         try {
                             parsed = TTMLConverter.fromLyrics(trimmed)
-                            // ✅ 对于 XML 格式，直接保存原始内容，避免 toXMLString 丢失歌曲结构
+                            // ✅ 对于 XML/TTML 格式，直接保存原始内容，避免结构信息丢失
                             cachedXmlContent = trimmed
                         } catch (e: Exception) {
-                            Timber.e(e, "[TTMLConverter] Failed to parse ScoreMuse XML directly")
+                            Timber.e(e, "[TTMLConverter] Failed to parse TTML/XML directly")
                             parsed = null
                             cachedXmlContent = ""
                         }
                     }
-                    // ✅ 其他格式使用 UnifiedLyricsParser（通过 TTMLConverter.fromLyrics）
+                    // ✅ 其他格式优先使用 WASM 解析器，失败再回退 Kotlin 解析
                     else -> {
-                        Timber.d("[SongStructure] Non-XML format ($format), using UnifiedLyricsParser")
-                        parsed = TTMLConverter.fromLyrics(
-                            content = trimmed,
-                            title = title.ifBlank { "自选歌词" },
-                            artist = artist.ifBlank { "Unknown" }
-                        )
-                        // 非 XML 格式需要转换后缓存为 ScoreMuse XML
-                        cachedXmlContent = parsed?.let { TTMLConverter.toTTMLString(it) } ?: ""
+                        val wasmParsed = withContext(Dispatchers.IO) {
+                            parseWithWasmPreferred(
+                                raw = trimmed,
+                                format = format,
+                                title = title.ifBlank { "自选歌词" },
+                                artist = artist.ifBlank { "Unknown" }
+                            )
+                        }
+                        if (wasmParsed != null) {
+                            Timber.d("[CustomLyrics] Parsed with WASM lyricProcessor ($format)")
+                            parsed = wasmParsed
+                            cachedXmlContent = TTMLConverter.toTTMLString(wasmParsed)
+                        } else {
+                            Timber.d("[CustomLyrics] WASM parse unavailable, using Kotlin parser ($format)")
+                            parsed = TTMLConverter.fromLyrics(
+                                content = trimmed,
+                                title = title.ifBlank { "自选歌词" },
+                                artist = artist.ifBlank { "Unknown" }
+                            )
+                            cachedXmlContent = parsed?.let { TTMLConverter.toTTMLString(it) } ?: ""
+                        }
                     }
                 }
-    
+
                 if (parsed != null && cachedXmlContent.isNotBlank()) {
                     lyricsMutable.value = parsed
                     updateSongStructures(parsed)
@@ -421,7 +467,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                     // ✅ 重置歌词哈希值，确保新歌词会被发送
                     lastSentLyricsHash = 0
-                                    
+
 
                 } else {
                     _errorMessage.value = "无法识别歌词格式"
@@ -542,3 +588,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         Timber.i("[SongStructure] Refreshing song structures")
     }
 }
+
+
+

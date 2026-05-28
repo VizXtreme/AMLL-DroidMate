@@ -545,6 +545,7 @@ fun MainScreen() {
                                 isLyricsFullscreen = true
                             }
                         },
+                        isInteractive = isLyricsFullscreen,
                         modifier = Modifier.fillMaxSize()
                     )
 
@@ -816,6 +817,7 @@ fun LyricsVisualLayer(
     onFullscreenTap: (() -> Unit)? = null,
     debugSource: String = "MainScreen",
     useAndroidBlurOverride: Boolean? = null,
+    isInteractive: Boolean = true,
 ) {
     val context = LocalContext.current
     val useAndroidBlur = useAndroidBlurOverride
@@ -891,6 +893,7 @@ fun LyricsVisualLayer(
                 onLyricsClick = onFullscreenTap,
                 onLineSeek = onLineSeek,
                 isPlaying = nowPlaying?.isPlaying ?: false,
+                isInteractive = isInteractive,
                 modifier = Modifier.fillMaxSize()
             )
         }

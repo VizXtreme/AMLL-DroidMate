@@ -153,9 +153,6 @@ class MediaInfoService(private val context: Context) {
                     }
                 }
             } else {
-                if (shouldLogVerbose()) {
-                    Timber.v("[MediaInfoService] No active media sessions found")
-                }
                 currentController = null
             }
         } catch (e: SecurityException) {

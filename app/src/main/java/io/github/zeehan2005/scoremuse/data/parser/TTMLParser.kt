@@ -108,9 +108,15 @@ object TTMLParser {
         var bgTransliteration: String? = null
     )
 
+    private data class TimedRange(
+        val startTime: Long,
+        val endTime: Long
+    )
+
     private fun parseTTMLDocument(doc: Document): UnifiedLyrics {
         val parsedParagraphs = mutableListOf<ParsedParagraph>()
-        
+        val timedParagraphRanges = mutableListOf<TimedRange>()
+
         // 解析 TTML 元数据中的歌曲结构信息
         Timber.d("[SongStructure] Starting TTML document parsing")
         val songStructures = parseSongStructuresFromMetadata(doc)
@@ -128,6 +134,7 @@ object TTMLParser {
                 if (i < 5 || i >= paragraphs.length - 2) {
                     Timber.d("[AgentDebug-RAW] Para $i: raw ttm:agent='$rawAgent'")
                 }
+                collectTimedRangeIfAny(pElement, timedParagraphRanges)
                 parseParagraph(pElement)?.let { parsedParagraphs.add(it) }
             }
         } catch (e: Exception) {
@@ -211,10 +218,25 @@ object TTMLParser {
                 Timber.w("[TTMLParser] Failed to parse metadata $e")
             LyricsMetadata(title = "Unknown", artist = "Unknown")
         }
-        
-        Timber.d("[SongStructure] Creating UnifiedLyrics with ${songStructures.size} structures")
+
+        val instrumentalStructures = detectInstrumentalStructures(
+            vocalLines = parsedParagraphs.mapNotNull { it.mainLine },
+            timedParagraphRanges = timedParagraphRanges,
+            existingStructures = songStructures
+        )
+        val autoParagraphStructures = if (songStructures.isEmpty() && shouldAutoParagraphFromDivs(doc)) {
+            buildParagraphStructuresBetweenInstrumentals(
+                vocalLines = parsedParagraphs.mapNotNull { it.mainLine },
+                instrumentalStructures = instrumentalStructures
+            )
+        } else {
+            emptyList()
+        }
+        val mergedStructures = (songStructures + instrumentalStructures + autoParagraphStructures)
+            .sortedBy { it.startTime }
+        Timber.d("[SongStructure] Creating UnifiedLyrics with ${mergedStructures.size} structures")
         return UnifiedLyrics(
-            metadata = metadata.copy(songStructures = songStructures.ifEmpty { null }),
+            metadata = metadata.copy(songStructures = mergedStructures.takeIf { it.isNotEmpty() }),
             lines = lines
         )
     }
@@ -607,18 +629,37 @@ object TTMLParser {
 
     private fun cleanBackgroundText(text: String): String {
         // 背景歌词同样遵循可见空格语义：禁止 trim。
-        // 仅去除文本中第一个 "(" 和最后一个 ")"，不改动其它内容。
-        val firstParenIndex = text.indexOf('(')
-        val lastParenIndex = text.lastIndexOf(')')
-        
-        if (firstParenIndex != -1 && lastParenIndex != -1 && lastParenIndex > firstParenIndex) {
-            // 移除第一个 "(" 和最后一个 ")"
-            return text.substring(0, firstParenIndex) +
-                   text.substring(firstParenIndex + 1, lastParenIndex) +
-                   text.substring(lastParenIndex + 1)
+        // 仅去除首词的第一个 "(" 和末词的最后一个 ")"，不改动其它内容。
+        if (text.isEmpty()) return text
+
+        val chars = text.toCharArray()
+        var firstWordStart = -1
+        var lastWordEnd = -1
+
+        for (i in chars.indices) {
+            if (!chars[i].isWhitespace()) {
+                firstWordStart = i
+                break
+            }
         }
-        
-        return text
+
+        for (i in chars.indices.reversed()) {
+            if (!chars[i].isWhitespace()) {
+                lastWordEnd = i
+                break
+            }
+        }
+
+        if (firstWordStart == -1 || lastWordEnd == -1) return text
+
+        if (chars[firstWordStart] == '(') {
+            chars[firstWordStart] = '\u0000'
+        }
+        if (chars[lastWordEnd] == ')') {
+            chars[lastWordEnd] = '\u0000'
+        }
+
+        return String(chars).replace("\u0000", "")
     }
     
     /**
@@ -631,7 +672,7 @@ object TTMLParser {
         try {
             Timber.d("[SongStructure] 🔍 Starting metadata structure parsing (only from <div> itunes:songPart attributes)")
             
-            // 唯一合法的方式：从 <body> 中的 <div> 标签解析 itunes:song-part/songPart 属性
+            // 唯一合法的方式：从 <body> 中的 <div> 标签解析 itunes:songPart/song-part
             Timber.d("[SongStructure] 📁 Parsing structures from <div> elements in <body>")
             parseSongStructuresFromBodyElements(doc, structures)
             
@@ -649,13 +690,174 @@ object TTMLParser {
                 
         return structures
     }
-        
 
-        
-    /**
-     * 从 <body> 中的 <div> 标签解析歌曲结构（唯一合法方式）
-     * 优先查找 itunes:songPart 属性，兼容 itunes:song-part 属性
-     */
+    private fun detectInstrumentalStructures(
+        vocalLines: List<LyricLine>,
+        timedParagraphRanges: List<TimedRange>,
+        existingStructures: List<SongStructure>
+    ): List<SongStructure> {
+        if (vocalLines.isEmpty()) {
+            Timber.d("[SongStructure] No vocal lines found; skipping instrumental structure detection")
+            return emptyList()
+        }
+
+        val sortedVocalLines = vocalLines.sortedBy { it.startTime }
+        val trackStart = timedParagraphRanges.minOfOrNull { it.startTime } ?: 0L
+        val trackEnd = timedParagraphRanges.maxOfOrNull { it.endTime } ?: sortedVocalLines.last().endTime
+        val minGapMs = 1500L
+
+        val results = mutableListOf<SongStructure>()
+
+        val firstStart = sortedVocalLines.first().startTime
+        if (firstStart - trackStart >= minGapMs && !hasInstrumentalOverlap(existingStructures, trackStart, firstStart)) {
+            results.add(
+                SongStructure(
+                    label = "Intro",
+                    startTime = trackStart,
+                    endTime = firstStart,
+                    type = SongStructureType.INTRO_INST
+                )
+            )
+            Timber.d("[SongStructure] ✅ Detected instrumental intro: ${formatTime(trackStart)} - ${formatTime(firstStart)}")
+        }
+
+        for (i in 0 until sortedVocalLines.size - 1) {
+            val currentEnd = sortedVocalLines[i].endTime
+            val nextStart = sortedVocalLines[i + 1].startTime
+            if (nextStart - currentEnd < minGapMs) continue
+            if (hasInstrumentalOverlap(existingStructures, currentEnd, nextStart)) continue
+
+            results.add(
+                SongStructure(
+                    label = "Interlude",
+                    startTime = currentEnd,
+                    endTime = nextStart,
+                    type = SongStructureType.INTERLUDE
+                )
+            )
+            Timber.d("[SongStructure] ✅ Detected interlude: ${formatTime(currentEnd)} - ${formatTime(nextStart)}")
+        }
+
+        val lastEnd = sortedVocalLines.last().endTime
+        if (trackEnd - lastEnd >= minGapMs && !hasInstrumentalOverlap(existingStructures, lastEnd, trackEnd)) {
+            results.add(
+                SongStructure(
+                    label = "Outro",
+                    startTime = lastEnd,
+                    endTime = trackEnd,
+                    type = SongStructureType.OUTRO_INST
+                )
+            )
+            Timber.d("[SongStructure] ✅ Detected instrumental outro: ${formatTime(lastEnd)} - ${formatTime(trackEnd)}")
+        }
+
+        return results
+    }
+
+    private fun shouldAutoParagraphFromDivs(doc: Document): Boolean {
+        val body = doc.getElementsByTagName("body").item(0) as? Element ?: return false
+        val divs = body.getElementsByTagName("div")
+        if (divs.length == 0) return true
+
+        for (i in 0 until divs.length) {
+            val div = divs.item(i) as? Element ?: continue
+            val paragraphs = div.getElementsByTagName("p")
+            if (paragraphs.length > 1) return false
+        }
+
+        return true
+    }
+
+    private fun buildParagraphStructuresBetweenInstrumentals(
+        vocalLines: List<LyricLine>,
+        instrumentalStructures: List<SongStructure>
+    ): List<SongStructure> {
+        if (vocalLines.isEmpty()) return emptyList()
+
+        val sortedLines = vocalLines.sortedBy { it.startTime }
+        val separators = instrumentalStructures.sortedBy { it.startTime }
+        val results = mutableListOf<SongStructure>()
+
+        var paragraphIndex = 1
+        var currentStart: Long? = null
+        var currentEnd = 0L
+        var separatorIndex = 0
+
+        fun closeParagraphIfAny() {
+            val start = currentStart ?: return
+            if (currentEnd <= start) return
+            results.add(
+                SongStructure(
+                    label = "段落$paragraphIndex",
+                    startTime = start,
+                    endTime = currentEnd,
+                    type = SongStructureType.UNKNOWN
+                )
+            )
+            paragraphIndex++
+            currentStart = null
+            currentEnd = 0L
+        }
+
+        for (line in sortedLines) {
+            while (separatorIndex < separators.size && line.startTime >= separators[separatorIndex].startTime) {
+                if (line.startTime < separators[separatorIndex].endTime) {
+                    closeParagraphIfAny()
+                    separatorIndex++
+                    continue
+                }
+
+                closeParagraphIfAny()
+                separatorIndex++
+            }
+
+            if (currentStart == null) {
+                currentStart = line.startTime
+            }
+            currentEnd = maxOf(currentEnd, line.endTime)
+        }
+
+        closeParagraphIfAny()
+        return results
+    }
+
+    private fun hasInstrumentalOverlap(
+        existingStructures: List<SongStructure>,
+        startTime: Long,
+        endTime: Long
+    ): Boolean {
+        if (existingStructures.isEmpty()) return false
+        return existingStructures.any { structure ->
+            val isInstrumental = structure.type == SongStructureType.INTRO_INST ||
+                structure.type == SongStructureType.OUTRO_INST ||
+                structure.type == SongStructureType.INTERLUDE
+            isInstrumental && startTime < structure.endTime && endTime > structure.startTime
+        }
+    }
+
+    private fun hasStructureOverlap(
+        existingStructures: List<SongStructure>,
+        startTime: Long,
+        endTime: Long
+    ): Boolean {
+        if (existingStructures.isEmpty()) return false
+        return existingStructures.any { structure ->
+            val overlap = startTime < structure.endTime && endTime > structure.startTime
+            overlap
+        }
+    }
+
+    private fun collectTimedRangeIfAny(element: Element, ranges: MutableList<TimedRange>) {
+        val beginStr = element.getAttribute("begin")
+        val endStr = element.getAttribute("end")
+        if (beginStr.isBlank() || endStr.isBlank()) return
+        val startTime = timeStrToMillis(beginStr)
+        val endTime = timeStrToMillis(endStr)
+        if (endTime > startTime) {
+            ranges.add(TimedRange(startTime = startTime, endTime = endTime))
+        }
+    }
+
     private fun parseSongStructuresFromBodyElements(doc: Document, structures: MutableList<SongStructure>) {
         val body = doc.getElementsByTagName("body").item(0) as? Element ?: run {
             Timber.d("[SongStructure] ⚠️ No <body> element found")

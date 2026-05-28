@@ -4,6 +4,7 @@ import android.content.Context
 import io.ktor.client.HttpClient
 import io.github.zeehan2005.scoremuse.data.repository.LyricsCacheRepository
 import io.github.zeehan2005.scoremuse.data.repository.LyricsRepository
+import dev.amll.droidmate.data.parser.WasmLyricParser
 
 /**
  * 简单的手动服务定位器
@@ -24,6 +25,7 @@ import io.github.zeehan2005.scoremuse.data.repository.LyricsRepository
  */
 object ServiceLocator {
     private var httpClient: HttpClient? = null
+    private var wasmLyricParser: WasmLyricParser? = null
 
     /**
      * 提供单例 HTTP 客户端实例
@@ -69,4 +71,18 @@ object ServiceLocator {
      */
     fun provideLyricsCacheRepository(context: Context): LyricsCacheRepository =
         LyricsCacheRepository(context)
+
+    /**
+     * 提供 WASM 歌词解析器实例 (单例)
+     *
+     * @param context Android 上下文
+     * @return WasmLyricParser 实例
+     */
+    @Synchronized
+    fun provideWasmLyricParser(context: Context): WasmLyricParser {
+        if (wasmLyricParser == null) {
+            wasmLyricParser = WasmLyricParser(context.applicationContext)
+        }
+        return wasmLyricParser!!
+    }
 }

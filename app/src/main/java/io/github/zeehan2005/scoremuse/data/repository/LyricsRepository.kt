@@ -3,6 +3,7 @@
 import io.github.zeehan2005.scoremuse.data.parser.global.mergeLyricLines
 import io.github.zeehan2005.scoremuse.data.parser.global.LyricsFormat
 import io.github.zeehan2005.scoremuse.data.parser.TTMLParser
+import dev.amll.droidmate.data.converter.TTMLConverter
 import io.github.zeehan2005.scoremuse.data.get.netease.NeteaseEapiCrypto
 import io.github.zeehan2005.scoremuse.data.get.qq.QqMusicQrcCrypto
 import io.github.zeehan2005.scoremuse.data.get.kugou.KugouDecrypter
@@ -2035,9 +2036,32 @@ open class LyricsRepository(
             }
             
             if (lyrics != null) {
+                // 1. 转换为 TTML 格式以保持稳定性（特别是针对非 TTML 来源如 QQ/网易）
+                // 这样做可以确保 rawTtml 字段始终存在，且内容与解析出的 lines 一致
+                val ttmlContent = lyrics.rawTtml ?: TTMLConverter.toTTMLString(lyrics)
+                
+                // 2. 重新解析 TTML 内容，确保返回的对象是经过标准 TTML 路径生成的
+                // 这符合“每次读取都解析 TTML”的原则，从而保证跨来源的稳定性
+                val stableLyrics = parseTTML(ttmlContent, title ?: lyrics.metadata.title, artist ?: lyrics.metadata.artist)
+                    ?: lyrics
+                
+                // 3. 储存到本地缓存（如果配置了缓存仓库）
+                // 这样后续 fetchLyricsAuto 的优先读取缓存逻辑就能生效
+                val finalTitle = title ?: stableLyrics.metadata.title
+                val finalArtist = artist ?: stableLyrics.metadata.artist
+                if (finalTitle.isNotBlank() && finalArtist.isNotBlank()) {
+                    cacheRepo?.upsert(
+                        title = finalTitle,
+                        artist = finalArtist,
+                        source = provider.uppercase(),
+                        xmlContent = ttmlContent
+                    )
+                    Timber.i("[LyricsRepository] Automatically cached lyrics for: $finalTitle - $finalArtist")
+                }
+
                 LyricsResult(
                     isSuccess = true,
-                    lyrics = lyrics,
+                    lyrics = stableLyrics,
                     source = provider.uppercase()
                 )
             } else {

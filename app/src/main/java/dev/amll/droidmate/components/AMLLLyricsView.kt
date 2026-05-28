@@ -81,8 +81,12 @@ fun AMLLLyricsView(
     onLyricsClick: (() -> Unit)? = null,
     // 歌词行跳转回调（用户点击某行歌词时跳转到指定时间）
     onLineSeek: ((Long) -> Unit)? = null,
+    // JS 解析完成回调（当 WebView 使用 WASM 解析出歌词行时调用）
+    onLyricsParsed: ((String) -> Unit)? = null,
     // 是否正在播放（用于同步播放/暂停状态）
     isPlaying: Boolean = true,
+    // 是否允许交互（非全屏模式下通常禁用交互，仅响应点击全屏）
+    isInteractive: Boolean = true,
 ) {
     // 获取 Android Context（用于访问应用设置和资源）
     // 检查 WebView 是否启用（用户可以在设置中禁用）
@@ -96,7 +100,9 @@ fun AMLLLyricsView(
     // 这样可以避免因为闭包捕获旧值而导致的 stale closure 问题
     val onLyricsClickState = rememberUpdatedState(onLyricsClick)
     val onLineSeekState = rememberUpdatedState(onLineSeek)
+    val onLyricsParsedState = rememberUpdatedState(onLyricsParsed)
     val isPlayingState = rememberUpdatedState(isPlaying)
+    val isInteractiveState = rememberUpdatedState(isInteractive)
     
     // 页面就绪状态（WebView 加载完成后设为 true）
     var isPageReady by remember { mutableStateOf(false) }
@@ -290,6 +296,9 @@ fun AMLLLyricsView(
                         isPlayingProvider = { isPlayingState.value },
                         onPageReady = {
                             webViewRef.post { onPageReady() }
+                        },
+                        onLyricsParsed = { json ->
+                            onLyricsParsedState.value?.invoke(json)
                         }
                     ),
                     "Android"  // 在前端通过 window.Android 访问
@@ -305,11 +314,14 @@ fun AMLLLyricsView(
 
                 setOnTouchListener { v, event ->
                     // 将触摸事件传递给 GestureDetector
-                    if (gestureDetector.onTouchEvent(event) && event.action == MotionEvent.ACTION_UP) {
+                    val isTapped = gestureDetector.onTouchEvent(event) && event.action == MotionEvent.ACTION_UP
+                    if (isTapped) {
                         v.performClick()
                     }
-                    // 始终返回 false，允许 WebView 处理滚动、长按选择等原生行为
-                    false
+                    
+                    // 如果处于非交互模式，消费所有事件以阻止 WebView 响应
+                    // 只有在交互模式下才返回 false，允许事件透传给 WebView 内部
+                    !isInteractiveState.value
                 }
 
                 // 处理点击事件
@@ -879,7 +891,8 @@ class AMLLInterface(
     private val onLineSeek: ((Long) -> Unit)? = null,
     private val onSeekRequested: ((Long) -> Unit)? = null,
     private val isPlayingProvider: () -> Boolean = { true },
-    private val onPageReady: (() -> Unit)? = null
+    private val onPageReady: (() -> Unit)? = null,
+    private val onLyricsParsed: ((String) -> Unit)? = null
 ) {
     /**
      * 页面初始化完成通知
@@ -888,6 +901,15 @@ class AMLLInterface(
     fun onPageReady() {
         Timber.i("[AMLLLyrics] [$debugSource#$instanceId] JS reported page ready")
         onPageReady?.invoke()
+    }
+
+    /**
+     * JS 解析完成回调（由 WASM 解析器解析后触发）
+     */
+    @JavascriptInterface
+    fun onLyricsParsed(json: String) {
+        Timber.i("[AMLLLyrics] [$debugSource#$instanceId] JS reported lyrics parsed: ${json.length} chars")
+        onLyricsParsed?.invoke(json)
     }
 
     /**

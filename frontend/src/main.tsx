@@ -15,13 +15,14 @@ import * as AMLLCore from '@applemusic-like-lyrics/core'
 import '@applemusic-like-lyrics/core/style.css'
 import '../styles.css'
 import { logToAndroid } from './utils/bridge_utils'
+import { processLyricsPayload } from './utils/lyricProcessor'
 
 // --- 全局类型声明 (Global Type Declarations) ---
 // 声明挂载在 window 对象上的 API，以便 Android 端和 TypeScript 类型检查使用
 declare global {
   interface Window {
     __amll?: any // 暴露给调试用的内部实例
-    updateLyrics?: (payload: LyricsPayload) => void // 更新歌词数据
+    updateLyrics?: (payload: any) => void // 更新歌词数据
     updateTime?: (timeMs: number) => void // 更新当前播放时间
     updateAlbumArt?: (uri: string) => Promise<void> // 更新专辑封面
     setPaused?: (paused: boolean) => void // 设置播放/暂停状态
@@ -43,8 +44,10 @@ declare global {
       isPlaying?: () => boolean // 查询原生播放状态
       onLineClick?: (index: number, startTime: number) => void // 歌词行点击回调
       onPageReady?: () => void // 页面就绪回调
+      onLyricsParsedResult?: (json: string) => void // 解析结果回调 (Parser 专用)
     }
     AMLLCore: typeof AMLLCore
+    parseLyrics?: (raw: string, format: string) => Promise<void> // 解析歌词入口
   }
 }
 
@@ -56,7 +59,6 @@ const state = {
   lyricLines: [] as any[], // 当前加载的歌词行数据
   // 默认占位图 (SVG Base64)
   albumUri: '',
-  lastAlbumArt: '', // 上一次设置的封面 URI，用于去重
   isPlaying: false, // 播放状态缓存
   hasPlaybackState: false, // 是否已接收过播放状态
   pendingLyricOptions: {} as Record<string, any>, // 待应用的配置项
@@ -167,10 +169,35 @@ function initAMLL() {
         })
         // 显式挂载播放器元素（如果库没有自动挂载）
         const el = state.player.getElement?.() || state.player.element
-        if (el && el.parentElement !== root) {
-          root.appendChild(el)
-          Object.assign(el.style, { position: 'absolute', inset: '0', zIndex: '1' })
+        if (el) {
+          Object.assign(el.style, { position: 'absolute', inset: '0', zIndex: '1', pointerEvents: 'auto' })
+          if (el.parentElement !== root) {
+            root.appendChild(el)
+          }
         }
+        // Forward lyric line clicks to Android and optimistically seek locally.
+        const onLineClick = (evt: any) => {
+          const detail = evt?.detail || {}
+          const lineIndex = typeof evt?.lineIndex === 'number' ? evt.lineIndex : (typeof detail.lineIndex === 'number' ? detail.lineIndex : -1)
+          const fallbackLine = (lineIndex >= 0 && state.lyricLines?.[lineIndex]) ? state.lyricLines[lineIndex] : undefined
+
+          const getStart = (obj: any) => (typeof obj?.startTime === 'number' ? obj.startTime : (typeof obj?.start === 'number' ? obj.start : undefined))
+          const startTime = getStart(evt) ?? getStart(detail) ?? getStart(evt?.line) ?? getStart(detail.line) ?? getStart(fallbackLine)
+
+          log(`line-click: index=${lineIndex}, start=${startTime}`, 'debug')
+          if (startTime === undefined) return
+          window.Android?.onLineClick?.(lineIndex, startTime)
+          if (state.player) {
+            if (state.player.setCurrentTime) {
+              state.player.setCurrentTime(startTime, false)
+            } else if (state.player.seek) {
+              state.player.seek(startTime)
+            }
+            state.player.update?.(0)
+          }
+        }
+        state.player.addEventListener?.('line-click', onLineClick)
+        el?.addEventListener?.('line-click', onLineClick)
         log('Created and attached DomLyricPlayer', 'info')
       } catch (e) {
         log(`Failed to instantiate DomLyricPlayer: ${(e as Error).message}`, 'error')
@@ -248,6 +275,24 @@ window.updateLyrics = (payload: any) => {
 }
 
 /**
+ * 歌词解析接口 (供独立的 Parser 容器调用)
+ */
+window.parseLyrics = async (raw: string, format: string) => {
+  try {
+    log(`[WASM Parser] Parsing raw content (format=${format})`, 'debug')
+    const lines = await processLyricsPayload({ raw, format })
+    if (window.Android?.onLyricsParsedResult) {
+      window.Android.onLyricsParsedResult(JSON.stringify(lines))
+    }
+  } catch (e) {
+    log(`[WASM Parser] Error: ${(e as Error).message}`, 'error')
+    if (window.Android?.onLyricsParsedResult) {
+      window.Android.onLyricsParsedResult(JSON.stringify([]))
+    }
+  }
+}
+
+/**
  * 同步播放时间
  * @param timeMs 当前播放位置（毫秒）
  */
@@ -282,18 +327,20 @@ window.updateTime = (timeMs: number) => {
  */
 window.updateAlbumArt = async (uri: string) => {
   if (!uri || uri.trim().length === 0) {
-    state.albumUri = state.lastAlbumArt = ''
+    state.albumUri = ''
     return
   }
 
-  if (state.lastAlbumArt === uri) return
-  state.lastAlbumArt = uri
-
   try {
     let finalUri = uri
+    const isFileUri = uri.startsWith('file:')
+    const isDataUri = uri.startsWith('data:')
+    const isBlobUri = uri.startsWith('blob:')
+    const isHttpUri = uri.startsWith('http://') || uri.startsWith('https://')
+
     // 如果是本地文件协议，尝试转换成 Data URL 以规避 WebView 的跨域限制
-    if (uri.startsWith('file:')) {
-      const response = await fetch(uri)
+    if (isFileUri) {
+      const response = await fetch(uri, { cache: 'no-store' })
       const blob = await response.blob()
       finalUri = await new Promise((resolve, reject) => {
         const reader = new FileReader()
@@ -301,6 +348,9 @@ window.updateAlbumArt = async (uri: string) => {
         reader.onerror = () => reject(reader.error)
         reader.readAsDataURL(blob)
       })
+    } else if (isHttpUri && !isDataUri && !isBlobUri) {
+      const cacheBuster = `t=${Date.now()}`
+      finalUri = uri.includes('?') ? `${uri}&${cacheBuster}` : `${uri}?${cacheBuster}`
     }
 
     state.albumUri = finalUri
