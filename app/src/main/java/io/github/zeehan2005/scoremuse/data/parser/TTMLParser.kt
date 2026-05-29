@@ -835,18 +835,6 @@ object TTMLParser {
         }
     }
 
-    private fun hasStructureOverlap(
-        existingStructures: List<SongStructure>,
-        startTime: Long,
-        endTime: Long
-    ): Boolean {
-        if (existingStructures.isEmpty()) return false
-        return existingStructures.any { structure ->
-            val overlap = startTime < structure.endTime && endTime > structure.startTime
-            overlap
-        }
-    }
-
     private fun collectTimedRangeIfAny(element: Element, ranges: MutableList<TimedRange>) {
         val beginStr = element.getAttribute("begin")
         val endStr = element.getAttribute("end")

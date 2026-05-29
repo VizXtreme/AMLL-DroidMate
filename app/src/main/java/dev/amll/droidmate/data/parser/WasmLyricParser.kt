@@ -73,7 +73,7 @@ class WasmLyricParser(private val context: Context) {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
-        Timber.Forest.d("[WasmLyricParser] Initializing Headless WebView for parsing")
+        Timber.d("[WasmLyricParser] Initializing Headless WebView for parsing")
 
         val assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
@@ -94,21 +94,21 @@ class WasmLyricParser(private val context: Context) {
                 ) = assetLoader.shouldInterceptRequest(request.url)
 
                 override fun onPageFinished(view: WebView, url: String) {
-                    Timber.Forest.d("[WasmLyricParser] WebView page loaded: $url")
+                    Timber.d("[WasmLyricParser] WebView page loaded: $url")
                 }
             }
 
             addJavascriptInterface(object {
                 @JavascriptInterface
                 fun onPageReady() {
-                    Timber.Forest.i("[WasmLyricParser] JS reported page ready")
+                    Timber.i("[WasmLyricParser] JS reported page ready")
                     isPageReady.set(true)
                     readyDeferred.complete(Unit)
                 }
 
                 @JavascriptInterface
                 fun onLyricsParsedResult(resultJson: String) {
-                    Timber.Forest.d("[WasmLyricParser] Received parsing result: ${resultJson.length} chars")
+                    Timber.d("[WasmLyricParser] Received parsing result: ${resultJson.length} chars")
                     pendingResult?.complete(resultJson)
                 }
 
@@ -116,9 +116,9 @@ class WasmLyricParser(private val context: Context) {
                 fun log(msg: String, level: String) {
                     val logMsg = "[WasmLyricParser] [JS] $msg"
                     when (level.lowercase()) {
-                        "error" -> Timber.Forest.e(logMsg)
-                        "warn" -> Timber.Forest.w(logMsg)
-                        else -> Timber.Forest.d(logMsg)
+                        "error" -> Timber.e(logMsg)
+                        "warn" -> Timber.w(logMsg)
+                        else -> Timber.d(logMsg)
                     }
                 }
             }, "Android")
@@ -138,11 +138,11 @@ class WasmLyricParser(private val context: Context) {
     suspend fun parse(raw: String, format: String): List<LyricLine>? = mutex.withLock {
         // 等待页面就绪 (包含 WASM 加载)
         if (!isPageReady.get()) {
-            Timber.Forest.d("[WasmLyricParser] Waiting for WebView to be ready...")
+            Timber.d("[WasmLyricParser] Waiting for WebView to be ready...")
             try {
                 withTimeout(8000) { readyDeferred.await() }
             } catch (e: Exception) {
-                Timber.Forest.e("[WasmLyricParser] WebView ready timeout")
+                Timber.e("[WasmLyricParser] WebView ready timeout" )
                 return null
             }
         }
@@ -162,14 +162,14 @@ class WasmLyricParser(private val context: Context) {
             // 等待解析结果 (增加超时)
             val resultJson = withTimeoutOrNull(10000) { deferred.await() }
             if (resultJson == null) {
-                Timber.Forest.e("[WasmLyricParser] Parsing timed out or failed to return result")
+                Timber.e("[WasmLyricParser] Parsing timed out or failed to return result")
                 return null
             }
 
             // 将 JSON 结果转换为 Kotlin 对象
             return decodeJsonResult(resultJson)
         } catch (e: Exception) {
-            Timber.Forest.e(e, "[WasmLyricParser] Error during parsing execution")
+            Timber.e(e, "[WasmLyricParser] Error during parsing execution")
             return null
         } finally {
             pendingResult = null
@@ -201,7 +201,7 @@ class WasmLyricParser(private val context: Context) {
                 )
             }
         } catch (e: Exception) {
-            Timber.Forest.e(e, "[WasmLyricParser] Failed to decode JSON result: $resultJson")
+            Timber.e(e, "[WasmLyricParser] Failed to decode JSON result: $resultJson")
             null
         }
     }

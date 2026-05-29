@@ -54,9 +54,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     @SuppressLint("StaticFieldLeak")
     private val context: Context = application.applicationContext
 
-    // ==================== HTTP Client & 仓库 ====================
-    // HTTP 客户端（由 ServiceLocator 提供以便集中管理）
-    private val httpClient = ServiceLocator.provideHttpClient(context)
     // make this mutable so tests can inject a fake repository if needed
 
     internal var lyricsRepository = ServiceLocator.provideLyricsRepository(context)
@@ -512,7 +509,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     override fun onCleared() {
-        super.onCleared()
         // unregister broadcast listener added earlier
         context.unregisterReceiver(deleteReceiver)
         
@@ -588,6 +584,3 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         Timber.i("[SongStructure] Refreshing song structures")
     }
 }
-
-
-

@@ -204,8 +204,12 @@ fun AMLLLyricsView(
                      * - 清空上一次配置的缓存
                      */
                     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
-                        isPageReady = false
-                        lastLyrics = null
+                        if (isPageReady) {
+                            isPageReady = false
+                        }
+                        if (lastLyrics != null) {
+                            lastLyrics = null
+                        }
                         Timber.d("[AMLLLyrics] [$debugSource#$instanceId] WebView page started: $url")
                     }
 

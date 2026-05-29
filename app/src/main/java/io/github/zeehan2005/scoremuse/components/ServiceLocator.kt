@@ -25,7 +25,6 @@ import dev.amll.droidmate.data.parser.WasmLyricParser
  */
 object ServiceLocator {
     private var httpClient: HttpClient? = null
-    private var wasmLyricParser: WasmLyricParser? = null
 
     /**
      * 提供单例 HTTP 客户端实例
@@ -39,14 +38,6 @@ object ServiceLocator {
             httpClient = HttpClientFactory.create(context.applicationContext)
         }
         return httpClient!!
-    }
-
-    /**
-     * 关闭全局 HTTP 客户端，释放资源
-     */
-    fun closeHttpClient() {
-        httpClient?.close()
-        httpClient = null
     }
 
     /**
@@ -73,16 +64,14 @@ object ServiceLocator {
         LyricsCacheRepository(context)
 
     /**
-     * 提供 WASM 歌词解析器实例 (单例)
+     * 提供 WASM 歌词解析器实例
+     *
+     * 注意：避免将持有 Context 的实例保存在静态字段中，防止内存泄漏。
      *
      * @param context Android 上下文
      * @return WasmLyricParser 实例
      */
-    @Synchronized
     fun provideWasmLyricParser(context: Context): WasmLyricParser {
-        if (wasmLyricParser == null) {
-            wasmLyricParser = WasmLyricParser(context.applicationContext)
-        }
-        return wasmLyricParser!!
+        return WasmLyricParser(context.applicationContext)
     }
 }

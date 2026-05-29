@@ -52,9 +52,7 @@ class MediaInfoService(private val context: Context) {
     // 专辑封面缓存，避免重复保存相同图片
     private val albumArtCache = ConcurrentHashMap<String, String>()
     
-    // 用于限制 verbose 日志频率
-    private var lastVerboseLogTime = 0L
-    private val verboseLogIntervalMs = 2000L  // 2 秒
+
     
     /**
      * 启动监听
@@ -389,19 +387,6 @@ class MediaInfoService(private val context: Context) {
         Timber.i("[PlaybackControl] Rewind command sent") 
     }
 
-    /**
-     * 判断是否应该发送 verbose 日志（最多每 2 秒一次）
-     */
-    private fun shouldLogVerbose(): Boolean {
-        val currentTime = System.currentTimeMillis()
-        return if (currentTime - lastVerboseLogTime >= verboseLogIntervalMs) {
-            lastVerboseLogTime = currentTime
-            true
-        } else {
-            false
-        }
-    }
-    
     companion object {
         private const val UPDATE_INTERVAL_MS = 100L  // 每 100ms 更新一次，减少更新频率
         private const val PROGRESS_UPDATE_THRESHOLD_MS = 100L  // 播放时间变化超过 100ms 才更新

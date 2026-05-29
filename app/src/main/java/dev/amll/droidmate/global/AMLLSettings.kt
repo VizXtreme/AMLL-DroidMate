@@ -307,10 +307,6 @@ object AMLLSettings {
     fun getAmllBackgroundRenderer(context: Context): String? =
         getStringOrNull(context, KEY_AMLL_BACKGROUND_RENDERER)
 
-    fun setAmllBackgroundRenderer(context: Context, renderer: String?) {
-        prefs(context).putStringAsync(KEY_AMLL_BACKGROUND_RENDERER, renderer)
-    }
-
     fun isAmllBackgroundRendererEnabled(context: Context): Boolean? =
         getBooleanOrNull(context, KEY_AMLL_BACKGROUND_RENDERER_ENABLED)
 
@@ -323,10 +319,6 @@ object AMLLSettings {
      */
     fun getAmllCssBackgroundProperty(context: Context): String? =
         getStringOrNull(context, KEY_AMLL_CSS_BACKGROUND_PROPERTY)
-
-    fun setAmllCssBackgroundProperty(context: Context, cssProperty: String?) {
-        prefs(context).putStringAsync(KEY_AMLL_CSS_BACKGROUND_PROPERTY, cssProperty)
-    }
 
     /**
      * 获取歌词背景最高帧率
