@@ -427,7 +427,7 @@ private fun DrawScope.drawStepMarkers(
     attractionRadius: Float = 0.03f,
     offsetX: Float = 0f
 ) {
-    val markerRadius = trackHeight / 2
+    val markerRadius = trackHeight * 0.2f
     
     // Calculate thumb center position for proper step marker positioning
     // Steps should be positioned based on normalized value (0.0 to 1.0)

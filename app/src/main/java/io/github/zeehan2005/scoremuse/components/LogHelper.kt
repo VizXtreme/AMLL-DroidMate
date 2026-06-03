@@ -117,23 +117,22 @@ object LogHelper {
             // 如果 Timber 提供了 tag 就使用，否则自动从堆栈中获取类名
             val logTag = tag ?: createStackElementTag()
             
-            synchronized(LogHelper) {
+            val entry = synchronized(LogHelper) {
                 nextId++
-            }
-            
-            val entry = LogEntry(
-                id = nextId,
-                timestamp = System.currentTimeMillis(),
-                level = level,
-                tag = logTag,
-                message = buildString {
-                    append(message)
-                    if (t != null) {
-                        append("\n")
-                        append(Log.getStackTraceString(t))
+                LogEntry(
+                    id = nextId,
+                    timestamp = System.currentTimeMillis(),
+                    level = level,
+                    tag = logTag,
+                    message = buildString {
+                        append(message)
+                        if (t != null) {
+                            append("\n")
+                            append(Log.getStackTraceString(t))
+                        }
                     }
-                }
-            )
+                )
+            }
             
             addLogEntry(entry)
         }
@@ -178,17 +177,19 @@ object LogHelper {
      * 添加日志条目
      */
     private fun addLogEntry(entry: LogEntry) {
-        // 计算日志条目的大小（字节）
-        val entrySize = entry.toLogString().toByteArray().size.toLong()
-        
-        // 添加到队列并更新总大小
-        logEntries.addLast(entry)
-        currentLogSize += entrySize
-        
-        // 保持日志大小不超过限制
-        while (currentLogSize > MAX_LOG_SIZE_BYTES && logEntries.isNotEmpty()) {
-            val removedEntry = logEntries.removeFirst()
-            currentLogSize -= removedEntry.toLogString().toByteArray().size.toLong()
+        synchronized(LogHelper) {
+            // 计算日志条目的大小（字节）
+            val entrySize = entry.toLogString().toByteArray().size.toLong()
+            
+            // 添加到队列并更新总大小
+            logEntries.addLast(entry)
+            currentLogSize += entrySize
+            
+            // 保持日志大小不超过限制
+            while (currentLogSize > MAX_LOG_SIZE_BYTES && logEntries.isNotEmpty()) {
+                val removedEntry = logEntries.removeFirst()
+                currentLogSize -= removedEntry.toLogString().toByteArray().size.toLong()
+            }
         }
     }
     
@@ -227,8 +228,10 @@ object LogHelper {
      * 清除所有日志
      */
     fun clearLogs() {
-        logEntries.clear()
-        currentLogSize = 0
+        synchronized(LogHelper) {
+            logEntries.clear()
+            currentLogSize = 0
+        }
     }
 
     /**
