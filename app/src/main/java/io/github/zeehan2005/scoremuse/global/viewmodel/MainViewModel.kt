@@ -532,37 +532,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 // 获取歌曲总时长用于检测尾奏
                 val songDuration = nowPlayingMusicMutable.value?.duration ?: 0L
-                
+
                 // 检查是否有元数据中的结构信息
                 val metadataStructures = lyrics.metadata.songStructures
-                Timber.d("[SongStructure] Metadata structures count: ${metadataStructures?.size ?: 0}")
-                Timber.d("[SongStructure] Current music: ${nowPlayingMusicMutable.value?.title} - ${nowPlayingMusicMutable.value?.artist}")
-                Timber.d("[SongStructure] Lyrics source: ${lyrics.metadata.source}")
-                if (!metadataStructures.isNullOrEmpty()) {
-                    Timber.d("[SongStructure] ✅ Using ${metadataStructures.size} structures from TTML metadata")
-                    metadataStructures.forEachIndexed { index, structure ->
-                        val startMin = structure.startTime / 60000
-                        val startSec = (structure.startTime % 60000) / 1000
-                        val endMin = structure.endTime / 60000
-                        val endSec = (structure.endTime % 60000) / 1000
-                        Timber.d("[SongStructure] [$index] ${structure.label} (${structure.type.displayName}): ${String.format(Locale.ROOT, "%d:%02d", startMin, startSec)} - ${String.format(Locale.ROOT, "%d:%02d", endMin, endSec)}")
-                    }
-                } else {
-                    Timber.i("[SongStructure] ⚠️ No metadata structures found, will use SongStructureParser fallback")
-                    Timber.d("[SongStructure] Lyrics has ${lyrics.lines.size} lines")
-                }
-                
-                val structures = SongStructureParser.parseStructure(lyrics.lines, lyrics.metadata.songStructures, songDuration)
+                val source = if (!metadataStructures.isNullOrEmpty()) "metadata" else "inferred"
+
+                val structures = SongStructureParser.parseStructure(lyrics.lines, metadataStructures, songDuration)
                 _songStructures.value = structures
-                Timber.d("[SongStructure] 📊 Final parsed ${structures.size} structures")
-                structures.forEachIndexed { index, structure ->
-                    val startMin = structure.startTime / 60000
-                    val startSec = (structure.startTime % 60000) / 1000
-                    val endMin = structure.endTime / 60000
-                    val endSec = (structure.endTime % 60000) / 1000
-                    Timber.d("[SongStructure] 🎵 [$index] ${structure.label} (${structure.type.displayName}): ${String.format(Locale.ROOT, "%d:%02d", startMin, startSec)} - ${String.format(Locale.ROOT, "%d:%02d", endMin, endSec)}")
+
+                val formatTime = { millis: Long ->
+                    val totalSeconds = millis / 1000
+                    val minutes = totalSeconds / 60
+                    val seconds = totalSeconds % 60
+                    String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
                 }
-                
+
+                val summary = if (structures.isEmpty()) {
+                    "none"
+                } else {
+                    structures.mapIndexed { index, structure ->
+                        "[$index] ${structure.label} (${structure.type.displayName}): ${formatTime(structure.startTime)} - ${formatTime(structure.endTime)}"
+                    }.joinToString("; ")
+                }
+                Timber.d("[SongStructure] Parsed ${structures.size} structures (source=$source): $summary")
+
                 // 诊断最终结果
                 if (structures.size == 1 && structures[0].label == "段落 1") {
                     Timber.i("[SongStructure] ⚠️ Fallback result: single paragraph structure")

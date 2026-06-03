@@ -1723,14 +1723,9 @@ open class LyricsRepository(
                         // 检查是否有歌曲结构
                         val songStructures = parsed.metadata.songStructures
                         if (!songStructures.isNullOrEmpty()) {
-                            Timber.d("[SongStructure] ✅ getAMLL_UnifiedLyrics received ${songStructures.size} structures")
-                            songStructures.forEachIndexed { index, structure ->
-                                Timber.d("[SongStructure]   [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms (${structure.duration}ms)")
-                            }
-                        } else {
-                            Timber.d("[SongStructure] ⚠️ getAMLL_UnifiedLyrics received no structure info")
+                            Timber.v("[SongStructure] AMLL parsed structures: ${songStructures.size}")
                         }
-                        
+
                         // Mark the source for AMLL lyrics so downstream feature analysis
                         // (e.g. overlap detection) can distinguish AMLL TTML DB content.
                         // 保留歌曲结构信息
@@ -2351,12 +2346,7 @@ open class LyricsRepository(
                 // 检查是否有解析到的歌曲结构
                 val songStructures = parsedLyrics.metadata.songStructures
                 if (!songStructures.isNullOrEmpty()) {
-                    Timber.d("[SongStructure] ✅ LyricsRepository received ${songStructures.size} structures")
-                    songStructures.forEachIndexed { index: Int, structure: SongStructure ->
-                        Timber.d("[SongStructure]   [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms (${structure.duration}ms)")
-                    }
-                } else {
-                    Timber.d("[SongStructure] ⚠️ LyricsRepository received no structure info")
+                    Timber.v("[SongStructure] LyricsRepository parsed structures: ${songStructures.size}")
                 }
                 
                 // 如果提供了自定义标题或艺术家，覆盖元数据（但保留 songStructures）

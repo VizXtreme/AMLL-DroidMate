@@ -153,26 +153,26 @@ private fun LyricsCachePage(
         isSelectionMode = false
     }
 
-    run {
-        if (selectedEntries.isNotEmpty()) {
-            val selectedItems = displayEntries.filter { selectedEntries.contains(it.id) }
-
-            // 使用文件导出 API 导出第一个选中的条目
-            // 对于多个条目，我们可以逐个导出或打包成 zip
-            val entry = selectedItems.first()
-            val fileName = "${entry.title}_${entry.artist}_${entry.source}.xml"
-
-            // 存储要导出的歌词内容
-//            onExport(entry.xmlContent)
-
-            // 启动文件选择器（使用新的 API）
-            (context as? android.app.Activity)?.let { activity ->
-                if (activity is LyricsCacheActivity) {
-                    activity.exportLauncher.launch(fileName)
-                }
-            }
-        }
-    }
+//    run {
+//        if (selectedEntries.isNotEmpty()) {
+//            val selectedItems = displayEntries.filter { selectedEntries.contains(it.id) }
+//
+//            // 使用文件导出 API 导出第一个选中的条目
+//            // 对于多个条目，我们可以逐个导出或打包成 zip
+//            val entry = selectedItems.first()
+//            val fileName = "${entry.title}_${entry.artist}_${entry.source}.xml"
+//
+//            // 存储要导出的歌词内容
+////            onExport(entry.xmlContent)
+//
+//            // 启动文件选择器（使用新的 API）
+//            (context as? android.app.Activity)?.let { activity ->
+//                if (activity is LyricsCacheActivity) {
+//                    activity.exportLauncher.launch(fileName)
+//                }
+//            }
+//        }
+//    }
 
     // 处理系统返回键
     BackHandler(isSelectionMode) {

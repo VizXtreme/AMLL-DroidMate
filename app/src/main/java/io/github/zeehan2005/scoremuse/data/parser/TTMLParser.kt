@@ -1,16 +1,14 @@
 package io.github.zeehan2005.scoremuse.data.parser
 
+import io.github.zeehan2005.scoremuse.data.parser.global.SongStructureParser
 import io.github.zeehan2005.scoremuse.global.LyricLine
 import io.github.zeehan2005.scoremuse.global.LyricWord
-import io.github.zeehan2005.scoremuse.global.SongStructure
-import io.github.zeehan2005.scoremuse.global.SongStructureType
-import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 import io.github.zeehan2005.scoremuse.global.LyricsMetadata
-import timber.log.Timber
+import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.Node
-import java.util.Locale
+import timber.log.Timber
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
@@ -18,7 +16,7 @@ import javax.xml.transform.stream.StreamResult
 
 /**
  * TTML (Timed Text Markup Language) 格式解析器
- * 
+ *
  * TTML 是一种基于 XML 的字幕格式标准，广泛用于视频字幕和歌词。
  * 这个解析器负责从 TTML XML 文档中提取：
  * - 歌词行信息（文本、时间戳）
@@ -26,30 +24,30 @@ import javax.xml.transform.stream.StreamResult
  * - 翻译和音译
  * - 歌曲结构信息（前奏、主歌、副歌等）
  * - 元数据（标题、艺术家等）
- * 
+ *
  * 特殊处理：
  * - 自动修复格式错误的 TTML（Apple 的 TTML 经常有不规范的标签）
  * - 支持内联样式和块级样式
  * - 保留原始结构信息供后续处理
  */
 object TTMLParser {
-    
+
     // XML 解析工厂（线程安全，可复用）
     private val factory = DocumentBuilderFactory.newInstance()
-    
+
     /**
      * 解析 TTML 内容，返回完整的 UnifiedLyrics 对象
-     * 
+     *
      * 这是 TTML 解析的主入口方法。它会：
      * 1. 解析 XML 文档结构
      * 2. 提取元数据（标题、艺术家等）
      * 3. 提取所有歌词行及其时间信息
      * 4. 识别歌曲结构段落（前奏、主歌、副歌等）
-     * 
+     *
      * 容错机制：
      * - 如果正常解析失败，会尝试清理格式后重试
      * - 完全失败时返回空列表，不会崩溃
-     * 
+     *
      * @param content TTML XML 字符串
      * @return 包含元数据和歌词行的完整对象
      */
@@ -75,7 +73,7 @@ object TTMLParser {
         return try {
             tryParse(content)
         } catch (e: Exception) {
-                Timber.w("[TTMLParser] Normal parse failed, attempting sanitized parse $e")
+            Timber.w("[TTMLParser] Normal parse failed, attempting sanitized parse $e")
             // 如果失败，尝试清理格式后重试
             try {
                 val sanitized = sanitizeTTMLContent(content)
@@ -108,19 +106,9 @@ object TTMLParser {
         var bgTransliteration: String? = null
     )
 
-    private data class TimedRange(
-        val startTime: Long,
-        val endTime: Long
-    )
-
     private fun parseTTMLDocument(doc: Document): UnifiedLyrics {
         val parsedParagraphs = mutableListOf<ParsedParagraph>()
-        val timedParagraphRanges = mutableListOf<TimedRange>()
-
-        // 解析 TTML 元数据中的歌曲结构信息
-        Timber.d("[SongStructure] Starting TTML document parsing")
-        val songStructures = parseSongStructuresFromMetadata(doc)
-        Timber.d("[SongStructure] TTML metadata parsing complete: ${songStructures.size} structures found")
+        val timedParagraphRanges = mutableListOf<SongStructureParser.TimeRange>()
 
         try {
             val body = doc.getElementsByTagName("body").item(0) as? Element ?: return UnifiedLyrics(
@@ -134,11 +122,12 @@ object TTMLParser {
                 if (i < 5 || i >= paragraphs.length - 2) {
                     Timber.d("[AgentDebug-RAW] Para $i: raw ttm:agent='$rawAgent'")
                 }
+                // 只收集时间范围信息，结构解析移到SongStructureParser
                 collectTimedRangeIfAny(pElement, timedParagraphRanges)
                 parseParagraph(pElement)?.let { parsedParagraphs.add(it) }
             }
         } catch (e: Exception) {
-                Timber.e("[TTMLParser] Failed to parse TTML document structure $e")
+            Timber.e("[TTMLParser] Failed to parse TTML document structure $e")
             return UnifiedLyrics(
                 metadata = LyricsMetadata(title = "Unknown", artist = "Unknown"),
                 lines = emptyList()
@@ -147,9 +136,9 @@ object TTMLParser {
 
         val normalizedAgents = parsedParagraphs.map { normalizeAgent(it.agent) }
         val uniqueAgents = normalizedAgents.filterNotNull().distinct()
-        
+
         Timber.i("[AgentAnalyzer] Total lines: ${parsedParagraphs.size}, unique agents: ${uniqueAgents.size}, agents: $uniqueAgents")
-        
+
         val duetFlags = when {
             uniqueAgents.size <= 1 -> {
                 Timber.d("[AgentAnalyzer] Mode: single or no agent (all isDuet=false)")
@@ -182,19 +171,19 @@ object TTMLParser {
         }
 
         Timber.d("[TTMLParser] Parse complete: ${lines.size} total output lines")
-        
+
         // 解析 TTML 元数据信息
         val metadata = try {
             Timber.d("[TTMLParser] Parsing TTML metadata")
             val head = doc.getElementsByTagName("head").item(0) as? Element
             val metadataElement = head?.getElementsByTagName("metadata")?.item(0) as? Element
-            
+
             var title: String? = null
             var artist: String? = null
             var album: String? = null
-            val language = "ja"
+            val language = ""
             var rawXmlMetadata: String? = null
-            
+
             if (metadataElement != null) {
                 // ✅ 保存原始 metadata 元素的完整 XML，用于未来扩展和保留未使用的信息
                 rawXmlMetadata = elementToXml(metadataElement)
@@ -206,7 +195,7 @@ object TTMLParser {
                 artist = metadataElement.getAttribute("itunes:artist").takeIf { it.isNotEmpty() }
                 album = metadataElement.getAttribute("itunes:album").takeIf { it.isNotEmpty() }
             }
-            
+
             LyricsMetadata(
                 title = title ?: "Unknown",
                 artist = artist ?: "Unknown",
@@ -215,31 +204,22 @@ object TTMLParser {
                 rawXmlMetadata = rawXmlMetadata
             )
         } catch (e: Exception) {
-                Timber.w("[TTMLParser] Failed to parse metadata $e")
+            Timber.w("[TTMLParser] Failed to parse metadata $e")
             LyricsMetadata(title = "Unknown", artist = "Unknown")
         }
 
-        val instrumentalStructures = detectInstrumentalStructures(
+        // 使用SongStructureParser来处理结构解析
+        val mergedStructures = SongStructureParser.parseFromTtmlDocument(
+            doc = doc,
             vocalLines = parsedParagraphs.mapNotNull { it.mainLine },
-            timedParagraphRanges = timedParagraphRanges,
-            existingStructures = songStructures
+            timedParagraphRanges = timedParagraphRanges
         )
-        val autoParagraphStructures = if (songStructures.isEmpty() && shouldAutoParagraphFromDivs(doc)) {
-            buildParagraphStructuresBetweenInstrumentals(
-                vocalLines = parsedParagraphs.mapNotNull { it.mainLine },
-                instrumentalStructures = instrumentalStructures
-            )
-        } else {
-            emptyList()
-        }
-        val mergedStructures = (songStructures + instrumentalStructures + autoParagraphStructures)
-            .sortedBy { it.startTime }
-        Timber.d("[SongStructure] Creating UnifiedLyrics with ${mergedStructures.size} structures")
         return UnifiedLyrics(
             metadata = metadata.copy(songStructures = mergedStructures.takeIf { it.isNotEmpty() }),
             lines = lines
         )
     }
+
 
     private fun parseParagraph(pElement: Element): ParsedParagraph? {
         return try {
@@ -276,7 +256,7 @@ object TTMLParser {
             val mainLine = if (mainText.isNotEmpty()) {
                 val mainStart = buffer.mainWords.firstOrNull()?.startTime ?: startTime
                 val mainEndRaw = buffer.mainWords.lastOrNull()?.endTime ?: endTime
-                val mainEnd = maxOf(mainStart + 1, mainEndRaw) // 确保持续时间至少为 1ms
+                val mainEnd = maxOf(mainStart + 1, mainEndRaw) // 确保持时间至少为 1ms
                 LyricLine(
                     startTime = mainStart,
                     endTime = mainEnd,
@@ -315,7 +295,7 @@ object TTMLParser {
                 ParsedParagraph(mainLine = mainLine, bgLine = bgLine, agent = agent)
             }
         } catch (e: Exception) {
-                Timber.w("[TTMLParser] Failed to parse paragraph $e")
+            Timber.w("[TTMLParser] Failed to parse paragraph $e")
             null
         }
     }
@@ -547,7 +527,7 @@ object TTMLParser {
             numberB != null -> agentB
             else -> if (agentA <= agentB) agentA else agentB
         }
-        
+
         Timber.d("[AGENT-DEBUG] pickLeftAgentForTwo: agentA='$agentA'(num=$numberA) vs agentB='$agentB'(num=$numberB) -> leftAgent='$result'")
         return result
     }
@@ -565,7 +545,7 @@ object TTMLParser {
             }
 
             if (lastAgent == null) {
-                // 多 agent 模式下，首个声部固定在左侧。
+                // 多 agent 模式，首个声部固定在左侧。
                 currentIsRight = false
                 lastAgent = agent
                 Timber.d("[AGENT-DEBUG] alternating: line $i first agent='$agent' -> isDuet=${false}")
@@ -661,354 +641,26 @@ object TTMLParser {
 
         return String(chars).replace("\u0000", "")
     }
-    
-    /**
-     * 解析 TTML 元数据中的歌曲结构信息
-     * 只支持一种标准格式：<body> 中 <div> 标签上的 itunes:song-part/songPart 属性
-     */
-    private fun parseSongStructuresFromMetadata(doc: Document): List<SongStructure> {
-        val structures = mutableListOf<SongStructure>()
-                    
-        try {
-            Timber.d("[SongStructure] 🔍 Starting metadata structure parsing (only from <div> itunes:songPart attributes)")
-            
-            // 唯一合法的方式：从 <body> 中的 <div> 标签解析 itunes:songPart/song-part
-            Timber.d("[SongStructure] 📁 Parsing structures from <div> elements in <body>")
-            parseSongStructuresFromBodyElements(doc, structures)
-            
-            if (structures.isEmpty()) {
-                Timber.i("[SongStructure] ⚠️ No songPart attributes found on <div> elements")
-            } else {
-                Timber.d("[SongStructure] ✅ Found ${structures.size} structures from <div> itunes:songPart attributes")
-            }
-            
-            Timber.d("[SongStructure] 📊 Metadata parsing complete: total ${structures.size} structures")
-                    
-        } catch (e: Exception) {
-                Timber.e("[SongStructure] ❌ Error parsing metadata $e")
-        }
-                
-        return structures
-    }
 
-    private fun detectInstrumentalStructures(
-        vocalLines: List<LyricLine>,
-        timedParagraphRanges: List<TimedRange>,
-        existingStructures: List<SongStructure>
-    ): List<SongStructure> {
-        if (vocalLines.isEmpty()) {
-            Timber.d("[SongStructure] No vocal lines found; skipping instrumental structure detection")
-            return emptyList()
-        }
-
-        val sortedVocalLines = vocalLines.sortedBy { it.startTime }
-        val trackStart = timedParagraphRanges.minOfOrNull { it.startTime } ?: 0L
-        val trackEnd = timedParagraphRanges.maxOfOrNull { it.endTime } ?: sortedVocalLines.last().endTime
-        val minGapMs = 1500L
-
-        val results = mutableListOf<SongStructure>()
-
-        val firstStart = sortedVocalLines.first().startTime
-        if (firstStart - trackStart >= minGapMs && !hasInstrumentalOverlap(existingStructures, trackStart, firstStart)) {
-            results.add(
-                SongStructure(
-                    label = "Intro",
-                    startTime = trackStart,
-                    endTime = firstStart,
-                    type = SongStructureType.INTRO_INST
-                )
-            )
-            Timber.d("[SongStructure] ✅ Detected instrumental intro: ${formatTime(trackStart)} - ${formatTime(firstStart)}")
-        }
-
-        for (i in 0 until sortedVocalLines.size - 1) {
-            val currentEnd = sortedVocalLines[i].endTime
-            val nextStart = sortedVocalLines[i + 1].startTime
-            if (nextStart - currentEnd < minGapMs) continue
-            if (hasInstrumentalOverlap(existingStructures, currentEnd, nextStart)) continue
-
-            results.add(
-                SongStructure(
-                    label = "Interlude",
-                    startTime = currentEnd,
-                    endTime = nextStart,
-                    type = SongStructureType.INTERLUDE
-                )
-            )
-            Timber.d("[SongStructure] ✅ Detected interlude: ${formatTime(currentEnd)} - ${formatTime(nextStart)}")
-        }
-
-        val lastEnd = sortedVocalLines.last().endTime
-        if (trackEnd - lastEnd >= minGapMs && !hasInstrumentalOverlap(existingStructures, lastEnd, trackEnd)) {
-            results.add(
-                SongStructure(
-                    label = "Outro",
-                    startTime = lastEnd,
-                    endTime = trackEnd,
-                    type = SongStructureType.OUTRO_INST
-                )
-            )
-            Timber.d("[SongStructure] ✅ Detected instrumental outro: ${formatTime(lastEnd)} - ${formatTime(trackEnd)}")
-        }
-
-        return results
-    }
-
-    private fun shouldAutoParagraphFromDivs(doc: Document): Boolean {
-        val body = doc.getElementsByTagName("body").item(0) as? Element ?: return false
-        val divs = body.getElementsByTagName("div")
-        if (divs.length == 0) return true
-
-        for (i in 0 until divs.length) {
-            val div = divs.item(i) as? Element ?: continue
-            val paragraphs = div.getElementsByTagName("p")
-            if (paragraphs.length > 1) return false
-        }
-
-        return true
-    }
-
-    private fun buildParagraphStructuresBetweenInstrumentals(
-        vocalLines: List<LyricLine>,
-        instrumentalStructures: List<SongStructure>
-    ): List<SongStructure> {
-        if (vocalLines.isEmpty()) return emptyList()
-
-        val sortedLines = vocalLines.sortedBy { it.startTime }
-        val separators = instrumentalStructures.sortedBy { it.startTime }
-        val results = mutableListOf<SongStructure>()
-
-        var paragraphIndex = 1
-        var currentStart: Long? = null
-        var currentEnd = 0L
-        var separatorIndex = 0
-
-        fun closeParagraphIfAny() {
-            val start = currentStart ?: return
-            if (currentEnd <= start) return
-            results.add(
-                SongStructure(
-                    label = "段落$paragraphIndex",
-                    startTime = start,
-                    endTime = currentEnd,
-                    type = SongStructureType.UNKNOWN
-                )
-            )
-            paragraphIndex++
-            currentStart = null
-            currentEnd = 0L
-        }
-
-        for (line in sortedLines) {
-            while (separatorIndex < separators.size && line.startTime >= separators[separatorIndex].startTime) {
-                if (line.startTime < separators[separatorIndex].endTime) {
-                    closeParagraphIfAny()
-                    separatorIndex++
-                    continue
-                }
-
-                closeParagraphIfAny()
-                separatorIndex++
-            }
-
-            if (currentStart == null) {
-                currentStart = line.startTime
-            }
-            currentEnd = maxOf(currentEnd, line.endTime)
-        }
-
-        closeParagraphIfAny()
-        return results
-    }
-
-    private fun hasInstrumentalOverlap(
-        existingStructures: List<SongStructure>,
-        startTime: Long,
-        endTime: Long
-    ): Boolean {
-        if (existingStructures.isEmpty()) return false
-        return existingStructures.any { structure ->
-            val isInstrumental = structure.type == SongStructureType.INTRO_INST ||
-                structure.type == SongStructureType.OUTRO_INST ||
-                structure.type == SongStructureType.INTERLUDE
-            isInstrumental && startTime < structure.endTime && endTime > structure.startTime
-        }
-    }
-
-    private fun collectTimedRangeIfAny(element: Element, ranges: MutableList<TimedRange>) {
+    private fun collectTimedRangeIfAny(element: Element, ranges: MutableList<SongStructureParser.TimeRange>) {
         val beginStr = element.getAttribute("begin")
         val endStr = element.getAttribute("end")
         if (beginStr.isBlank() || endStr.isBlank()) return
         val startTime = timeStrToMillis(beginStr)
         val endTime = timeStrToMillis(endStr)
         if (endTime > startTime) {
-            ranges.add(TimedRange(startTime = startTime, endTime = endTime))
+            ranges.add(SongStructureParser.TimeRange(startTime = startTime, endTime = endTime))
         }
     }
 
-    private fun parseSongStructuresFromBodyElements(doc: Document, structures: MutableList<SongStructure>) {
-        val body = doc.getElementsByTagName("body").item(0) as? Element ?: run {
-            Timber.d("[SongStructure] ⚠️ No <body> element found")
-            return
-        }
-            
-        // 优先查找带有 itunes:songPart 或 itunes:song-part 属性的 div 元素
-        val divs = body.getElementsByTagName("div")
-        
-        Timber.d("[SongStructure] 🔍 Checking $divs divs for songPart attributes")
-            
-        var index = 0
-        var foundCount = 0
-            
-        // 只处理 div 元素
-        for (i in 0 until divs.length) {
-            val div = divs.item(i) as? Element ?: continue
-            val songPartAttr = readSongPartAttribute(div)
-            if (songPartAttr != null) {
-                foundCount++
-                Timber.d("[SongStructure] 🎵 Found songPart attribute on div[$i]: $songPartAttr")
-                parseSongStructureFromAttribute(div, songPartAttr, index++, structures)
-            }
-        }
-        
-        if (foundCount == 0) {
-            Timber.d("[SongStructure] ⚠️ No songPart attributes found on <div> elements")
-        } else {
-            Timber.d("[SongStructure] ✅ Found $foundCount <div> elements with songPart attributes")
-        }
-    }
-        
-    /**
-     * 读取元素的 itunes:songPart 或 itunes:song-part 属性值
-     * 优先使用 itunes:songPart（iTunes 官方标准），兼容 itunes:song-part
-     */
-    private fun readSongPartAttribute(element: Element): String? {
-        // 优先尝试驼峰式 itunes:songPart（iTunes 官方标准）
-        val camelCase = element.getAttribute("itunes:songPart").takeIf { it.isNotEmpty() }
-        if (camelCase != null) return camelCase
-            
-        // 兼容连字符式 itunes:song-part
-        val kebabCase = element.getAttribute("itunes:song-part").takeIf { it.isNotEmpty() }
-        if (kebabCase != null) return kebabCase
-            
-        return null
-    }
-        
-    /**
-     * 从元素属性解析歌曲结构
-     */
-    private fun parseSongStructureFromAttribute(
-        element: Element,
-        label: String,
-        index: Int,
-        structures: MutableList<SongStructure>
-    ) {
-        // 尝试从 begin/end 属性获取时间
-        val beginStr = element.getAttribute("begin").takeIf { it.isNotEmpty() }
-        val endStr = element.getAttribute("end").takeIf { it.isNotEmpty() }
-        
-        Timber.d("[SongStructure] Parsing structure from attribute: index=$index, label='$label', hasBegin=${beginStr != null}, hasEnd=${endStr != null}")
-            
-        if (beginStr != null && endStr != null) {
-            val startTime = timeStrToMillis(beginStr)
-            val endTime = timeStrToMillis(endStr)
-                
-            if (endTime > startTime) {
-                val type = mapStructureType(label)
-                val structure = SongStructure(
-                    label = label,
-                    startTime = startTime,
-                    endTime = endTime,
-                    type = type
-                )
-                structures.add(structure)
-                    
-                Timber.d("[SongStructure] ✅ Parsed from attribute: $label ($type) ${formatTime(startTime)} - ${formatTime(endTime)}")
-            } else {
-                Timber.w("[SongStructure] ⚠️ Invalid time range for structure: begin=$startTime, end=$endTime")
-            }
-        } else {
-            Timber.d("[SongStructure] Skipping structure without begin/end attributes")
-        }
-    }
-    
-    /**
-     * 将结构标签映射到 SongStructureType
-     */
-    private fun mapStructureType(label: String): SongStructureType {
-        val lowerLabel = label.lowercase()
-        return when {
-            lowerLabel.contains("verse") -> SongStructureType.VERSE
-            lowerLabel.contains("chorus") -> SongStructureType.CHORUS
-            lowerLabel.contains("bridge") -> SongStructureType.BRIDGE
-            lowerLabel.contains("pre-chorus") || lowerLabel.contains("prechorus") -> SongStructureType.PRE_CHORUS
-            lowerLabel.contains("intro_para") -> SongStructureType.INTRO_PARA
-            lowerLabel.contains("intro_inst") -> SongStructureType.INTRO_INST
-            lowerLabel.contains("intro") -> SongStructureType.INTRO_PARA  // 默认将 intro 视为引子
-            lowerLabel.contains("outro_para") -> SongStructureType.OUTRO_PARA
-            lowerLabel.contains("outro_inst") -> SongStructureType.OUTRO_INST
-            lowerLabel.contains("outro") -> SongStructureType.OUTRO_PARA  // 默认将 outro 视为尾声
-            lowerLabel.contains("interlude") -> SongStructureType.INTERLUDE
-            lowerLabel.contains("solo") -> SongStructureType.SOLO
-            lowerLabel.contains("break") -> SongStructureType.BREAK
-            else -> SongStructureType.UNKNOWN
-        }
-    }
-
-        
-    /**
-     * 格式化时间为 mm:ss 格式（用于日志）
-     */
-    private fun formatTime(millis: Long): String {
-        val totalSeconds = millis / 1000
-        val minutes = totalSeconds / 60
-        val seconds = totalSeconds % 60
-        return String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
-    }
-        
     /**
      * 将 TTML 时间格式转换为毫秒
-     * 格式：mm:ss.mmm (例：00:12.345)
+     *
+     * 委托给 [SongStructureParser.parseTimeString]，避免重复实现。
+     * 格式：mm:ss.mmm (例：00:12.345) 或 hh:mm:ss.mmm
      */
     private fun timeStrToMillis(timeStr: String): Long {
-        return try {
-            if (timeStr.isBlank()) return 0L
-
-            val normalized = timeStr.trim().lowercase().removeSuffix("s")
-            if (normalized.isEmpty()) return 0L
-
-            if (!normalized.contains(":")) {
-                val seconds = normalized.toDoubleOrNull() ?: return 0L
-                return (seconds * 1000.0).toLong()
-            }
-
-            val parts = normalized.split(":")
-            if (parts.size !in 2..3) return 0L
-
-            val hours: Long
-            val minutes: Long
-            val secondToken: String
-            if (parts.size == 3) {
-                hours = parts[0].toLongOrNull() ?: return 0L
-                minutes = parts[1].toLongOrNull() ?: return 0L
-                secondToken = parts[2]
-            } else {
-                hours = 0L
-                minutes = parts[0].toLongOrNull() ?: return 0L
-                secondToken = parts[1]
-            }
-
-            val secParts = secondToken.split(".")
-            val seconds = secParts[0].toLongOrNull() ?: return 0L
-            val millis = if (secParts.size > 1) {
-                secParts[1].padEnd(3, '0').take(3).toLongOrNull() ?: 0L
-            } else 0L
-
-            (hours * 3600 + minutes * 60 + seconds) * 1000 + millis
-        } catch (e: Exception) {
-            Timber.e("[TTMLParser] Failed to parse time string: $timeStr $e")
-            0L
-        }
+        return SongStructureParser.parseTimeString(timeStr)
     }
 
     /**
@@ -1017,26 +669,26 @@ object TTMLParser {
     private fun elementToXml(element: Element): String {
         val transformerFactory = TransformerFactory.newInstance()
         val transformer = transformerFactory.newTransformer()
-        
+
         // 配置输出格式
         val output = java.io.StringWriter()
         val result = StreamResult(output)
-        
+
         // 设置缩进和编码
         transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "no")
         transformer.setOutputProperty(javax.xml.transform.OutputKeys.ENCODING, "UTF-8")
         transformer.setOutputProperty(javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION, "yes")
-        
-        // 执行转换
+
+        // ��行转换
         val source = DOMSource(element.ownerDocument)
         transformer.transform(source, result)
-        
+
         return output.toString()
     }
 
     /**
      * 清理 TTML 内容，修复常见的格式问题
-     * 
+     *
      * 主要处理：
      * 1. 移除 BOM (Byte Order Mark)
      * 2. 修复不完整的命名空间声明
@@ -1045,12 +697,12 @@ object TTMLParser {
      */
     private fun sanitizeTTMLContent(content: String): String {
         var sanitized = content
-        
+
         // 1. 移除 BOM
         if (sanitized.startsWith("\uFEFF")) {
             sanitized = sanitized.substring(1)
         }
-        
+
         // 2. 修复常见的命名空间问题 - 确保有必要的命名空间声明
         if (!sanitized.contains("xmlns:ttm=")) {
             sanitized = sanitized.replace(
@@ -1058,24 +710,23 @@ object TTMLParser {
                 "<tt xmlns:ttm=\"http://www.w3.org/ns/ttml#metadata\" "
             )
         }
-        
+
         if (!sanitized.contains("xmlns:itunes=")) {
             sanitized = sanitized.replace(
                 "<tt ",
                 "<tt xmlns:itunes=\"http://music.apple.com/namespace/1.0/\" "
             )
         }
-        
+
         // 3. 清理一些常见的非法 XML 字符（但保留合法的歌词字符）
         sanitized = sanitized.replace(Regex("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]"), "")
-        
+
         // 4. 确保根元素闭合
         if (!sanitized.trimEnd().endsWith("</tt>")) {
             Timber.w("[TTMLParser] TTML content may be incomplete or malformed")
         }
-        
+
         return sanitized
     }
-
 
 }
