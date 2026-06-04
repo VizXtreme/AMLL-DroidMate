@@ -251,37 +251,36 @@ androidComponents {
 dependencies {
     // ==================== Compose BOM (Bill of Materials) ====================
     // 使用 BOM 统一管理所有 Compose 相关库的版本，避免版本冲突
-    implementation(platform("androidx.compose:compose-bom:latest.release"))
-    implementation("androidx.compose.material3:material3:latest.release")
-    androidTestImplementation(platform("androidx.compose:compose-bom:latest.release"))
+    implementation(platform("androidx.compose:compose-bom:latest.integration"))
+    implementation("androidx.compose.material3:material3:1.5.0-alpha20")
+    androidTestImplementation(platform("androidx.compose:compose-bom:latest.integration"))
 
     // ==================== AndroidX 核心库 ====================
     // Kotlin 扩展函数，提供更简洁的 API
-    implementation("androidx.core:core-ktx:latest.release")
+    implementation("androidx.core:core-ktx:latest.integration")
     
     // 启动屏支持（Android 12+ 原生启动屏 API）
     // 1.2.0 是最新稳定版（1.1.0 从未发布正式版）
-    implementation("androidx.core:core-splashscreen:latest.release")
+    implementation("androidx.core:core-splashscreen:latest.integration")
     
     // Lifecycle 运行时和 ViewModel（支持 Compose）
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:latest.release")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:latest.release")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     
     // Activity Compose 集成（使 Activity 支持 Compose）
-    implementation("androidx.activity:activity-compose:latest.release")
+    implementation("androidx.activity:activity-compose:latest.integration")
     
     // 媒体播放支持（用于获取音乐播放信息）
-    implementation("androidx.media:media:latest.release")
+    implementation("androidx.media:media:latest.integration")
     
     // 调色板提取（从专辑封面提取颜色）
-    implementation("androidx.palette:palette:latest.release")
 
     // ==================== Media3 UI 组件 ====================
     // 提供 DefaultTimeBar 和其他播放器控制组件
-    implementation("androidx.media3:media3-ui:latest.release")
+    implementation("androidx.media3:media3-ui:latest.integration")
     
     // WebView 支持（用于 AMLL 歌词渲染）
-    implementation("androidx.webkit:webkit:latest.release")
+    implementation("androidx.webkit:webkit:latest.integration")
     // ==================== Jetpack Compose UI ====================
     // 版本号由 BOM 统一管理，不需要单独指定
     // Compose UI 核心功能
@@ -293,13 +292,14 @@ dependencies {
     // Material Design 3 组件库
     implementation("androidx.compose.material3:material3")
     // Google Material 设计组件（非 Compose 版本）
-    implementation("com.google.android.material:material:latest.release")
+    implementation("com.google.android.material:material:latest.integration")
     // Material 图标扩展库（更多图标选择）
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.palette:palette:latest.integration")
     
     // ==================== 图片加载 ====================
     // Coil: Kotlin 编写的图片加载库，支持 Compose
-    implementation("io.coil-kt:coil-compose:latest.release")
+    implementation("io.coil-kt:coil-compose:latest.integration")
 
     // ==================== Ktor 网络客户端（3.x 版本） ====================
     // Ktor 核心库（HTTP 客户端）
@@ -320,43 +320,43 @@ dependencies {
 
     // ==================== JSON 序列化 ====================
     // Kotlinx Serialization: Kotlin 原生的 JSON 序列化库
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:latest.release")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:latest.integration")
 
 
     // ==================== 协程（异步编程） ====================
     // Android 平台协程（包含主线程调度器）
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:latest.release")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:latest.integration")
     // 协程核心库
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:latest.release")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:latest.integration")
 
     // ==================== 日志框架 ====================
     // Timber: JakeWharton 开发的轻量级日志库
-    implementation("com.jakewharton.timber:timber:latest.release")
+    implementation("com.jakewharton.timber:timber:latest.integration")
     // SLF4J Android: 将 SLF4J 日志转发到 Logcat，解决库依赖问题
     implementation("org.slf4j:slf4j-android:1.7.36")
 
     // ==================== 数据库（Room ORM） ====================
     // Room 运行时库（SQLite 对象映射）
-    implementation("androidx.room:room-runtime:latest.release")
+    implementation("androidx.room:room-runtime:latest.integration")
     // Room Kotlin 扩展（Flow、协程支持）
-    implementation("androidx.room:room-ktx:latest.release")
+    implementation("androidx.room:room-ktx:latest.integration")
 
     // ==================== 测试库 ====================
     // JUnit4: Java/Kotlin 单元测试框架
-    testImplementation("junit:junit:latest.release")
+    testImplementation("junit:junit:latest.integration")
     
     // 协程测试支持（TestDispatcher 等）
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:latest.release")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:latest.integration")
 
     // Ktor Mock 引擎（单元测试用）
-    testImplementation("io.ktor:ktor-client-mock:latest.release")
-    testImplementation("io.ktor:ktor-client-mock-jvm:latest.release")
+    testImplementation("io.ktor:ktor-client-mock:latest.integration")
+    testImplementation("io.ktor:ktor-client-mock-jvm:latest.integration")
     
     // Android 仪器化测试（在模拟器/真机上运行）
-    androidTestImplementation("io.ktor:ktor-client-mock:latest.release")
-    androidTestImplementation("io.ktor:ktor-client-mock-jvm:latest.release")
-    androidTestImplementation("androidx.test.ext:junit:latest.release")
-    androidTestImplementation("androidx.test.espresso:espresso-core:latest.release")
+    androidTestImplementation("io.ktor:ktor-client-mock:latest.integration")
+    androidTestImplementation("io.ktor:ktor-client-mock-jvm:latest.integration")
+    androidTestImplementation("androidx.test.ext:junit:latest.integration")
+    androidTestImplementation("androidx.test.espresso:espresso-core:latest.integration")
     
     // Compose UI 测试框架
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")

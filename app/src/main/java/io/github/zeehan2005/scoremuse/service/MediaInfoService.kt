@@ -19,25 +19,24 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
-import java.util.concurrent.ConcurrentHashMap
 import androidx.core.graphics.scale
 
 /**
  * 媒体信息监听服务 - 获取当前播放的歌曲信息
- * 
+ *
  * 性能优化：
  * - 使用 Coroutine + Dispatchers.IO 在后台线程执行轮询
- * - 专辑图片异步处理 + 内存/磁盘缓存
+ * - 专辑图片异步处理（不再缓存，专辑图变化时直接覆盖旧文件）
  * - Flow 发射优化，仅在关键数据变化时更新
  */
 class MediaInfoService(private val context: Context) {
-    
+
     private val _nowPlayingMusic = MutableStateFlow<NowPlayingMusic?>(null)
     val nowPlayingMusic: StateFlow<NowPlayingMusic?> = _nowPlayingMusic
-    
+
     // 后台协程作用域，使用 IO 调度器
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    
+
     private val mediaSessionManager: MediaSessionManager? = try {
         context.getSystemService(Context.MEDIA_SESSION_SERVICE) as? MediaSessionManager
     } catch (e: Exception) {
@@ -46,14 +45,11 @@ class MediaInfoService(private val context: Context) {
     }
 
     private val listenerComponentName = ComponentName(context, MediaListenerService::class.java)
-    
-    private var currentController: MediaController? = null
-    
-    // 专辑封面缓存，避免重复保存相同图片
-    private val albumArtCache = ConcurrentHashMap<String, String>()
-    
 
-    
+    private var currentController: MediaController? = null
+
+
+
     /**
      * 启动监听
      */
@@ -61,7 +57,7 @@ class MediaInfoService(private val context: Context) {
         Timber.i("[MediaInfoService] Starting media info listener")
         scheduleNextUpdate()
     }
-    
+
     /**
      * 停止监听
      */
@@ -69,13 +65,13 @@ class MediaInfoService(private val context: Context) {
         Timber.i("[MediaInfoService] Stopping media info listener")
         serviceScope.cancel()
     }
-    
+
     /**
      * 更新媒体信息（在 IO 线程执行）
      */
     private suspend fun updateMediaInfo() {
         if (!serviceScope.isActive) return
-        
+
         try {
             val activeSessions = withContext(Dispatchers.IO) {
                 mediaSessionManager?.getActiveSessions(listenerComponentName)
@@ -96,13 +92,10 @@ class MediaInfoService(private val context: Context) {
                     val position = playbackState.position
                     val isPlaying = playbackState.state == android.media.session.PlaybackState.STATE_PLAYING
 
-                    // 检查是否为同一首歌
+                    // 旧音乐对象（用于对比）
                     val oldMusic = _nowPlayingMusic.value
-                    oldMusic?.title == title &&
-                                     oldMusic.artist == artist &&
-                                     oldMusic.packageName == packageName
 
-                    // ✅ 统一逻辑：通过检查专辑图 Bitmap 是否变化来决定是否更新
+                    // 当前已展示的专辑图 URI
                     val currentAlbumArtUri = oldMusic?.albumArtUri
 
                     // 尝试从播放源获取专辑图 Bitmap（不是 URI）
@@ -111,7 +104,7 @@ class MediaInfoService(private val context: Context) {
 
                     // 智能判断是否需要处理专辑图
                     val finalAlbumArtUri = when {
-                        // 情况 1: 获取到了新的 Bitmap → 重新处理
+                        // 情况 1: 获取到了新的 Bitmap → 重新写入文件（旧的同名文件会被销毁）
                         newAlbumArtBitmap != null -> {
                             processAlbumArtBitmap(bitmap = newAlbumArtBitmap, title, artist, packageName)
                         }
@@ -145,40 +138,18 @@ class MediaInfoService(private val context: Context) {
                         timestamp = System.currentTimeMillis()
                     )
 
-                    // 只有数据真正变化时才更新 Flow
-                    if (shouldUpdateBasicInfo(oldMusic, updatedMusic)) {
+
                         _nowPlayingMusic.value = updatedMusic
-                    }
                 }
             } else {
                 currentController = null
             }
         } catch (e: SecurityException) {
-            Timber.e("[MediaInfoService] Permission denied to access media sessions")
+            Timber.e("[MediaInfoService] Permission denied to access media sessions $e")
             updateMediaInfoViaContentResolver()
         } catch (e: Exception) {
             Timber.e("[MediaInfoService] Error updating media info $e")
         }
-    }
-
-    /**
-     * 判断基础信息是否需要更新（不包括专辑图）
-     */
-    private fun shouldUpdateBasicInfo(old: NowPlayingMusic?, new: NowPlayingMusic): Boolean {
-        // 歌曲基本信息变化时立即更新
-        val isBasicInfoChanged = old?.title != new.title ||
-                                 old.artist != new.artist ||
-                                 old.isPlaying != new.isPlaying ||
-                                 old.packageName != new.packageName
-
-        if (isBasicInfoChanged) return true
-
-        // ✅ 关键修复：添加播放时间检查，但只在变化超过阈值时才更新（避免过于频繁）
-        // 每 更新一次进度，与 UPDATE_INTERVAL_MS 保持一致
-        val positionChanged = kotlin.math.abs(old.currentPosition - new.currentPosition)
-        val isProgressSignificant = positionChanged >= PROGRESS_UPDATE_THRESHOLD_MS
-
-        return isProgressSignificant
     }
 
     /**
@@ -195,7 +166,7 @@ class MediaInfoService(private val context: Context) {
     }
 
     /**
-     * 直接从 Bitmap 处理专辑图（新增方法）
+     * 直接从 Bitmap 处理专辑图（不再使用内存缓存，每次写入都会覆盖旧文件）
      */
     private suspend fun processAlbumArtBitmap(
         bitmap: Bitmap,
@@ -207,13 +178,7 @@ class MediaInfoService(private val context: Context) {
             // 生成缓存 key
             val cacheKey = "${packageName ?: "unknown"}_${title}_$artist"
 
-            // 检查内存缓存（可选：可以添加 Bitmap 哈希比较）
-            albumArtCache[cacheKey]?.takeIf { File(it).exists() }?.let { cached ->
-                Timber.d("[AlbumArtExtractor] Hit memory cache: $cached")
-                return@withContext cached
-            }
-
-            // 保存到缓存
+            // 保存（并销毁旧文件）
             saveAlbumArtBitmapToCache(
                 bitmap = bitmap,
                 cacheKey = cacheKey
@@ -226,7 +191,7 @@ class MediaInfoService(private val context: Context) {
 
     /**
      * 异步处理专辑封面（在 IO 线程执行）
-     * 从 URI 获取专辑图
+     * 从 URI 获取专辑图（不再使用内存缓存）
      */
     private suspend fun processAlbumArtAsync(
         metadata: android.media.MediaMetadata,
@@ -238,12 +203,6 @@ class MediaInfoService(private val context: Context) {
             // 生成缓存 key
             val cacheKey = "${packageName ?: "unknown"}_${title}_$artist"
 
-            // 检查内存缓存
-            albumArtCache[cacheKey]?.takeIf { File(it).exists() }?.let { cached ->
-                Timber.d("[AlbumArtExtractor] Hit memory cache: $cached")
-                return@withContext cached
-            }
-
             // 获取专辑图 Bitmap
             val albumArtBitmap = metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
                 ?: metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
@@ -254,7 +213,7 @@ class MediaInfoService(private val context: Context) {
                     ?: metadata.getString(android.media.MediaMetadata.METADATA_KEY_ART_URI)
             }
 
-            // 保存到缓存
+            // 保存（并销毁旧文件）
             saveAlbumArtBitmapToCache(
                 bitmap = albumArtBitmap,
                 cacheKey = cacheKey
@@ -266,7 +225,12 @@ class MediaInfoService(private val context: Context) {
     }
 
     /**
-     * 保存专辑图 Bitmap 到缓存
+     * 保存专辑图 Bitmap 到磁盘
+     *
+     * 行为变更：
+     * - 移除了内存缓存（albumArtCache）以及「文件已存在则直接返回」的逻辑
+     * - 每次写入新的专辑图前，都会先销毁当前缓存目录中的所有旧专辑图文件，
+     *   以确保专辑图变化时能即时反映到前端，不会出现「同一首歌内残留旧图」的情况
      */
     private fun saveAlbumArtBitmapToCache(
         bitmap: Bitmap,
@@ -282,17 +246,16 @@ class MediaInfoService(private val context: Context) {
             val safeKey = cacheKey.hashCode().toUInt().toString(16)
             val file = File(cacheDir, "album_art_${safeKey}.jpg")
 
-            // 如果文件已存在且大小合理，直接返回（避免重复写入）
-            if (file.exists() && file.length() > 1024) {
-                return "file://${file.absolutePath}"
-            }
+            // 销毁旧的专辑图文件（包括同名旧文件和不同 cacheKey 的旧文件），
+            // 保证不会因为缓存命中错误而展示错误的专辑图
+            deleteAllAlbumArtCache(cacheDir, excluding = file)
 
             // 缩放图片至最大 512x512，减少内存占用
             val scaledBitmap = resizeBitmap(bitmap)
 
             try {
                 FileOutputStream(file).use { out ->
-                    // 压缩质量从 90 降至 75，显著减少文件大小
+                    // 压缩质量 75，显著减少文件大小
                     scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, out)
                 }
             } finally {
@@ -306,11 +269,30 @@ class MediaInfoService(private val context: Context) {
 
             val uri = "file://${file.absolutePath}"
             Timber.d("[AlbumArtExtractor] Album art saved to: $uri")
-            albumArtCache[cacheKey] = uri
             uri
         } catch (e: Exception) {
             Timber.e("[AlbumArtExtractor] Failed to save album art to cache $e")
             null
+        }
+    }
+
+    /**
+     * 删除缓存目录中除指定保留文件以外的所有专辑图文件
+     */
+    private fun deleteAllAlbumArtCache(cacheDir: File, excluding: File) {
+        try {
+            val files = cacheDir.listFiles() ?: return
+            for (f in files) {
+                if (f.isFile && f.absolutePath != excluding.absolutePath) {
+                    if (!f.delete()) {
+                        Timber.w("[AlbumArtExtractor] Failed to delete stale album art: ${f.absolutePath}")
+                    } else {
+                        Timber.d("[AlbumArtExtractor] Deleted stale album art: ${f.absolutePath}")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e("[AlbumArtExtractor] Failed to clean album art cache $e")
         }
     }
 
@@ -384,11 +366,10 @@ class MediaInfoService(private val context: Context) {
 
     fun rewind() {
         currentController?.transportControls?.rewind()
-        Timber.i("[PlaybackControl] Rewind command sent") 
+        Timber.i("[PlaybackControl] Rewind command sent")
     }
 
     companion object {
         private const val UPDATE_INTERVAL_MS = 100L  // 每 100ms 更新一次，减少更新频率
-        private const val PROGRESS_UPDATE_THRESHOLD_MS = 100L  // 播放时间变化超过 100ms 才更新
     }
 }
