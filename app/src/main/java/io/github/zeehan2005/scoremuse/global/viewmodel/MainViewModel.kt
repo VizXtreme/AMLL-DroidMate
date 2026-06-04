@@ -25,9 +25,11 @@ import io.github.zeehan2005.scoremuse.ui.getAppNameFromPackage
 import io.github.zeehan2005.scoremuse.components.AudioDeviceHelper
 import io.github.zeehan2005.scoremuse.data.parser.global.LyricsFormat
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -94,6 +96,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val isLoading: StateFlow<Boolean> = _isLoading
     
     private val _errorMessage = MutableStateFlow<String?>(null)
+
+    // 跟踪当前 fetchLyrics 协程任务，以便在 isLoading 变 false 时主动停止
+    // fetchLyricsAuto 调用以及任何尚未完成的子任务（例如进行中的网络请求）。
+    @Volatile
+    private var fetchLyricsJob: Job? = null
 
     // tracks whether we've already shown the paused notification. After a
     // pause occurs we'll send one update with ongoing=false, then refrain from
@@ -272,10 +279,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _errorMessage.value = "未检测到播放信息"
             return
         }
-    
-        viewModelScope.launch {
+
+        // 如果已有正在运行的 fetchLyrics 任务（例如上一个 fetch 还未结束），
+        // 主动取消它，以避免多个搜索任务并行消耗资源。取消后 launch 不会执行。
+        fetchLyricsJob?.cancel()
+        // coroutineContext 是 CoroutineScope 扩展属性，可以在 launch lambda 内直接访问。
+        // 在这里提前抓取当前协程的 Job，保存到 fetchLyricsJob 供后续取消使用。
+        val newJob = viewModelScope.launch {
             _errorMessage.value = null
-    
+            // 将当前协程的 Job 保存为 fetchLyricsJob，保证 cancelFetchLyrics() 可以取消它
+            val currentJob = coroutineContext[Job]
+            if (currentJob != null) {
+                fetchLyricsJob = currentJob
+            }
+
             // first try to load from cache without toggling the loading flag; this avoids
             // showing a spinner/mask for cached data which is usually very fast.
             val cached = lyricsCacheRepository.findBySong(music.title, music.artist)
@@ -292,31 +309,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                         // ✅ 重置歌词哈希值，确保新歌词会被发送
                         lastSentLyricsHash = 0
-                            
 
-                            
                         return@launch
                     }
                 } else {
                     Timber.d("[CacheManager] Bypassing stale Kugou cache to refresh whitespace-fixed lyrics")
                 }
             }
-    
+
             // no usable cache, fall back to network search
             lyricsMutable.value = null
             _songStructures.value = emptyList() // 清空歌曲结构
             _isLoading.value = true
-    
+
             try {
+                // 在发起网络请求前检查取消状态，避免取消后仍进行昂贵的网络调用
+                kotlinx.coroutines.currentCoroutineContext().ensureActive()
+
                 Timber.i("[LyricsMatcher] Fetching lyrics for: ${music.title} - ${music.artist}")
-    
+
                 val sourceName = getAppNameFromPackage(context, music.packageName)
                 val result = lyricsRepository.fetchLyricsAuto(
                     title = music.title,
                     artist = music.artist,
                     currentSourceName = sourceName
                 )
-    
+
+                // fetchLyricsAuto 返回后再次检查取消状态
+                kotlinx.coroutines.currentCoroutineContext().ensureActive()
+
                 if (result.isSuccess && result.lyrics != null) {
                     // ⭐ 修复关键：只有在设置启用元数据处理时才处理，否则使用原始歌词
                     val shouldProcessMetadata = AMLLSettings.isMetadataProcessingEnabled(context)
@@ -327,7 +348,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         Timber.d("[LyricsMatcher] Metadata processing disabled, using raw lyrics")
                         result.lyrics
                     }
-                    
+
                     lyricsMutable.value = finalLyrics
                     updateSongStructures(finalLyrics)
                     // ⭐ 修复关键：始终缓存原始歌词内容（不经过元数据处理）
@@ -342,22 +363,54 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                     // ✅ 重置歌词哈希值，确保新歌词会被发送
                     lastSentLyricsHash = 0
-                        
+
                     // 刷新歌曲结构（重搜歌词时）
                     refreshSongStructures()
-                        
+
 
                 } else {
                     _errorMessage.value = result.errorMessage ?: "获取歌词失败"
                     Timber.e("[LyricsMatcher] Failed to fetch lyrics: ${result.errorMessage}")
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // 主动取消：记个日志后安静退出，不覆盖错误信息
+                Timber.i("[LyricsMatcher] fetchLyrics cancelled (isLoading -> false)")
+                throw e
             } catch (e: Exception) {
                 _errorMessage.value = "错误：${e.message}"
                 Timber.e(e, "[LyricsMatcher] Error fetching lyrics")
             } finally {
                 _isLoading.value = false
+                if (fetchLyricsJob == coroutineContext[Job]) {
+                    fetchLyricsJob = null
+                }
             }
         }
+        // launch 会在调度前返回，但为了避免在 init 阶段出现微小调度空档
+        // 导致 fetchLyricsJob 仍是上一个 job，这里同时用 launch 的返回 Job 覆盖一次。
+        fetchLyricsJob = newJob
+    }
+
+    /**
+     * 取消正在运行的 fetchLyrics 任务。
+     *
+     * 主要由 MainScreen 在 isLoading 变为 false 时调用，以确保
+     * LyricsRepository.fetchLyricsAuto() 以及它内部启动的任何子任务（例如
+     * 并行的网络搜索、AMLL 探测等）能够被立即停止，避免在 UI 不再展示
+     * 加载状态后仍继续在后台运行。
+     *
+     * 调用此方法后：
+     * - 当前协程会抛出 CancellationException，fetchLyricsAuto() 的 `try` 块会
+     *   提前退出，finally 仍会执行，_isLoading 被设为 false。
+     * - 没有正在运行的任务时，该方法是空操作。
+     */
+    fun cancelFetchLyrics() {
+        val job = fetchLyricsJob
+        if (job != null && job.isActive) {
+            Timber.i("[LyricsMatcher] cancelFetchLyrics() called -> cancelling running fetchLyrics job")
+            job.cancel()
+        }
+        fetchLyricsJob = null
     }
 
     private fun wasmFormatFor(format: LyricsFormat): String? = when (format) {

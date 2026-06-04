@@ -253,7 +253,6 @@ fun MainScreen() {
     var autoUpdateDialogTitle by remember { mutableStateOf("") }
     var autoUpdateDialogMessage by remember { mutableStateOf("") }
     var autoUpdateDialogUrl by remember { mutableStateOf<String?>(null) }
-    var spinnerVisible by remember { mutableStateOf(false) }
 
     // 全屏控制状态
     var controlsVisible by remember { mutableStateOf(true) }
@@ -304,6 +303,15 @@ fun MainScreen() {
             showMatchBubble = true
         } else {
             showMatchBubble = false
+            // 注意：不要在这里调用 viewModel.cancelFetchLyrics()。
+            // isLoading 变 false 有两种情况：
+            //   1. fetchLyrics 协程自然完成 ——此时 fetchLyricsAuto 已经返回，重复取消是空操作但无问题。
+            //   2. 切歌时 fetchLyrics() 取消了旧协程、启动了新协程。
+            //      旧协程的 finally 会设置 isLoading=false；如果这里再调用
+            //      cancelFetchLyrics()，会**误伤刚启动的新协程**，导致新歌曲的
+            //      fetchLyricsAuto 被错误取消（出现“切歌后新歌曲不触发 fetchLyrics”
+            //      的 bug）。
+            // 因此取消动作应该只在 ViewModel.onCleared()、或者用户主动取消的场景下进行。
         }
     }
 
@@ -550,7 +558,7 @@ fun MainScreen() {
                     )
 
                     // 占位提示
-                    if (currentLyrics == null && !spinnerVisible) {
+                    if (currentLyrics == null && !isLoading) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -669,7 +677,7 @@ fun MainScreen() {
                         }
                     }
 
-                    if (spinnerVisible) {
+                    if (isLoading) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             LoadingIndicator()
                         }
