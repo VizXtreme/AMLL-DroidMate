@@ -118,7 +118,7 @@
 
         <!-- 动画设置：AMLL 动画与背景渲染开关 -->
         <activity
-            android:name="dev.amll.droidmate.ui.settings.GraphicSettings"
+            android:name="dev.amll.droidmate.ui.settings.ComponentSettings"
             android:exported="false"
             android:theme="@style/Theme.ScoreMuse" />
 

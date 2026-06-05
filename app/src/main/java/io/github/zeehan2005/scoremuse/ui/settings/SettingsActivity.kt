@@ -60,7 +60,7 @@ import io.github.zeehan2005.scoremuse.global.AppSettings
 import io.github.zeehan2005.scoremuse.global.CardClickAction
 import io.github.zeehan2005.scoremuse.global.UpdateChannel
 import io.github.zeehan2005.scoremuse.ui.components.SwitchWithIcon
-import dev.amll.droidmate.ui.settings.GraphicSettings
+import dev.amll.droidmate.ui.settings.ComponentSettings
 import io.github.zeehan2005.scoremuse.global.theme.DynamicThemeManager
 import io.github.zeehan2005.scoremuse.global.theme.ScoreMuseTheme
 import io.github.zeehan2005.scoremuse.components.GitHubUpdateChecker
@@ -321,7 +321,7 @@ private fun SettingsPage(
             }
 
             Text(
-                text = "图形设置",
+                text = "歌词组件设置",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -333,7 +333,7 @@ private fun SettingsPage(
                         context.startActivity(
                             Intent(
                                 context,
-                                GraphicSettings::class.java
+                                ComponentSettings::class.java
                             )
                         )
                     },

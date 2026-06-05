@@ -48,15 +48,15 @@ import io.github.zeehan2005.scoremuse.global.LyricsMetadata
 import io.github.zeehan2005.scoremuse.global.NowPlayingMusic
 import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 
-class GraphicSettings : BaseComposeActivity() {
+class ComponentSettings : BaseComposeActivity() {
     @Composable
     override fun RenderContent() {
-        GraphicSettingsPage(onBack = { finish() })
+        ComponentSettingsPage(onBack = { finish() })
     }
 }
 
 @Composable
-private fun GraphicSettingsPage(onBack: () -> Unit) {
+private fun ComponentSettingsPage(onBack: () -> Unit) {
     val context = LocalContext.current
 
     val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
@@ -142,7 +142,7 @@ private fun GraphicSettingsPage(onBack: () -> Unit) {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("图形设置") },
+                title = { Text("歌词组件设置") },
                 navigationIcon = {
                     FilledIconButton(
                         onClick = onBack,
