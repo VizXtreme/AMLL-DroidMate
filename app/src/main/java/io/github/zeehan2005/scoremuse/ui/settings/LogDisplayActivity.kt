@@ -39,6 +39,7 @@ import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -375,6 +376,29 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                 ),
                 scrollBehavior = scrollBehavior
             )
+        },
+        floatingActionButton = {
+            // 屏幕底部“滚动到底部”按钮
+            SmallFloatingActionButton(
+                onClick = {
+                    // 恢复自动滚动
+                    isPaused = false
+                    autoScrollEnabled = true
+                    // 立即滚动到列表最后一项
+                    if (logEntries.isNotEmpty()) {
+                        scope.launch {
+                            listState.scrollToItem(logEntries.lastIndex)
+                        }
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = "滚动到底部"
+                )
+            }
         }
     ) { innerPadding ->
         // 暂停/恢复自动滚动提示
