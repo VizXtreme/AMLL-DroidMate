@@ -458,6 +458,8 @@ fun MainScreen() {
                                             scope.launch {
                                                 viewModel.fetchLyrics()
                                                 webViewReloadKey++
+                                                // 刷新专辑图：清空本地缓存并强制重拉
+                                                viewModel.refreshAlbumArt()
                                                 val currentUri = nowPlaying?.albumArtUri
                                                 if (!currentUri.isNullOrBlank()) {
                                                     try {

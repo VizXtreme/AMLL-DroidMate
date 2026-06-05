@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -28,6 +30,10 @@ import androidx.core.graphics.scale
  * - 使用 Coroutine + Dispatchers.IO 在后台线程执行轮询
  * - 专辑图片异步处理（不再缓存，专辑图变化时直接覆盖旧文件）
  * - Flow 发射优化，仅在关键数据变化时更新
+ *
+ * 并发与文件安全：
+ * - 专辑图保存使用 Mutex 串行化，避免轮询并发导致文件写入被截断
+ * - 写入采用「临时文件 + 原子 rename」策略，保证前端永远读到完整的文件
  */
 class MediaInfoService(private val context: Context) {
 
@@ -48,6 +54,12 @@ class MediaInfoService(private val context: Context) {
 
     private var currentController: MediaController? = null
 
+    // 专辑图保存互斥锁：保证文件写入/删除串行执行，避免轮询并发导致的「只获取一半」bug
+    private val albumArtWriteMutex = Mutex()
+
+    // 上一次专辑图强制刷新请求的来源标识，用于去重和避免重复重拉
+    private var lastAlbumArtRefreshKey: String? = null
+
 
 
     /**
@@ -64,6 +76,43 @@ class MediaInfoService(private val context: Context) {
     fun stopListening() {
         Timber.i("[MediaInfoService] Stopping media info listener")
         serviceScope.cancel()
+    }
+
+    /**
+     * 强制刷新专辑图。
+     *
+     * 由用户主动点击「刷新」按钮触发，会清空当前缓存的专辑图，并强制下一轮轮询
+     * 重新走「获取 Bitmap → 写文件」的完整流程，确保前端能立刻看到最新专辑图。
+     *
+     * @param refreshKey 调用方提供的唯一标识（例如歌曲的 title+artist+packageName），
+     *                   相同 key 在专辑图未变化时不会重复清空缓存。
+     */
+    fun refreshAlbumArt(refreshKey: String? = null) {
+        if (refreshKey != null && refreshKey == lastAlbumArtRefreshKey) {
+            Timber.d("[MediaInfoService] refreshAlbumArt skipped (same key: $refreshKey)")
+            return
+        }
+        lastAlbumArtRefreshKey = refreshKey
+        Timber.i("[MediaInfoService] refreshAlbumArt requested (key=$refreshKey)")
+
+        serviceScope.launch {
+            albumArtWriteMutex.withLock {
+                try {
+                    val cacheDir = File(context.cacheDir, "album_art")
+                    if (cacheDir.exists()) {
+                        val files = cacheDir.listFiles().orEmpty()
+                        for (f in files) {
+                            if (f.isFile && !f.delete()) {
+                                Timber.w("[AlbumArtExtractor] refreshAlbumArt: failed to delete ${f.absolutePath}")
+                            }
+                        }
+                        Timber.i("[MediaInfoService] refreshAlbumArt: cleared ${files.size} stale files")
+                    }
+                } catch (e: Exception) {
+                    Timber.e("[AlbumArtExtractor] refreshAlbumArt: failed to clear cache $e")
+                }
+            }
+        }
     }
 
     /**
@@ -231,48 +280,69 @@ class MediaInfoService(private val context: Context) {
      * - 移除了内存缓存（albumArtCache）以及「文件已存在则直接返回」的逻辑
      * - 每次写入新的专辑图前，都会先销毁当前缓存目录中的所有旧专辑图文件，
      *   以确保专辑图变化时能即时反映到前端，不会出现「同一首歌内残留旧图」的情况
+     *
+     * 关键修复（避免「专辑图只获取一半」bug）：
+     * - 整个删除 + 写入流程由 albumArtWriteMutex 串行化，避免轮询并发时
+     *   两次保存互相删除对方正在写入的文件，导致最终落到磁盘上的文件不完整
+     * - 写入采用「临时文件 + 原子 rename」策略，保证前端任何时刻读取到的文件
+     *   都是完整可用的 JPEG 数据
      */
-    private fun saveAlbumArtBitmapToCache(
+    private suspend fun saveAlbumArtBitmapToCache(
         bitmap: Bitmap,
         cacheKey: String
     ): String? {
-        return try {
-            val cacheDir = File(context.cacheDir, "album_art")
-            if (!cacheDir.exists()) {
-                cacheDir.mkdirs()
-            }
-
-            // 使用哈希值作为文件名，避免特殊字符问题
-            val safeKey = cacheKey.hashCode().toUInt().toString(16)
-            val file = File(cacheDir, "album_art_${safeKey}.jpg")
-
-            // 销毁旧的专辑图文件（包括同名旧文件和不同 cacheKey 的旧文件），
-            // 保证不会因为缓存命中错误而展示错误的专辑图
-            deleteAllAlbumArtCache(cacheDir, excluding = file)
-
-            // 缩放图片至最大 512x512，减少内存占用
-            val scaledBitmap = resizeBitmap(bitmap)
-
+        return albumArtWriteMutex.withLock {
             try {
-                FileOutputStream(file).use { out ->
-                    // 压缩质量 75，显著减少文件大小
-                    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, out)
+                val cacheDir = File(context.cacheDir, "album_art")
+                if (!cacheDir.exists()) {
+                    cacheDir.mkdirs()
                 }
-            } finally {
-                // 关键修复：仅在创建了新 Bitmap 时才调用 recycle()
-                // 如果图片本身小于 512px，resizeBitmap 会返回原始 bitmap，
-                // 此时不应 recycle，因为它可能仍被 MediaSession/Metadata 使用。
-                if (scaledBitmap !== bitmap) {
-                    scaledBitmap.recycle()
-                }
-            }
 
-            val uri = "file://${file.absolutePath}"
-            Timber.d("[AlbumArtExtractor] Album art saved to: $uri")
-            uri
-        } catch (e: Exception) {
-            Timber.e("[AlbumArtExtractor] Failed to save album art to cache $e")
-            null
+                // 使用哈希值作为文件名，避免特殊字符问题
+                val safeKey = cacheKey.hashCode().toUInt().toString(16)
+                val file = File(cacheDir, "album_art_${safeKey}.jpg")
+                // 临时文件：先写到这里，写完后再原子重命名为正式文件
+                val tmpFile = File(cacheDir, "album_art_${safeKey}.jpg.tmp")
+
+                // 销毁旧的专辑图文件（包括同名旧文件和不同 cacheKey 的旧文件），
+                // 保证不会因为缓存命中错误而展示错误的专辑图
+                deleteAllAlbumArtCache(cacheDir, excluding = file)
+
+                // 缩放图片至最大 512x512，减少内存占用
+                val scaledBitmap = resizeBitmap(bitmap)
+
+                try {
+                    FileOutputStream(tmpFile).use { out ->
+                        // 压缩质量 75，显著减少文件大小
+                        scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 75, out)
+                        out.flush()
+                    }
+                } finally {
+                    // 关键修复：仅在创建了新 Bitmap 时才调用 recycle()
+                    // 如果图片本身小于 512px，resizeBitmap 会返回原始 bitmap，
+                    // 此时不应 recycle，因为它可能仍被 MediaSession/Metadata 使用。
+                    if (scaledBitmap !== bitmap) {
+                        scaledBitmap.recycle()
+                    }
+                }
+
+                // 原子重命名：保证前端任何时刻看到的 album_art_xxx.jpg 都是完整文件
+                // renameTo 在大多数文件系统上是原子操作，且若目标已存在会自动覆盖
+                if (!tmpFile.renameTo(file)) {
+                    // 极少数情况下 renameTo 失败（例如跨挂载点），回退到 delete + rename
+                    file.delete()
+                    if (!tmpFile.renameTo(file)) {
+                        Timber.e("[AlbumArtExtractor] Failed to rename tmp file to ${file.absolutePath}")
+                        return@withLock null
+                    }
+                }
+
+                val uri = "file://${file.absolutePath}"
+                uri
+            } catch (e: Exception) {
+                Timber.e("[AlbumArtExtractor] Failed to save album art to cache $e")
+                null
+            }
         }
     }
 
@@ -370,6 +440,6 @@ class MediaInfoService(private val context: Context) {
     }
 
     companion object {
-        private const val UPDATE_INTERVAL_MS = 100L  // 每 100ms 更新一次，减少更新频率
+        private const val UPDATE_INTERVAL_MS = 500L  // 每 500ms 更新一次，降低专辑图写入压力
     }
 }

@@ -9,6 +9,7 @@ import io.github.zeehan2005.scoremuse.data.get.qq.QqMusicQrcCrypto
 import io.github.zeehan2005.scoremuse.data.get.kugou.KugouDecrypter
 import android.content.Context
 import io.github.zeehan2005.scoremuse.data.parser.global.UnifiedLyricsParser
+import io.github.zeehan2005.scoremuse.data.ranking.LyricsCandidateRanker
 import io.github.zeehan2005.scoremuse.global.LyricLine
 import io.github.zeehan2005.scoremuse.global.LyricsFeature
 import io.github.zeehan2005.scoremuse.global.LyricsResult
@@ -1933,21 +1934,13 @@ open class LyricsRepository(
         artist: String,
         currentSourceName: String? = null
     ): LyricsResult {
-        // simplified flow: search and immediately use the top candidate
-        // 新增: 优先检查应用本地缓存（LyricsCacheRepository），如果存在则直接返回。
-        // 这是用户保存的歌词缓存，与 AM MLL DB 等来源无关。
+        // 本地缓存短路由调用方（MainViewModel.fetchLyrics）统一处理，
+        // 这里不再重复检查，避免与上层逻辑产生竞争。
         try {
             Timber.i("[SearchService] Auto-fetching lyrics for: $title - $artist")
 
-            // check local cached lyrics first
-            cacheRepo?.let {
-                getCachedLyrics(title, artist)?.let { cachedResult ->
-                    Timber.i("[SearchService] Returning lyrics from local cache: ${cachedResult.source}")
-                    return cachedResult
-                }
-            }
-
-            var searchResults = searchLyrics(title, artist)
+            // 1. 多源并发搜索
+            val searchResults = searchLyrics(title, artist)
             if (searchResults.isEmpty()) {
                 Timber.w("[SearchService] No search results found for: $title - $artist")
                 return LyricsResult(
@@ -1956,17 +1949,32 @@ open class LyricsRepository(
                 )
             }
 
-            if (searchResults.size > 1) {
-                searchResults = adjustResultsForFeatures(searchResults, currentSourceName)
+            // 2. 并行获取每个候选的 features 集合（用于打破置信度平局）。
+            // 排序与 CustomLyricsViewModel.searchCandidates 走完全相同的规则，
+            // 避免出现"自动选的词"和"手动选的词"体验割裂。
+            val featuresByKey: Map<String, Set<LyricsFeature>> = coroutineScope {
+                searchResults.map { candidate ->
+                    async {
+                        LyricsCandidateRanker.keyOf(candidate) to runCatching {
+                            getLyricsFeatures(
+                                candidate.provider,
+                                candidate.songId,
+                                candidate.title,
+                                candidate.artist
+                            )
+                        }.getOrDefault(emptySet())
+                    }
+                }.awaitAll().toMap()
             }
 
-            val top = searchResults.first()
-            Timber.d("[SearchService] Selected top candidate after sorting: ${top.provider} id=${top.songId} conf=${top.confidence}")
+            // 3. 共享 ranker 统一排序（与 CustomLyricsViewModel 走同一份规则）
+            val ranked = LyricsCandidateRanker.rank(searchResults, featuresByKey, currentSourceName)
+            val top = ranked.first()
+            Timber.d("[SearchService] Selected top candidate after ranking: ${top.provider} id=${top.songId} conf=${top.confidence}")
 
-            // fetch using generic getter
+            // 4. 拉取完整歌词（getLyrics 内部会做 TTML 规范化并写本地缓存）
             val result = getLyrics(top.provider, top.songId, top.title, top.artist)
             if (result.isSuccess) {
-                // ensure source matches previous "自动识别:" style
                 return result.copy(
                     source = formatAutoSource(
                         provider = top.provider,
@@ -2102,119 +2110,10 @@ open class LyricsRepository(
         return lyrics?.let { analyzeFeatures(it) } ?: emptySet()
     }
 
-    /**
-     * 重新排序搜索结果，使匹配度相差不大的时功能多的靠前。
-     * 这是一个独立的辅助手段，主要给 fetchLyricsAuto 和测试使用。
-     */
-    /**
-     * 重新排序搜索结果，使匹配度相差不大的时功能多的靠前。
-     * 这是一个独立的辅助手段，主要给 fetchLyricsAuto 和测试使用。
-     *
-     * @param currentSourceName 可选的当前播放来源名称（如应用名）。
-     *   在候选置信度与功能完全相同时，如果该字符串包含特定关键词，
-     *   会按以下优先级调整：
-     *     - 包含“网易”时优先网易云
-     *     - 包含“QQ”时优先QQ音乐，其次酷狗
-     *     - 包含“酷狗”时优先酷狗，其次QQ音乐
-     */
-    internal suspend fun adjustResultsForFeatures(
-        results: List<LyricsSearchResult>,
-        currentSourceName: String? = null
-    ): List<LyricsSearchResult> {
-        if (results.size <= 1) return results
-        val decorated = results.map { result ->
-            val features = getLyricsFeatures(result.provider, result.songId, result.title, result.artist)
-            result to features
-        }
-        return decorated.sortedWith(Comparator { a, b ->
-            // 2. confidence
-            val diff = a.first.confidence - b.first.confidence
-            if (diff != 0f) return@Comparator -diff.compareTo(0f)
-
-            // 3. features
-            val featureDiff = b.second.size - a.second.size
-            if (featureDiff != 0) return@Comparator featureDiff
-
-            // 4. prefer AMLL DB results (regardless of current source bias)
-            val aAml = a.first.provider.equals("amll", true)
-            val bAml = b.first.provider.equals("amll", true)
-            if (aAml != bAml) return@Comparator if (aAml) -1 else 1
-
-            // 4b. for AMLL results, prefer ID-based matches over metadata-based ones
-            if (aAml) {
-                if (a.first.metadataMatch != b.first.metadataMatch) {
-                    return@Comparator if (!a.first.metadataMatch) -1 else 1
-                }
-            }
-
-            // 5. current source bias
-            if (!currentSourceName.isNullOrBlank()) {
-                val lower = currentSourceName.lowercase()
-                val priorityList = when {
-                    lower.contains("网易") -> listOf("netease")
-                    lower.contains("qq") -> listOf("qq", "kugou")
-                    lower.contains("酷狗") -> listOf("kugou", "qq")
-                    else -> emptyList()
-                }
-                if (priorityList.isNotEmpty()) {
-                    val aIndex = priorityList.indexOf(a.first.provider.lowercase()).let { if (it < 0) Int.MAX_VALUE else it }
-                    val bIndex = priorityList.indexOf(b.first.provider.lowercase()).let { if (it < 0) Int.MAX_VALUE else it }
-                    if (aIndex != bIndex) return@Comparator aIndex.compareTo(bIndex)
-                }
-
-                // 5b. AMLL prefix check
-                fun amllMatch(r: LyricsSearchResult): Boolean {
-                    if (!r.provider.equals("amll", true)) return false
-                    val parts = r.songId.split(":", limit = 2)
-                    if (parts.size < 2) return false
-                    val prefix = parts[0].lowercase()
-                    return when {
-                        lower.contains("网易") -> prefix == "netease" || prefix == "ncm"
-                        lower.contains("qq") -> prefix == "qq" || prefix == "qqmusic"
-                        lower.contains("酷狗") -> prefix == "kugou"
-                        else -> false
-                    }
-                }
-                val aMatch = amllMatch(a.first)
-                val bMatch = amllMatch(b.first)
-                if (aMatch != bMatch) return@Comparator if (aMatch) -1 else 1
-            }
-
-            // 6. fixed provider priority with TME rules
-            val bothTme = setOf("qq", "kugou").contains(a.first.provider.lowercase()) &&
-                    setOf("qq", "kugou").contains(b.first.provider.lowercase())
-            val tmeSource = currentSourceName?.lowercase()?.let { it.contains("qq") || it.contains("酷狗") } ?: false
-            if (bothTme && tmeSource) {
-                val lowerSource = currentSourceName.lowercase()
-                val preferKugou = lowerSource.contains("酷狗") && !lowerSource.contains("qq")
-                val preferQQ = lowerSource.contains("qq") && !lowerSource.contains("酷狗")
-                if (preferKugou) {
-                    if (a.first.provider.lowercase() == "kugou" && b.first.provider.lowercase() == "qq") return@Comparator -1
-                    if (a.first.provider.lowercase() == "qq" && b.first.provider.lowercase() == "kugou") return@Comparator 1
-                } else if (preferQQ) {
-                    if (a.first.provider.lowercase() == "qq" && b.first.provider.lowercase() == "kugou") return@Comparator -1
-                    if (a.first.provider.lowercase() == "kugou" && b.first.provider.lowercase() == "qq") return@Comparator 1
-                }
-                // else equal
-            } else {
-                val providerPriority = mapOf(
-                    "cache" to -1,
-                    "amll" to 0,
-                    "kugou" to 1,
-                    "netease" to 2,
-                    "ncm" to 2,
-                    "qq" to 3,
-                    "qqmusic" to 3
-                )
-                val pa = providerPriority[a.first.provider.lowercase()] ?: Int.MAX_VALUE
-                val pb = providerPriority[b.first.provider.lowercase()] ?: Int.MAX_VALUE
-                if (pa != pb) return@Comparator pa - pb
-            }
-
-            // 7. equal -> preserve arrival order
-            0
-        }).map { it.first }
-    }
+    // 候选排序规则已统一迁移到 data/ranking/LyricsCandidateRanker，
+    // 这里不再保留 adjustResultsForFeatures() 独立实现。
+    // - fetchLyricsAuto 直接调用 LyricsCandidateRanker.rank()
+    // - CustomLyricsViewModel.compareCandidates() 委托给 LyricsCandidateRanker.compare()
 
     private fun analyzeFeatures(lyrics: UnifiedLyrics): Set<LyricsFeature> {
         val features = mutableSetOf<LyricsFeature>()
