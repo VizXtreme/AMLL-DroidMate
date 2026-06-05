@@ -346,7 +346,7 @@ private fun SettingsPage(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("图形设置", color = MaterialTheme.colorScheme.onSurface)
+                    Text("歌词组件设置", color = MaterialTheme.colorScheme.onSurface)
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = "进入",
