@@ -410,6 +410,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 _errorMessage.value = "应用歌词失败：${e.message}"
                 Timber.e(e, "[CustomLyrics] Error applying custom lyrics input")
+            } finally {
+                // 无论成功/失败/早返回，都确保 MainScreen 的 isLoading 指示器会消失
+                // 与 MainViewModel.fetchLyrics() 的 finally 块保持一致。
+                _isLoading.value = false
             }
         }
     }
