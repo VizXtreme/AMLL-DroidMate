@@ -257,10 +257,20 @@ fun MainScreen() {
     // 全屏控制状态
     var controlsVisible by remember { mutableStateOf(true) }
     var hideControlsJob by remember { mutableStateOf<Job?>(null) }
+    // fadeOut 动画时长。作为唯一时序源，控制 controlsAlpha 动画与
+    // controlsInLayout 的判断逻辑。
+    val controlsTransitionDuration = 250
     val controlsAlpha by animateFloatAsState(
-        if (controlsVisible && isLyricsFullscreen) 1f else 0f,
+        targetValue = if (controlsVisible && isLyricsFullscreen) 1f else 0f,
+        animationSpec = tween(durationMillis = controlsTransitionDuration),
         label = "controlsAlpha"
     )
+    // 控件是否在布局中：完全以 controlsAlpha 动画的 ground truth 为依据。
+    // - controlsVisible=true → 立即在布局中（alpha 正在淡入）
+    // - controlsAlpha>0.01 → 仍在 fadeOut 动画中，保留在布局中让动画走完
+    // - controlsAlpha≤0.01 → 动画已完成，从布局中彻底移除（不再拦截点击）
+    // 这样避免依赖于额外状态，确保动画与布局完全同步，不闪烁。
+    val controlsInLayout = controlsVisible || controlsAlpha > 0.01f
 
     // 在 Composable 上下文中创建协程作用域，供回调函数使用
     val scope = rememberCoroutineScope()
@@ -605,7 +615,9 @@ fun MainScreen() {
                     }
 
                     // 全屏控制按钮
-                    if (isLyricsFullscreen) {
+                    // 使用 controlsInLayout 包裹：仅在 fadeOut 动画结束后才从布局中彻底移除，
+                    // 避免隐藏状态下的播放卡片残留位置遮住 LyricsVisualLayer 的点击事件。
+                    if (isLyricsFullscreen && controlsInLayout) {
                         IconButton(
                             onClick = { isLyricsFullscreen = false },
                             modifier = Modifier
@@ -642,13 +654,13 @@ fun MainScreen() {
                                         )
                                     }
                                 }
-                                
+
                                 // 在全屏模式下复用播放卡片作为控制中心
                                 NowPlayingCard(
                                     nowPlaying = nowPlaying,
                                     context = context,
                                     songStructures = songStructures,
-                                    onPlayPauseClick = { 
+                                    onPlayPauseClick = {
                                         if (nowPlaying?.isPlaying == true) viewModel.pause() else viewModel.play()
                                         resetHideTimer()
                                     },
