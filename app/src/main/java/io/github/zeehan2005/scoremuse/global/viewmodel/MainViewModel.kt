@@ -460,7 +460,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun updateSongStructures(lyrics: UnifiedLyrics) {
         viewModelScope.launch {
             try {
-                val songDuration = nowPlayingMusicMutable.value?.duration ?: 0L
+                // 多级 fallback 获取 songDuration，确保尾奏能够被正确检测：
+                // 1) 优先使用当前播放音乐的 duration（最准确）
+                // 2) 否则使用 lyrics 元数据中的 duration
+                // 3) 否则从歌词行推断（最后一句歌词的结束时间 + 5秒缓冲）
+                // 4) 最后回退到 0
+                // 修复：当 nowPlayingMusic 还未更新或 duration=0 时（如异步竞态），
+                // 尾奏段落无法被检测，导致尾奏丢失。
+                val inferredEndTime = lyrics.lines.maxOfOrNull { it.endTime } ?: 0L
+                // 修复：使用 .takeIf { it > 0 } 确保当 duration==0（不仅仅是 null）时也能 fallback。
+                // 这处理了 nowPlayingMusic 还未更新、或 duration=0 的异常情况。
+                val songDuration = nowPlayingMusicMutable.value?.duration?.takeIf { it > 0 }
+                    ?: lyrics.metadata.duration.takeIf { it > 0 }
+                    ?: inferredEndTime.takeIf { it > 0 }?.plus(5_000L)
+                    ?: 0L
+                Timber.v("[SongStructure] Using songDuration=${songDuration}ms (nowPlaying=${nowPlayingMusicMutable.value?.duration}, meta=${lyrics.metadata.duration}, inferred=${inferredEndTime})")
 
                 val metadataStructures = lyrics.metadata.songStructures
                 val source = if (!metadataStructures.isNullOrEmpty()) "metadata" else "inferred"

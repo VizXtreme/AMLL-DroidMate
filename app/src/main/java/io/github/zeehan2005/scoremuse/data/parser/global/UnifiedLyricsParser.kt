@@ -249,7 +249,9 @@ object UnifiedLyricsParser {
             Timber.d("[UnifiedLyricsParser] Final sorted summary: total=${sortedLines.size}, ${summarizeBgLines(sortedLines)}")
             
             // 解析歌曲结构
-            val songStructures = SongStructureParser.parseStructure(sortedLines)
+            // 修复：之前没有传 songDuration，导致 detectInterludes 中的尾奏检测永远不生效。
+            // 这里传入推断出的 duration，让尾奏能被正确识别。
+            val songStructures = SongStructureParser.parseStructure(sortedLines, songDuration = duration)
 
             UnifiedLyrics(
                 metadata = LyricsMetadata(

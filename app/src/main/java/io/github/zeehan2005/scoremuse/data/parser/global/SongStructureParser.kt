@@ -48,14 +48,70 @@ object SongStructureParser {
         metadataStructure: List<SongStructure>? = null,
         songDuration: Long = 0L
     ): List<SongStructure> {
+        // 计算有效的 songDuration（多级 fallback）
+        val effectiveDuration = if (songDuration > 0) {
+            songDuration
+        } else {
+            val inferred = lyricsLines.maxOfOrNull { it.endTime } ?: 0L
+            if (inferred > 0) inferred + 5_000L else 0L
+        }
+
         // 如果提供了元数据结构，优先使用
         if (!metadataStructure.isNullOrEmpty()) {
-            return metadataStructure
+            // 修复：之前直接返回 metadata，会丢失尾奏。当 metadata 未覆盖到歌曲末尾时
+            // （例如 TTML 中只有 itunes:songPart 标记的前几个段落，缺失尾奏/间奏），
+            // 仍然需要自动补全尾奏。
+            return ensureOutro(metadataStructure, lyricsLines, effectiveDuration)
         }
 
         // 否则，从歌词行自动推断结构
         Timber.v("[SongStructure] Fallback triggered: no metadata structures")
-        return inferStructureFromLyrics(lyricsLines, songDuration)
+        return inferStructureFromLyrics(lyricsLines, effectiveDuration)
+    }
+
+    /**
+     * 确保元数据结构后面追加强制尾奏（如果元数据未覆盖到歌曲末尾）。
+     *
+     * 修复前：调用 `parseStructure` 并传入 metadata 时，会直接 `return metadataStructure`，
+     * 跳过 `inferStructureFromLyrics` 和 `detectInterludes`，导致尾奏永远不显示。
+     *
+     * 修复后：即使有 metadata，只要最后一个结构没有覆盖到歌曲末尾（差值 >= 4s），
+     * 就自动追加一个 OUTRO_INST 段落。
+     */
+    private fun ensureOutro(
+        metadataStructure: List<SongStructure>,
+        lyricsLines: List<LyricLine>,
+        songDuration: Long
+    ): List<SongStructure> {
+        if (songDuration <= 0 || metadataStructure.isEmpty()) {
+            return metadataStructure
+        }
+
+        // 找到 metadata 中最晚结束的结构
+        val lastStructure = metadataStructure.maxByOrNull { it.endTime } ?: return metadataStructure
+        val outroStart = lastStructure.endTime
+        val outroDuration = songDuration - outroStart
+
+        // 如果已有结构覆盖到歌曲末尾（或接近），不重复添加
+        if (outroDuration < INTERLUDE_THRESHOLD_MS) {
+            return metadataStructure
+        }
+
+        // 避免重复：如果最后一个结构本身就是 OUTRO_INST 且范围相近，跳过
+        if (lastStructure.type == SongStructureType.OUTRO_INST ||
+            lastStructure.type == SongStructureType.OUTRO_PARA
+        ) {
+            return metadataStructure
+        }
+
+        Timber.d("[SongStructure] Metadata did not cover song end (last.endTime=${outroStart}ms, songDuration=${songDuration}ms, gap=${outroDuration}ms). Appending OUTRO_INST.")
+        val outro = SongStructure(
+            label = SongStructureType.OUTRO_INST.displayName,
+            startTime = outroStart,
+            endTime = songDuration,
+            type = SongStructureType.OUTRO_INST
+        )
+        return metadataStructure + outro
     }
 
     /**
@@ -172,11 +228,11 @@ object SongStructureParser {
             // 所有间隔都需要 >= 4 秒才显示
             if (gap >= INTERLUDE_THRESHOLD_MS) {
                 val type = when (i) {
-                    0 -> SongStructureType.INTRO_INST  // 不会到这里，保留以防逻辑变化
+                    0 -> SongStructureType.INTERLUDE  // 修复：不再错误标记为 INTRO_INST
                     lyricLines.size - 2 -> {
-                        // 倒数第二段和最后一段之间的间隔，需要判断是 outro_inst 还是 outro_para
-                        // 因为后面还有最后一段歌词，所以是 outro_inst（纯音乐尾奏）
-                        SongStructureType.OUTRO_INST
+                        // 修复：最后两行歌词之间的间隔是 INTERLUDE（间奏），不是 OUTRO_INST（尾奏）
+                        // 真正的尾奏（从最后一句歌词结束到歌曲结束）由下面的 if (songDuration > 0) 分支单独处理
+                        SongStructureType.INTERLUDE
                     }
 
                     else -> SongStructureType.INTERLUDE

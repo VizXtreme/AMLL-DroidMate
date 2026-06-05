@@ -15,7 +15,6 @@ import * as AMLLCore from '@applemusic-like-lyrics/core'
 import '@applemusic-like-lyrics/core/style.css'
 import '../styles.css'
 import { logToAndroid } from './utils/bridge_utils'
-import { processLyricsPayload } from './utils/lyricProcessor'
 
 // --- 全局类型声明 (Global Type Declarations) ---
 // 声明挂载在 window 对象上的 API，以便 Android 端和 TypeScript 类型检查使用
@@ -271,24 +270,6 @@ window.updateLyrics = (payload: any) => {
     }
   } catch (e) {
     log(`updateLyrics error: ${(e as Error).message}`, 'error')
-  }
-}
-
-/**
- * 歌词解析接口 (供独立的 Parser 容器调用)
- */
-window.parseLyrics = async (raw: string, format: string) => {
-  try {
-    log(`[WASM Parser] Parsing raw content (format=${format})`, 'debug')
-    const lines = await processLyricsPayload({ raw, format })
-    if (window.Android?.onLyricsParsedResult) {
-      window.Android.onLyricsParsedResult(JSON.stringify(lines))
-    }
-  } catch (e) {
-    log(`[WASM Parser] Error: ${(e as Error).message}`, 'error')
-    if (window.Android?.onLyricsParsedResult) {
-      window.Android.onLyricsParsedResult(JSON.stringify([]))
-    }
   }
 }
 
