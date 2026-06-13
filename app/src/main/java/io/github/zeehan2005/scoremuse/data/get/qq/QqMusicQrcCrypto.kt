@@ -24,7 +24,7 @@ import java.util.zip.InflaterInputStream
  * 这个工具与 Unilyric 的非标准 DES 实现对齐，确保兼容性。
  */
 object QqMusicQrcCrypto {
-    // DES 加密参数（与非标准实现对齐）
+    /** DES 加密参数（与非标准实现对齐） */
     private const val ROUNDS = 16          // 加密轮数
     private const val SUB_KEY_SIZE = 6     // 子密钥大小
     private const val DES_BLOCK_SIZE = 8   // DES 块大小（8 字节）
@@ -69,7 +69,7 @@ object QqMusicQrcCrypto {
             "Encrypted data length must be a multiple of $DES_BLOCK_SIZE"
         }
 
-        // 逐块进行 3DES 解密
+        /** 逐块进行 3DES 解密 */
         val decrypted = ByteArray(encryptedBytes.size)
         var offset = 0
         while (offset < encryptedBytes.size) {
@@ -156,7 +156,7 @@ object QqMusicQrcCrypto {
             InflaterInputStream(ByteArrayInputStream(data)).use { it.readBytes() }
         } catch (e: Exception) {
             Timber.i("[QqMusicQrcCrypto] Zlib decompression failed, retrying as raw deflate $e")
-            // Some QQ QRC payloads appear to be raw DEFLATE without zlib headers.
+            /** Some QQ QRC payloads appear to be raw DEFLATE without zlib headers. */
             val inflater = Inflater(true)
             try {
                 InflaterInputStream(ByteArrayInputStream(data), inflater).use { it.readBytes() }
@@ -176,8 +176,10 @@ object QqMusicQrcCrypto {
     }
 
     private fun attemptDecompressFromPossibleZlibOffset(data: ByteArray): ByteArray {
-        // zlib header validity check: (CMF*256 + FLG) % 31 == 0
-        // CMF is fixed to 0x78 for deflate, but FLG varies.
+        /**
+         * zlib header validity check: (CMF*256 + FLG) % 31 == 0
+         * CMF is fixed to 0x78 for deflate, but FLG varies.
+         */
         val candidateOffsets = data.withIndex().filter { it.value == 0x78.toByte() }.map { it.index }
         Timber.d("[QqMusicQrcCrypto] Found ${candidateOffsets.size} potential 0x78 zlib start bytes")
 
@@ -378,8 +380,10 @@ object QqMusicQrcCrypto {
             val key64 = bytesToLongBE(byteArrayOf(0, 0) + key)
             val xor = expanded xor key64
            
-            // QQ Music 使用自定义的 S-Box 索引计算（非标准 DES）
-            // 索引计算：((a & 0x20) | ((a & 0x1f) >> 1) | ((a & 0x01) << 4))
+            /**
+             * QQ Music 使用自定义的 S-Box 索引计算（非标准 DES）
+             * 索引计算：((a & 0x20) | ((a & 0x1f) >> 1) | ((a & 0x01) << 4))
+             */
             fun calculateSBoxIndex(value: Long): Int {
                 val a = value.toInt()
                 return ((a and 0x20) or ((a and 0x1f) shr 1) or ((a and 0x01) shl 4))

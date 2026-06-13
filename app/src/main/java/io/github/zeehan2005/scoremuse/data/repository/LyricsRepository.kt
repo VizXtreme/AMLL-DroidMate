@@ -1,4 +1,4 @@
-﻿package io.github.zeehan2005.scoremuse.data.repository
+package io.github.zeehan2005.scoremuse.data.repository
 
 import io.github.zeehan2005.scoremuse.data.parser.global.mergeLyricLines
 import io.github.zeehan2005.scoremuse.data.parser.global.LyricsFormat
@@ -60,11 +60,11 @@ open class LyricsRepository(
     private val context: Context? = null
 ) {
 
+    /** scope used for background TTML probes; keeps them independent of caller */
     private val processMetadata: Boolean
         get() = context?.let { AppSettings.isMetadataProcessingEnabled(it) } ?: false
-    // scope used for background TTML probes; keeps them independent of caller
 
-    // exposed for testing
+    /** exposed for testing */
     enum class MatchType(val score: Int) {
         NONE(-1),
         VERY_LOW(10),
@@ -85,9 +85,7 @@ open class LyricsRepository(
     }
 
 
-    /**
-     * 从 QQ 音乐搜索歌词
-     */
+
     /**
      * 从 QQ 音乐搜索歌词，返回最多三个最佳候选。
      */
@@ -95,7 +93,7 @@ open class LyricsRepository(
         return try {
             val keyword = "$title $artist".trim()
 
-            // 对齐 Unilyric-lite: req_1 + POST JSON 到 musicu.fcg
+            /** 对齐 Unilyric-lite: req_1 + POST JSON 到 musicu.fcg*/
             val requestBody = buildJsonObject {
                 putJsonObject("req_1") {
                     put("method", "DoSearchForQQMusicDesktop")
@@ -123,7 +121,7 @@ open class LyricsRepository(
             val responseBody = searchResponse.body<String>()
             val responseJson = json.parseToJsonElement(responseBody).jsonObject
 
-            // 解析搜索结果
+            /** 解析搜索结果 */
             val songList = responseJson["req_1"]
                 ?.jsonObject?.get("data")
                 ?.jsonObject?.get("body")
@@ -136,7 +134,7 @@ open class LyricsRepository(
                 return emptyList()
             }
 
-            // 收集所有候选并评估匹配度
+            /** 收集所有候选并评估匹配度 */
             val candidates = mutableListOf<Pair<LyricsSearchResult, Int>>()
             for (songElement in songList) {
                 val song = songElement.jsonObject
@@ -164,7 +162,7 @@ open class LyricsRepository(
                 }
             }
 
-            // 返回得分最高的前三个
+            /** 返回得分最高的前三个 */
             candidates.sortedByDescending { it.second }
                 .take(3)
                 .map { it.first }
@@ -181,7 +179,7 @@ open class LyricsRepository(
         return try {
             val (mid, numericId) = parseQqSongIds(songMid)
 
-            // 对齐 Unilyric-lite: 优先 lyric_download 接口
+            /** 对齐 Unilyric-lite: 优先 lyric_download 接口 */
             if (numericId != null) {
                 val fromLyricDownload = getQQMusicLyricsViaLyricDownload(numericId, title, artist)
                 if (fromLyricDownload != null) {
@@ -220,19 +218,19 @@ open class LyricsRepository(
             Timber.d("[LyricsRepository] QQ Music lyrics API response length=${responseBody.length}, preview='${responseBody.take(2000)}'")
             val responseJson = json.parseToJsonElement(responseBody).jsonObject
             
-            // 获取标准LRC格式歌词
+            /** 获取标准LRC格式歌词 */
             val lyricContent = responseJson["req_1"]
                 ?.jsonObject?.get("data")
                 ?.jsonObject?.get("lyric")
                 ?.jsonPrimitive?.contentOrNull
             
-            // 获取QRC逐字格式歌词（优先使用）
+            /** 获取QRC逐字格式歌词（优先使用）*/
             val qrcContent = responseJson["req_1"]
                 ?.jsonObject?.get("data")
                 ?.jsonObject?.get("qrc")
                 ?.jsonPrimitive?.contentOrNull
 
-            // 额外 debug：输出一下内容长度和前缀，方便排查 “QRC 变成 0” 以及其他无效数据的情况
+            /** 额外 debug：输出一下内容长度和前缀，方便排查 “QRC 变成 0” 以及其他无效数据的情况 */
             if (!qrcContent.isNullOrBlank()) {
                 Timber.d("[LyricsRepository] QQ Music QRC raw content length=${qrcContent.length}, preview='${qrcContent.take(80)}'")
             } else {
@@ -257,7 +255,7 @@ open class LyricsRepository(
                 return null
             }
 
-            // 如果 QQ 接口返回 qrc=0（或者空），我们尝试使用 lyric_download.fcg 接口获取更完整的歌词（可能包含逐字信息）
+            /** 如果 QQ 接口返回 qrc=0（或者空），我们尝试使用 lyric_download.fcg 接口获取更完整的歌词（可能包含逐字信息） */
             val songIdFromResponse = responseJson["req_1"]
                 ?.jsonObject?.get("data")
                 ?.jsonObject?.get("songID")
@@ -273,7 +271,7 @@ open class LyricsRepository(
                 Timber.w("[LyricsRepository] lyric_download.fcg fallback did not yield lyrics for songID=$songIdFromResponse")
             }
             
-            // 优先使用 QRC 逐字格式，如果不存在则使用 LRC 格式
+            /** 优先使用 QRC 逐字格式，如果不存在则使用 LRC 格式 */
             val contentToUse = if (!qrcContent.isNullOrBlank() && qrcContent != "0") {
                 Timber.i("[LyricsRepository] Using QRC (word-by-word) format for QQ Music")
                 qrcContent
@@ -282,13 +280,13 @@ open class LyricsRepository(
                 lyricContent!!
             }
             
-            // 检查内容是否有效（防止"0"或其他无效标记）
+            /** 检查内容是否有效（防止"0"或其他无效标记） */
             if (contentToUse.length < 5) {
                 Timber.e("[LyricsRepository] Content from QQ Music is invalid (likely empty): '$contentToUse'")
-                // 检查是否有备选LRC内容
+                /** 检查是否有备选LRC内容 */
                 if (contentToUse != lyricContent && !lyricContent.isNullOrBlank() && lyricContent.length >= 5) {
                     Timber.i("[LyricsRepository] Fallback to LRC format from QQ Music")
-                    // 重新使用LRC
+                    /** 重新使用LRC */
                     val fallbackDecoded = try {
                         String(android.util.Base64.decode(lyricContent, android.util.Base64.DEFAULT))
                     } catch (e: IllegalArgumentException) {
@@ -301,7 +299,7 @@ open class LyricsRepository(
                             artist = artist ?: "Unknown",
                             processMetadata = processMetadata
                         )
-                        // Mark as fallback since this is converted from LRC, not original TTML
+                        /** Mark as fallback since this is converted from LRC, not original TTML */
                         return fallbackLyrics?.copy(
                             metadata = fallbackLyrics.metadata.copy(isFallback = true)
                         )
@@ -310,27 +308,27 @@ open class LyricsRepository(
                 return null
             }
             
-            // QQ音乐歌词可能是 Base64 编码的 LRC/QRC，也可能是 HEX + 3DES + Zlib 的 QRC 数据。
-            // 尝试检测并使用正确的解码方式。
+            /** QQ音乐歌词可能是 Base64 编码的 LRC/QRC，也可能是 HEX + 3DES + Zlib 的 QRC 数据。
+             *  尝试检测并使用正确的解码方式。 */
             val decodedLyric = try {
                 if (QqMusicQrcCrypto.looksLikeHex(contentToUse)) {
                     Timber.d("[LyricsRepository] QRC content detected as hex, using QqMusicQrcCrypto.decryptQrcHex")
                     QqMusicQrcCrypto.decryptQrcHex(contentToUse)
                 } else {
-                    // 当内容不是 HEX 时，大多数情况是 Base64 编码的 LRC/QRC
+                    /** 当内容不是 HEX 时，大多数情况是 Base64 编码的 LRC/QRC */
                     String(android.util.Base64.decode(contentToUse, android.util.Base64.DEFAULT))
                 }
             } catch (e: Exception) {
                 Timber.e("[LyricsRepository] Failed to decode QQ Music lyrics content $e")
                 Timber.d("[LyricsRepository] First 200 chars of content: ${contentToUse.take(200)}")
-                // 尝试直接使用原始内容（可能本身就是未经编码的歌词）
+                /** 尝试直接使用原始内容（可能本身就是未经编码的歌词） */
                 contentToUse
             }
             
-            // 调试日志：显示解码后的前500个字符
+            /** 调试日志：显示解码后的前500个字符 */
             Timber.d("[LyricsRepository] Decoded QQ Music lyrics (first 500 chars): ${decodedLyric.take(500)}")
             
-            // 使用统一解析器处理多种格式（QRC、LRC等）
+            /** 使用统一解析器处理多种格式（QRC、LRC等） */
             val mainLyrics = UnifiedLyricsParser.parse(
                 content = decodedLyric,
                 title = title ?: "Unknown",
@@ -338,7 +336,7 @@ open class LyricsRepository(
                 processMetadata = processMetadata
             ) ?: return null
 
-            // Debug: 记录解析后首行 word 数量，以便确认是否是 "逐字" 解析结果
+            /** Debug: 记录解析后首行 word 数量，以便确认是否是 "逐字" 解析结果 */
             Timber.d("[LyricsRepository]Parsed main lyrics: lines=${mainLyrics.lines.size}, firstLineWords=${mainLyrics.lines.firstOrNull()?.words?.size ?: 0}")
 
             val translationLines = transContent
@@ -413,7 +411,7 @@ open class LyricsRepository(
             val transEncrypted = extractXmlCData(body, "contentts")
             val romaEncrypted = extractXmlCData(body, "contentroma")
 
-            // Debug: log full encrypted payload so we can inspect the exact hex string returned by QQ.
+            /** Debug: log full encrypted payload so we can inspect the exact hex string returned by QQ. */
             Timber.d("[LyricsRepository] lyric_download.fcg payload (content) length=${mainEncrypted?.length ?: 0}, payload=$mainEncrypted")
 
             if (mainEncrypted.isNullOrBlank()) {
@@ -450,8 +448,8 @@ open class LyricsRepository(
     }
 
     private fun extractXmlCData(xml: String, tagName: String): String? {
-        // Some QQ responses include attributes on the <content> tag (e.g. <content type="file" ...>).
-        // Use a more flexible regex to match the tag even when it has attributes.
+        /** Some QQ responses include attributes on the <content> tag (e.g. <content type="file" ...>).
+         *  Use a more flexible regex to match the tag even when it has attributes. */
         val regex = Regex("""<$tagName\b[^>]*><!\[CDATA\[(.*?)]]></$tagName>""", RegexOption.DOT_MATCHES_ALL)
         return regex.find(xml)?.groupValues?.getOrNull(1)?.takeIf { it.isNotBlank() }
     }
@@ -595,17 +593,17 @@ open class LyricsRepository(
                 return null
             }
             
-            // 原词 (LRC)
+            /** 原词 (LRC)*/
             val lyricContent = responseJson["lrc"]
                 ?.jsonObject?.get("lyric")
                 ?.jsonPrimitive?.contentOrNull
 
-            // 逐词 (YRC)
+            /** 逐词 (YRC)*/
             val yrcContent = responseJson["yrc"]
                 ?.jsonObject?.get("lyric")
                 ?.jsonPrimitive?.contentOrNull
 
-            // 翻译/音译
+            /** 翻译/音译 */
             val translationContent = responseJson["tlyric"]
                 ?.jsonObject?.get("lyric")
                 ?.jsonPrimitive?.contentOrNull
@@ -620,7 +618,7 @@ open class LyricsRepository(
                 Timber.d("[LyricsRepository] LRC field content preview (500 chars): $preview")
                 val detectedFormat = LyricsFormat.detect(lyricContent)
                 Timber.d("[LyricsRepository] LRC field detected format: $detectedFormat")
-                // 查找第一个歌词行（非元数据行）
+                /** 查找第一个歌词行（非元数据行） */
                 val firstLyricLine = lyricContent.lines().find { 
                     it.trim().startsWith("[") && !it.trim().startsWith("{")
                 }
@@ -640,7 +638,7 @@ open class LyricsRepository(
                 return null
             }
 
-            // 优先使用 YRC（逐字格式），然后是 LRC
+            /** 优先使用 YRC（逐字格式），然后是 LRC */
             val mainContent = if (!yrcContent.isNullOrBlank()) {
                 Timber.i("[LyricsRepository] Using YRC (word-by-word) format for Netease")
                 Timber.d("[LyricsRepository] YRC content (first 500 chars): ${yrcContent.take(500)}")
@@ -650,7 +648,7 @@ open class LyricsRepository(
                 lyricContent.orEmpty()
             }
             
-            // 使用统一解析器处理 YRC、LRC 等多种格式
+            /** 使用统一解析器处理 YRC、LRC 等多种格式 */
             val mainLyrics = UnifiedLyricsParser.parse(
                 content = mainContent,
                 title = title ?: "Unknown",
@@ -681,7 +679,7 @@ open class LyricsRepository(
      */
     suspend fun searchAmlldb(title: String, artist: String): List<LyricsSearchResult> {
         return try {
-            // AMLL DB search API only supports searching by title (not title+artist)
+            /** AMLL DB search API only supports searching by title (not title+artist) */
             val query = title.trim()
             if (query.isEmpty()) return emptyList()
 
@@ -692,10 +690,10 @@ open class LyricsRepository(
                 put("type", "all")
             }
 
-            // Debug: log the outgoing request payload
+            /** Debug: log the outgoing request payload */
             Timber.d("[LyricsRepository] AMLL DB search request payload: $payload")
 
-            // Search mirrors in parallel to improve robustness and speed
+            /** Search mirrors in parallel to improve robustness and speed */
             val endpoints = listOf(
                 "https://amlldb.bikonoo.com/api/search-lyrics"
             )
@@ -721,7 +719,7 @@ open class LyricsRepository(
                             Timber.d("[LyricsRepository] AMLL parsed array size: ${resultArray.size}")
                             if (resultArray.isEmpty()) return@runCatching emptyList()
 
-                            // helper to extract a list of strings from either a primitive or an array
+                            /** helper to extract a list of strings from either a primitive or an array */
                             fun JsonElement?.asStringList(): List<String> = when (this) {
                                 null -> emptyList()
                                 is JsonPrimitive -> listOfNotNull(contentOrNull)
@@ -729,8 +727,8 @@ open class LyricsRepository(
                                 else -> emptyList()
                             }
 
-                            // Prefer a title candidate that best matches our query (AMLL DB sometimes returns multiple
-                            // alternative titles for the same song). This ensures we display the best-matching title.
+                            /** Prefer a title candidate that best matches our query (AMLL DB sometimes returns multiple
+                             *  alternative titles for the same song). This ensures we display the best-matching title. */
                             resultArray.mapNotNull { item ->
                                 val itemObj = item.jsonObject
                                 val platform = itemObj["platform"].asStringList().firstOrNull() ?: return@mapNotNull null
@@ -738,18 +736,18 @@ open class LyricsRepository(
                                 val titleCandidates = itemObj["title"].asStringList()
                                 val artistCandidates = itemObj["artist"].asStringList()
 
-                                // Require at least one title and one artist
+                                /** Require at least one title and one artist */
                                 if (titleCandidates.isEmpty() || artistCandidates.isEmpty()) return@mapNotNull null
 
                                 val albumRes = itemObj["album"].asStringList().firstOrNull()
                                 val fileRes = itemObj["file"].asStringList().firstOrNull()
                                 val actualId = fileRes?.takeIf { it.isNotBlank() } ?: id
 
-                                // Use combined artist string for matching (allows multiple variants)
+                                /** Use combined artist string for matching (allows multiple variants) */
                                 val artistForMatch = artistCandidates.joinToString("/") { it }
 
-                                // Choose a display artist variant that best matches the local artist info.
-                                // AMLL DB may return multiple spellings/variants for the same artist.
+                                /** Choose a display artist variant that best matches the local artist info.
+                                 *  AMLL DB may return multiple spellings/variants for the same artist. */
                                 val bestDisplayArtist = artistCandidates
                                     .maxByOrNull { candidate ->
                                         compareArtists(artist, candidate)?.score ?: 0
@@ -757,7 +755,7 @@ open class LyricsRepository(
 
                                 Timber.d("[LyricsRepository] AMLL item: platform=$platform id=$id actualId=$actualId titleCandidates=$titleCandidates artistCandidates=$artistCandidates album=$albumRes bestDisplayArtist=$bestDisplayArtist")
 
-                                // Evaluate each title candidate and pick the one with the highest confidence.
+                                /** Evaluate each title candidate and pick the one with the highest confidence. */
                                 val (bestTitle, bestEval) = titleCandidates
                                     .map { candidate ->
                                         val matchEval = evaluateMatch(
@@ -775,7 +773,7 @@ open class LyricsRepository(
                                         if (diff != 0) return@Comparator diff
                                         a.third.compareTo(b.third)
                                     })
-                                    // should never be null because we guard for titleCandidates.isEmpty
+                                    /** should never be null because we guard for titleCandidates.isEmpty */
                                     ?: Triple(
                                         titleCandidates.first(),
                                         evaluateMatch(
@@ -828,7 +826,7 @@ open class LyricsRepository(
                 deferreds.awaitAll().flatten()
             }
 
-            // Deduplicate by provider+songId and limit size
+            /** Deduplicate by provider+songId and limit size */
             Timber.d("[LyricsRepository] AMLL joined size before dedupe: ${joined.size}")
             Timber.d("[LyricsRepository] AMLL joined contents: $joined")
             joined
@@ -843,7 +841,7 @@ open class LyricsRepository(
     /**
      * 从酷狗音乐搜索歌词
      */
-    // cache for lazily mapping song hashes -> proposal id (first lookup may issue network request)
+    /** cache for lazily mapping song hashes -> proposal id (first lookup may issue network request) */
     private val kugouHashToProposalCache = mutableMapOf<String, String?>()
 
     /**
@@ -889,7 +887,7 @@ open class LyricsRepository(
             val keyword = "$title $artist".trim()
             Timber.d("[LyricsRepository] Kugou search starting for keyword: $keyword")
 
-            // Step 1: 从 Kugou 搜歌曲获得哈希值（对齐 Unilyric）
+            /** Step 1: 从 Kugou 搜歌曲获得哈希值（对齐 Unilyric） */
             val searchResponse = httpClient.get("http://mobilecdn.kugou.com/api/v3/search/song") {
                 parameter("keyword", keyword)
                 parameter("page", "1")
@@ -952,9 +950,9 @@ open class LyricsRepository(
                 Timber.d("[Kugou]   -> Evaluation: confidence=${matchEval.confidence}, match=${matchEval.matchType}(score=${matchType.score})")
 
                 if (matchType.score >= MatchType.VERY_LOW.score) {
-                    // always store hash internally; for display we append proposal if available
+                    /** always store hash internally; for display we append proposal if available */
                     val proposal = fetchKugouProposalId(songHash)
-                    // format: "<hash>" or "<hash>::<proposal>" (numeric id)
+                    /** format: "<hash>" or "<hash>::<proposal>" (numeric id) */
                     val idToStore = if (!proposal.isNullOrBlank()) {
                         "$songHash::$proposal"
                     } else songHash
@@ -998,13 +996,15 @@ open class LyricsRepository(
             // 基于 Unilyric 的实现
             // https://lyrics.kugou.com 是官方歌词 API
             
-            // if the caller passed a combined id, split it; the first segment is
-            // always the original song hash that the service expects for queries.
+            /**
+             * if the caller passed a combined id, split it; the first segment is
+             * always the original song hash that the service expects for queries.
+             */
             val hash = idOrHash.substringBefore("::")
             val displayPart = idOrHash.substringAfter("::", "")
 
             val isNumericId = displayPart.all { it.isDigit() }
-            // Step 1: 搜索歌词候选（使用 hash）
+            /** Step 1: 搜索歌词候选（使用 hash） */
             val searchResponse = httpClient.get("https://lyrics.kugou.com/search") {
                 parameter("ver", "1")
                 parameter("man", "yes")
@@ -1031,8 +1031,10 @@ open class LyricsRepository(
                 return null
             }
             
-            // Step 2: 选出合适的候选。如果调用方提供了数字 ID，尝试匹配；
-            // 否则直接取第一个。
+            /**
+             * Step 2: 选出合适的候选。如果调用方提供了数字 ID，尝试匹配；
+             * 否则直接取第一个。
+             */
             val candidate = if (isNumericId && displayPart.isNotEmpty()) {
                 candidates.firstOrNull { it.jsonObject["id"]?.jsonPrimitive?.content == displayPart }
                     ?.jsonObject
@@ -1054,7 +1056,7 @@ open class LyricsRepository(
             
             Timber.d("[Kugou] Kugou lyrics candidate - id: $lyricId, accesskey: $accesskey")
             
-            // Step 3: 下载歌词（KRC 格式）
+            /** Step 3: 下载歌词（KRC 格式） */
             val downloadResponse = httpClient.get("https://lyrics.kugou.com/download") {
                 parameter("ver", "1")
                 parameter("client", "pc")
@@ -1080,7 +1082,7 @@ open class LyricsRepository(
                 return null
             }
             
-            // Step 4: 解密歌词内容（根据 Unilyric: Base64 + XOR + Zlib）
+            /** Step 4: 解密歌词内容（根据 Unilyric: Base64 + XOR + Zlib） */
             val decryptedLyrics = KugouDecrypter.decryptKrc(encryptedContent)
             
             if (decryptedLyrics.isNullOrBlank()) {
@@ -1090,7 +1092,7 @@ open class LyricsRepository(
             
             Timber.d("[Kugou] Decrypted Kugou lyrics (first 500 chars): ${decryptedLyrics.take(500)}")
             
-            // Step 5: 使用统一解析器处理 KRC/LRC 格式
+            /** Step 5: 使用统一解析器处理 KRC/LRC 格式 */
             val ttml = UnifiedLyricsParser.parse(
                 content = decryptedLyrics,
                 title = title ?: "Unknown",
@@ -1114,13 +1116,13 @@ open class LyricsRepository(
      * 规范化名称用于比较（基于 Unilyric 的 normalize_name_for_comparison）
      */
     private fun stripAccents(input: String): String {
-        // remove diacritics (e.g. é -> e) to make comparison accent-insensitive
+        /** remove diacritics (e.g. é -> e) to make comparison accent-insensitive */
         val normalized = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD)
         return Regex("\\p{InCombiningDiacriticalMarks}+").replace(normalized, "")
     }
 
     internal fun normalizeForComparison(name: String): String {
-        // apply Chinese traditional->simplified conversion (align with Unilyric logic)
+        /** apply Chinese traditional->simplified conversion (align with Unilyric logic) */
         var s = name
         // apply accent stripping next
         s = stripAccents(s)
@@ -1231,7 +1233,7 @@ open class LyricsRepository(
         return converted == parenText
     }
 
-    // version-related keywords that often indicate alternate mixes/edits/releases
+    /** version-related keywords that often indicate alternate mixes/edits/releases */
     private fun extractVersionKeywords(s: String): Set<String> {
         val keywords = listOf(
             // English terms
@@ -1247,18 +1249,22 @@ open class LyricsRepository(
         )
         val lower = s.lowercase()
 
-        // start with any keyword that appears in the string
+        /** start with any keyword that appears in the string */
         val matches = keywords.filter { lower.contains(it) }.toMutableSet()
 
-        // additionally detect numeric tempo/multiplier markers like "0.6x", "1.5x" etc.
-        // such tokens are commonly used to denote speed changes and should count as version keywords.
+        /**
+         * additionally detect numeric tempo/multiplier markers like "0.6x", "1.5x" etc.
+         * such tokens are commonly used to denote speed changes and should count as version keywords.
+         */
         val multiplierRegex = Regex("\\b\\d+(?:\\.\\d+)?x\\b")
         multiplierRegex.findAll(lower).forEach { matches.add(it.value) }
 
-        // extra: capture parenthesized segments that likely indicate a version
-        // marker, e.g. "(国语版)" or "(remix version)".  we only consider cases
-        // where the content ends with 版 or contains the word "version" to
-        // prevent false positives such as "(版面)".
+        /**
+         * extra: capture parenthesized segments that likely indicate a version
+         * marker, e.g. "(国语版)" or "(remix version)".  we only consider cases
+         * where the content ends with 版 or contains the word "version" to
+         * prevent false positives such as "(版面)".
+         */
         val parenthesized = Regex("\\(([^)]+)\\)").findAll(lower)
             .map { it.groupValues[1] }
             .toList()
@@ -1303,8 +1309,10 @@ open class LyricsRepository(
         val n2 = normalizeForComparison(lowered2)
         if (n1 == n2) return NameMatchType.PERFECT
 
-        // if the normalized names contain differing version/mix tags,
-        // treat as a much weaker match since they are likely separate releases
+        /**
+         * if the normalized names contain differing version/mix tags,
+         * treat as a much weaker match since they are likely separate releases
+         */
         val v1 = extractVersionKeywords(n1)
         val v2 = extractVersionKeywords(n2)
         if (v1.isNotEmpty() || v2.isNotEmpty()) {
@@ -1337,15 +1345,17 @@ open class LyricsRepository(
             val b1 = n1.substringBefore('(').trim()
             val b2 = n2.substringBefore('(').trim()
             if (b1 == b2) {
-                // examine the text inside the parentheses of whichever name contains it
+                /** examine the text inside the parentheses of whichever name contains it */
                 val parenText = if (n1.contains('(')) {
                     n1.substringAfter('(').substringBefore(')')
                 } else {
                     n2.substringAfter('(').substringBefore(')')
                 }
-                // if the parenthesized text contains any of the version/mix keywords
-                // (live, remix, edit etc.) we treat it as a weaker LOW match. otherwise
-                // it's likely just a translation or annotation, so consider it perfect.
+                /**
+                 * if the parenthesized text contains any of the version/mix keywords
+                 * (live, remix, edit etc.) we treat it as a weaker LOW match. otherwise
+                 * it's likely just a translation or annotation, so consider it perfect.
+                 */
                 val keywordsInParen = extractVersionKeywords(parenText)
                 return if (keywordsInParen.isNotEmpty()) {
                     NameMatchType.LOW
@@ -1382,7 +1392,7 @@ open class LyricsRepository(
     internal fun compareArtists(artists1: String?, artists2: String?): ArtistMatchType? {
         val list1 = normalizeArtistList(artists1.orEmpty())
         val list2 = normalizeArtistList(artists2.orEmpty())
-        // normalize common conjunctions in artist names
+        /** normalize common conjunctions in artist names */
         fun normalizeConjunctions(list: List<String>) = list.map { it.replace(" & ", " and ") }
         val n1 = normalizeConjunctions(list1)
         val n2 = normalizeConjunctions(list2)
@@ -1436,7 +1446,7 @@ open class LyricsRepository(
         val d2 = duration2 ?: return null
         val diff = kotlin.math.abs(d1 - d2).toDouble() / 1000.0
 
-        // 高斯衰减近似 Unilyric 的时长比较
+        /** 高斯衰减近似 Unilyric 的时长比较 */
         val sigma = 3.0
         val similarity = kotlin.math.exp(-(diff * diff) / (2.0 * sigma * sigma))
         return when {
@@ -1463,7 +1473,7 @@ open class LyricsRepository(
         val artistMatch = compareArtists(searchArtist, resultArtist)
         val albumMatch = compareName(searchAlbum, resultAlbum)
         val durationMatch = compareDuration(searchDurationMs, resultDurationMs)
-        // weights can be tweaked later or exposed via configuration
+        /** weights can be tweaked later or exposed via configuration */
         val titleWeight = 1.0
         val artistWeight = 1.0
         val albumWeight = 0.5   // slightly higher importance for album
@@ -1494,7 +1504,7 @@ open class LyricsRepository(
 
         Timber.d("[MatchEvaluator]       totalScore (raw): $totalScore, possibleScore: $possibleScore, normalized: $normalizedScore")
 
-        // thresholds adjusted after tuning to reduce false positives
+        /** thresholds adjusted after tuning to reduce false positives */
         val thresholds = listOf(
             22.0 to MatchType.PERFECT,
             20.0 to MatchType.VERY_HIGH,
@@ -1652,20 +1662,26 @@ open class LyricsRepository(
         title: String? = null,
         artist: String? = null
     ): UnifiedLyrics? {
-        // allow callers to pass a platform prefix (e.g. "qq:12345") or omit for
-        // backwards compatibility.  default platform is ncm (网易云).
-        // If the "songId" is a direct URL (from AMLL search "file" field), we treat it as
-        // a direct download link.
+        /**
+         * allow callers to pass a platform prefix (e.g. "qq:12345") or omit for
+         * backwards compatibility.  default platform is ncm (网易云).
+         * If the "songId" is a direct URL (from AMLL search "file" field), we treat it as
+         * a direct download link.
+         */
         val (platform, rawId) = parseAmlLId(songId)
 
-        // some AMLL search results return native file names like "....ttml".
-        // For mirror endpoints we need to avoid appending ".ttml" twice.
+        /**
+         * some AMLL search results return native file names like "....ttml".
+         * For mirror endpoints we need to avoid appending ".ttml" twice.
+         */
         val normalizedId = rawId.removeSuffix(".ttml")
         val hasTtmlSuffix = rawId.endsWith(".ttml")
 
-        // for QQ IDs we may receive "id1::id2".
-        // which is the typical Unilyric format, so split on
-        // "::" first to avoid producing an empty string for the second part.
+        /**
+         * for QQ IDs we may receive "id1::id2".
+         * which is the typical Unilyric format, so split on
+         * "::" first to avoid producing an empty string for the second part.
+         */
         val candidateIds = when {
             platform == "qq" && normalizedId.contains("::") -> normalizedId.split("::", limit = 2)
             else -> listOf(normalizedId)
@@ -1676,9 +1692,11 @@ open class LyricsRepository(
         lastAmlLError = null
 
         for (normalizedSongId in candidateIds) {
-            // build the list of endpoints; the mirrors we had before only host the ncm
-            // archive so they should only be used when platform == "ncm".
-            // If the rawId is a direct URL (platform="url"), use it directly.
+            /**
+             * build the list of endpoints; the mirrors we had before only host the ncm
+             * archive so they should only be used when platform == "ncm".
+             * If the rawId is a direct URL (platform="url"), use it directly.
+             */
             val endpoints = mutableListOf<String>()
             if (platform == "url") {
                 endpoints += rawId
@@ -1687,10 +1705,12 @@ open class LyricsRepository(
                 // (some platforms like raw-lyrics include the .ttml suffix in the ID)
                 endpoints += "https://amll-ttml-db.stevexmh.net/$platform/$rawId"
 
-                // Mirror endpoints exist for multiple platforms (not just `ncm`).
-                // Determine the mirror folder name:
-                // - if the platform already ends with "-lyrics" (e.g. raw-lyrics), keep it
-                // - otherwise append "-lyrics" (e.g. ncm -> ncm-lyrics)
+                /**
+                 * Mirror endpoints exist for multiple platforms (not just `ncm`).
+                 * Determine the mirror folder name:
+                 * - if the platform already ends with "-lyrics" (e.g. raw-lyrics), keep it
+                 * - otherwise append "-lyrics" (e.g. ncm -> ncm-lyrics)
+                 */
                 val mirrorFolder = if (platform.endsWith("-lyrics")) platform else "${platform}-lyrics"
                 val idWithSuffix = if (hasTtmlSuffix) rawId else "$normalizedSongId.ttml"
                 endpoints += "https://amlldb.bikonoo.com/$mirrorFolder/$idWithSuffix"
@@ -1721,15 +1741,17 @@ open class LyricsRepository(
 
                     val parsed = parseTTML(content, title, artist)
                     if (parsed != null && parsed.lines.isNotEmpty()) {
-                        // 检查是否有歌曲结构
+                        /** 检查是否有歌曲结构 */
                         val songStructures = parsed.metadata.songStructures
                         if (!songStructures.isNullOrEmpty()) {
                             Timber.v("[SongStructure] AMLL parsed structures: ${songStructures.size}")
                         }
 
-                        // Mark the source for AMLL lyrics so downstream feature analysis
-                        // (e.g. overlap detection) can distinguish AMLL TTML DB content.
-                        // 保留歌曲结构信息
+                        /**
+                         * Mark the source for AMLL lyrics so downstream feature analysis
+                         * (e.g. overlap detection) can distinguish AMLL TTML DB content.
+                         * 保留歌曲结构信息
+                         */
                         val withSource = parsed.copy(
                             metadata = parsed.metadata.copy(
                                 source = "AMLL TTML DB",
@@ -1835,7 +1857,7 @@ open class LyricsRepository(
                         }
                     }
 
-                    // await first success if any (within this detached job)
+                    /** await first success if any (within this detached job) */
                     val pair = channel.receiveCatching().getOrNull()
                     if (pair != null) {
                         val (prefixId, amllResult) = pair
@@ -1928,7 +1950,7 @@ open class LyricsRepository(
      *   若传入且搜索候选在置信度/功能上完全相等，则有助于优先选择
      *   与当前来源相关的结果（如网易、QQ、酷狗）。
      */
-    // Made open for unit and integration tests to allow custom behavior
+    /** Made open for unit and integration tests to allow custom behavior */
     open suspend fun fetchLyricsAuto(
         title: String,
         artist: String,
@@ -1939,7 +1961,7 @@ open class LyricsRepository(
         try {
             Timber.i("[SearchService] Auto-fetching lyrics for: $title - $artist")
 
-            // 1. 多源并发搜索
+            /** 1. 多源并发搜索 */
             val searchResults = searchLyrics(title, artist)
             if (searchResults.isEmpty()) {
                 Timber.w("[SearchService] No search results found for: $title - $artist")
@@ -1949,9 +1971,11 @@ open class LyricsRepository(
                 )
             }
 
-            // 2. 并行获取每个候选的 features 集合（用于打破置信度平局）。
-            // 排序与 CustomLyricsViewModel.searchCandidates 走完全相同的规则，
-            // 避免出现"自动选的词"和"手动选的词"体验割裂。
+            /**
+             * 2. 并行获取每个候选的 features 集合（用于打破置信度平局）。
+             * 排序与 CustomLyricsViewModel.searchCandidates 走完全相同的规则，
+             * 避免出现"自动选的词"和"手动选的词"体验割裂。
+             */
             val featuresByKey: Map<String, Set<LyricsFeature>> = coroutineScope {
                 searchResults.map { candidate ->
                     async {
@@ -1967,12 +1991,12 @@ open class LyricsRepository(
                 }.awaitAll().toMap()
             }
 
-            // 3. 共享 ranker 统一排序（与 CustomLyricsViewModel 走同一份规则）
+            /** 3. 共享 ranker 统一排序（与 CustomLyricsViewModel 走同一份规则） */
             val ranked = LyricsCandidateRanker.rank(searchResults, featuresByKey, currentSourceName)
             val top = ranked.first()
             Timber.d("[SearchService] Selected top candidate after ranking: ${top.provider} id=${top.songId} conf=${top.confidence}")
 
-            // 4. 拉取完整歌词（getLyrics 内部会做 TTML 规范化并写本地缓存）
+            /** 4. 拉取完整歌词（getLyrics 内部会做 TTML 规范化并写本地缓存） */
             val result = getLyrics(top.provider, top.songId, top.title, top.artist)
             if (result.isSuccess) {
                 return result.copy(
@@ -2039,17 +2063,23 @@ open class LyricsRepository(
             }
             
             if (lyrics != null) {
-                // 1. 转换为 TTML 格式以保持稳定性（特别是针对非 TTML 来源如 QQ/网易）
-                // 这样做可以确保 rawTtml 字段始终存在，且内容与解析出的 lines 一致
+                /**
+                 * 1. 转换为 TTML 格式以保持稳定性（特别是针对非 TTML 来源如 QQ/网易）
+                 * 这样做可以确保 rawTtml 字段始终存在，且内容与解析出的 lines 一致
+                 */
                 val ttmlContent = lyrics.rawTtml ?: TTMLConverter.toTTMLString(lyrics)
                 
-                // 2. 重新解析 TTML 内容，确保返回的对象是经过标准 TTML 路径生成的
-                // 这符合“每次读取都解析 TTML”的原则，从而保证跨来源的稳定性
+                /**
+                 * 2. 重新解析 TTML 内容，确保返回的对象是经过标准 TTML 路径生成的
+                 * 这符合“每次读取都解析 TTML”的原则，从而保证跨来源的稳定性
+                 */
                 val stableLyrics = parseTTML(ttmlContent, title ?: lyrics.metadata.title, artist ?: lyrics.metadata.artist)
                     ?: lyrics
                 
-                // 3. 储存到本地缓存（如果配置了缓存仓库）
-                // 这样后续 fetchLyricsAuto 的优先读取缓存逻辑就能生效
+                /**
+                 * 3. 储存到本地缓存（如果配置了缓存仓库）
+                 * 这样后续 fetchLyricsAuto 的优先读取缓存逻辑就能生效
+                 */
                 val finalTitle = title ?: stableLyrics.metadata.title
                 val finalArtist = artist ?: stableLyrics.metadata.artist
                 if (finalTitle.isNotBlank() && finalArtist.isNotBlank()) {
@@ -2110,10 +2140,12 @@ open class LyricsRepository(
         return lyrics?.let { analyzeFeatures(it) } ?: emptySet()
     }
 
-    // 候选排序规则已统一迁移到 data/ranking/LyricsCandidateRanker，
-    // 这里不再保留 adjustResultsForFeatures() 独立实现。
-    // - fetchLyricsAuto 直接调用 LyricsCandidateRanker.rank()
-    // - CustomLyricsViewModel.compareCandidates() 委托给 LyricsCandidateRanker.compare()
+    /**
+     * 候选排序规则已统一迁移到 data/ranking/LyricsCandidateRanker，
+     * 这里不再保留 adjustResultsForFeatures() 独立实现。
+     * - fetchLyricsAuto 直接调用 LyricsCandidateRanker.rank()
+     * - CustomLyricsViewModel.compareCandidates() 委托给 LyricsCandidateRanker.compare()
+     */
 
     private fun analyzeFeatures(lyrics: UnifiedLyrics): Set<LyricsFeature> {
         val features = mutableSetOf<LyricsFeature>()
@@ -2122,10 +2154,12 @@ open class LyricsRepository(
         if (lines.any { it.isBG }) features.add(LyricsFeature.BACKGROUND)
         if (lines.any { it.translation?.isNotBlank() == true }) features.add(LyricsFeature.TRANSLATION)
         if (lines.any { it.transliteration?.isNotBlank() == true }) features.add(LyricsFeature.TRANSLITERATION)
-        // treat 'words' feature as present only if there is at least one line
-        // with more than one word, or the single word does not exactly match the
-        // line timing.  This prevents ordinary "line‑timed" lyrics from being
-        // flagged as word‑level.
+        /**
+         * treat 'words' feature as present only if there is at least one line
+         * with more than one word, or the single word does not exactly match the
+         * line timing.  This prevents ordinary "line‑timed" lyrics from being
+         * flagged as word‑level.
+         */
         val hasRealWords = lines.any { line ->
             val w = line.words
             if (w.isEmpty()) return@any false
@@ -2138,22 +2172,26 @@ open class LyricsRepository(
             }
         }
         if (hasRealWords) features.add(LyricsFeature.WORDS)
-        // Only mark overlap as a feature for sources where it is expected to be
-        // meaningful (e.g. TTML results or a raw TTML file). Other sources
-        // may produce overlapping timings during conversion and should not be
-        // treated as a true "overlap" feature.
+        /**
+         * Only mark overlap as a feature for sources where it is expected to be
+         * meaningful (e.g. TTML results or a raw TTML file). Other sources
+         * may produce overlapping timings during conversion and should not be
+         * treated as a true "overlap" feature.
+         */
         val sourceLower = lyrics.metadata.source.lowercase()
         val shouldMarkOverlap = sourceLower.contains("ttml")
         if (shouldMarkOverlap && lines.zipWithNext().any { it.second.startTime < it.first.endTime }) {
             features.add(LyricsFeature.OVERLAP)
         }
-        // Check for 结构标记 information (verse, chorus, etc.)
-        // This feature is only available when TTML contains valid songPart metadata
-        // Exclude fallback results with generic labels like "段落 1", "段落 2"
-        // Also exclude pure instrumental sections (Intro, Interlude, Outro, etc.)
+        /**
+         * Check for 结构标记 information (verse, chorus, etc.)
+         * This feature is only available when TTML contains valid songPart metadata
+         * Exclude fallback results with generic labels like "段落 1", "段落 2"
+         * Also exclude pure instrumental sections (Intro, Interlude, Outro, etc.)
+         */
         val songStructures = lyrics.metadata.songStructures
         if (!songStructures.isNullOrEmpty()) {
-            // Check if structures have meaningful vocal section labels
+            /** Check if structures have meaningful vocal section labels */
             val hasRealVocalStructureLabels = songStructures.any { structure ->
                 val label = structure.label.trim()
                 val type = structure.type
@@ -2242,13 +2280,13 @@ open class LyricsRepository(
                     return null
                 }
                 
-                // 检查是否有解析到的歌曲结构
+                /** 检查是否有解析到的歌曲结构 */
                 val songStructures = parsedLyrics.metadata.songStructures
                 if (!songStructures.isNullOrEmpty()) {
                     Timber.v("[SongStructure] LyricsRepository parsed structures: ${songStructures.size}")
                 }
                 
-                // 如果提供了自定义标题或艺术家，覆盖元数据（但保留 songStructures）
+                /** 如果提供了自定义标题或艺术家，覆盖元数据（但保留 songStructures） */
                 val metadata = parsedLyrics.metadata.copy(
                     title = title ?: parsedLyrics.metadata.title,
                     artist = artist ?: parsedLyrics.metadata.artist,

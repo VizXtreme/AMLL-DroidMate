@@ -103,30 +103,32 @@ private fun LogDisplayPage(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // 日志列表状态
+    /** 日志列表状态 */
     var logEntries by remember { mutableStateOf(LogHelper.getAllLogs()) }
     val listState = rememberLazyListState()
 
-    // 自动滚动控制
+    /** 自动滚动控制 */
     var autoScrollEnabled by remember { mutableStateOf(true) }
     var isPaused by remember { mutableStateOf(false) }
 
-    // 日志记录控制 - 从持久化存储读取
+    /** 日志记录控制 - 从持久化存储读取 */
     var isLoggingPaused by remember {
         mutableStateOf(LogHelper.isLoggingPaused())
     }
 
-    // 日志等级筛选 - 从持久化存储读取
+    /** 日志等级筛选 - 从持久化存储读取 */
     var showFilterDropdown by remember { mutableStateOf(false) }
     var minLogLevel by remember {
         mutableStateOf(LogHelper.getMinLogLevel())
     }
 
-    // 日志统计
+    /** 日志统计 */
     var stats by remember { mutableStateOf(LogHelper.getLogStats()) }
 
-    // 文件保存启动器 - 使用 SAF (Storage Access Framework)
-    // 系统会自动打开保存对话框，默认在 Downloads，用户可以选择其他位置
+    /**
+     * 文件保存启动器 - 使用 SAF (Storage Access Framework)
+     * 系统会自动打开保存对话框，默认在 Downloads，用户可以选择其他位置
+     */
     val saveFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
@@ -257,7 +259,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            // 各个等级选项（按等级排序）
+                            /** 各个等级选项（按等级排序） */
                             val levels = listOf(
                                 "V" to "详细 (全部)",
                                 "D" to "调试",

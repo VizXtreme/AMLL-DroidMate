@@ -75,10 +75,10 @@ import java.util.Locale
  * - 加快歌词加载速度
  */
 class LyricsCacheActivity : BaseComposeActivity() {
-    // 存储要导出的歌词内容
+    /** 存储要导出的歌词内容 */
     private var exportTtmlContent: String? = null
     
-    // 使用新的 Activity Result API
+    /** 使用新的 Activity Result API */
     val exportLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/xml")
     ) { uri ->
@@ -105,7 +105,7 @@ class LyricsCacheActivity : BaseComposeActivity() {
     
     @Composable
     override fun RenderContent() {
-        // 获取歌词缓存仓库
+        /** 获取歌词缓存仓库 */
         val repository = LyricsCacheRepository(applicationContext)
         // 渲染歌词缓存管理页面
         LyricsCachePage(

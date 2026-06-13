@@ -55,14 +55,14 @@ class MainActivity : ComponentActivity() {
             val nowPlaying by viewModel.nowPlayingMusic.collectAsState()
             val isDarkTheme = isSystemInDarkTheme()
             
-            // 观察全局动态颜色方案
+            /** 观察全局动态颜色方案 */
             val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
             
             LaunchedEffect(nowPlaying?.albumArtUri, isDarkTheme) {
                 val albumArtUri = nowPlaying?.albumArtUri
                 if (!albumArtUri.isNullOrBlank()) {
                     try {
-                        // 优化：将专辑封面颜色提取移到后台线程，避免阻塞UI线程
+                        /** 优化：将专辑封面颜色提取移到后台线程，避免阻塞UI线程 */
                         val colors = withContext(Dispatchers.Default) {
                             AlbumColorExtractor.extractColorsFromAlbumArt(
                                 context = this@MainActivity,

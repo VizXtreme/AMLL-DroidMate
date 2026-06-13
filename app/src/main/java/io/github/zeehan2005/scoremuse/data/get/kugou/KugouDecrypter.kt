@@ -21,7 +21,7 @@ import java.util.zip.InflaterInputStream
  */
 object KugouDecrypter {
     
-    // 固定的 16 字节解密密钥（XOR 密钥循环使用）
+    /** 固定的 16 字节解密密钥（XOR 密钥循环使用） */
     private val KRC_DECRYPT_KEY = byteArrayOf(
         0x40, 0x47, 0x61, 0x77, 0x5E, 0x32, 0x74, 0x47,
         0x51, 0x36, 0x31, 0x2D, 0xCE.toByte(), 0xD2.toByte(), 0x6E, 0x69
@@ -42,7 +42,7 @@ object KugouDecrypter {
      */
     fun decryptKrc(encryptedBase64: String): String? {
         return try {
-            // Step 1: Base64 解码
+            /** Step 1: Base64 解码 */
             val encryptedBytes = Base64.decode(encryptedBase64, Base64.DEFAULT)
             Timber.d("[KugouDecrypter] KRC encrypted data length: ${encryptedBytes.size}")
             
@@ -52,17 +52,19 @@ object KugouDecrypter {
                 return null
             }
             
-            // Step 2: 移除前 4 字节头（"krc1" 标识）
+            /** Step 2: 移除前 4 字节头（"krc1" 标识） */
             val dataToDecrypt = encryptedBytes.drop(4).toByteArray()
             
-            // Step 3: XOR 解密（16 字节密钥循环使用）
-            // XOR 的特性：A XOR K XOR K = A，所以加密和解密使用相同的算法
+            /**
+             * Step 3: XOR 解密（16 字节密钥循环使用）
+             * XOR 的特性：A XOR K XOR K = A，所以加密和解密使用相同的算法
+             */
             val decryptedData = ByteArray(dataToDecrypt.size)
             for (i in dataToDecrypt.indices) {
                 decryptedData[i] = (dataToDecrypt[i].toInt() xor KRC_DECRYPT_KEY[i % KRC_DECRYPT_KEY.size].toInt()).toByte()
             }
             
-            // Step 4: Zlib 解压缩
+            /** Step 4: Zlib 解压缩 */
             val decompressed = decompress(decryptedData)
             
             // Step 5: 转换为 UTF-8 字符串

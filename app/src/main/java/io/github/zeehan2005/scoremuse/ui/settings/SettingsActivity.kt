@@ -122,11 +122,11 @@ private fun SettingsPage(
 ) {
     val context = LocalContext.current
 
-    // use the global dynamic color scheme as the source of truth for accent
+    /** use the global dynamic color scheme as the source of truth for accent */
     val dynamicColorScheme by DynamicThemeManager.observeColorScheme()
     val rippleColor = dynamicColorScheme?.primary ?: MaterialTheme.colorScheme.primary
 
-    // keep switch thumb/track consistent with the dynamic accent color
+    /** keep switch thumb/track consistent with the dynamic accent color */
     val switchColors = SwitchDefaults.colors(
         checkedThumbColor = rippleColor,
         checkedTrackColor = rippleColor.copy(alpha = 0.5f),
@@ -135,8 +135,10 @@ private fun SettingsPage(
         uncheckedTrackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f)
     )
 
-    // we no longer need MainViewModel or album art extraction here; that work
-    // is already performed in MainActivity and pushed to DynamicThemeManager
+    /**
+     * we no longer need MainViewModel or album art extraction here; that work
+     * is already performed in MainActivity and pushed to DynamicThemeManager
+     */
 
     var selectedAction by remember { mutableStateOf(AppSettings.getCardClickAction(context)) }
     var lyricNotificationEnabled by remember {

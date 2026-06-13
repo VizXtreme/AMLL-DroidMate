@@ -19,12 +19,16 @@ import timber.log.Timber
  */
 object EnhancedLrcParser {
     
-    // LRC 行时间戳正则：[mm:ss.ms] 或 [mm:ss]
-    // 匹配行级开始时间，这是每行歌词的基础时间戳
+    /**
+     * LRC 行时间戳正则：[mm:ss.ms] 或 [mm:ss]
+     * 匹配行级开始时间，这是每行歌词的基础时间戳
+     */
     private val LINE_TIMESTAMP_REGEX = Regex("""\[(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?]""")
         
-    // 增强型 LRC 逐字时间戳正则：<mm:ss.ms>词
-    // 匹配每个字的精确时间戳和对应的文本
+    /**
+     * 增强型 LRC 逐字时间戳正则：<mm:ss.ms>词
+     * 匹配每个字的精确时间戳和对应的文本
+     */
     private val WORD_TIMESTAMP_REGEX = Regex("""<(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?>([^<]+)""")
     
     /**
@@ -43,7 +47,7 @@ object EnhancedLrcParser {
         val lines = mutableListOf<LyricLine>()
         val contentLines = content.lines()
         
-        // 提取全局偏移量（offset 元数据用于整体调整歌词时间）
+        /** 提取全局偏移量（offset 元数据用于整体调整歌词时间） */
         var offsetMs = 0L
         for (lineStr in contentLines) {
             val trimmed = lineStr.trim()
@@ -96,16 +100,16 @@ object EnhancedLrcParser {
         allLines: List<String>,
         lineNumber: Int
     ): LyricLine? {
-        // 匹配行时间戳
+        /** 匹配行时间戳 */
         val lineMatch = LINE_TIMESTAMP_REGEX.find(line) ?: return null
         val lineStartMs = TimestampUtils.toMillis(
             "${lineMatch.groupValues[1]}:${lineMatch.groupValues[2]}:${lineMatch.groupValues[3]}"
         )
         
-        // 提取行时间戳后的内容
+        /** 提取行时间戳后的内容 */
         val contentAfterTimestamp = line.substring(lineMatch.range.last + 1)
         
-        // 检查是否包含逐字时间戳
+        /** 检查是否包含逐字时间戳 */
         val hasWordTimestamps = WORD_TIMESTAMP_REGEX.containsMatchIn(contentAfterTimestamp)
 
         return if (hasWordTimestamps) {
@@ -154,7 +158,7 @@ object EnhancedLrcParser {
                 // 当前词的结束时间是下一个词的开始时间
                 words[i] = words[i].copy(endTime = maxOf(words[i].startTime + 1, words[i + 1].startTime))
             } else {
-                // 最后一个词的结束时间
+                /** 最后一个词的结束时间 */
                 val nextLineStartMs = findNextLineStartTime(allLines, lineNumber)
                 words[i] = words[i].copy(
                     endTime = maxOf(words[i].startTime + 1, nextLineStartMs ?: (words[i].startTime + 1000))
@@ -229,7 +233,7 @@ object EnhancedLrcParser {
      */
     @Deprecated("Use TimestampUtils.toMillis instead")
     private fun parseTimeToMillis(minutes: String, seconds: String, millisStr: String): Long {
-        // 保留旧实现以确保向后兼容，新代码应该直接使用 TimestampUtils
+        /** 保留旧实现以确保向后兼容，新代码应该直接使用 TimestampUtils */
         val min = minutes.toLongOrNull() ?: 0L
         val sec = seconds.toLongOrNull() ?: 0L
         val millis = if (millisStr.isEmpty()) {

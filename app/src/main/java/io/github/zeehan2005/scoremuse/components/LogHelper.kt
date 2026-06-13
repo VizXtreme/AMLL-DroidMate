@@ -31,19 +31,28 @@ import java.util.concurrent.ConcurrentLinkedDeque
 object LogHelper {
     
     // 配置常量
-    private const val MAX_LOG_SIZE_BYTES = 128 * 1024  // 最多保留 128KB 日志，避免内存溢出
-    private const val PREFS_NAME = "ScoreMuse_log_settings"  // SharedPreferences 名称
-    private const val KEY_LOGGING_PAUSED = "logging_paused"  // 暂停状态键
-    private const val KEY_MIN_LOG_LEVEL = "min_log_level"  // 最小日志等级键
+    /** 最多保留 128KB 日志，避免内存溢出 */
+    private const val MAX_LOG_SIZE_BYTES = 128 * 1024
+    /** SharedPreferences 名称 */
+    private const val PREFS_NAME = "ScoreMuse_log_settings"
+    /** 暂停状态键 */
+    private const val KEY_LOGGING_PAUSED = "logging_paused"
+    /** 最小日志等级键 */
+    private const val KEY_MIN_LOG_LEVEL = "min_log_level"
     
     // 内部状态
-    private val logEntries = ConcurrentLinkedDeque<LogEntry>()  // 线程安全的日志队列
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.ROOT)  // 时间格式化
-    private var nextId = 0L  // 自增 ID 生成器，为每条日志分配唯一编号
-    private var currentLogSize = 0L  // 当前日志总大小（字节）
+    /**  线程安全的日志队列 */
+    private val logEntries = ConcurrentLinkedDeque<LogEntry>()
+    /** 时间格式化 */
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.ROOT)
+    /** 自增 ID 生成器，为每条日志分配唯一编号 */
+    private var nextId = 0L
+    /** 当前日志总大小（字节） */
+    private var currentLogSize = 0L
     
     // 持久化设置
-    private var prefs: PreferenceHelper? = null  // SharedPreferences 封装
+    /** SharedPreferences 封装 */
+    private var prefs: PreferenceHelper? = null
 
     /**
      * 初始化 LogHelper，必须在应用启动时调用
@@ -114,7 +123,7 @@ object LogHelper {
     class LogHelperTree : Timber.Tree() {
         override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
             val level = getLogLevelName(priority)
-            // 如果 Timber 提供了 tag 就使用，否则自动从堆栈中获取类名
+            /** 如果 Timber 提供了 tag 就使用，否则自动从堆栈中获取类名 */
             val logTag = tag ?: createStackElementTag()
             
             val entry = synchronized(LogHelper) {
@@ -153,7 +162,7 @@ object LogHelper {
                     continue
                 }
                 
-                // 提取类名的最后一部分（去掉包名）
+                /** 提取类名的最后一部分（去掉包名）*/
                 val simpleClassName = className.substringAfterLast('.')
                 return simpleClassName
             }
@@ -178,7 +187,7 @@ object LogHelper {
      */
     private fun addLogEntry(entry: LogEntry) {
         synchronized(LogHelper) {
-            // 计算日志条目的大小（字节）
+            /** 计算日志条目的大小（字节） */
             val entrySize = entry.toLogString().toByteArray().size.toLong()
             
             // 添加到队列并更新总大小

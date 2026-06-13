@@ -27,16 +27,16 @@ import java.util.Base64
  */
 object KrcParser {
     
-    // KRC 行时间戳正则: [起始ms,持续ms]
+    /** KRC 行时间戳正则: [起始ms,持续ms] */
     private val LINE_TIMESTAMP_REGEX = Regex("""^\[(\d+),(\d+)]""")
     
-    // KRC 逐字时间戳正则: <偏移ms,持续ms,0>文本
+    /** KRC 逐字时间戳正则: <偏移ms,持续ms,0>文本 */
     private val SYLLABLE_REGEX = Regex("""<(\d+),(\d+),\d+>([^<]+)""")
 
-    // KRC 内嵌翻译/音译标签：[language:BASE64_JSON]
+    /** KRC 内嵌翻译/音译标签：[language:BASE64_JSON] */
     private val LANGUAGE_TAG_REGEX = Regex("""\[language:([A-Za-z0-9+/=]+)]""")
     
-    // JSON 解析器（忽略未知字段，保证兼容性）
+    /** JSON 解析器（忽略未知字段，保证兼容性） */
     private val json = Json { ignoreUnknownKeys = true }
 
     private data class KrcAuxiliaryData(
@@ -62,7 +62,7 @@ object KrcParser {
         val auxiliaryData = extractAuxiliaryDataFromKrc(content)
         var auxLineIndex = 0
         
-        // look for optional global offset metadata (milliseconds)
+        /** look for optional global offset metadata (milliseconds) */
         var globalOffsetMs = 0L
         for (lineStr in contentLines) {
             val trimmed = lineStr.trim()
@@ -84,7 +84,7 @@ object KrcParser {
             
             try {
                 parseSingleLine(trimmed)?.let { parsedLine ->
-                    // apply offset
+                    /** apply offset */
                     val shiftedLine = if (globalOffsetMs != 0L) {
                         parsedLine.copy(
                             startTime = parsedLine.startTime + globalOffsetMs,
@@ -167,16 +167,16 @@ object KrcParser {
      * 解析单行 KRC 歌词
      */
     private fun parseSingleLine(line: String): LyricLine? {
-        // 匹配行时间戳
+        /** 匹配行时间戳 */
         val lineMatch = LINE_TIMESTAMP_REGEX.find(line) ?: return null
         val lineStartMs = lineMatch.groupValues[1].toLongOrNull() ?: return null
         val lineDurationMs = lineMatch.groupValues[2].toLongOrNull() ?: return null
         val lineEndMs = lineStartMs + lineDurationMs
         
-        // 提取行时间戳后的内容
+        /** 提取行时间戳后的内容 */
         val contentAfterTimestamp = line.substring(lineMatch.range.last + 1)
         
-        // 解析逐字内容
+        /** 解析逐字内容 */
         val words = mutableListOf<LyricWord>()
         var fullText = ""
         
@@ -185,11 +185,11 @@ object KrcParser {
             val durationMs = match.groupValues[2].toLongOrNull() ?: 0L
             val text = match.groupValues[3]
             
-            // 绝对时间 = 行起始时间 + 音节偏移时间
+            /** 绝对时间 = 行起始时间 + 音节偏移时间 */
             val syllableStartMs = lineStartMs + offsetMs
             val syllableEndMs = syllableStartMs + maxOf(1L, durationMs) // 确保持续时间至少为 1ms，防止 JS 侧计算 NaN
             
-            // KRC 音节文本里的空格是可见语义（尤其英文单词间分隔），不能 trim 掉。
+            /** KRC 音节文本里的空格是可见语义（尤其英文单词间分隔），不能 trim 掉。 */
             val normalizedWordText = normalizeWordText(text, words)
             if (normalizedWordText != null) {
                 words.add(
@@ -205,9 +205,9 @@ object KrcParser {
         
         // 如果没有解析到任何词，尝试提取纯文本
         if (words.isEmpty()) {
-            // 移除所有时间标签，获取纯文本
+            /** 移除所有时间标签，获取纯文本 */
             val plainText = SYLLABLE_REGEX.replace(contentAfterTimestamp) { it.groupValues[3] }
-            // 某些歌词源可能会在行中只包含时间戳占位符（例如 "(240410,1651)"），不应将其作为可见歌词展示。
+            /** 某些歌词源可能会在行中只包含时间戳占位符（例如 "(240410,1651)"），不应将其作为可见歌词展示。 */
             val normalized = plainText.replace(Regex("[^\\d(),]"), "")
             val isTimestampToken = Regex("^\\(\\d+,\\d+\\)(?:\\(\\d+,\\d+\\))*$").matches(normalized)
             if (plainText.isNotEmpty() && !isTimestampToken) {

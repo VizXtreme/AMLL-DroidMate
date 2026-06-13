@@ -257,7 +257,7 @@ object GitHubUpdateChecker {
     }
 
     private fun parseStableAsApproxInstant(stable: SemVer): Instant {
-        // Fallback ordering when installed version is stable but remote is Alpha.
+        /** Fallback ordering when installed version is stable but remote is Alpha. */
         val syntheticYear = 2000 + stable.major.coerceIn(0, 99)
         val syntheticMonth = (stable.minor.coerceIn(0, 11) + 1)
         val syntheticDay = (stable.patch.coerceIn(0, 27) + 1)

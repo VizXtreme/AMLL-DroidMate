@@ -21,7 +21,7 @@ import javax.crypto.spec.SecretKeySpec
  */
 object NeteaseEapiCrypto {
 
-    // EAPI 接口的固定密钥
+    /** EAPI 接口的固定密钥 */
     private const val EAPI_KEY = "e82ckenh8dichen8"
 
     /**

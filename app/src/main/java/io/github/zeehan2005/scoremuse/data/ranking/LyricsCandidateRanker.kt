@@ -49,12 +49,12 @@ object LyricsCandidateRanker {
         b: LyricsSearchResult, bFeatures: Set<LyricsFeature>?,
         currentSourceName: String?
     ): Int {
-        // 1. cache 优先
+        /** 1. cache 优先 */
         val aCache = a.provider.equals("cache", true)
         val bCache = b.provider.equals("cache", true)
         if (aCache != bCache) return if (aCache) -1 else 1
 
-        // 2. 置信度降序
+        /** 2. 置信度降序 */
         val confDiff = a.confidence - b.confidence
         if (confDiff != 0f) return -confDiff.compareTo(0f)
 
@@ -64,7 +64,7 @@ object LyricsCandidateRanker {
             if (featDiff != 0) return featDiff
         }
 
-        // 4. AMLL 优先于其他来源
+        /** 4. AMLL 优先于其他来源 */
         val aAml = a.provider.equals("amll", true)
         val bAml = b.provider.equals("amll", true)
         if (aAml != bAml) return if (aAml) -1 else 1
@@ -109,7 +109,7 @@ object LyricsCandidateRanker {
             }
         }
 
-        // 8. provider 固定优先级 / TME 互斥规则
+        /** 8. provider 固定优先级 / TME 互斥规则 */
         val lowerA = a.provider.lowercase()
         val lowerB = b.provider.lowercase()
         val bothTme = lowerA in setOf("qq", "kugou") && lowerB in setOf("qq", "kugou")
@@ -126,7 +126,7 @@ object LyricsCandidateRanker {
                 if (lowerA == "qq" && lowerB == "kugou") return -1
                 if (lowerA == "kugou" && lowerB == "qq") return 1
             }
-            // 都是 TME 但都不偏向某一边时落入 providerPriority
+            /** 都是 TME 但都不偏向某一边时落入 providerPriority */
             val pa = providerPriority[lowerA] ?: Int.MAX_VALUE
             val pb = providerPriority[lowerB] ?: Int.MAX_VALUE
             if (pa != pb) return pa - pb

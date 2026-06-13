@@ -40,7 +40,7 @@ class MediaInfoService(private val context: Context) {
     private val _nowPlayingMusic = MutableStateFlow<NowPlayingMusic?>(null)
     val nowPlayingMusic: StateFlow<NowPlayingMusic?> = _nowPlayingMusic
 
-    // 后台协程作用域，使用 IO 调度器
+    /** 后台协程作用域，使用 IO 调度器 */
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val mediaSessionManager: MediaSessionManager? = try {
@@ -54,10 +54,10 @@ class MediaInfoService(private val context: Context) {
 
     private var currentController: MediaController? = null
 
-    // 专辑图保存互斥锁：保证文件写入/删除串行执行，避免轮询并发导致的「只获取一半」bug
+    /** 专辑图保存互斥锁：保证文件写入/删除串行执行，避免轮询并发导致的「只获取一半」bug */
     private val albumArtWriteMutex = Mutex()
 
-    // 上一次专辑图强制刷新请求的来源标识，用于去重和避免重复重拉
+    /** 上一次专辑图强制刷新请求的来源标识，用于去重和避免重复重拉 */
     private var lastAlbumArtRefreshKey: String? = null
 
 
@@ -141,17 +141,17 @@ class MediaInfoService(private val context: Context) {
                     val position = playbackState.position
                     val isPlaying = playbackState.state == android.media.session.PlaybackState.STATE_PLAYING
 
-                    // 旧音乐对象（用于对比）
+                    /** 旧音乐对象（用于对比） */
                     val oldMusic = _nowPlayingMusic.value
 
-                    // 当前已展示的专辑图 URI
+                    /** 当前已展示的专辑图 URI */
                     val currentAlbumArtUri = oldMusic?.albumArtUri
 
-                    // 尝试从播放源获取专辑图 Bitmap（不是 URI）
+                    /** 尝试从播放源获取专辑图 Bitmap（不是 URI） */
                     val newAlbumArtBitmap = metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
                         ?: metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
 
-                    // 智能判断是否需要处理专辑图
+                    /** 智能判断是否需要处理专辑图 */
                     val finalAlbumArtUri = when {
                         // 情况 1: 获取到了新的 Bitmap → 重新写入文件（旧的同名文件会被销毁）
                         newAlbumArtBitmap != null -> {
@@ -174,7 +174,7 @@ class MediaInfoService(private val context: Context) {
                         }
                     }
 
-                    // 构建最终的音乐对象（包含最新播放时间和专辑图）
+                    /** 构建最终的音乐对象（包含最新播放时间和专辑图） */
                     val updatedMusic = NowPlayingMusic(
                         title = title,
                         artist = artist,
@@ -224,7 +224,7 @@ class MediaInfoService(private val context: Context) {
         packageName: String?
     ): String? = withContext(Dispatchers.IO) {
         try {
-            // 生成缓存 key
+            /** 生成缓存 key */
             val cacheKey = "${packageName ?: "unknown"}_${title}_$artist"
 
             // 保存（并销毁旧文件）
@@ -249,10 +249,10 @@ class MediaInfoService(private val context: Context) {
         packageName: String?
     ): String? = withContext(Dispatchers.IO) {
         try {
-            // 生成缓存 key
+            /** 生成缓存 key */
             val cacheKey = "${packageName ?: "unknown"}_${title}_$artist"
 
-            // 获取专辑图 Bitmap
+            /** 获取专辑图 Bitmap */
             val albumArtBitmap = metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
                 ?: metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
 
@@ -298,17 +298,17 @@ class MediaInfoService(private val context: Context) {
                     cacheDir.mkdirs()
                 }
 
-                // 使用哈希值作为文件名，避免特殊字符问题
+                /** 使用哈希值作为文件名，避免特殊字符问题 */
                 val safeKey = cacheKey.hashCode().toUInt().toString(16)
                 val file = File(cacheDir, "album_art_${safeKey}.jpg")
-                // 临时文件：先写到这里，写完后再原子重命名为正式文件
+                /** 临时文件：先写到这里，写完后再原子重命名为正式文件 */
                 val tmpFile = File(cacheDir, "album_art_${safeKey}.jpg.tmp")
 
                 // 销毁旧的专辑图文件（包括同名旧文件和不同 cacheKey 的旧文件），
                 // 保证不会因为缓存命中错误而展示错误的专辑图
                 deleteAllAlbumArtCache(cacheDir, excluding = file)
 
-                // 缩放图片至最大 512x512，减少内存占用
+                /** 缩放图片至最大 512x512，减少内存占用 */
                 val scaledBitmap = resizeBitmap(bitmap)
 
                 try {

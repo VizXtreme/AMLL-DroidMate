@@ -52,9 +52,9 @@ enum class LyricsFormat(val extension: String, val displayName: String) {
          * @return 检测到的歌词格式类型
          */
         fun detect(content: String): LyricsFormat {
-            // 预处理：移除 BOM（字节顺序标记）和首尾空格
+            /** 预处理：移除 BOM（字节顺序标记）和首尾空格
             // Some lyrics sources may include a leading BOM (U+FEFF) which breaks regex-based format detection.
-            // Normalize by trimming whitespace and stripping a leading BOM so format detection works consistently.
+            // Normalize by trimming whitespace and stripping a leading BOM so format detection works consistently.*/
             val trimmed = content.trim().trimStart('\uFEFF')
 
             // ========== QQ Music QRC XML 格式检测 ==========

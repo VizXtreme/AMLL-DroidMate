@@ -21,13 +21,17 @@ import timber.log.Timber
  */
 object QrcParser {
 
-    // 正则表达式：匹配 QRC 逐字令牌
-    // 分组：text=歌词文本，start=开始时间，duration=持续时间
-    // 例如："你好 (0,500)" -> text="你好", start=0, duration=500
+    /**
+     * 正则表达式：匹配 QRC 逐字令牌
+     * 分组：text=歌词文本，start=开始时间，duration=持续时间
+     * 例如："你好 (0,500)" -> text="你好", start=0, duration=500
+     */
     private val lyricTokenRegex = Regex("""(?<text>.*?)\((?<start>\d+),(?<duration>\d+)\)""")
     
-    // 正则表达式：匹配 QRC 行级时间戳
-    // 格式：[起始时间，持续时间]
+    /**
+     * 正则表达式：匹配 QRC 行级时间戳
+     * 格式：[起始时间，持续时间]
+     */
     private val qrcLineTimestampRegex = Regex("""^\[(\d+),(\d+)]""")
 
     /**
@@ -42,7 +46,7 @@ object QrcParser {
      * @return 解析后的 LyricLine 列表
      */
     fun parse(content: String): List<LyricLine> {
-        // 如果是 XML 格式，需要先提取歌词内容
+        /** 如果是 XML 格式，需要先提取歌词内容 */
         val rawContent = extractQrcFromXmlIfNeeded(content)
 
         // 调试日志：输出原始内容的基本信息
@@ -66,7 +70,7 @@ object QrcParser {
             parseSingleLine(line)?.let { finalLines.add(it) }
         }
 
-        // 调试输出：统计解析结果
+        /** 调试输出：统计解析结果 */
         val totalWords = finalLines.sumOf { it.words.size }
         Timber.d("[QrcParser] Output: ${finalLines.size} lines, $totalWords words (avg=${if (finalLines.isNotEmpty()) totalWords.toDouble() / finalLines.size else 0.0})")
 
@@ -88,11 +92,11 @@ object QrcParser {
      * @return 解析后的 LyricLine，如果无法解析则返回 null
      */
     private fun parseSingleLine(line: String): LyricLine? {
-        // QRC 行头部：[lineStart,lineDuration] (单位：毫秒)
+        /** QRC 行头部：[lineStart,lineDuration] (单位：毫秒) */
         val lineStartMs = qrcLineTimestampRegex.find(line)?.groups?.get(1)?.value?.toLongOrNull()
         val lineDurationMs = qrcLineTimestampRegex.find(line)?.groups?.get(2)?.value?.toLongOrNull()
     
-        // 移除行级时间戳，剩下的就是歌词内容
+        /** 移除行级时间戳，剩下的就是歌词内容 */
         val lineContent = qrcLineTimestampRegex.replace(line, "")
         val words = mutableListOf<LyricWord>()
     
@@ -105,7 +109,7 @@ object QrcParser {
             val startMs = capture.groups["start"]?.value?.toLongOrNull() ?: continue
             val durationMs = capture.groups["duration"]?.value?.toLongOrNull() ?: continue
     
-            // 根据是否有尾随空格决定是否在单词后添加空格
+            /** 根据是否有尾随空格决定是否在单词后添加空格 */
             val text = if (endsWithSpace) "$cleanText " else cleanText
             words.add(
                 LyricWord(
@@ -123,8 +127,10 @@ object QrcParser {
         // Do not treat these timestamp tokens as lyric text.
         if (words.isEmpty() && lineStartMs != null) {
             val fallbackText = lineContent.trim()
-            // Normalize to catch hidden/zero-width characters or other noise that still renders as
-            // a timestamp-like token (e.g. "\u200B(240410,1651)").
+            /**
+             * Normalize to catch hidden/zero-width characters or other noise that still renders as
+             * a timestamp-like token (e.g. "\u200B(240410,1651)").
+             */
             val normalized = fallbackText.replace(Regex("[^\\d(),]"), "")
             val isTimestampToken = Regex("^\\(\\d+,\\d+\\)(?:\\(\\d+,\\d+\\))*$").matches(normalized)
             
@@ -144,8 +150,10 @@ object QrcParser {
         // 如果没有解析出任何单词，返回 null（丢弃这一行）
         if (words.isEmpty()) return null
 
-        // 计算行的开始和结束时间
-        // 优先使用行级时间戳，如果没有则使用第一个和最后一个单词的时间
+        /**
+         * 计算行的开始和结束时间
+         * 优先使用行级时间戳，如果没有则使用第一个和最后一个单词的时间
+         */
         val lineStart = lineStartMs ?: words.first().startTime
         val rawLineEnd = lineStart + (lineDurationMs ?: (words.last().endTime - lineStart))
         val lineEnd = maxOf(lineStart + 1, rawLineEnd) // 确保行持续时间至少为 1ms
@@ -188,7 +196,7 @@ object QrcParser {
         // contain apostrophes or even internal quotation marks. We want to use the outermost
         // quotes for the attribute value so that inner quotes don't truncate the match.
         val extracted = mutableListOf<String>()
-        // 匹配 <Lyric_N LyricContent='...' /> 或 <Lyric_N LyricContent="..." />
+        /** 匹配 <Lyric_N LyricContent='...' /> 或 <Lyric_N LyricContent="..." /> */
         val tagStartRegex = Regex("""<Lyric_\d+\b[^>]*\bLyricContent=(['"])""", RegexOption.IGNORE_CASE)
         var searchIndex = 0
 
@@ -198,7 +206,7 @@ object QrcParser {
             val quoteChar = match.groupValues[1].single()  // 获取引号类型（单引号或双引号）
             val valueStart = match.range.last + 1  // 属性值开始位置
 
-            // Find the end of the current tag so we can pick the outermost closing quote inside it.
+            /** Find the end of the current tag so we can pick the outermost closing quote inside it. */
             val tagEnd = content.indexOf('>', startIndex = valueStart).takeIf { it >= 0 } ?: content.length
             val lastQuoteBeforeTagEnd = content.lastIndexOf(quoteChar, startIndex = tagEnd - 1)
             val valueEnd = if (lastQuoteBeforeTagEnd >= valueStart) {
@@ -208,7 +216,7 @@ object QrcParser {
                 content.indexOf(quoteChar, startIndex = valueStart).takeIf { it >= 0 } ?: content.length
             }
 
-            // 提取属性值并进行 XML 反转义
+            /** 提取属性值并进行 XML 反转义 */
             val rawValue = content.substring(valueStart, valueEnd)
             extracted.add(unescapeXmlAttribute(rawValue))
 

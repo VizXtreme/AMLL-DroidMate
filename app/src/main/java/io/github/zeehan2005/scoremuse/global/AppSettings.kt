@@ -74,7 +74,7 @@ enum class UpdateChannel(val value: String) {
  * 支持在运行时动态读取和修改。
  */
 object AppSettings {
-    // 键名常量定义（避免硬编码字符串）
+    /** 键名常量定义（避免硬编码字符串） */
     private const val PREFS_NAME = "ScoreMuse_settings"  // SharedPreferences 名称
     private const val KEY_CARD_CLICK_ACTION = "card_click_action"  // 卡片点击行为
     private const val KEY_LYRIC_NOTIFICATION_ENABLED = "lyric_notification_enabled"  // 歌词通知开关
@@ -87,7 +87,7 @@ object AppSettings {
     private const val KEY_SONG_STRUCTURE_BAR_ENABLED = "song_structure_bar_enabled" // 歌曲结构条开关
 
 
-    // 辅助函数：获取 SharedPreferences 实例（避免重复代码）
+    /** 辅助函数：获取 SharedPreferences 实例（避免重复代码） */
     private fun prefs(context: Context) =
         PreferenceHelper(context, PREFS_NAME)
 
@@ -147,8 +147,10 @@ object AppSettings {
         prefs(context).putLong(KEY_LAST_UPDATE_CHECK_AT, timestampMillis)
     }
 
-    // time when user tapped “later” in update dialog; used to suppress automatic
-    // checks for the next 24 hours.
+    /**
+     * time when user tapped “later” in update dialog; used to suppress automatic
+     * checks for the next 24 hours.
+     */
     private const val KEY_LAST_UPDATE_LATER_AT = "last_update_later_at"
 
     fun getLastUpdateLaterAt(context: Context): Long {
@@ -213,7 +215,7 @@ object AppSettings {
         device: String,
         source: String = WILDCARD
     ): Long? {
-        // Normalize for lookup
+        /** Normalize for lookup */
         val normalizedTitle = title?.trim().takeIf { !it.isNullOrBlank() } ?: WILDCARD
         val normalizedArtist = artist?.trim().takeIf { !it.isNullOrBlank() } ?: WILDCARD
         val normalizedDevice = device.trim().ifBlank { WILDCARD }

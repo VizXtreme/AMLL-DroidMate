@@ -32,30 +32,30 @@ object TimestampUtils {
      */
     fun toMillis(timeStr: String?): Long {
         return try {
-            // 处理空值情况
+            /** 处理空值情况 */
             if (timeStr.isNullOrBlank()) return 0L
             
-            // 预处理：去除首尾空格、转小写、去掉可能的 's' 后缀
+            /** 预处理：去除首尾空格、转小写、去掉可能的 's' 后缀 */
             val normalized = timeStr.trim().lowercase().removeSuffix("s")
             if (normalized.isEmpty()) return 0L
             
-            // 处理纯秒数格式（不包含冒号）
-            // 例如："12.345" 或 "12.5s"
+
             if (!normalized.contains(":")) {
+                /** 处理纯秒数格式（不包含冒号） */
                 val seconds = normalized.toDoubleOrNull() ?: return 0L
                 return (seconds * 1000.0).toLong()
             }
             
-            // 处理包含冒号的格式
-            // 根据冒号数量判断是 mm:ss 还是 hh:mm:ss 格式
+            /** 处理包含冒号的格式
+             *  根据冒号数量判断是 mm:ss 还是 hh:mm:ss 格式 */
             val parts = normalized.split(":")
             when (parts.size) {
-                2 -> parseMmSsFormat(parts)  // 分：秒格式
-                3 -> parseHhMmSsFormat(parts)  // 时：分：秒格式
-                else -> 0L  // 不支持的格式
+                2 -> parseMmSsFormat(parts)  /** 分：秒格式 */
+                3 -> parseHhMmSsFormat(parts)  /** 时：分：秒格式 */
+                else -> 0L  /** 不支持的格式 */
             }
         } catch (e: Exception) {
-            // 捕获所有异常，确保不会因为时间戳解析错误导致程序崩溃
+            /** 捕获所有异常，确保不会因为时间戳解析错误导致程序崩溃 */
             Timber.e("[TimestampUtils] Failed to parse time string: $timeStr $e")
             0L
         }
@@ -75,10 +75,10 @@ object TimestampUtils {
      * @return 格式化后的时间字符串
      */
     fun fromMillis(millis: Long, format: Format = Format.AUTO): String {
-        // 处理负数情况
+        /** 处理负数情况 */
         if (millis < 0) return "00:00.000"
         
-        // 分解毫秒数为各个时间单位
+        /** 分解毫秒数为各个时间单位 */
         val totalSeconds = millis / 1000
         val hours = totalSeconds / 3600
         val minutes = (totalSeconds % 3600) / 60
@@ -89,7 +89,7 @@ object TimestampUtils {
             Format.MM_SS_MS -> String.format(Locale.ROOT, "%02d:%02d.%03d", minutes, seconds, ms)
             Format.HH_MM_SS_MS -> String.format(Locale.ROOT, "%02d:%02d:%02d.%03d", hours, minutes, seconds, ms)
             Format.AUTO -> {
-                // 智能选择：如果超过 1 小时就使用时分秒格式，否则使用分秒格式
+                /** 智能选择：如果超过 1 小时就使用时分秒格式，否则使用分秒格式 */
                 if (hours > 0) {
                     String.format(Locale.ROOT, "%02d:%02d:%02d.%03d", hours, minutes, seconds, ms)
                 } else {
@@ -110,8 +110,8 @@ object TimestampUtils {
         AUTO           // 自动选择 - 根据实际时长智能选择合适格式
     }
     
-    // ==================== 私有辅助方法 ====================
-    // 以下是内部使用的辅助函数，不对外暴露
+    /** ==================== 私有辅助方法 ==================== */
+    /** 以下是内部使用的辅助函数，不对外暴露 */
     
     /**
      * 解析 mm:ss.ms 或 mm:ss 格式
@@ -126,7 +126,7 @@ object TimestampUtils {
         val minutes = parts[0].toLongOrNull() ?: return 0L
         val secondToken = parts[1]
         
-        // 委托给统一的秒部分解析函数
+        /** 委托给统一的秒部分解析函数 */
         return parseSecondToken(secondToken) + minutes * 60 * 1000
     }
     
@@ -143,7 +143,7 @@ object TimestampUtils {
         val minutes = parts[1].toLongOrNull() ?: return 0L
         val secondToken = parts[2]
         
-        // 分别计算各部分的毫秒数然后相加
+        /** 分别计算各部分的毫秒数然后相加 */
         return parseSecondToken(secondToken) + minutes * 60 * 1000 + hours * 3600 * 1000
     }
     
@@ -163,14 +163,14 @@ object TimestampUtils {
      * @return 秒和毫秒的总毫秒数
      */
     private fun parseSecondToken(secondToken: String): Long {
-        // 按小数点分割秒和毫秒部分
+        /** 按小数点分割秒和毫秒部分 */
         val secParts = secondToken.split(".")
         val seconds = secParts[0].toLongOrNull() ?: return 0L
         
-        // 处理毫秒部分（小数点后）
+        /** 处理毫秒部分（小数点后） */
         val millis = if (secParts.size > 1) {
-            // 补齐到 3 位数字并截取前 3 位
-            // 例如："1" -> "100" -> 100ms, "12" -> "120" -> 120ms, "1234" -> "123" -> 123ms
+            /** 补齐到 3 位数字并截取前 3 位
+             *  例如："1" -> "100" -> 100ms, "12" -> "120" -> 120ms, "1234" -> "123" -> 123ms */
             secParts[1].padEnd(3, '0').take(3).toLongOrNull() ?: 0L
         } else {
             0L

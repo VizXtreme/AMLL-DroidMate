@@ -87,24 +87,24 @@ fun SongStructureBar(
         return
     }
 
-    // LazyRow 的状态管理：用于控制横向滚动
+    /** LazyRow 的状态管理：用于控制横向滚动 */
     val listState = rememberLazyListState()
     // CoroutineScope：用于在需要时启动协程执行滚动动画
     rememberCoroutineScope()
-    // Density：用于在 DP 和 PX 之间转换
+    /** Density：用于在 DP 和 PX 之间转换 */
     val density = LocalDensity.current
 
     // ==================== 布局常量定义 ====================
     val horizontalPaddingDp = 16.dp // 左右各 16dp，总共 32dp 的内边距
     val chipSpacingDp = 8.dp // chips（段落标签）之间的间距
-    // 将 DP 转换为像素（布局计算需要使用像素）
+    /** 将 DP 转换为像素（布局计算需要使用像素） */
     val horizontalPaddingPx = with(density) { horizontalPaddingDp.roundToPx() }
     val chipSpacingPx = with(density) { chipSpacingDp.roundToPx() }
 
     // ==================== 容器宽度测量 ====================
     // 存储 LazyRow 容器的实际宽度（像素）
     var containerWidthPx by remember { mutableIntStateOf(0) }
-    // 计算实际可用于 chips 的宽度（减去左右 padding）
+    /** 计算实际可用于 chips 的宽度（减去左右 padding） */
     val availableWidthPx = maxOf(0, containerWidthPx - 2 * horizontalPaddingPx)
 
     // ==================== Chip 自然宽度管理 ====================
@@ -112,7 +112,7 @@ fun SongStructureBar(
     // Key: 段落索引，Value: 自然宽度（像素）
     var chipNaturalWidthsPx by remember { mutableStateOf<Map<Int, Int>>(emptyMap()) }
 
-    // 添加一个 key 用于追踪 structures 的变化，确保切歌时重置测量状态
+    /** 添加一个 key 用于追踪 structures 的变化，确保切歌时重置测量状态 */
     val structuresKey = remember(structures) {
         // 生成 structures 的唯一标识符，当内容变化时会改变
         structures.hashCode() xor structures.size
@@ -121,27 +121,31 @@ fun SongStructureBar(
     // ==================== 宽度计算 ====================
     // 计算所有 chips 的总自然宽度
     val totalNaturalWidthPx = chipNaturalWidthsPx.values.sum()
-    // 计算所有间距的总宽度（n 个 chips 有 n-1 个间距）
+    /** 计算所有间距的总宽度（n 个 chips 有 n-1 个间距） */
     val totalSpacingWidthPx = if (chipNaturalWidthsPx.size > 1) {
         (chipNaturalWidthsPx.size - 1) * chipSpacingPx
     } else {
         0
     }
-    // chips 实际占用的总宽度 = 自然宽度 + 间距
+    /** chips 实际占用的总宽度 = 自然宽度 + 间距 */
     val totalContentWidthPx = totalNaturalWidthPx + totalSpacingWidthPx
 
-    // 判断是否需要扩展宽度：
-    // 1. 总内容宽度小于可用宽度
-    // 2. 可用宽度大于 0（容器已测量完成）
-    // 3. 所有 chips 都已完成测量
-    // 4. structures 不为空
+    /**
+     * 判断是否需要扩展宽度：
+     * 1. 总内容宽度小于可用宽度
+     * 2. 可用宽度大于 0（容器已测量完成）
+     * 3. 所有 chips 都已完成测量
+     * 4. structures 不为空
+     */
     val shouldExpand = totalContentWidthPx < availableWidthPx &&
                        availableWidthPx > 0 &&
                        chipNaturalWidthsPx.size == structures.size &&
                        structures.isNotEmpty()
 
-    // 计算每个 chip 应该分配的宽度（如果需要扩展）
-    // 依赖 structuresKey 确保 structures 内容变化时重新计算
+    /**
+     * 计算每个 chip 应该分配的宽度（如果需要扩展）
+     * 依赖 structuresKey 确保 structures 内容变化时重新计算
+     */
     val expandedChipWidthsPx by remember(
         structuresKey,
         chipNaturalWidthsPx,
@@ -154,9 +158,9 @@ fun SongStructureBar(
             } else {
                 // 计算密集型操作，在后台线程执行
                 runBlocking(Dispatchers.Default) {
-                    // 需要填充的额外宽度 = 可用宽度 - (自然宽度总和 + 间距总和)
+                    /** 需要填充的额外宽度 = 可用宽度 - (自然宽度总和 + 间距总和) */
                     val extraWidthPx = availableWidthPx - totalContentWidthPx
-                    // 平均分配给每个 chip
+                    /** 平均分配给每个 chip */
                     val extraPerChipPx = extraWidthPx / structures.size
                     // 每个 chip 的最终宽度 = 自然宽度 + 额外分配的宽度
                     chipNaturalWidthsPx.mapValues { (_, naturalWidthPx) ->
@@ -167,8 +171,10 @@ fun SongStructureBar(
         }
     }
 
-    // 添加布局完成标志：确保所有芯片都完成测量后再执行滚动
-    // 依赖 structuresKey 确保 structures 内容变化时重新检查
+    /**
+     * 添加布局完成标志：确保所有芯片都完成测量后再执行滚动
+     * 依赖 structuresKey 确保 structures 内容变化时重新检查
+     */
     val allChipsMeasured by remember(
         structuresKey,
         chipNaturalWidthsPx,
@@ -185,7 +191,7 @@ fun SongStructureBar(
         }
     }
 
-    // 计算当前应该显示的 structure 索引
+    /** 计算当前应该显示的 structure 索引 */
     val currentStructureIndex by remember(structures, currentTime) {
         derivedStateOf {
             structures.indexOfFirst { currentTime in it.startTime..it.endTime }
@@ -201,22 +207,24 @@ fun SongStructureBar(
     // 当 currentStructureIndex 变化时，自动滚动到该位置并居中
     LaunchedEffect(currentStructureIndex, containerWidthPx, allChipsMeasured) {
         if (currentStructureIndex >= 0 && containerWidthPx > 0 && allChipsMeasured) {
-            // 在后台线程计算滚动位置，避免阻塞UI线程
+            /** 在后台线程计算滚动位置，避免阻塞UI线程 */
             val scrollData = withContext(Dispatchers.Default) {
-                // 获取当前可见 item 的信息，直接读取实际像素位置
+                /** 获取当前可见 item 的信息，直接读取实际像素位置 */
                 val visibleItem =
                     listState.layoutInfo.visibleItemsInfo.find { it.index == currentStructureIndex }
 
                 if (visibleItem != null) {
-                    // 直接从 layoutInfo 获取目标 chip 的实际 position 信息
+                    /** 直接从 layoutInfo 获取目标 chip 的实际 position 信息 */
                     val chipStartOffsetPx = visibleItem.offset // chip 起始位置的偏移量（相对于当前可视区域左边缘）
                     val chipSizePx = visibleItem.size // chip 的实际大小（宽度）
 
-                    // 计算 chip 中心点相对于容器左边缘的当前位置
+                    /** 计算 chip 中心点相对于容器左边缘的当前位置 */
                     val chipCenterCurrentPx = chipStartOffsetPx + (chipSizePx / 2)
 
-                    // 计算需要的滚动距离：让 chip 中心移动到容器中心
-                    // scrollOffset 表示相对于当前滚动位置的额外偏移
+                    /**
+                     * 计算需要的滚动距离：让 chip 中心移动到容器中心
+                     * scrollOffset 表示相对于当前滚动位置的额外偏移
+                     */
                     val targetCenterPx = containerWidthPx / 2
                     val scrollOffset = chipCenterCurrentPx - targetCenterPx
 
@@ -298,7 +306,7 @@ fun SongStructureChip(
     baseColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
 ) {
 
-    // 使用渐变色方案，匹配 NowPlayingCard 的视觉效果
+    /** 使用渐变色方案，匹配 NowPlayingCard 的视觉效果 */
     val chipBaseColor = if (isCurrent) {
         MaterialTheme.colorScheme.primary
     } else {
@@ -318,7 +326,7 @@ fun SongStructureChip(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    // 纯音乐类型（只显示音符符号，不显示文字和时间）
+    /** 纯音乐类型（只显示音符符号，不显示文字和时间） */
     val isInstrumentalType = structure.type in listOf(
         SongStructureType.INTERLUDE,
         SongStructureType.INTRO_INST,

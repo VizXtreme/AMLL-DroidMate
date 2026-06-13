@@ -93,7 +93,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
     val nowPlaying by mediaInfoService.nowPlayingMusic.collectAsState()
     val currentDeviceName = AudioDeviceHelper.getCurrentOutputDeviceName(context)
 
-    // 转换设备名称用于显示
+    /** 转换设备名称用于显示 */
     val displayDeviceName = when {
         currentDeviceName.startsWith("Bluetooth") -> currentDeviceName.replaceFirst("Bluetooth", "蓝牙")
         currentDeviceName == "Wired" -> "有线音频"
@@ -101,7 +101,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
         else -> currentDeviceName
     }
 
-    // 获取应用名称
+    /** 获取应用名称 */
     val appName = remember(nowPlaying?.packageName) {
         nowPlaying?.packageName?.let { pkg ->
             try {

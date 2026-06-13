@@ -152,14 +152,14 @@ class WasmLyricParser(private val context: Context) {
 
         try {
             withContext(Dispatchers.Main) {
-                // 使用 JSONObject.quote 安全地转义字符串，避免注入
+                /** 使用 JSONObject.quote 安全地转义字符串，避免注入 */
                 val escapedRaw = JSONObject.quote(raw)
                 val script =
                     "if(window.parseLyrics) { window.parseLyrics($escapedRaw, '$format'); } else { Android.log('parseLyrics not found', 'error'); }"
                 webView?.evaluateJavascript(script, null)
             }
 
-            // 等待解析结果 (增加超时)
+            /** 等待解析结果 (增加超时) */
             val resultJson = withTimeoutOrNull(10000) { deferred.await() }
             if (resultJson == null) {
                 Timber.e("[WasmLyricParser] Parsing timed out or failed to return result")
@@ -182,7 +182,7 @@ class WasmLyricParser(private val context: Context) {
             if (wasmLines.isEmpty()) return emptyList()
 
             wasmLines.map { line ->
-                // JS 端的 LyricLine 结构映射到 Kotlin 端
+                /** JS 端的 LyricLine 结构映射到 Kotlin 端 */
                 val text = if (line.words.isNotEmpty()) {
                     line.words.joinToString("") { it.word }
                 } else {

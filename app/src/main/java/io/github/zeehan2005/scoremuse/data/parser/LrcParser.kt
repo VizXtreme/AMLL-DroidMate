@@ -30,12 +30,16 @@ private data class TempLrcEntry(
  */
 object LrcParser {
 
-    // 正则表达式：匹配 LRC 行格式
-    // 例如：[00:12.34][00:15.67] 歌词文本  （支持多个连续时间戳）
+    /**
+     * 正则表达式：匹配 LRC 行格式
+     * 例如：[00:12.34][00:15.67] 歌词文本  （支持多个连续时间戳）
+     */
     private val lrcLineRegex = Regex("""^((?:\[\d{2,}:\d{2}[.:]\d{2,3}])+)(.*)$""")
     
-    // 正则表达式：从 LRC 行中提取单个时间戳
-    // 分组：1=分钟，2=秒，3=毫秒（可以是 2 位或 3 位）
+    /**
+     * 正则表达式：从 LRC 行中提取单个时间戳
+     * 分组：1=分钟，2=秒，3=毫秒（可以是 2 位或 3 位）
+     */
     private val tsExtractRegex = Regex("""\[(\d{2,}):(\d{2})[.:](\d{2,3})]""")
 
     /**
@@ -52,9 +56,9 @@ object LrcParser {
      * @return 解析后的 LyricLine 列表
      */
     fun parse(content: String): List<LyricLine> {
-        // 临时存储解析出的条目
+        /** 临时存储解析出的条目 */
         val entries = mutableListOf<TempLrcEntry>()
-        // 存储元数据（支持同一个 key 有多个值）
+        /** 存储元数据（支持同一个 key 有多个值） */
         val metadata = mutableMapOf<String, MutableList<String>>()
 
         // 逐行解析
@@ -65,7 +69,7 @@ object LrcParser {
             // 先尝试解析元数据，如果是元数据行就跳过后续处理
             if (parseAndStoreMetadata(line, metadata)) continue
 
-            // 尝试匹配 LRC 行格式
+            /** 尝试匹配 LRC 行格式 */
             val lineCaps = lrcLineRegex.find(line) ?: continue
             val allTs = lineCaps.groupValues[1]  // 所有时间戳部分
             val text = normalizeTextWhitespace(lineCaps.groupValues[2])  // 歌词文本
@@ -81,7 +85,7 @@ object LrcParser {
                     continue
                 }
                 
-                // 处理毫秒部分（可能是 2 位或 3 位数字）
+                /** 处理毫秒部分（可能是 2 位或 3 位数字） */
                 val fraction = ts.groupValues[3]
                 val milliseconds = when (fraction.length) {
                     2 -> (fraction.toLongOrNull() ?: 0L) * 10L  // 2 位补零成 3 位
@@ -94,11 +98,13 @@ object LrcParser {
             }
         }
 
-        // 从元数据中提取全局偏移量（如果有）
-        // 偏移量用于整体调整所有歌词的时间，通常用于校正同步问题
+        /**
+         * 从元数据中提取全局偏移量（如果有）
+         * 偏移量用于整体调整所有歌词的时间，通常用于校正同步问题
+         */
         val offsetMs = metadata["offset"]?.firstOrNull()?.toLongOrNull() ?: 0L
 
-        // 按时间戳排序所有条目
+        /** 按时间戳排序所有条目 */
         val sorted = entries.sortedBy { it.timestampMs }
         val finalLines = mutableListOf<LyricLine>()
         var i = 0
@@ -106,22 +112,24 @@ object LrcParser {
         // 遍历所有条目，将相同时间戳的合并为一行
         while (i < sorted.size) {
             val startMsOriginal = sorted[i].timestampMs
-            // 应用全局偏移量
+            /** 应用全局偏移量 */
             val startMs = startMsOriginal + offsetMs
             
-            // 找到所有相同时间戳的条目（它们应该显示在同一行）
+            /** 找到所有相同时间戳的条目（它们应该显示在同一行） */
             val groupEndIndex = sorted.subList(i, sorted.size).indexOfFirst { it.timestampMs != startMsOriginal }
                 .let { if (it == -1) sorted.size else i + it }
 
             val group = sorted.subList(i, groupEndIndex)
             
-            // 估算结束时间：使用下一行的开始时间
-            // 确保持续时间至少为 1ms，防止 JS 侧计算 NaN
+            /**
+             * 估算结束时间：使用下一行的开始时间
+             * 确保持续时间至少为 1ms，防止 JS 侧计算 NaN
+             */
             val endMsOriginal = sorted.getOrNull(groupEndIndex)?.timestampMs?.let { maxOf(startMsOriginal + 1, it) }
                 ?: (startMsOriginal + DEFAULT_LAST_LRC_LINE_DURATION_MS)  // 最后一行使用默认持续时间
             val endMs = endMsOriginal + offsetMs
 
-            // 过滤掉空文本，只保留有意义的歌词
+            /** 过滤掉空文本，只保留有意义的歌词 */
             val meaningful = group.filter { it.text.isNotEmpty() }
             if (meaningful.isNotEmpty()) {
                 val mainText = meaningful[0].text

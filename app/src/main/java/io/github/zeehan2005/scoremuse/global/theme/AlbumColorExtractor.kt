@@ -84,7 +84,7 @@ object AlbumColorExtractor {
         palette: Palette,
         isDarkTheme: Boolean
     ): ColorScheme {
-        // 1. 确定种子颜色 (Seed Colors)
+        /** 1. 确定种子颜色 (Seed Colors) */
         val primarySeed = palette.vibrantSwatch?.rgb?.let { Color(it) }
             ?: palette.dominantSwatch?.rgb?.let { Color(it) }
             ?: Color(0xFF6366F1)

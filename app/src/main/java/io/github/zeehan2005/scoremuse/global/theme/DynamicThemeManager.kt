@@ -12,7 +12,7 @@ import timber.log.Timber
  * 这个对象负责管理从专辑封面提取的动态颜色方案，实现"音乐变色龙"效果。
  */
 object DynamicThemeManager {
-    // 内部状态：存储当前的动态颜色方案 (Material 3 ColorScheme)
+    /** 内部状态：存储当前的动态颜色方案 (Material 3 ColorScheme) */
     private val _dynamicColorScheme = mutableStateOf<ColorScheme?>(null)
 
     /**

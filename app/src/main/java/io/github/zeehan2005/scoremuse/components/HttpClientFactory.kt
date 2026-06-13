@@ -31,8 +31,10 @@ import java.util.concurrent.TimeUnit
 object HttpClientFactory {
 
     // 缓存配置常量
-    private const val CACHE_SIZE = 50L * 1024 * 1024 // 50 MB - 缓存大小限制
-    private const val CACHE_DIR_NAME = "http_cache"  // 缓存目录名称
+    /** 缓存大小限制 */
+    private const val CACHE_SIZE = 50L * 1024 * 1024
+    /** 缓存目录名称 */
+    private const val CACHE_DIR_NAME = "http_cache"
 
     /**
      * 创建配置好的 HttpClient，包含缓存支持
@@ -47,20 +49,20 @@ object HttpClientFactory {
      * @return 配置好的 HttpClient 实例
      */
     fun create(context: Context): HttpClient {
-        // 创建缓存目录（在 Android cache 路径下）
-        // 使用 context.cacheDir 确保缓存在系统清理时可以被自动清除
+        /** 创建缓存目录（在 Android cache 路径下）
+        // 使用 context.cacheDir 确保缓存在系统清理时可以被自动清除 */
         val cacheDir = File(context.cacheDir, CACHE_DIR_NAME)
         if (!cacheDir.exists()) {
             cacheDir.mkdirs()
         }
 
-        // 缓存拦截器：智能控制不同请求的缓存策略
-        // 这是 OkHttp 的核心机制，可以在请求/响应过程中修改行为
+        /** 缓存拦截器：智能控制不同请求的缓存策略
+        // 这是 OkHttp 的核心机制，可以在请求/响应过程中修改行为*/
         val cacheInterceptor = Interceptor { chain ->
             val request = chain.request()
             val response = chain.proceed(request)  // 执行请求
 
-            // 根据 URL 路径设置不同的缓存策略
+            /** 根据 URL 路径设置不同的缓存策略 */
             val url = request.url.toString()
 
             // 歌词搜索结果缓存 5 分钟

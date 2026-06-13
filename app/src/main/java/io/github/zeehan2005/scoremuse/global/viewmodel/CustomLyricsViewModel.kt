@@ -98,18 +98,20 @@ class CustomLyricsViewModel @JvmOverloads constructor(
     // 当前歌曲唯一标识（title + artist）
     // 用于区分不同歌曲的歌词搜索结果
     private var currentSongKey: String? = null
-    // remember most recent search terms for pagination
+    /** remember most recent search terms for pagination */
     private var lastSearchTitle: String = ""
     private var lastSearchArtist: String = ""
-    // 分页偏移量（每个平台独立记录）
+    /** 分页偏移量（每个平台独立记录） */
     private val offsets = mutableMapOf<String, Int>()
 
     // ==================== 平台优先级配置 ====================
     // provider 固定优先级表已迁移到 LyricsCandidateRanker.providerPriority，
     // 排序规则统一在 data/ranking/LyricsCandidateRanker.kt 维护。
 
-    // 当前正在播放的来源名称（用于打破平局）
-    // 当多个歌词候选的置信度和特性完全相同时，优先显示当前播放源的歌词
+    /**
+     * 当前正在播放的来源名称（用于打破平局）
+     * 当多个歌词候选的置信度和特性完全相同时，优先显示当前播放源的歌词
+     */
     private var currentSourceName: String? = null
 
     /**
@@ -144,8 +146,10 @@ class CustomLyricsViewModel @JvmOverloads constructor(
         return a.seq.compareTo(b.seq)
     }
 
-    // 把 VM 自己的 CustomLyricsCandidate 适配成 ranker 期望的 LyricsSearchResult。
-    // 仅做字段拷贝，不做任何业务判断。
+    /**
+     * 把 VM 自己的 CustomLyricsCandidate 适配成 ranker 期望的 LyricsSearchResult。
+     * 仅做字段拷贝，不做任何业务判断。
+     */
     private fun CustomLyricsCandidate.toLyricsSearchResult(): LyricsSearchResult =
         LyricsSearchResult(
             provider = provider,
@@ -157,21 +161,21 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             metadataMatch = metadataMatch
         )
 
-    // comparator 委托给 compareCandidates
+    /** comparator 委托给 compareCandidates */
     internal val candidateComparator = Comparator<CustomLyricsCandidate> { a, b ->
         compareCandidates(a, b)
     }
 
-    // 别名，保留旧调用点（之前 publishCandidate 使用 combinedComparator）
+    /** 别名，保留旧调用点（之前 publishCandidate 使用 combinedComparator） */
     internal val combinedComparator = candidateComparator
 
     private val _candidates = MutableStateFlow<List<CustomLyricsCandidate>>(emptyList())
     val candidates: StateFlow<List<CustomLyricsCandidate>> = _candidates
 
-    // sequence generator for arrival order
+    /** sequence generator for arrival order */
     private val seqGenerator = AtomicLong()
 
-    // helper used by searchCandidates and loadMore
+    /** helper used by searchCandidates and loadMore */
     private fun publishCandidate(candidate: CustomLyricsCandidate) {
         val withSeq = candidate.copy(seq = seqGenerator.incrementAndGet())
         val currentList = _candidates.value.toMutableList()
@@ -195,14 +199,14 @@ class CustomLyricsViewModel @JvmOverloads constructor(
     private val _appliedLyricsText = MutableStateFlow<String?>(null)
     val appliedLyricsText: StateFlow<String?> = _appliedLyricsText
 
-    // tag the origin of the applied lyrics so the caller can distinguish manual vs candidate
+    /** tag the origin of the applied lyrics so the caller can distinguish manual vs candidate */
     private val _appliedLyricsSource = MutableStateFlow<String?>(null)
     val appliedLyricsSource: StateFlow<String?> = _appliedLyricsSource
 
     fun searchCandidates(title: String, artist: String) {
         if (title.isBlank() && artist.isBlank()) return
 
-        // 更新当前歌曲唯一标识
+        /** 更新当前歌曲唯一标识 */
         val songKey = "$title-$artist"
         currentSongKey = songKey
         // remember search terms for pagination and reset offsets
@@ -244,7 +248,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                     val candidate = result.toCandidate()
                     viewModelScope.launch {
                         publishCandidate(candidate)
-                        // fetch features in background and re-sort when ready
+                        /** fetch features in background and re-sort when ready */
                         val feats = runCatching {
                             withContext(Dispatchers.IO) {
                                 lyricsRepository.getLyricsFeatures(
@@ -277,7 +281,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
     }
 
     fun applyCandidate(candidate: CustomLyricsCandidate) {
-        // 更新当前歌曲唯一标识
+        /** 更新当前歌曲唯一标识 */
         val songKey = "${candidate.title}-${candidate.artist}"
         currentSongKey = songKey
 
@@ -286,7 +290,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             _errorMessage.value = null
             try {
                 if (candidate.provider == "cache") {
-                    // 直接读取缓存内容
+                    /** 直接读取缓存内容 */
                     val cached = lyricsCacheRepository.findBySong(candidate.title, candidate.artist)
                     if (cached != null && cached.xmlContent.isNotBlank()) {
                         // 只在歌曲未切换时应用歌词
@@ -298,7 +302,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                         _errorMessage.value = "缓存歌词不存在或内容为空"
                     }
                 } else {
-                    // 传递候选歌词的 title 和 artist 以确保正确的元数据
+                    /** 传递候选歌词的 title 和 artist 以确保正确的元数据 */
                     val result = withContext(Dispatchers.IO) {
                         lyricsRepository.getLyrics(
                             candidate.provider,
@@ -361,7 +365,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
             artist: String,
             id: String?
         ): String {
-            // every provider uses the same template: 服务商：歌曲名 - 歌手名(id)
+            /** every provider uses the same template: 服务商：歌曲名 - 歌手名(id) */
             val providerName = providerDisplayName(provider)
             return "$providerName：$title - $artist(${id ?: ""})"
         }
@@ -373,11 +377,13 @@ class CustomLyricsViewModel @JvmOverloads constructor(
          * for providers where that makes sense.
          */
         private fun providerDisplayName(provider: String): String {
-            // The UI list only shows a friendly name; IDs should not be
-            // appended directly after the provider name.  Previously we added
-            // the songId here which caused the title to read
-            // That was confusing and the ID is still
-            // surfaced elsewhere if needed so drop it from the display name.
+            /**
+             * The UI list only shows a friendly name; IDs should not be
+             * appended directly after the provider name.  Previously we added
+             * the songId here which caused the title to read
+             * That was confusing and the ID is still
+             * surfaced elsewhere if needed so drop it from the display name.
+             */
             val base = when (provider.lowercase()) {
                 "netease", "ncm" -> "网易云音乐"
                 "qq", "qqmusic" -> "QQ音乐"
@@ -400,10 +406,12 @@ class CustomLyricsViewModel @JvmOverloads constructor(
         val artist = lastSearchArtist
         if (title.isBlank() && artist.isBlank()) return
         viewModelScope.launch {
-            // after repository change each search returns max 3 candidates; offsets
-            // can still be used to track how many we have shown locally but the
-            // data source itself does not support pagination.  we therefore ignore
-            // the stored offset when querying and instead update it afterwards.
+            /**
+             * after repository change each search returns max 3 candidates; offsets
+             * can still be used to track how many we have shown locally but the
+             * data source itself does not support pagination.  we therefore ignore
+             * the stored offset when querying and instead update it afterwards.
+             */
             val newResults = withContext(Dispatchers.IO) {
                 when (provider.lowercase()) {
                     "qq", "qqmusic" -> lyricsRepository.searchQQMusic(title, artist)
@@ -432,7 +440,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                     _appliedLyricsSource.value = sourceFromInput(input)
                     _appliedLyricsText.value = input.trim()
                 } else {
-                    // 对于纯文本，仍然进行一次转换以确保基本结构
+                    /** 对于纯文本，仍然进行一次转换以确保基本结构 */
                     val parsed = TTMLConverter.fromLyrics(
                         content = input,
                         title = title.ifBlank { "自选歌词" },
@@ -460,8 +468,10 @@ class CustomLyricsViewModel @JvmOverloads constructor(
     }
 
     private fun LyricsSearchResult.toCandidate(): CustomLyricsCandidate {
-        // matchType may contain verbose labels such as PERFECT/VERY_HIGH
-        // those are not useful in the UI, so clear them.
+        /**
+         * matchType may contain verbose labels such as PERFECT/VERY_HIGH
+         * those are not useful in the UI, so clear them.
+         */
         val displayName = if (provider.equals("amll", true) && metadataMatch) {
             "AMLL TTML DB (基于歌名)"
         } else {

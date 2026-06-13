@@ -43,8 +43,8 @@ fun normalizeTextWhitespace(text: String): String {
     val trimmed = text.trim()
     if (trimmed.isEmpty()) return ""
 
-    // QQ 音乐翻译字段有时会以双斜杠开头（"//"），这会导致显示异常。
-    // 这里统一去掉行首的双斜杠及后续空白。
+    /** QQ 音乐翻译字段有时会以双斜杠开头（"//"），这会导致显示异常。
+    // 这里统一去掉行首的双斜杠及后续空白。*/
     val withoutLeadingSlashes = trimmed.replaceFirst(Regex("^/{2,}\\s*"), "")
     if (withoutLeadingSlashes.isEmpty()) return ""
 
@@ -65,7 +65,7 @@ fun normalizeTextWhitespace(text: String): String {
  * @return Pair(清理后的文本，是否有尾随空格)，如果文本为空则返回 null
  */
 fun processSyllableText(rawTextSlice: String, words: MutableList<LyricWord>): Pair<String, Boolean>? {
-    // 检查是否有前导和尾随空格
+    /** 检查是否有前导和尾随空格 */
     val hasLeadingSpace = rawTextSlice.firstOrNull()?.isWhitespace() == true
     val hasTrailingSpace = rawTextSlice.lastOrNull()?.isWhitespace() == true
     val cleanText = rawTextSlice.trim()
@@ -98,7 +98,7 @@ fun processSyllableText(rawTextSlice: String, words: MutableList<LyricWord>): Pa
  * @return 如果是元数据行返回 true，否则返回 false
  */
 fun parseAndStoreMetadata(line: String, rawMetadata: MutableMap<String, MutableList<String>>): Boolean {
-    // 尝试匹配元数据标签格式
+    /** 尝试匹配元数据标签格式 */
     val match = METADATA_TAG_REGEX.find(line) ?: return false
     val key = match.groups["key"]?.value?.trim().orEmpty()
     if (key.isEmpty()) return false
@@ -135,11 +135,11 @@ fun mergeLyricLines(
         return mainLines
     }
 
-    // 维护翻译和罗马音的当前索引
+    /** 维护翻译和罗马音的当前索引 */
     var transIndex = 0
     var romanIndex = 0
 
-    // 按时间排序，方便后续匹配
+    /** 按时间排序，方便后续匹配 */
     val trans = translationLines.orEmpty().sortedBy { it.startTime }
     val roman = romanizationLines.orEmpty().sortedBy { it.startTime }
 
@@ -154,12 +154,12 @@ fun mergeLyricLines(
             romanIndex += 1
         }
 
-        // 检查当前翻译行是否与主歌词时间匹配
+        /** 检查当前翻译行是否与主歌词时间匹配 */
         val translation = trans.getOrNull(transIndex)
             ?.takeIf { abs(it.startTime - main.startTime) <= TOLERANCE_MS }
             ?.text
 
-        // 检查当前罗马音行是否与主歌词时间匹配
+        /** 检查当前罗马音行是否与主歌词时间匹配 */
         val romanization = roman.getOrNull(romanIndex)
             ?.takeIf { abs(it.startTime - main.startTime) <= TOLERANCE_MS }
             ?.text

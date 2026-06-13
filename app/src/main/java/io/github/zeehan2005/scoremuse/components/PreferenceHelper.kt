@@ -33,10 +33,10 @@ class PreferenceHelper(context: Context, name: String) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences(name, Context.MODE_PRIVATE)
     
-    // Dispatcher for IO operations with limited parallelism
+    /** Dispatcher for IO operations with limited parallelism */
     private val dispatcher = Dispatchers.IO.limitedParallelism(1)
     
-    // Pending writes cache for batching
+    /** Pending writes cache for batching */
     private val pendingWrites = ConcurrentHashMap<String, Any>()
     private var saveJob: Job? = null
 
@@ -136,7 +136,7 @@ class PreferenceHelper(context: Context, name: String) {
                         is Float -> putFloat(key, value)
                     }
                 }
-            } // apply() is async, doesn't block
+            }
             
             pendingWrites.clear()
         } catch (e: Exception) {

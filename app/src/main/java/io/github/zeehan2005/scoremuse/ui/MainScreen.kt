@@ -171,7 +171,7 @@ fun getAppNameFromPackage(context: Context, packageName: String?): String? {
     }
 }
 
-// helpers moved here so they are visible to MainScreen early in the file
+/** helpers moved here so they are visible to MainScreen early in the file */
 private fun isNotificationAccessGranted(context: Context): Boolean =
     Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")?.contains(context.packageName) == true
 
@@ -185,7 +185,7 @@ private fun AdaptiveStatusBarStyle(useDarkIcons: Boolean) {
     }
 }
 
-// used by AdaptiveStatusBarStyle
+/** used by AdaptiveStatusBarStyle */
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
@@ -199,25 +199,29 @@ fun MainScreen() {
     val viewModel: MainViewModel = viewModel()
     val nowPlaying by viewModel.nowPlayingMusic.collectAsState()
     val isDarkTheme = isSystemInDarkTheme()
-    // rippleColor tracks album-art-based primary color; falls back to theme primary if extraction fails
+    /** rippleColor tracks album-art-based primary color; falls back to theme primary if extraction fails */
     val initialPrimary = MaterialTheme.colorScheme.primary
     val rippleColor = remember { mutableStateOf(initialPrimary) }
-    // derived background color used by both now playing card and dropdown menu
-    // always use the darker alpha so light mode matches dark mode
+    /**
+     * derived background color used by both now playing card and dropdown menu
+     * always use the darker alpha so light mode matches dark mode
+     */
     val cardBg = rippleColor.value.copy(alpha = 0.3f)
-//    // 菜单背景：在容器表面色基础上叠加 15% 的主题色，保持不透明的同时跟随主题色变化
-//    val menuBg = rippleColor.value.copy(alpha = 0.15f).compositeOver(MaterialTheme.colorScheme.surfaceContainerHigh)
+/**
+ * // 菜单背景：在容器表面色基础上叠加 15% 的主题色，保持不透明的同时跟随主题色变化
+ * val menuBg = rippleColor.value.copy(alpha = 0.15f).compositeOver(MaterialTheme.colorScheme.surfaceContainerHigh)
+ */
     val lyrics by viewModel.lyrics.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val songStructures by viewModel.songStructures.collectAsState()
     val isSongStructureBarEnabled by viewModel.isSongStructureBarEnabled.collectAsState()
-    // 使用 derivedStateOf 优化状态计算，减少不必要的 recomposition
+    /** 使用 derivedStateOf 优化状态计算，减少不必要的 recomposition */
     val currentTime by remember {
         derivedStateOf {
             nowPlaying?.currentPosition ?: 0L
         }
     }
-    // Apply user-configured lyric timing offsets when updating the lyric view
+    /** Apply user-configured lyric timing offsets when updating the lyric view */
     val lyricTime by remember {
         derivedStateOf {
             viewModel.getLyricTimeWithDeviceOffset(nowPlaying)
@@ -231,7 +235,7 @@ fun MainScreen() {
         val uri = nowPlaying?.albumArtUri
         if (!uri.isNullOrBlank()) {
             try {
-                // 优化：将颜色提取移���后台线程，避免阻塞UI线程
+                /** 优化：将颜色提取移���后台线程，避免阻塞UI线程 */
                 val colors = withContext(Dispatchers.Default) {
                     AlbumColorExtractor.extractColorsFromAlbumArt(context, uri, isDarkTheme)
                 }
@@ -254,25 +258,29 @@ fun MainScreen() {
     var autoUpdateDialogMessage by remember { mutableStateOf("") }
     var autoUpdateDialogUrl by remember { mutableStateOf<String?>(null) }
 
-    // 全屏控制状态
+    /** 全屏控制状态 */
     var controlsVisible by remember { mutableStateOf(true) }
     var hideControlsJob by remember { mutableStateOf<Job?>(null) }
-    // fadeOut 动画时长。作为唯一时序源，控制 controlsAlpha 动画与
-    // controlsInLayout 的判断逻辑。
+    /**
+     * fadeOut 动画时长。作为唯一时序源，控制 controlsAlpha 动画与
+     * controlsInLayout 的判断逻辑。
+     */
     val controlsTransitionDuration = 250
     val controlsAlpha by animateFloatAsState(
         targetValue = if (controlsVisible && isLyricsFullscreen) 1f else 0f,
         animationSpec = tween(durationMillis = controlsTransitionDuration),
         label = "controlsAlpha"
     )
-    // 控件是否在布局中：完全以 controlsAlpha 动画的 ground truth 为依据。
-    // - controlsVisible=true → 立即在布局中（alpha 正在淡入）
-    // - controlsAlpha>0.01 → 仍在 fadeOut 动画中，保留在布局中让动画走完
-    // - controlsAlpha≤0.01 → 动画已完成，从布局中彻底移除（不再拦截点击）
-    // 这样避免依赖于额外状态，确保动画与布局完全同步，不闪烁。
+    /**
+     * 控件是否在布局中：完全以 controlsAlpha 动画的 ground truth 为依据。
+     * - controlsVisible=true → 立即在布局中（alpha 正在淡入）
+     * - controlsAlpha>0.01 → 仍在 fadeOut 动画中，保留在布局中让动画走完
+     * - controlsAlpha≤0.01 → 动画已完成，从布局中彻底移除（不再拦截点击）
+     * 这样避免依赖于额外状态，确保动画与布局完全同步，不闪烁。
+     */
     val controlsInLayout = controlsVisible || controlsAlpha > 0.01f
 
-    // 在 Composable 上下文中创建协程作用域，供回调函数使用
+    /** 在 Composable 上下文中创建协程作用域，供回调函数使用 */
     val scope = rememberCoroutineScope()
 
     fun resetHideTimer() {
@@ -365,7 +373,7 @@ fun MainScreen() {
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
 
-    // 动画数值：共用 Card 实例所需的过渡动画
+    /** 动画数值：共用 Card 实例所需的过渡动画 */
     val cardPaddingH by animateDpAsState(if (isLyricsFullscreen) 0.dp else 16.dp, label = "cardPaddingH")
     val cardPaddingV by animateDpAsState(if (isLyricsFullscreen) 0.dp else 8.dp, label = "cardPaddingV")
     val cardCorner by animateDpAsState(if (isLyricsFullscreen) 0.dp else 24.dp, label = "cardCorner")
@@ -518,7 +526,7 @@ fun MainScreen() {
         }
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize()) {
-            // 顶部间距：非全屏时避开状态栏和 TopAppBar
+            /** 顶部间距：非全屏时避开状态栏和 TopAppBar */
             val topPadding = if (isLyricsFullscreen) 0.dp else innerPadding.calculateTopPadding()
             Spacer(Modifier.height(topPadding))
 
@@ -530,7 +538,7 @@ fun MainScreen() {
                 )
             }
 
-            // 统一的歌词 Card 实例
+            /** 统一的歌词 Card 实例 */
             val currentLyrics = lyrics
             Card(
                 modifier = Modifier
@@ -742,7 +750,7 @@ fun MainScreen() {
                 )
             }
 
-            // 底部间距：非全屏时避开导航栏
+            /** 底部间距：非全屏时避开导航栏 */
             val bottomPadding = if (isLyricsFullscreen) 0.dp else innerPadding.calculateBottomPadding()
             Spacer(Modifier.height(bottomPadding))
         }
@@ -853,7 +861,7 @@ fun LyricsVisualLayer(
         nowPlaying.albumArtUri ?: fallbackAlbumArtUri
     }
 
-    // 优化：使用更高效的状态管理，减少不必要的内存分配
+    /** 优化：使用更高效的状态管理，减少不必要的内存分配 */
     val boxHeight = remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     val sizeChangeJob = remember { mutableStateOf<Job?>(null) }
@@ -1090,7 +1098,7 @@ fun NowPlayingCard(
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
 
-                        // 其次：当前时间
+                        /** 其次：当前时间 */
                         val timeAlpha = if (isSeeking) 1.0f else 0.8f
                         Text(
                             formatTime(sliderValue.toLong()),
@@ -1130,7 +1138,7 @@ fun NowPlayingCard(
                             waveSpeed = if (nowPlaying.isPlaying) WavySliderDefaults.WaveSpeed else 0.dp,
                         )
 
-                        // 其次：时间显示模式（总时长 vs 剩���时长）
+                        /** 其次：时间显示模式（总时长 vs 剩���时长） */
                         val rightTimeText = if (isRemainingTimeMode) {
                             "-${formatTime((nowPlaying.duration - sliderValue.toLong()).coerceAtLeast(0L))}"
                         } else {

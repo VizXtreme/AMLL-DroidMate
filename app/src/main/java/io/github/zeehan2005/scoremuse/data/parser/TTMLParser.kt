@@ -32,7 +32,7 @@ import javax.xml.transform.stream.StreamResult
  */
 object TTMLParser {
 
-    // XML 解析工厂（线程安全，可复用）
+    /** XML 解析工厂（线程安全，可复用） */
     private val factory = DocumentBuilderFactory.newInstance()
 
     /**
@@ -61,9 +61,11 @@ object TTMLParser {
 
         val builder = factory.newDocumentBuilder()
 
-        // attempt a normal parse first; if it fails we may be dealing with
-        // malformed metadata tags (common in Apple-supplied TTML) and we'll
-        // retry after sanitizing the input.
+        /**
+         * attempt a normal parse first; if it fails we may be dealing with
+         * malformed metadata tags (common in Apple-supplied TTML) and we'll
+         * retry after sanitizing the input.
+         */
         fun tryParse(input: String): UnifiedLyrics {
             val doc = builder.parse(input.byteInputStream())
             return parseTTMLDocument(doc).copy(rawContent = input, format = "ttml")
@@ -172,7 +174,7 @@ object TTMLParser {
 
         Timber.d("[TTMLParser] Parse complete: ${lines.size} total output lines")
 
-        // 解析 TTML 元数据信息
+        /** 解析 TTML 元数据信息 */
         val metadata = try {
             Timber.d("[TTMLParser] Parsing TTML metadata")
             val head = doc.getElementsByTagName("head").item(0) as? Element
@@ -208,7 +210,7 @@ object TTMLParser {
             LyricsMetadata(title = "Unknown", artist = "Unknown")
         }
 
-        // 使用SongStructureParser来处理结构解析
+        /** 使用SongStructureParser来处理结构解析 */
         val mergedStructures = SongStructureParser.parseFromTtmlDocument(
             doc = doc,
             vocalLines = parsedParagraphs.mapNotNull { it.mainLine },
@@ -589,8 +591,10 @@ object TTMLParser {
     private fun normalizeAuxiliaryText(text: String): String {
         if (text.isEmpty()) return ""
 
-        // QQ TTML sometimes uses "//" (or repeated slashes) to mean "no translation".
-        // Treat it as empty so the UI doesn't show it as literal text.
+        /**
+         * QQ TTML sometimes uses "//" (or repeated slashes) to mean "no translation".
+         * Treat it as empty so the UI doesn't show it as literal text.
+         */
         val normalized = text.replace(Regex("[\\t\\r\\n]+"), " ").trim()
         // QQ TTML may use "//" to indicate no translation; keep a single slash.
         if (normalized == "//") return ""
@@ -670,7 +674,7 @@ object TTMLParser {
         val transformerFactory = TransformerFactory.newInstance()
         val transformer = transformerFactory.newTransformer()
 
-        // 配置输出格式
+        /** 配置输出格式 */
         val output = java.io.StringWriter()
         val result = StreamResult(output)
 
@@ -679,7 +683,7 @@ object TTMLParser {
         transformer.setOutputProperty(javax.xml.transform.OutputKeys.ENCODING, "UTF-8")
         transformer.setOutputProperty(javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION, "yes")
 
-        // ��行转换
+        /** ��行转换 */
         val source = DOMSource(element.ownerDocument)
         transformer.transform(source, result)
 

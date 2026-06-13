@@ -3,6 +3,7 @@ package io.github.zeehan2005.scoremuse.data.repository
 import android.content.Context
 import io.github.zeehan2005.scoremuse.global.CachedLyricEntry
 import kotlinx.serialization.json.Json
+import java.util.Map.entry
 import java.util.UUID
 
 /**
@@ -92,21 +93,21 @@ class LyricsCacheRepository(context: Context) {
         val titleKey = normalize(title)
         val artistKey = normalize(artist)
 
-        // Ensure at most one entry per song (title+artist).  If there are multiple
-        // entries with different sources, remove them so we replace with the new one.
+        /** Ensure at most one entry per song (title+artist).
+         * If there are multiple entries with different sources, remove them so we replace with the new one. */
         val duplicates = all.withIndex().filter {
             normalize(it.value.title) == titleKey &&
                 normalize(it.value.artist) == artistKey
         }.map { it.index }
 
         val entryId = if (duplicates.isNotEmpty()) {
-            // keep the first duplicate's id
+            /** keep the first duplicate's id */
             all[duplicates.first()].id
         } else {
             UUID.randomUUID().toString()
         }
 
-        // remove all existing duplicates first
+        /** remove all existing duplicates first */
         duplicates.sortedDescending().forEach { all.removeAt(it) }
 
         val newEntry = CachedLyricEntry(

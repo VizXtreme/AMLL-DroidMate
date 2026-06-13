@@ -24,7 +24,7 @@ import timber.log.Timber
 @Suppress("unused")
 object KugouSignature {
     
-    // 酷狗 Android 客户端固定盐值
+    /** 酷狗 Android 客户端固定盐值 */
     private const val KUGOU_ANDROID_SALT = "OIlwieks28dk2k092lksi2UIkp"
     private const val APP_ID = "1005"       // 应用 ID
     private const val CLIENT_VER = "12569"  // 客户端版本号
@@ -48,15 +48,17 @@ object KugouSignature {
      */
     fun generateSignature(params: Map<String, String>, body: String = ""): String {
         return try {
-            // 构建参数字符串（需要按 key 排序）
-            // TreeMap 会自动按键排序
+            /**
+             * 构建参数字符串（需要按 key 排序）
+             * TreeMap 会自动按键排序
+             */
             val sortedParams = params.toSortedMap()
             val paramsString = sortedParams.entries.joinToString("") { (k, v) -> "$k=$v" }
             
-            // 构建待签名字符串：salt + params + body + salt
+            /** 构建待签名字符串：salt + params + body + salt */
             val stringToSign = KUGOU_ANDROID_SALT + paramsString + body + KUGOU_ANDROID_SALT
             
-            // 计算 MD5
+            /** 计算 MD5 */
             val md5 = MessageDigest.getInstance("MD5")
             val digest = md5.digest(stringToSign.toByteArray())
             

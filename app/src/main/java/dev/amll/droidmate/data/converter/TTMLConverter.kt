@@ -76,7 +76,7 @@ object TTMLConverter {
         sb.append("""<?xml version="1.0" encoding="UTF-8"?>""")
         if (formatted) sb.append("\n")
         
-        // TTML 核心
+        /** TTML 核心 */
         val indent = if (formatted) "  " else ""
         val lineBreak = if (formatted) "\n" else ""
         
@@ -90,7 +90,7 @@ object TTMLConverter {
         // Head
         sb.append("${indent}<head>$lineBreak")
         
-        // ✅ 如果有原始 XML metadata，直接使用它（保留所有未使用的 XML 信息）
+        /** ✅ 如果有原始 XML metadata，直接使用它（保留所有未使用的 XML 信息）*/
         val rawXmlMetadata = lyrics.metadata.rawXmlMetadata
         if (!rawXmlMetadata.isNullOrBlank()) {
             Timber.d("[TTMLConverter] Using preserved raw XML metadata for serialization")
@@ -106,7 +106,7 @@ object TTMLConverter {
                 sb.append("""${indent}${indent}${indent}<ttm:agent type="person" xml:id="v1" />""")
                 if (formatted) sb.append("\n")
                 
-                // 检查是否有对唱歌词，如果有则添加 v2 agent 定义
+                /** 检查是否有对唱歌词，如果有则添加 v2 agent 定义 */
                 val hasDuet = lyrics.lines.any { it.isDuet }
                 if (hasDuet) {
                     sb.append("""${indent}${indent}${indent}<ttm:agent type="other" xml:id="v2" />""")
@@ -132,56 +132,56 @@ object TTMLConverter {
         
         sb.append("""${indent}</head>$lineBreak""")
         
-        // Body
+        /** Body */
         val duration = TimestampUtils.fromMillis(lyrics.lines.lastOrNull()?.endTime ?: 0L)
         sb.append("""${indent}<body dur="$duration">$lineBreak""")
                 
-        // ✅ 如果有歌曲结构信息，为每个结构创建独立的 <div> 标签
-        val structures = lyrics.metadata.songStructures
-        if (!structures.isNullOrEmpty()) {
-            // 按歌曲结构分组歌词行
-            var lineIndex = 0
-            structures.forEachIndexed { structIndex, structure ->
-                val startTimeAttr = TimestampUtils.fromMillis(structure.startTime)
-                val endTimeAttr = TimestampUtils.fromMillis(structure.endTime)
-                        
-                // ✅ 优先使用 structure.label（保留"段落 1"等 fallback 标签），其次使用 type.displayName
-                val songPartValue = if (structure.label.startsWith("段落")) {
-                    structure.label  // ✅ 保留 fallback 的"段落 X"标签
-                } else {
-                    structure.type.displayName  // 使用标准的类型名称（Verse、Chorus 等）
-                }
-                sb.append("""${indent}${indent}<div itunes:songPart="${escapeXml(songPartValue)}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
-                        
-                // 添加该结构包含的歌词行
-                while (lineIndex < lyrics.lines.size) {
-                    val line = lyrics.lines[lineIndex]
-                    // 如果当前行的开始时间超过结构结束时间，跳出
-                    if (line.startTime > structure.endTime && structIndex < structures.size - 1) break
-                            
-                    appendLyricLine(sb, line, lineIndex, indent, formatted)
-                    lineIndex++
-                }
-                        
-                sb.append("""${indent}${indent}</div>$lineBreak""")
-            }
-                    
-            // 处理剩余的歌词行（没有结构信息的部分）
-            if (lineIndex < lyrics.lines.size) {
-                sb.append("""${indent}${indent}<div>$lineBreak""")
-                for (i in lineIndex until lyrics.lines.size) {
-                    appendLyricLine(sb, lyrics.lines[i], i, indent, formatted)
-                }
-                sb.append("""${indent}${indent}</div>$lineBreak""")
-            }
-        } else {
+//        /** ✅ 如果有歌曲结构信息，为每个结构创建独立的 <div> 标签*/
+//        val structures = lyrics.metadata.songStructures
+//        if (!structures.isNullOrEmpty()) {
+//            // 按歌曲结构分组歌词行
+//            var lineIndex = 0
+//            structures.forEachIndexed { structIndex, structure ->
+//                val startTimeAttr = TimestampUtils.fromMillis(structure.startTime)
+//                val endTimeAttr = TimestampUtils.fromMillis(structure.endTime)
+//
+//                // ✅ 优先使用 structure.label（保留"段落 1"等 fallback 标签），其次使用 type.displayName
+//                val songPartValue = if (structure.label.startsWith("段落")) {
+//                    structure.label  // ✅ 保留 fallback 的"段落 X"标签
+//                } else {
+//                    structure.type.displayName  // 使用标准的类型名称（Verse、Chorus 等）
+//                }
+//                sb.append("""${indent}${indent}<div itunes:songPart="${escapeXml(songPartValue)}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
+//
+//                // 添加该结构包含的歌词行
+//                while (lineIndex < lyrics.lines.size) {
+//                    val line = lyrics.lines[lineIndex]
+//                    // 如果当前行的开始时间超过结构结束时间，跳出
+//                    if (line.startTime > structure.endTime && structIndex < structures.size - 1) break
+//
+//                    appendLyricLine(sb, line, lineIndex, indent, formatted)
+//                    lineIndex++
+//                }
+//
+//                sb.append("""${indent}${indent}</div>$lineBreak""")
+//            }
+//
+//            // 处理剩余的歌词行（没有结构信息的部分）
+//            if (lineIndex < lyrics.lines.size) {
+//                sb.append("""${indent}${indent}<div>$lineBreak""")
+//                for (i in lineIndex until lyrics.lines.size) {
+//                    appendLyricLine(sb, lyrics.lines[i], i, indent, formatted)
+//                }
+//                sb.append("""${indent}${indent}</div>$lineBreak""")
+//            }
+//        } else {
             // 没有结构信息，使用单个 div 包含所有歌词
             sb.append("""${indent}${indent}<div>$lineBreak""")
             lyrics.lines.forEachIndexed { index, line ->
                 appendLyricLine(sb, line, index, indent, formatted)
             }
             sb.append("""${indent}${indent}</div>$lineBreak""")
-        }
+//        }
         
         // 关闭 body 和 tt 标签
         sb.append("""${indent}</body>$lineBreak""")
@@ -204,7 +204,7 @@ object TTMLConverter {
         val end = TimestampUtils.fromMillis(line.endTime)
         val lineNum = "L${lineIndex + 1}"
                 
-        // ✅ 优先使用 agent 字段，如果没有则根据 isDuet 推断
+        /** ✅ 优先使用 agent 字段，如果没有则根据 isDuet 推断*/
         val agentValue = line.agent ?: if (line.isDuet) "v2" else "v1"
         val agentAttr = if (agentValue.isNotEmpty()) " ttm:agent=\"$agentValue\"" else ""
                 
@@ -305,7 +305,6 @@ object TTMLConverter {
                 title = title,
                 artist = artist,
                 album = album,
-                language = "ja",
                 duration = lines.lastOrNull()?.endTime ?: 0L,
                 source = "DroidMate"
             ),
@@ -320,7 +319,6 @@ object TTMLConverter {
      */
     @Deprecated("Use TimestampUtils.fromMillis()", ReplaceWith("TimestampUtils.fromMillis(millis, TimestampUtils.Format.MM_SS_MS)"))
     fun formatTime(millis: Long): String {
-        // 保留旧实现以确保向后兼容
         val totalSeconds = millis / 1000
         val minutes = totalSeconds / 60
         val seconds = totalSeconds % 60
@@ -336,7 +334,6 @@ object TTMLConverter {
      */
     @Deprecated("Use TimestampUtils.toMillis()", ReplaceWith("TimestampUtils.toMillis(timeStr)"))
     fun timeToMillis(timeStr: String): Long {
-        // 保留旧实现以确保向后兼容
         return try {
             val parts = timeStr.split(":")
             if (parts.size != 2) return 0L

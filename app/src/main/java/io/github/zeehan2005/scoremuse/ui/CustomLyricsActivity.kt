@@ -74,12 +74,12 @@ import timber.log.Timber
 class CustomLyricsActivity : BaseComposeActivity() {
     @Composable
     override fun RenderContent() {
-        // 从 Intent 获取参数
+        /** 从 Intent 获取参数 */
         val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
         val artist = intent.getStringExtra(EXTRA_ARTIST).orEmpty()
         val playbackSource = intent.getStringExtra(EXTRA_PLAYBACK_SOURCE)
         
-        // 获取 ViewModel（管理歌词搜索和候选列表）
+        /** 获取 ViewModel（管理歌词搜索和候选列表） */
         val viewModel: CustomLyricsViewModel = viewModel()
         // 更新当前播放来源（用于优先级排序）
         LaunchedEffect(playbackSource) {
@@ -92,7 +92,7 @@ class CustomLyricsActivity : BaseComposeActivity() {
             artist = artist,
             onBack = { finish() },
             onApply = { lyricsText, lyricsSource ->
-                // 构建返回结果
+                /** 构建返回结果 */
                 val result = Intent().apply {
                     putExtra(EXTRA_TITLE, title)
                     putExtra(EXTRA_ARTIST, artist)
@@ -105,7 +105,7 @@ class CustomLyricsActivity : BaseComposeActivity() {
         )
     }
     
-    // Intent 参数常量定义
+    /** Intent 参数常量定义 */
     companion object {
         const val EXTRA_TITLE = "extra_title"           // 歌曲标题
         const val EXTRA_ARTIST = "extra_artist"         // 艺术家名称
@@ -126,7 +126,7 @@ private fun CustomLyricsPage(
 ) {
     val vm: CustomLyricsViewModel = viewModel()
     val candidates by vm.candidates.collectAsState()
-    // Hide local-cache entries from the displayed list
+    /** Hide local-cache entries from the displayed list */
     val visibleCandidates = remember(candidates) {
         candidates.filter { it.provider.lowercase() != "cache" }
     }
@@ -139,7 +139,7 @@ private fun CustomLyricsPage(
     var manualText by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
-    // File picker launcher for importing lyrics from file
+    /** File picker launcher for importing lyrics from file */
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -305,7 +305,7 @@ private fun CustomLyricsPage(
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Button(onClick = {
-                                // 对当前已显示的每个来源请求更多
+                                /** 对当前已显示的每个来源请求更多 */
                                 val providers = visibleCandidates.map { it.provider.lowercase() }
                                     .distinct()
                                 providers.forEach { prov -> vm.loadMore(prov) }

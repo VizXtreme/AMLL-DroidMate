@@ -20,10 +20,10 @@ import timber.log.Timber
  */
 object YrcParser {
 
-    // YRC 行级时间戳正则：[起始 ms，持续 ms]
+    /** YRC 行级时间戳正则：[起始 ms，持续 ms] */
     private val yrcLineTimestampRegex = Regex("""^\[(?<start>\d+),(?<duration>\d+)]""")
     
-    // YRC 逐字时间戳正则：(起始 ms，持续 ms，0)
+    /** YRC 逐字时间戳正则：(起始 ms，持续 ms，0) */
     private val yrcSyllableTimestampRegex = Regex("""\((?<start>\d+),(?<duration>\d+),(?<zero>0)\)""")
 
     /**

@@ -29,13 +29,13 @@ object AudioDeviceHelper {
      * 3. 内置扬声器（默认）
      * 
      * @param context Android 上下文
-     * @return 设备名称，例如 "Bluetooth (Sony WH-1000XM4)"、"Wired"、"Speaker"
+     * @return 设备名称，例如 "Bluetooth (Sony WH-1000XM4)"、"Wired"、"Speaker", 无法获取 AudioManager 时返回 Unknown
      */
     fun getCurrentOutputDeviceName(context: Context): String {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-            ?: return "Unknown"  // 无法获取 AudioManager 时返回 Unknown
+            ?: return "Unknown"
 
-        // getDevices 仅在 API 23+ 支持，旧版本返回通用标签
+        /** getDevices 仅在 API 23+ 支持，旧版本返回通用标签 */
 
         val devices = try {
             audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
@@ -43,7 +43,7 @@ object AudioDeviceHelper {
             emptyArray<AudioDeviceInfo>()
         }
 
-        // 优先检测蓝牙设备（因为通常有明显的音频延迟）
+        /** 优先检测蓝牙设备（因为通常有明显的音频延迟）*/
         val bluetooth = devices.firstOrNull {
             it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
         }
@@ -52,7 +52,7 @@ object AudioDeviceHelper {
             return if (name != null) "Bluetooth ($name)" else "Bluetooth"
         }
 
-        // 检测有线设备（耳机、USB 等）
+        /** 检测有线设备（耳机、USB 等）*/
         val wired = devices.firstOrNull {
             it.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
                 it.type == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
@@ -64,13 +64,13 @@ object AudioDeviceHelper {
             return if (name != null) "Wired ($name)" else "Wired"
         }
 
-        // 默认使用内置扬声器
+        /** 默认使用内置扬声器*/
         val speaker = devices.firstOrNull { it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }
         if (speaker != null) {
             return "Speaker"
         }
 
-        // 回退到第一个可用的输出设备
+        /** 回退到第一个可用的输出设备*/
         return devices.firstOrNull()?.productName?.toString()?.takeIf { it.isNotBlank() } ?: "Unknown"
     }
 }

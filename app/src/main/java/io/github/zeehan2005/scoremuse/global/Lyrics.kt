@@ -70,13 +70,16 @@ data class LyricLine(
 @Stable
 @Serializable
 data class UnifiedLyrics(
-    val metadata: LyricsMetadata,     // 元数据（歌名、歌手、专辑等）
-    val lines: List<LyricLine>,     // 所有歌词行
-    // 保留原始歌词字符串，用于 WebView 直接解析或 WebSocket 发送
-    val rawContent: String? = null,    // 原始歌词内容（可选）
-    val format: String? = null,        // 原始格式（可选，如 "ttml", "lrc", "yrc"）
-    // 兼容字段：保留原始 TTML 字符串
-    val rawTtml: String? = null        // 原始 TTML XML 字符串（可选）
+    /** 元数据（歌名、歌手、专辑等）*/
+    val metadata: LyricsMetadata,
+    /** 所有歌词行 */
+    val lines: List<LyricLine>,
+    /** 保留原始歌词字符串，用于 WebView 直接解析或 WebSocket 发送*/
+    val rawContent: String? = null,
+    /** 原始格式（可选，如 "ttml", "lrc", "yrc"）*/
+    val format: String? = null,
+    /** 兼容字段：保留原始 TTML  */
+    val rawTtml: String? = null
 )
 
 /**
@@ -87,17 +90,24 @@ data class UnifiedLyrics(
 @Stable
 @Serializable
 data class LyricsMetadata(
-    val title: String,                      // 歌曲标题
-    val artist: String,                     // 艺术家
-    val album: String? = null,              // 专辑名称（可选）
-    val language: String? = null,            // 语言代码（可选）
-    val duration: Long = 0L,                // 歌曲总时长（毫秒）
-    val source: String = "ScoreMuse",       // 来源标识
-    val songStructures: List<SongStructure>? = null,  // 歌曲结构段落（主歌、副歌等）
-    // 保留原始 XML 的完整 metadata 元素内容（用于未来扩展和保留未使用的 XML 信息）
-    val rawXmlMetadata: String? = null,     // 原始 XML 元数据（可选）
-    // 标记是否为 fallback 结果（true 表示是从其他格式转换而来，非原始格式）
-    val isFallback: Boolean = false         // 是否为 fallback 结果
+    /** 歌曲标题 */
+    val title: String,
+    /** 艺术家 */
+    val artist: String,
+    /** 专辑名称（可选）*/
+    val album: String? = null,
+    /** 语言代码（可选）*/
+    val language: String? = null,
+    /** 歌曲总时长（毫秒）*/
+    val duration: Long = 0L,
+    /** 来源标识 */
+    val source: String = "ScoreMuse",
+    /** 歌曲结构段落（主歌、副歌等） */
+    val songStructures: List<SongStructure>? = null,
+    /** 保留原始 XML 的完整 metadata 元素内容（用于未来扩展和保留未使用的 XML 信息）*/
+    val rawXmlMetadata: String? = null,
+    /** 标记是否为 fallback 结果（true 表示是从其他格式转换而来，非原始格式）*/
+    val isFallback: Boolean = false
 )
 
 /**
@@ -134,7 +144,7 @@ data class SongStructure(
     val endTime: Long,        // 段落结束时间（毫秒）
     val type: SongStructureType = SongStructureType.UNKNOWN  // 段落类型
 ) {
-    // 计算段落持续时间
+    /** 计算段落持续时间 */
     val duration: Long
         get() = endTime - startTime
 }

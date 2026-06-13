@@ -89,7 +89,7 @@ fun WavySlider(
     val thumbHeightPx = with(density) { thumbHeight.toPx() }
     val thumbSideGapPx = with(density) { WavySliderDefaults.ThumbTrackGapSize.toPx() }
     
-    // Create state first
+    /** Create state first */
     val state = rememberWavySliderState(
         initialValue = value.fastCoerceIn(0f, 1f),
         customSteps = customSteps,
@@ -106,7 +106,7 @@ fun WavySlider(
         }
     }
     
-    // Keyboard handling
+    /** Keyboard handling */
     val keyboardModifier = if (enabled) {
         Modifier.onKeyEvent { keyEvent ->
             when (keyEvent.type) {
@@ -162,7 +162,7 @@ fun WavySlider(
         Modifier
     }
     
-    // Touch/drag handling
+    /** Touch/drag handling */
     val dragModifier = if (enabled) {
         Modifier.pointerInput(state, thumbWidthPx, thumbSideGapPx) {
             awaitEachGesture {
@@ -172,9 +172,11 @@ fun WavySlider(
                 val down = awaitFirstDown(requireUnconsumed = false)
                 val lastX = down.position.x
                 
-                // Calculate initial value from touch position (absolute positioning)
-                // Thumb center moves from (thumbSideGapPx + thumbWidthPx/2) to (trackWidth - thumbSideGapPx - thumbWidthPx/2)
-                // Position 0 in value space corresponds to (thumbSideGapPx + thumbWidthPx/2) in pixel space
+                /**
+                 * Calculate initial value from touch position (absolute positioning)
+                 * Thumb center moves from (thumbSideGapPx + thumbWidthPx/2) to (trackWidth - thumbSideGapPx - thumbWidthPx/2)
+                 * Position 0 in value space corresponds to (thumbSideGapPx + thumbWidthPx/2) in pixel space
+                 */
                 val touchOffset = lastX - (thumbSideGapPx + thumbWidthPx / 2)
                 val initialValue = (touchOffset / availableWidth).fastCoerceIn(0f, 1f)
                 state.value = initialValue
@@ -183,7 +185,7 @@ fun WavySlider(
                 try {
                     horizontalDrag(down.id) { change ->
                         val currentX = change.position.x
-                        // Use absolute positioning instead of relative delta
+                        /** Use absolute positioning instead of relative delta */
                         val offset = currentX - (thumbSideGapPx + thumbWidthPx / 2)
                         val newValue = (offset / availableWidth).fastCoerceIn(0f, 1f)
                         state.value = newValue
@@ -251,21 +253,23 @@ private fun WavySliderDrawing(
     val density = LocalDensity.current
     val trackHeightPx = with(density) { WavySliderDefaults.TrackHeight.toPx() }
     
-    // MD3 standard (XS size): 6dp gap on each side of thumb
+    /** MD3 standard (XS size): 6dp gap on each side of thumb */
     val thumbSideGapPx = with(density) { WavySliderDefaults.ThumbTrackGapSize.toPx() }
     
-    // Calculate canvas height to accommodate both track and thumb
-    // Thumb needs enough vertical space to be fully visible
+    /**
+     * Calculate canvas height to accommodate both track and thumb
+     * Thumb needs enough vertical space to be fully visible
+     */
     val canvasHeightDp = maxOf(WavySliderDefaults.TrackHeight * 2, with(density) { thumbHeightPx.toDp() })
     
-    // 保存当前的时间偏移，用于暂停时保持波浪相位
+    /** 保存当前的时间偏移，用于暂停时保持波浪相位 */
     val savedTimeOffset = remember { mutableFloatStateOf(0f) }
     val animationTimeOffset = remember { mutableFloatStateOf(0f) }
     
     // 使用 LaunchedEffect 管理动画
     LaunchedEffect(waveSpeedPx) {
         if (waveSpeedPx > 0) {
-            // 播放时，启动动画
+            /** 播放时，启动动画 */
             var currentOffset: Float
             val duration = (1000 * wavelengthPx / waveSpeedPx).toInt()
             
@@ -283,7 +287,7 @@ private fun WavySliderDrawing(
         }
     }
     
-    // 优化：减少不必要的计算，只在需要时更新时间偏移
+    /** 优化：减少不必要的计算，只在需要时更新时间偏移 */
     val timeOffset by remember(waveSpeedPx, animationTimeOffset.floatValue) {
         derivedStateOf {
             if (waveSpeedPx > 0) {
@@ -310,11 +314,13 @@ private fun WavySliderDrawing(
         state.updateDimensions(trackWidth, trackHeightPx)
         state.updateThumbDimensions(thumbWidthPx, thumbHeightPx)
         
-        // Calculate available track width for thumb movement
+        /** Calculate available track width for thumb movement */
         val availableWidth = trackWidth - thumbWidthPx - thumbSideGapPx * 2
         
-        // Calculate thumb center position
-        // Thumb center moves from (thumbSideGapPx + thumbWidthPx/2) to (trackWidth - thumbSideGapPx - thumbWidthPx/2)
+        /**
+         * Calculate thumb center position
+         * Thumb center moves from (thumbSideGapPx + thumbWidthPx/2) to (trackWidth - thumbSideGapPx - thumbWidthPx/2)
+         */
         val thumbCenterX = thumbSideGapPx + thumbWidthPx / 2 + availableWidth * state.value
         
         // Draw inactive track (starts from thumb center + gap)
@@ -324,8 +330,10 @@ private fun WavySliderDrawing(
             size = Size(trackWidth - thumbCenterX - thumbSideGapPx * 2, trackHeightPx),
             cornerRadius = CornerRadius(trackHeightPx / 2)
         )
-        // Draw active track with wave (wave width = inactive track width - 6dp)
-        // Wave starts and ends so that the round cap is exactly thumbSideGapPx away from the edges/thumb
+        /**
+         * Draw active track with wave (wave width = inactive track width - 6dp)
+         * Wave starts and ends so that the round cap is exactly thumbSideGapPx away from the edges/thumb
+         */
         val wavyTrackHeightPx = trackHeightPx - with(density) { 6.dp.toPx() }
         val wavyStartX = thumbSideGapPx + wavyTrackHeightPx / 2
         val wavyEndX = thumbCenterX - thumbWidthPx / 2 - wavyTrackHeightPx / 2 - thumbSideGapPx
@@ -342,7 +350,7 @@ private fun WavySliderDrawing(
             waveAmplitudePx = waveAmplitudePx
         )
         
-        // Draw thumb with dynamic scale for visual feedback when near a step
+        /** Draw thumb with dynamic scale for visual feedback when near a step */
         val scaledThumbWidth = thumbWidthPx * state.thumbScale
         val scaledThumbHeight = thumbHeightPx * state.thumbScale
         
@@ -381,13 +389,13 @@ private fun DrawScope.drawWavyTrack(
     if (endX <= startX) return
     
     val path = Path()
-    // Use MD3 standard amplitude (3dp) scaled by amplitude parameter
+    /** Use MD3 standard amplitude (3dp) scaled by amplitude parameter */
     val actualAmplitude = waveAmplitudePx * amplitude.coerceIn(0f, 1f)
     
-    // Calculate the step size based on wavelength for better performance
+    /** Calculate the step size based on wavelength for better performance */
     val stepSize = max(2f, wavelengthPx / 20f) // Reduce number of points
     
-    // Start at the first point of the wave
+    /** Start at the first point of the wave */
     val firstWaveOffset = (startX / wavelengthPx * 2 * PI + timeOffset).toFloat()
     val firstY = centerY + sin(firstWaveOffset) * actualAmplitude
     path.moveTo(startX, firstY)
@@ -401,7 +409,7 @@ private fun DrawScope.drawWavyTrack(
         x += stepSize
     }
     
-    // Ensure the path reaches the end point
+    /** Ensure the path reaches the end point */
     val finalWaveOffset = (endX / wavelengthPx * 2 * PI + timeOffset).toFloat()
     val finalY = centerY + sin(finalWaveOffset) * actualAmplitude
     path.lineTo(endX, finalY)
@@ -432,7 +440,7 @@ private fun DrawScope.drawStepMarkers(
     // Calculate thumb center position for proper step marker positioning
     // Steps should be positioned based on normalized value (0.0 to 1.0)
     for (step in customSteps) {
-        // Step position is normalized, multiply by track width and add offset to get pixel position
+        /** Step position is normalized, multiply by track width and add offset to get pixel position */
         val x = step * trackWidth + offsetX
         val isNearCurrent = abs(step - currentValue) < attractionRadius
         
