@@ -262,17 +262,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 kotlinx.coroutines.currentCoroutineContext().ensureActive()
 
                 if (result.isSuccess && result.lyrics != null) {
-                    val shouldProcessMetadata = AMLLSettings.isMetadataProcessingEnabled(context)
-                    val finalLyrics = if (shouldProcessMetadata) {
-                        Timber.d("[LyricsMatcher] Metadata processing enabled, using processed lyrics")
-                        result.lyrics
-                    } else {
-                        Timber.d("[LyricsMatcher] Metadata processing disabled, using raw lyrics")
-                        result.lyrics
-                    }
+//                    val shouldProcessMetadata = AMLLSettings.isMetadataProcessingEnabled(context)
+//                    val finalLyrics = if (shouldProcessMetadata) {
+//                        Timber.d("[LyricsMatcher] Metadata processing enabled, using processed lyrics")
+//                        result.lyrics
+//                    } else {
+//                        Timber.d("[LyricsMatcher] Metadata processing disabled, using raw lyrics")
+//                        result.lyrics
+//                    }
 
-                    lyricsMutable.value = finalLyrics
-                    updateSongStructures(finalLyrics)
+//                    lyricsMutable.value = finalLyrics
+//                    updateSongStructures(finalLyrics)
                     val rawXmlContent = TTMLConverter.toTTMLString(result.lyrics)
                     lyricsCacheRepository.upsert(
                         title = music.title,

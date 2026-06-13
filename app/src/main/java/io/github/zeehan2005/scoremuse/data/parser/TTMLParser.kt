@@ -210,11 +210,14 @@ object TTMLParser {
             LyricsMetadata(title = "Unknown", artist = "Unknown")
         }
 
-        /** 使用SongStructureParser来处理结构解析 */
-        val mergedStructures = SongStructureParser.parseFromTtmlDocument(
-            doc = doc,
-            vocalLines = parsedParagraphs.mapNotNull { it.mainLine },
-            timedParagraphRanges = timedParagraphRanges
+        // 使用SongStructureParser来处理结构解析：
+        // 1. 从 <div> 元素解析 songPart
+        // 2. 调用 parseStructure 合并间奏/尾奏
+        val songPartStructures = SongStructureParser.parseStructuresFromDivs(doc)
+        val mergedStructures = SongStructureParser.parseStructure(
+            lyricsLines = parsedParagraphs.mapNotNull { it.mainLine },
+            metadataStructure = songPartStructures,
+            songDuration = timedParagraphRanges.maxOfOrNull { it.endTime } ?: 0L
         )
         return UnifiedLyrics(
             metadata = metadata.copy(songStructures = mergedStructures.takeIf { it.isNotEmpty() }),

@@ -138,7 +138,6 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.Locale
 import dev.amll.droidmate.components.AMLLLyricsView
-import dev.amll.droidmate.components.AMLLRenderMode
 import kotlin.collections.isNotEmpty
 import kotlin.collections.map
 import kotlin.jvm.java
@@ -918,7 +917,6 @@ fun LyricsVisualLayer(
                 lyrics = lyrics,
                 currentTime = currentTime,
                 albumArtUri = effectiveAlbumArtUri,
-                renderMode = AMLLRenderMode.DOM,
                 debugSource = debugSource,
                 onLyricsClick = onFullscreenTap,
                 onLineSeek = onLineSeek,

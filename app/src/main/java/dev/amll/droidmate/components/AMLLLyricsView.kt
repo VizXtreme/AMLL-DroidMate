@@ -12,6 +12,8 @@ import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 //import android.webkit.WebResourceRequest
 //import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
@@ -35,6 +37,7 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import android.graphics.Color as AndroidColor
 import androidx.core.net.toUri
+import androidx.webkit.WebViewAssetLoader
 import kotlin.collections.joinToString
 
 
@@ -84,7 +87,7 @@ fun AMLLLyricsView(
      */
     val onLyricsClickState = rememberUpdatedState(onLyricsClick)
     val onLineSeekState = rememberUpdatedState(onLineSeek)
-/** val onLyricsParsedState = rememberUpdatedState(onLyricsParsed) */
+//    val onLyricsParsedState = rememberUpdatedState(onLyricsParsed)
     val isPlayingState = rememberUpdatedState(isPlaying)
     val isInteractiveState = rememberUpdatedState(isInteractive)
 
@@ -111,7 +114,7 @@ fun AMLLLyricsView(
     var lastAlbumArtUri by remember { mutableStateOf<String?>(null) }
 
     var lastMotionConfigValue by remember { mutableStateOf<String?>(null) }
-    
+
 //    // 字体配置相关状态
 //    var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
 //    var lastBackgroundConfigValue by remember { mutableStateOf<String?>(null) }
@@ -152,8 +155,8 @@ fun AMLLLyricsView(
 //            // 配置 WebViewAssetLoader 以安全地加载本地资源
 //            // 将 assets 目录映射到 https://appassets.androidplatform.net/assets/
 //            // 将外部字体文件映射到 https://appassets.androidplatform.net/fonts/
-//            val assetLoader = WebViewAssetLoader.Builder()
-//                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
+            val assetLoader = WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
 //                .addPathHandler("/fonts/") { path ->
 //                    // 根据路径中的 ID 查找对应的字体文件
 //                    val fontId = path.substringBefore('/')
@@ -171,7 +174,7 @@ fun AMLLLyricsView(
 //                        } else null
 //                    } else null
 //                }
-//                .build()
+                .build()
 
             WebView(context).apply {
                 // 设置 WebView 的 LayoutParams 为 MATCH_PARENT（填满父容器）
@@ -183,15 +186,15 @@ fun AMLLLyricsView(
                 // ==================== WebViewClient 配置 ====================
                 // 监听 WebView 页面加载事件
                 webViewClient = object : WebViewClient() {
-//                    /**
-//                     * 拦截请求并交给 AssetLoader 处理
-//                     */
-//                    override fun shouldInterceptRequest(
-//                        view: WebView,
-//                        request: WebResourceRequest
-//                    ): WebResourceResponse? {
-//                        return assetLoader.shouldInterceptRequest(request.url)
-//                    }
+                    /**
+                     * 拦截请求并交给 AssetLoader 处理
+                     */
+                    override fun shouldInterceptRequest(
+                        view: WebView,
+                        request: WebResourceRequest
+                    ): WebResourceResponse? {
+                        return assetLoader.shouldInterceptRequest(request.url)
+                    }
 
                     /**
                      * 页面开始加载时回调

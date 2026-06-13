@@ -258,7 +258,12 @@ fun SongStructureBar(
         ) {
             itemsIndexed(
                 structures,
-                key = { _, structure -> structure.startTime }) { index, structure ->
+                // 修复：原 key 使用 startTime，但当 songPart 包含从 0 开始的段落时，
+                // 会与 INTRO_INST（startTime=0）冲突。改用唯一组合 key。
+                key = { index, structure ->
+                    "${structure.type.name}-${structure.startTime}-${structure.endTime}-$index"
+                }
+            ) { index, structure ->
                 val expandedWidthPx = expandedChipWidthsPx[index]
 
                 SongStructureChip(

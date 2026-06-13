@@ -116,7 +116,7 @@ object LyricsCandidateRanker {
         val tmeSource = !currentSourceName.isNullOrBlank() &&
             (currentSourceName.contains("qq", ignoreCase = true) || currentSourceName.contains("酷狗"))
         if (bothTme && tmeSource) {
-            val lowerSource = currentSourceName!!.lowercase()
+            val lowerSource = currentSourceName.lowercase()
             val preferKugou = lowerSource.contains("酷狗") && !lowerSource.contains("qq")
             val preferQQ = lowerSource.contains("qq") && !lowerSource.contains("酷狗")
             if (preferKugou) {

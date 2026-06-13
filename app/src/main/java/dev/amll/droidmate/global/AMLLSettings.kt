@@ -40,10 +40,17 @@ object AMLLSettings {
 //    private const val KEY_AMLL_FONT_WEIGHT = "amll_font_weight"  // 字体字重
 //    private const val KEY_AMLL_LETTER_SPACING = "amll_letter_spacing"  // 字符间距
 
-    /**
-     * 歌词背景相关设置
-     * private const val KEY_AMLL_BACKGROUND_RENDERER = "amll_background_renderer"  // 背景渲染器类型
-     */
+    // 歌词样式相关设置
+//    private const val KEY_AMLL_LYRIC_PLAYER_IMPLEMENTATION = "amll_lyric_player_implementation"  // 歌词播放器实现
+    private const val KEY_AMLL_LYRIC_SIZE_PRESET = "amll_lyric_size_preset"  // 歌词字体大小预设
+    private const val KEY_AMLL_ENABLE_TRANSLATION_LINE = "amll_enable_translation_line"  // 显示翻译歌词
+    private const val KEY_AMLL_ENABLE_ROMAN_LINE = "amll_enable_roman_line"  // 显示音译歌词
+    private const val KEY_AMLL_ADVANCE_DYNAMIC_LYRIC_TIME = "amll_advance_dynamic_lyric_time"  // 提前歌词行时序
+    private const val KEY_AMLL_FONT_WEIGHT = "amll_font_weight"  // 字体字重
+    private const val KEY_AMLL_LETTER_SPACING = "amll_letter_spacing"  // 字符间距
+
+    // 歌词背景相关设置
+    private const val KEY_AMLL_BACKGROUND_RENDERER = "amll_background_renderer"  // 背景渲染器类型
     private const val KEY_AMLL_BACKGROUND_RENDERER_ENABLED = "amll_background_renderer_enabled"  // 背景渲染开关
 //    private const val KEY_AMLL_CSS_BACKGROUND_PROPERTY = "amll_css_background_property"  // CSS 背景属性
 //    private const val KEY_AMLL_BACKGROUND_FPS = "amll_background_fps"  // 背景帧率

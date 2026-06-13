@@ -8,45 +8,28 @@ import timber.log.Timber
 
 /**
  * 歌曲结构解析器
- * 
- * 这个工具用于识别和标记歌曲的各个段落结构，例如：
- * - 前奏 (Intro)
- * - 主歌 (Verse)
- * - 预副歌 (Pre-Chorus)
- * - 副歌 (Chorus)
- * - 间奏 (Interlude)
- * - 桥段 (Bridge)
- * - 尾奏 (Outro)
- * 
+ *
  * 工作原理：
- * 1. 优先使用 TTML 元数据中提供的结构信息（最准确）
- * 2. 如果没有元数据，则基于歌词时间间隔自动推断：
- *    - 长时间空白 → 间奏/前奏/尾奏
+ * 1. 优先使用 TTML <div> 元素中的 itunes:songPart 属性（最准确）
+ * 2. 否则，从歌词行自动推断结构（前奏、间奏、尾奏等）
  */
 object SongStructureParser {
-    
-    /** 间奏检测阈值（4 秒）
-     * 当歌词行之间的时间间隔大于等于此值时，认为是间奏/前奏/尾奏 */
+
+    // 间奏检测阈值（4 秒）
     private const val INTERLUDE_THRESHOLD_MS = 4000L
-    
+
     /**
-     * 从 TTML 歌词解析歌曲结构
-     * 
-     * 这是歌曲结构解析的主入口方法。它采用两级策略：
-     * 1. 优先使用 TTML 元数据中的结构信息（如果存在）
-     * 2. 如果没有元数据，则从歌词行自动推断结构
-     * 
-     * @param lyricsLines 歌词行列表
-     * @param metadataStructure 从 TTML 元数据中解析的结构信息（如果有）
-     * @param songDuration 歌曲总时长（毫秒），用于检测尾奏
-     * @return 歌曲结构列表（按时间顺序排列）
+     * 从歌词行解析歌曲结构（如果提供了 metadataStructure，优先使用并补充间奏/尾奏）。
+     *
+     * 修复：即使有 metadataStructure（如 itunes:songPart），也会同时从歌词行时间间隔
+     * 检测间奏（interlude），因为 songPart 不会记录两个段落之间的纯器乐间隔。
      */
     fun parseStructure(
         lyricsLines: List<LyricLine>,
         metadataStructure: List<SongStructure>? = null,
         songDuration: Long = 0L
     ): List<SongStructure> {
-        /** 计算有效的 songDuration（多级 fallback） */
+        // 计算有效的 songDuration（多级 fallback）
         val effectiveDuration = if (songDuration > 0) {
             songDuration
         } else {
@@ -54,27 +37,35 @@ object SongStructureParser {
             if (inferred > 0) inferred + 5_000L else 0L
         }
 
-        /** 如果提供了元数据结构，优先使用 */
-        if (!metadataStructure.isNullOrEmpty()) {
-            /** 修复：之前直接返回 metadata，会丢失尾奏。当 metadata 未覆盖到歌曲末尾时
-             * （例如 TTML 中只有 itunes:songPart 标记的前几个段落，缺失尾奏/间奏），
-             * 仍然需要自动补全尾奏。 */
-            return ensureOutro(metadataStructure, lyricsLines, effectiveDuration)
+        if (metadataStructure.isNullOrEmpty()) {
+            Timber.v("[SongStructure] Fallback triggered: no metadata structures")
+            return inferStructureFromLyrics(lyricsLines, effectiveDuration)
         }
 
-        /** 否则，从歌词行自动推断结构 */
-        Timber.v("[SongStructure] Fallback triggered: no metadata structures")
-        return inferStructureFromLyrics(lyricsLines, effectiveDuration)
+        // 有 metadata：保留 songPart + 补全间奏 + 补全尾奏
+        val withOutro = ensureOutro(metadataStructure, lyricsLines, effectiveDuration)
+        return mergeWithInterludes(withOutro, lyricsLines, effectiveDuration)
+    }
+
+    /**
+     * 在保留已有结构（如 songPart）的基础上，补充从歌词行推断出的间奏和尾奏。
+     */
+    private fun mergeWithInterludes(
+        baseStructures: List<SongStructure>,
+        lyricsLines: List<LyricLine>,
+        songDuration: Long
+    ): List<SongStructure> {
+        if (lyricsLines.isEmpty()) return baseStructures
+
+        val interludes = detectInterludes(lyricsLines, songDuration)
+        if (interludes.isEmpty()) return baseStructures
+
+        // 合并：baseStructures（songPart） + interludes（间奏/尾奏），按 startTime 排序
+        return (baseStructures + interludes).sortedBy { it.startTime }
     }
 
     /**
      * 确保元数据结构后面追加强制尾奏（如果元数据未覆盖到歌曲末尾）。
-     *
-     * 修复前：调用 `parseStructure` 并传入 metadata 时，会直接 `return metadataStructure`，
-     * 跳过 `inferStructureFromLyrics` 和 `detectInterludes`，导致尾奏永远不显示。
-     *
-     * 修复后：即使有 metadata，只要最后一个结构没有覆盖到歌曲末尾（差值 >= 4s），
-     * 就自动追加一个 OUTRO_INST 段落。
      */
     private fun ensureOutro(
         metadataStructure: List<SongStructure>,
@@ -85,41 +76,26 @@ object SongStructureParser {
             return metadataStructure
         }
 
-        /** 找到 metadata 中最晚结束的结构 */
         val lastStructure = metadataStructure.maxByOrNull { it.endTime } ?: return metadataStructure
         val outroStart = lastStructure.endTime
         val outroDuration = songDuration - outroStart
 
-        /** 如果已有结构覆盖到歌曲末尾（或接近），不重复添加 */
-        if (outroDuration < INTERLUDE_THRESHOLD_MS) {
-            return metadataStructure
-        }
-
-        /** 避免重复：如果最后一个结构本身就是 OUTRO_INST 且范围相近，跳过 */
+        if (outroDuration < INTERLUDE_THRESHOLD_MS) return metadataStructure
         if (lastStructure.type == SongStructureType.OUTRO_INST ||
             lastStructure.type == SongStructureType.OUTRO_PARA
-        ) {
-            return metadataStructure
-        }
+        ) return metadataStructure
 
-        Timber.d("[SongStructure] Metadata did not cover song end (last.endTime=${outroStart}ms, songDuration=${songDuration}ms, gap=${outroDuration}ms). Appending OUTRO_INST.")
-        val outro = SongStructure(
+        Timber.d("[SongStructure] Appending OUTRO_INST: last.endTime=${outroStart}ms, songDuration=${songDuration}ms, gap=${outroDuration}ms")
+        return metadataStructure + SongStructure(
             label = SongStructureType.OUTRO_INST.displayName,
             startTime = outroStart,
             endTime = songDuration,
             type = SongStructureType.OUTRO_INST
         )
-        return metadataStructure + outro
     }
 
     /**
-     * 从歌词行自动推断歌曲结构
-     * 
-     * Fallback 逻辑：
-     * 1. 检测歌词行之间的时间间隔
-     * 2. 间隔 >= 4 秒的标记为间奏/前奏/尾奏
-     * 3. 将间隔前后的歌词标记为独立段落
-     * 4. 区分纯音乐 (inst) 和有歌词 (para) 的前奏/尾奏
+     * 从歌词行自动推断歌曲结构。
      */
     private fun inferStructureFromLyrics(lines: List<LyricLine>, songDuration: Long = 0L): List<SongStructure> {
         if (lines.isEmpty()) {
@@ -131,22 +107,19 @@ object SongStructureParser {
         val interludes = detectInterludes(lines, songDuration)
 
         if (interludes.isEmpty()) {
-            /** 没有检测到间奏，将所有歌词作为一个段落 */
             structures.add(
                 SongStructure(
                     label = "段落 1",
                     startTime = lines.first().startTime,
                     endTime = lines.last().endTime,
-                    type = SongStructureType.UNKNOWN  /** 使用 UNKNOWN 避免强行覆盖成 Verse */
+                    type = SongStructureType.UNKNOWN
                 )
             )
         } else {
-            /** 有间奏，需要将歌词分割成多个段落 */
             var paragraphIndex = 1
             var lastEndTime: Long = 0
 
             for (interlude in interludes) {
-                /** 添加间奏之前的歌词段落 */
                 if (interlude.startTime > lastEndTime) {
                     val paragraphLines = lines.filter {
                         it.startTime >= lastEndTime && it.endTime <= interlude.startTime
@@ -158,19 +131,17 @@ object SongStructureParser {
                                 label = "段落 $paragraphIndex",
                                 startTime = paragraphLines.first().startTime,
                                 endTime = paragraphLines.last().endTime,
-                                type = SongStructureType.UNKNOWN  /** 使用 UNKNOWN 避免强行覆盖成 Verse */
+                                type = SongStructureType.UNKNOWN
                             )
                         )
                         paragraphIndex++
                     }
                 }
 
-                /** 添加间奏段落 */
                 structures.add(interlude)
                 lastEndTime = interlude.endTime
             }
 
-            /** 添加最后一个间奏之后的歌词段落（如果有） */
             val remainingLines = lines.filter { it.startTime >= lastEndTime }
             if (remainingLines.isNotEmpty()) {
                 structures.add(
@@ -178,7 +149,7 @@ object SongStructureParser {
                         label = "段落 $paragraphIndex",
                         startTime = remainingLines.first().startTime,
                         endTime = remainingLines.last().endTime,
-                        type = SongStructureType.UNKNOWN  /** 使用 UNKNOWN 避免强行覆盖成 Verse */
+                        type = SongStructureType.UNKNOWN
                     )
                 )
             }
@@ -186,81 +157,60 @@ object SongStructureParser {
 
         return structures
     }
-    
+
     /**
-     * 检测歌词行之间的间奏/前奏/尾奏
-     * 
-     * 检测规则：
-     * - 所有间隔（包括前奏、间奏、尾奏）都需要 >= 4 秒才显示
-     * - 区分纯音乐 (inst) 和有歌词 (para) 的前奏/尾奏：
-     *   - intro_inst/outro_inst: 前后都没有歌词（纯音乐间隔）
-     *   - intro_para/outro_para: 前后有歌词（有歌词的引子/尾声）
+     * 检测歌词行之间的间奏/前奏/尾奏。
      */
     private fun detectInterludes(lyricLines: List<LyricLine>, songDuration: Long = 0L): List<SongStructure> {
         val interludes = mutableListOf<SongStructure>()
 
-        if (lyricLines.isEmpty()) {
-            return interludes
-        }
+        if (lyricLines.isEmpty()) return interludes
 
-        /** 检测前奏：从歌曲开始到第一句歌词 */
+        // 检测前奏
         val firstLine = lyricLines.first()
         if (firstLine.startTime >= INTERLUDE_THRESHOLD_MS) {
-            /** 判断是前奏还是引子：第一段歌词之前有时间间隔
-             *  由于这是第一段歌词之前的间隔，后面肯定有歌词，所以是 intro_inst（纯音乐前奏） */
-            val intro = SongStructure(
-                label = SongStructureType.INTRO_INST.displayName,
-                startTime = 0L,
-                endTime = firstLine.startTime,
-                type = SongStructureType.INTRO_INST
+            interludes.add(
+                SongStructure(
+                    label = SongStructureType.INTRO_INST.displayName,
+                    startTime = 0L,
+                    endTime = firstLine.startTime,
+                    type = SongStructureType.INTRO_INST
+                )
             )
-            interludes.add(intro)
         }
 
-        /** 检测歌词之间的间奏 */
+        // 检测歌词行之间的间奏（统一为 INTERLUDE，尾奏由 songDuration 单独处理）
         for (i in 0 until lyricLines.size - 1) {
             val currentLine = lyricLines[i]
             val nextLine = lyricLines[i + 1]
             val gap = nextLine.startTime - currentLine.endTime
 
-            /** 所有间隔都需要 >= 4 秒才显示 */
             if (gap >= INTERLUDE_THRESHOLD_MS) {
-                val type = when (i) {
-                    0 -> SongStructureType.INTERLUDE  /** 修复：不再错误标记为 INTRO_INST */
-                    lyricLines.size - 2 -> {
-                        /** 修复：最后两行歌词之间的间隔是 INTERLUDE（间奏），不是 OUTRO_INST（尾奏）
-                         *  真正的尾奏（从最后一句歌词结束到歌曲结束）由下面的 if (songDuration > 0) 分支单独处理 */
-                        SongStructureType.INTERLUDE
-                    }
-
-                    else -> SongStructureType.INTERLUDE
-                }
-
                 interludes.add(
                     SongStructure(
-                        label = type.displayName,
+                        label = SongStructureType.INTERLUDE.displayName,
                         startTime = currentLine.endTime,
                         endTime = nextLine.startTime,
-                        type = type
+                        type = SongStructureType.INTERLUDE
                     )
                 )
             }
         }
 
-        /** 检测尾奏：从最后一句歌词结束到歌曲结束 */
+        // 检测尾奏
         if (songDuration > 0) {
             val lastLine = lyricLines.last()
             val outroDuration = songDuration - lastLine.endTime
 
             if (outroDuration >= INTERLUDE_THRESHOLD_MS) {
-                /** 最后一段歌词之后到歌曲结束，没有后续歌词，所以是 outro_inst（纯音乐尾奏） */
-                val outro = SongStructure(
-                    label = SongStructureType.OUTRO_INST.displayName,
-                    startTime = lastLine.endTime,
-                    endTime = songDuration,
-                    type = SongStructureType.OUTRO_INST
+                interludes.add(
+                    SongStructure(
+                        label = SongStructureType.OUTRO_INST.displayName,
+                        startTime = lastLine.endTime,
+                        endTime = songDuration,
+                        type = SongStructureType.OUTRO_INST
+                    )
                 )
-                interludes.add(outro)
             }
         }
 
@@ -269,111 +219,57 @@ object SongStructureParser {
 
     /**
      * 时间范围
-     *
-     * 表示 TTML 中某个节点 (例如段落 <p> 或歌曲结构 <span>) 的时间范围。
-     * 用作歌曲结构解析的原始输入数据。
      */
     data class TimeRange(
-        /** 开始时间（毫秒） */
         val startTime: Long,
-        /** 结束时间（毫秒） */
         val endTime: Long
     )
 
     /**
-     * 从 TTML 文档解析歌曲结构
+     * 从 <div> 元素的 itunes:songPart 属性解析 songPart。
      *
-     * 这是与 TTML 文档配套的解析入口。它采用两级策略：
-     * 1. 优先使用 TTML 元数据中提供的结构信息（最准确）
-     *    - itunes:songPart / itunes:songwriters 等
-     * 2. 如果没有元数据或元数据中未找到结构，则从歌词行和时间范围自动推断结构
-     *
-     * @param doc TTML 解析后的 XML 文档
-     * @param vocalLines 来自 <body>/<p> 的有效演唱行（已过滤背景行等）
-     * @param timedParagraphRanges 来自段落的时间范围列表
-     * @return 歌曲结构列表（按时间顺序排列）
+     * TTML 示例：
+     * ```xml
+     * <div begin="00:17.286" end="00:45.219" itunes:songPart="Verse">...</div>
+     * ```
      */
-    fun parseFromTtmlDocument(
-        doc: Document,
-        vocalLines: List<LyricLine>,
-        timedParagraphRanges: List<TimeRange>
-    ): List<SongStructure> {
-        /** 1. 优先尝试从 TTML 元数据中解析结构 */
-        val metadataStructures = parseStructuresFromMetadata(doc)
-        if (metadataStructures.isNotEmpty()) {
-            Timber.d("[SongStructure] Found ${metadataStructures.size} structures from TTML metadata")
-            return metadataStructures
-        }
-
-        /** 2. Fallback：结合 timedParagraphRanges 和 vocalLines 推断结构 */
-        if (vocalLines.isEmpty() && timedParagraphRanges.isEmpty()) {
-            Timber.w("[SongStructure] No vocal lines or timed ranges available, returning empty structures")
-            return emptyList()
-        }
-
-        /** 如果有时间范围信息，以时间范围为主 */
-        val baseLines = if (vocalLines.isNotEmpty()) {
-            vocalLines
-        } else {
-            /** 把时间范围转换成伪 LyricLine 供 detectInterludes 使用 */
-            timedParagraphRanges.map { range ->
-                LyricLine(
-                    startTime = range.startTime,
-                    endTime = range.endTime,
-                    text = ""
-                )
-            }
-        }
-
-        val songDuration = timedParagraphRanges.maxOfOrNull { it.endTime } ?: 0L
-        Timber.d("[SongStructure] Fallback inference: ${baseLines.size} lines, duration=${songDuration}ms")
-        return inferStructureFromLyrics(baseLines, songDuration)
-    }
-
-    /**
-     * 从 TTML metadata 元素中解析歌曲结构
-     *
-     * 支持的命名空间与字段：
-     * - itunes:songPart (apple-music 提供的歌曲结构信息)
-     * - ttm:songPart (W3C TTML metadata 扩展)
-     *
-     * 注：当前实现专注于通用回退逻辑，元数据中明确的 songPart 留作后续扩展。
-     */
-    private fun parseStructuresFromMetadata(doc: Document): List<SongStructure> {
+    fun parseStructuresFromDivs(doc: Document): List<SongStructure> {
         return try {
-            val head = doc.getElementsByTagName("head").item(0) as? org.w3c.dom.Element
-                ?: return emptyList()
-            val metadataElement = head.getElementsByTagName("metadata").item(0) as? org.w3c.dom.Element
-                ?: return emptyList()
+            // Android 的 DocumentBuilderFactory 默认是 namespace-unaware，
+            // 直接使用 getElementsByTagName 即可匹配 div 元素
+            val divs = doc.getElementsByTagName("div")
+            Timber.d("[SongStructure] Searching div elements: found ${divs.length}")
 
             val structures = mutableListOf<SongStructure>()
+            for (i in 0 until divs.length) {
+                val div = divs.item(i) as? org.w3c.dom.Element ?: continue
 
-            /** 查找 itunes:songPart 元素 (Apple Music TTML 扩展) */
-            val songParts = metadataElement.getElementsByTagName("itunes:songPart")
-            for (i in 0 until songParts.length) {
-                val element = songParts.item(i) as? org.w3c.dom.Element ?: continue
-                val label = element.textContent?.trim()?.takeIf { it.isNotEmpty() } ?: continue
-                val begin = element.getAttribute("begin")
-                val end = element.getAttribute("end")
-                if (begin.isBlank() || end.isBlank()) continue
+                // 兼容驼峰（Apple Music 原始）和连字符（AMLL TTML DB）两种属性名
+                val songPart = div.getAttribute("itunes:songPart")
+                    .ifBlank { div.getAttribute("itunes:song-part") }
+                if (songPart.isBlank()) continue
 
-                val startTime = parseTimeString(begin)
-                val endTime = parseTimeString(end)
+                val beginStr = div.getAttribute("begin")
+                val endStr = div.getAttribute("end")
+                if (beginStr.isBlank() || endStr.isBlank()) continue
+
+                val startTime = parseTimeString(beginStr)
+                val endTime = parseTimeString(endStr)
                 if (endTime <= startTime) continue
 
                 structures.add(
                     SongStructure(
-                        label = label,
+                        label = songPart,
                         startTime = startTime,
                         endTime = endTime,
-                        type = mapLabelToStructureType(label)
+                        type = mapLabelToStructureType(songPart)
                     )
                 )
+                Timber.d("[SongStructure] div itunes:songPart parsed: '$songPart' ${startTime}ms-${endTime}ms")
             }
-
             structures
         } catch (e: Exception) {
-            Timber.w("[SongStructure] Failed to parse structures from metadata: $e")
+            Timber.w("[SongStructure] Failed to parse div itunes:songPart: $e")
             emptyList()
         }
     }
@@ -385,8 +281,8 @@ object SongStructureParser {
         val normalized = label.trim().lowercase()
         return when {
             normalized.contains("intro") -> SongStructureType.INTRO_INST
-            normalized.contains("outro") -> SongStructureType.OUTRO_INST
-            normalized.contains("chorus")  -> SongStructureType.CHORUS
+            normalized.contains("outro") || normalized.contains("ending") -> SongStructureType.OUTRO_INST
+            normalized.contains("chorus") || normalized.contains("hook") -> SongStructureType.CHORUS
             normalized.contains("verse") -> SongStructureType.VERSE
             normalized.contains("bridge") -> SongStructureType.BRIDGE
             normalized.contains("pre-chorus") || normalized.contains("prechorus") -> SongStructureType.PRE_CHORUS
@@ -401,8 +297,6 @@ object SongStructureParser {
      * 将 TTML 时间格式转换为毫秒
      *
      * 格式：mm:ss.mmm (例：00:12.345) 或 hh:mm:ss.mmm
-     *
-     * 说明：internal 可见性以便同模块内的 TTMLParser 复用，消除重复代码。
      */
     internal fun parseTimeString(timeStr: String): Long {
         if (timeStr.isBlank()) return 0L
