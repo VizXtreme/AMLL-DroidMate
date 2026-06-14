@@ -26,11 +26,21 @@ class LyricsCacheRepository(context: Context) {
 
     /**
      * 获取所有缓存的歌词条目
-     * 
+     *
+     * 同一首歌（normalize 后的 title+artist）只保留最新一条，
+     * 防止历史遗留的重复条目出现在 UI 中。
+     *
      * @return 按更新时间降序排列的列表（最新的在前）
      */
     fun getAll(): List<CachedLyricEntry> {
-        return readAll().sortedByDescending { it.updatedAt }
+        val all = readAll()
+        // 读取时去重：同  title+artist 只保留 updatedAt 最新的
+        val seen = mutableSetOf<String>()
+        val deduped = all.sortedByDescending { it.updatedAt }.filter { entry ->
+            val key = "${normalize(entry.title)}|${normalize(entry.artist)}"
+            seen.add(key)
+        }
+        return deduped
     }
 
     /**

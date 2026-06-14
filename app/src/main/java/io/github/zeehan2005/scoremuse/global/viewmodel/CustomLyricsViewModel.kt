@@ -320,7 +320,8 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                                 provider = candidate.provider,
                                 title = candidate.title,
                                 artist = candidate.artist,
-                                id = candidate.songId
+                                id = candidate.songId,
+                                metadataMatch = candidate.metadataMatch
                             )
                             // 优先使用原始歌词内容，以便利用前端的 WASM 解析器获得更精确的效果
                             _appliedLyricsText.value = result.lyrics.rawContent ?: TTMLConverter.toTTMLString(result.lyrics)
@@ -357,17 +358,30 @@ class CustomLyricsViewModel @JvmOverloads constructor(
 
         /**
          * Constructs the source string for lyrics obtained from an external
-         * provider (candidate or cache) – always marks it as auto‑recognized.
+         * provider (candidate or cache).
+         *
+         * 与 LyricsRepository.formatAutoSource() 保持一致的格式（只是不加 "自动识别:" 前缀），
+         * 确保自动/手动两条路径写入缓存的 source 字符串结构统一。
          */
         fun autoSourceForCandidate(
             provider: String,
             title: String,
             artist: String,
-            id: String?
+            id: String?,
+            metadataMatch: Boolean = false
         ): String {
-            /** every provider uses the same template: 服务商：歌曲名 - 歌手名(id) */
-            val providerName = providerDisplayName(provider)
-            return "$providerName：$title - $artist(${id ?: ""})"
+            var providerName = providerDisplayName(provider)
+            var idPart = id ?: ""
+            if (idPart.isNotBlank() && idPart.contains(":")) {
+                val parts = idPart.split(":", limit = 2)
+                val plat = parts[0].uppercase()
+                idPart = parts[1]
+                providerName = "$providerName($plat)"
+            }
+            if (metadataMatch) {
+                providerName = "$providerName (基于歌名)"
+            }
+            return "$providerName：$title - $artist($idPart)"
         }
 
         /**

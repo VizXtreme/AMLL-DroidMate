@@ -262,18 +262,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 kotlinx.coroutines.currentCoroutineContext().ensureActive()
 
                 if (result.isSuccess && result.lyrics != null) {
-                    lyricsMutable.value = result.lyrics
                     val rawXmlContent = TTMLConverter.toTTMLString(result.lyrics)
-                    lyricsCacheRepository.upsert(
+                    applyLyricsToState(
+                        lyrics = result.lyrics,
                         title = music.title,
                         artist = music.artist,
                         source = result.source ?: "auto",
                         xmlContent = rawXmlContent
                     )
                     Timber.i("[LyricsMatcher] Successfully fetched lyrics from ${result.source}")
-
-                    lastSentLyricsHash = 0
-                    updateSongStructures(result.lyrics)
                 } else {
                     _errorMessage.value = result.errorMessage ?: "获取歌词失败"
                     Timber.e("[LyricsMatcher] Failed to fetch lyrics: ${result.errorMessage}")
@@ -301,6 +298,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             job.cancel()
         }
         fetchLyricsJob = null
+    }
+
+    /**
+     * 将解析后的歌词统一应用到 UI 状态并写入缓存。
+     *
+     * 由 fetchLyrics() 和 applyCustomLyricsInput() 共同调用，
+     * 确保自动/手动两条路径的歌词应用行为完全一致：
+     * - 更新 lyricsMutable 触发前端渲染
+     * - 解析并更新 SongStructure
+     * - 清除错误状态
+     * - 写入本地缓存（后续切歌时优先读取）
+     * - 重置 WebView 更新哈希
+     */
+    private fun applyLyricsToState(
+        lyrics: UnifiedLyrics,
+        title: String,
+        artist: String,
+        source: String,
+        xmlContent: String
+    ) {
+        lyricsMutable.value = lyrics
+        updateSongStructures(lyrics)
+        _errorMessage.value = null
+        lyricsCacheRepository.upsert(
+            title = title,
+            artist = artist,
+            source = source,
+            xmlContent = xmlContent
+        )
+        lastSentLyricsHash = 0
     }
 
     private fun wasmFormatFor(format: LyricsFormat): String? = when (format) {
@@ -337,11 +364,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun applyCustomLyricsInput(content: String, title: String, artist: String, source: String = "manual") {
         viewModelScope.launch {
             try {
+                // 与 fetchLyrics() 保持一致：取消进行中的自动获取任务，防止自动结果覆盖手动歌词
+                fetchLyricsJob?.cancel()
+
+                // 与 fetchLyrics() 保持一致：开始时清除旧错误消息
+                _errorMessage.value = null
+
                 val trimmed = content.trim()
                 if (trimmed.isBlank()) {
                     _errorMessage.value = "歌词内容为空"
                     return@launch
                 }
+
+                // 与 fetchLyrics() 保持一致：设置加载状态，让 UI 显示匹配反馈
+                _isLoading.value = true
 
                 val format = LyricsFormat.detect(trimmed)
 
@@ -386,16 +422,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 if (parsed != null && cachedXmlContent.isNotBlank()) {
-                    lyricsMutable.value = parsed
-                    updateSongStructures(parsed)
-                    _errorMessage.value = null
-                    lyricsCacheRepository.upsert(
+                    applyLyricsToState(
+                        lyrics = parsed,
                         title = title.ifBlank { "自选歌词" },
                         artist = artist.ifBlank { "Unknown" },
                         source = source,
                         xmlContent = cachedXmlContent
                     )
-                    lastSentLyricsHash = 0
                 } else {
                     _errorMessage.value = "无法识别歌词格式"
                 }
