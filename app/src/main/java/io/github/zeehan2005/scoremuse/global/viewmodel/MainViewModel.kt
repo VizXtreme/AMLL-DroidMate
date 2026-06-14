@@ -262,17 +262,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 kotlinx.coroutines.currentCoroutineContext().ensureActive()
 
                 if (result.isSuccess && result.lyrics != null) {
-//                    val shouldProcessMetadata = AMLLSettings.isMetadataProcessingEnabled(context)
-//                    val finalLyrics = if (shouldProcessMetadata) {
-//                        Timber.d("[LyricsMatcher] Metadata processing enabled, using processed lyrics")
-//                        result.lyrics
-//                    } else {
-//                        Timber.d("[LyricsMatcher] Metadata processing disabled, using raw lyrics")
-//                        result.lyrics
-//                    }
-
-//                    lyricsMutable.value = finalLyrics
-//                    updateSongStructures(finalLyrics)
+                    lyricsMutable.value = result.lyrics
                     val rawXmlContent = TTMLConverter.toTTMLString(result.lyrics)
                     lyricsCacheRepository.upsert(
                         title = music.title,
@@ -283,7 +273,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     Timber.i("[LyricsMatcher] Successfully fetched lyrics from ${result.source}")
 
                     lastSentLyricsHash = 0
-                    refreshSongStructures()
+                    updateSongStructures(result.lyrics)
                 } else {
                     _errorMessage.value = result.errorMessage ?: "获取歌词失败"
                     Timber.e("[LyricsMatcher] Failed to fetch lyrics: ${result.errorMessage}")
@@ -516,11 +506,54 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * 刷新歌曲结构信息
+     *
+     * 此函数会先等待当前可能正在进行的 fetchLyricsJob 完成，
+     * 确保基于最新的 lyrics 重新解析 SongStructure（识别/推断段落）。
+     * 避免在 fetchLyrics 协程尚未结束、lyricsMutable 仍为旧值时，
+     * 错误地复用旧歌词进行刷新（用户多次连点"刷新"按钮时尤其需要）。
+     *
+     * 此函数是 suspend 的，应在协程中调用。
      */
-    fun refreshSongStructures() {
-        val currentLyrics = lyricsMutable.value ?: return
+    suspend fun refreshSongStructures() {
+        // 先 join 当前 fetchLyrics 任务，确保 lyricsMutable 是最新值
+        // 注意：需要避免与 fetchLyrics() 内部自调用产生死锁。
+        // 内部调用时 fetchLyricsJob 就是当前协程，这里通过
+        // coroutineContext[Job] !== fetchLyricsJob 来区分。
+        val pendingJob = fetchLyricsJob
+        val currentJob = kotlinx.coroutines.currentCoroutineContext()[Job]
+        if (pendingJob != null && pendingJob.isActive && pendingJob != currentJob) {
+            Timber.i("[SongStructure] refreshSongStructures: awaiting pending fetchLyricsJob...")
+            try {
+                pendingJob.join()
+            } catch (_: kotlinx.coroutines.CancellationException) {
+                // 等待被取消时，跳过本次刷新
+                Timber.w("[SongStructure] refreshSongStructures cancelled while waiting for fetchLyricsJob")
+                return
+            }
+        }
+
+        val currentLyrics = lyricsMutable.value
+        if (currentLyrics == null) {
+            Timber.w("[SongStructure] refreshSongStructures: no lyrics available, skipping")
+            return
+        }
         updateSongStructures(currentLyrics)
         Timber.i("[SongStructure] Refreshing song structures")
+    }
+
+    /**
+     * 兼容旧调用方（无协程上下文时）。
+     * 直接基于当前 lyricsMutable 重新解析 SongStructure。
+     * 注意：此重载不会等待 fetchLyricsJob 完成；如需等待，请改用 suspend 重载。
+     */
+    fun refreshSongStructuresNow() {
+        val currentLyrics = lyricsMutable.value
+        if (currentLyrics == null) {
+            Timber.w("[SongStructure] refreshSongStructuresNow: no lyrics available, skipping")
+            return
+        }
+        updateSongStructures(currentLyrics)
+        Timber.i("[SongStructure] Refreshing song structures (sync)")
     }
 
     /**

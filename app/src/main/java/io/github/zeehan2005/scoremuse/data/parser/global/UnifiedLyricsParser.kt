@@ -243,11 +243,10 @@ object UnifiedLyricsParser {
             val duration = sortedLines.lastOrNull()?.endTime ?: 0L
             Timber.d("[UnifiedLyricsParser] Final sorted summary: total=${sortedLines.size}, ${summarizeBgLines(sortedLines)}")
             
-            /** 解析歌曲结构
-             *  修复：之前没有传 songDuration，导致 detectInterludes 中的尾奏检测永远不生效。
-             *  这里传入推断出的 duration，让尾奏能被正确识别。 */
-            val songStructures = SongStructureParser.parseStructure(sortedLines, songDuration = duration)
-
+            /** 歌曲结构交由 MainViewModel.updateSongStructures() 统一解析，
+             *  避免在此处和 MainViewModel 中重复调用 SongStructureParser.parseStructure()。
+             *  MainViewModel 拥有更准确的 songDuration（来自 nowPlayingMusic），
+             *  能更正确地检测尾奏。 */
             UnifiedLyrics(
                 metadata = LyricsMetadata(
                     title = title,
@@ -256,7 +255,7 @@ object UnifiedLyricsParser {
                     language = detectLanguage(content),
                     duration = duration,
                     source = "ScoreMuse (${format.displayName})",
-                    songStructures = songStructures
+                    songStructures = null  // 由 MainViewModel.updateSongStructures() 统一解析
                 ),
                 lines = sortedLines,
                 rawContent = normalizedContent,

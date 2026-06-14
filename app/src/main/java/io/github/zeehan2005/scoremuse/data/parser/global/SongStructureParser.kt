@@ -60,8 +60,19 @@ object SongStructureParser {
         val interludes = detectInterludes(lyricsLines, songDuration)
         if (interludes.isEmpty()) return baseStructures
 
-        // 合并：baseStructures（songPart） + interludes（间奏/尾奏），按 startTime 排序
-        return (baseStructures + interludes).sortedBy { it.startTime }
+        // 去重：过滤掉与 baseStructures 中已有结构时间重叠的间奏。
+        // 这避免了当 parseStructure() 被多次调用时（如 TTMLParser 合并一次，
+        // updateSongStructures 再用合并后的结果作为 metadataStructures 传入），
+        // 同一间奏被重复添加。
+        val newInterludes = interludes.filter { interlude ->
+            baseStructures.none { existing ->
+                interlude.startTime < existing.endTime && interlude.endTime > existing.startTime
+            }
+        }
+        if (newInterludes.isEmpty()) return baseStructures
+
+        // 合并：baseStructures + 新增间奏/尾奏，按 startTime 排序
+        return (baseStructures + newInterludes).sortedBy { it.startTime }
     }
 
     /**

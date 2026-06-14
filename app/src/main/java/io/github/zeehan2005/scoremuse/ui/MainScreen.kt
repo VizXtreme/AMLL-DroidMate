@@ -463,9 +463,14 @@ fun MainScreen() {
                                         },
                                         onClick = {
                                             scope.launch {
+                                                Timber.d("[UI] 刷新按钮被点击：开始重新拉取歌词 + 重新识别/推断 SongStructure")
+                                                // 1) 重新拉取歌词（启动 fetchLyrics 协程）。
+                                                //    fetchLyrics() 内部会取消上一个未完成的拉取任务并启动新任务，
+                                                //    拉取成功后会自动调用 updateSongStructures() 重新解析结构。
                                                 viewModel.fetchLyrics()
+                                                // 2) 让 WebView 重新加载歌词。
                                                 webViewReloadKey++
-                                                // 刷新专辑图：清空本地缓存并强制重拉
+                                                // 3) 刷新专辑图：清空本地缓存并强制重拉
                                                 viewModel.refreshAlbumArt()
                                                 val currentUri = nowPlaying?.albumArtUri
                                                 if (!currentUri.isNullOrBlank()) {
@@ -478,9 +483,8 @@ fun MainScreen() {
                                                 } else {
                                                     rippleColor.value = initialPrimary
                                                 }
-                                                viewModel.refreshSongStructures()
                                                 showMenu = false
-                                                Timber.d("[UI] 刷新按钮被点击：webViewReloadKey=$webViewReloadKey")
+                                                Timber.d("[UI] 刷新按钮处理完成：webViewReloadKey=$webViewReloadKey")
                                             }
                                         },
                                         colors = MenuDefaults.itemColors(
