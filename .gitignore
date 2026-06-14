@@ -114,3 +114,4 @@ frontend/dist/
 
 # Local configuration (contains SDK paths etc.)
 local.properties
+/.claude/
