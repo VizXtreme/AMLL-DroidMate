@@ -97,13 +97,31 @@ class PreferenceHelper(context: Context, name: String) {
     fun putBoolean(key: String, value: Boolean) {
         prefs.edit {putBoolean(key, value)}
     }
-    
+
     /**
      * 异步布尔值写入（带批量优化）
-     * 
+     *
      * 与 putStringAsync 类似，但用于布尔类型
      */
     fun putBooleanAsync(key: String, value: Boolean) {
+        pendingWrites[key] = value
+        scheduleFlush()
+    }
+
+    fun putInt(key: String, value: Int) {
+        prefs.edit {putInt(key, value)}
+    }
+
+    fun putIntAsync(key: String, value: Int) {
+        pendingWrites[key] = value
+        scheduleFlush()
+    }
+
+    fun putFloat(key: String, value: Float) {
+        prefs.edit {putFloat(key, value)}
+    }
+
+    fun putFloatAsync(key: String, value: Float) {
         pendingWrites[key] = value
         scheduleFlush()
     }

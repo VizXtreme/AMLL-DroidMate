@@ -207,6 +207,11 @@ function initAMLL() {
       }
     }
 
+    // 初始化背景渲染器（默认使用 mesh 渲染器，后续可通过 configureLyricBackground 切换）
+    if (!state.background) {
+      state.background = createBackgroundRenderer(Core, root as HTMLElement)
+    }
+
     // 暴露内部实例以便调试
     window.__amll = { player: state.player, backgroundRender: state.background }
 

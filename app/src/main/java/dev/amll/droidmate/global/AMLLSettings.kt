@@ -31,6 +31,11 @@ object AMLLSettings {
     // 歌词背景相关设置
     private const val KEY_AMLL_BACKGROUND_RENDERER = "amll_background_renderer"  // 背景渲染器类型
     private const val KEY_AMLL_BACKGROUND_RENDERER_ENABLED = "amll_background_renderer_enabled"  // 背景渲染开关
+    private const val KEY_AMLL_BACKGROUND_FPS = "amll_background_fps"  // 背景渲染帧率
+    private const val KEY_AMLL_BACKGROUND_RENDER_SCALE = "amll_background_render_scale"  // 背景渲染缩放
+    private const val KEY_AMLL_BACKGROUND_STATIC_MODE = "amll_background_static_mode"  // 背景静态模式
+    private const val KEY_AMLL_BACKGROUND_CSS_PROPERTY = "amll_background_css_property"  // CSS 背景属性
+    private const val KEY_AMLL_ANIMATION_FPS = "amll_animation_fps"  // 动画帧率
 
     /** 默认 AMLL 歌词字体族（Apple Music 风格） */
     const val DEFAULT_AMLL_FONT_FAMILY = "\"SF Pro Display\", \"PingFang SC\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
@@ -299,6 +304,60 @@ object AMLLSettings {
 
     fun setAmllBackgroundRendererEnabled(context: Context, enabled: Boolean) {
         prefs(context).putBooleanAsync(KEY_AMLL_BACKGROUND_RENDERER_ENABLED, enabled)
+    }
+
+    fun getAmllBackgroundRenderer(context: Context): String {
+        return prefs(context).getString(KEY_AMLL_BACKGROUND_RENDERER, "mesh") ?: "mesh"
+    }
+
+    fun setAmllBackgroundRenderer(context: Context, renderer: String) {
+        prefs(context).putStringAsync(KEY_AMLL_BACKGROUND_RENDERER, renderer)
+    }
+
+    fun getAmllBackgroundFps(context: Context): Int? {
+        val p = prefs(context)
+        return if (p.contains(KEY_AMLL_BACKGROUND_FPS)) p.getInt(KEY_AMLL_BACKGROUND_FPS) else null
+    }
+
+    fun setAmllBackgroundFps(context: Context, fps: Int) {
+        prefs(context).putIntAsync(KEY_AMLL_BACKGROUND_FPS, fps)
+    }
+
+    fun getAmllBackgroundRenderScale(context: Context): Float? {
+        val p = prefs(context)
+        return if (p.contains(KEY_AMLL_BACKGROUND_RENDER_SCALE)) p.getFloat(KEY_AMLL_BACKGROUND_RENDER_SCALE) else null
+    }
+
+    fun setAmllBackgroundRenderScale(context: Context, scale: Float) {
+        prefs(context).putFloatAsync(KEY_AMLL_BACKGROUND_RENDER_SCALE, scale)
+    }
+
+    fun isAmllBackgroundStaticModeEnabled(context: Context): Boolean? =
+        getBooleanOrNull(context, KEY_AMLL_BACKGROUND_STATIC_MODE)
+
+    fun setAmllBackgroundStaticModeEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBooleanAsync(KEY_AMLL_BACKGROUND_STATIC_MODE, enabled)
+    }
+
+    fun getAmllCssBackgroundProperty(context: Context): String? {
+        return prefs(context).getString(KEY_AMLL_BACKGROUND_CSS_PROPERTY, null)
+    }
+
+    fun setAmllCssBackgroundProperty(context: Context, cssProperty: String?) {
+        if (cssProperty.isNullOrBlank()) {
+            prefs(context).remove(KEY_AMLL_BACKGROUND_CSS_PROPERTY)
+        } else {
+            prefs(context).putStringAsync(KEY_AMLL_BACKGROUND_CSS_PROPERTY, cssProperty)
+        }
+    }
+
+    fun getAmllAnimationFps(context: Context): Int? {
+        val p = prefs(context)
+        return if (p.contains(KEY_AMLL_ANIMATION_FPS)) p.getInt(KEY_AMLL_ANIMATION_FPS) else null
+    }
+
+    fun setAmllAnimationFps(context: Context, fps: Int) {
+        prefs(context).putIntAsync(KEY_AMLL_ANIMATION_FPS, fps)
     }
 
 }

@@ -117,7 +117,7 @@ fun AMLLLyricsView(
 
     // 字体配置相关状态
     var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
-//    var lastBackgroundConfigValue by remember { mutableStateOf<String?>(null) }
+    var lastBackgroundConfigValue by remember { mutableStateOf<String?>(null) }
 
     // ==================== 时间���新节流 ====================
     /**
@@ -382,57 +382,56 @@ fun AMLLLyricsView(
 
 
 
-//            // ==================== 动画 FPS 设置 ====================
-//            /** 使用用户自定义的 FPS 值，不再根据渲染模式强制限制 */
-//            val userFps = AMLLSettings.getAmllAnimationFps(view.context)
+            // ==================== 动画 FPS 设置 ====================
+            /** 使用用户自定义的 FPS 值，不再根据渲染模式强制限制 */
+            val userFps = AMLLSettings.getAmllAnimationFps(view.context)
 
             // ==================== 歌词背景配置 ====================
-//            val backgroundRendererEnabled = AMLLSettings.isAmllBackgroundRendererEnabled(view.context) ?: true
-//            val backgroundRenderer = if (backgroundRendererEnabled) {
-//                AMLLSettings.getAmllBackgroundRenderer(view.context)
-//            } else {
-//                null
-//            }
-//            val cssBackgroundProperty = if (backgroundRendererEnabled) {
-//                AMLLSettings.getAmllCssBackgroundProperty(view.context)
-//            } else {
-//                "transparent"
-//            }
-//            val backgroundFps = if (backgroundRendererEnabled) {
-//                AMLLSettings.getAmllBackgroundFps(view.context) ?: userFps
-//            } else {
-//                null
-//            }
-//            val backgroundRenderScale = if (backgroundRendererEnabled) {
-//                AMLLSettings.getAmllBackgroundRenderScale(view.context)
-//            } else {
-//                null
-//            }
-//            val enableBackgroundStaticMode = if (backgroundRendererEnabled) {
-//                AMLLSettings.isAmllBackgroundStaticModeEnabled(view.context)
-//            } else {
-//                null
-//            }
+            val backgroundRendererEnabled = AMLLSettings.isAmllBackgroundRendererEnabled(view.context) ?: true
+            val backgroundRenderer = if (backgroundRendererEnabled) {
+                AMLLSettings.getAmllBackgroundRenderer(view.context)
+            } else {
+                "css-bg"
+            }
+            val cssBackgroundProperty = if (!backgroundRendererEnabled) {
+                AMLLSettings.getAmllCssBackgroundProperty(view.context) ?: "transparent"
+            } else {
+                null
+            }
+            val backgroundFps = if (backgroundRendererEnabled) {
+                AMLLSettings.getAmllBackgroundFps(view.context) ?: userFps
+            } else {
+                null
+            }
+            val backgroundRenderScale = if (backgroundRendererEnabled) {
+                AMLLSettings.getAmllBackgroundRenderScale(view.context)
+            } else {
+                null
+            }
+            val enableBackgroundStaticMode = if (backgroundRendererEnabled) {
+                AMLLSettings.isAmllBackgroundStaticModeEnabled(view.context)
+            } else {
+                null
+            }
 
-//            // 根据渲染器类型构建背景配置
-//            val backgroundConfigObj = JSONObject().apply {
-//                put("renderer", backgroundRenderer ?: "mesh")
-////                if (backgroundRenderer == "css-bg") {
-////                    cssBackgroundProperty?.let { put("cssProperty", it) }
-////                } else {
-////                    backgroundFps?.let { put("fps", it.coerceIn(15, 240)) }
-////                    backgroundRenderScale?.let { put("renderScale", it.toDouble()) }
-////                    enableBackgroundStaticMode?.let { put("staticMode", it) }
-////
-////                }
-//            }
-//            val backgroundConfig = backgroundConfigObj.toString()
-//
-//            if (lastBackgroundConfigValue != backgroundConfig) {
-//                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureLyricBackground(config=$backgroundConfig)")
-//                view.evaluateJavascript("window.configureLyricBackground && window.configureLyricBackground($backgroundConfig);", null)
-//                lastBackgroundConfigValue = backgroundConfig
-//            }
+            // 根据渲染器类型构建背景配置
+            val backgroundConfigObj = JSONObject().apply {
+                put("renderer", backgroundRenderer)
+                if (backgroundRenderer == "css-bg") {
+                    cssBackgroundProperty?.let { put("cssProperty", it) }
+                } else {
+                    backgroundFps?.let { put("fps", it.coerceIn(15, 240)) }
+                    backgroundRenderScale?.let { put("renderScale", it.toDouble()) }
+                    enableBackgroundStaticMode?.let { put("staticMode", it) }
+                }
+            }
+            val backgroundConfig = backgroundConfigObj.toString()
+
+            if (lastBackgroundConfigValue != backgroundConfig) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureLyricBackground(config=$backgroundConfig)")
+                view.evaluateJavascript("window.configureLyricBackground && window.configureLyricBackground($backgroundConfig);", null)
+                lastBackgroundConfigValue = backgroundConfig
+            }
 
             // ==================== 歌词动画运动配置 ====================
             // 构建歌词动画的运动配置文件（弹簧、缩放、模糊等效果）

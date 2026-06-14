@@ -25545,6 +25545,9 @@ function initAMLL() {
         log(`Failed to instantiate DomLyricPlayer: ${e2.message}`, "error");
       }
     }
+    if (!state.background) {
+      state.background = createBackgroundRenderer(Core, root);
+    }
     window.__amll = { player: state.player, backgroundRender: state.background };
     let lastTime = performance.now();
     const tick = (now) => {
