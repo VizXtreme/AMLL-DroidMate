@@ -686,8 +686,8 @@ object TTMLParser {
         transformer.setOutputProperty(javax.xml.transform.OutputKeys.ENCODING, "UTF-8")
         transformer.setOutputProperty(javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION, "yes")
 
-        /** ��行转换 */
-        val source = DOMSource(element.ownerDocument)
+        /** 序列化 element 本身及其子元素（不应使用 ownerDocument，否则会将整份文档都嵌入 rawXmlMetadata） */
+        val source = DOMSource(element)
         transformer.transform(source, result)
 
         return output.toString()

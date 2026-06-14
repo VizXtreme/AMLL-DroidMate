@@ -1,6 +1,7 @@
 package dev.amll.droidmate.data.converter
 
 import io.github.zeehan2005.scoremuse.global.LyricLine
+import io.github.zeehan2005.scoremuse.global.SongStructureType
 import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 import io.github.zeehan2005.scoremuse.data.parser.global.TimestampUtils
 import io.github.zeehan2005.scoremuse.data.parser.global.UnifiedLyricsParser
@@ -135,53 +136,68 @@ object TTMLConverter {
         /** Body */
         val duration = TimestampUtils.fromMillis(lyrics.lines.lastOrNull()?.endTime ?: 0L)
         sb.append("""${indent}<body dur="$duration">$lineBreak""")
-                
-//        /** ✅ 如果有歌曲结构信息，为每个结构创建独立的 <div> 标签*/
-//        val structures = lyrics.metadata.songStructures
-//        if (!structures.isNullOrEmpty()) {
-//            // 按歌曲结构分组歌词行
-//            var lineIndex = 0
-//            structures.forEachIndexed { structIndex, structure ->
-//                val startTimeAttr = TimestampUtils.fromMillis(structure.startTime)
-//                val endTimeAttr = TimestampUtils.fromMillis(structure.endTime)
-//
-//                // ✅ 优先使用 structure.label（保留"段落 1"等 fallback 标签），其次使用 type.displayName
-//                val songPartValue = if (structure.label.startsWith("段落")) {
-//                    structure.label  // ✅ 保留 fallback 的"段落 X"标签
-//                } else {
-//                    structure.type.displayName  // 使用标准的类型名称（Verse、Chorus 等）
-//                }
-//                sb.append("""${indent}${indent}<div itunes:songPart="${escapeXml(songPartValue)}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
-//
-//                // 添加该结构包含的歌词行
-//                while (lineIndex < lyrics.lines.size) {
-//                    val line = lyrics.lines[lineIndex]
-//                    // 如果当前行的开始时间超过结构结束时间，跳出
-//                    if (line.startTime > structure.endTime && structIndex < structures.size - 1) break
-//
-//                    appendLyricLine(sb, line, lineIndex, indent, formatted)
-//                    lineIndex++
-//                }
-//
-//                sb.append("""${indent}${indent}</div>$lineBreak""")
-//            }
-//
-//            // 处理剩余的歌词行（没有结构信息的部分）
-//            if (lineIndex < lyrics.lines.size) {
-//                sb.append("""${indent}${indent}<div>$lineBreak""")
-//                for (i in lineIndex until lyrics.lines.size) {
-//                    appendLyricLine(sb, lyrics.lines[i], i, indent, formatted)
-//                }
-//                sb.append("""${indent}${indent}</div>$lineBreak""")
-//            }
-//        } else {
+
+        /** ✅ 将 songStructures 序列化为 <div itunes:songPart="...">，确保缓存再解析时能恢复结构。
+         *  只保留"真实"的段落标记（来自 TTML 原数据的 songPart），排除：
+         *  - 推断的间奏/前奏/尾奏（INTRO_INST、INTERLUDE、OUTRO_INST）
+         *  - SongStructureParser 回退推断的 "段落 X" 标签
+         */
+        val structures = lyrics.metadata.songStructures
+        if (!structures.isNullOrEmpty()) {
+            val realStructures = structures.filter { structure ->
+                structure.type != SongStructureType.INTRO_INST &&
+                structure.type != SongStructureType.INTERLUDE &&
+                structure.type != SongStructureType.OUTRO_INST &&
+                !structure.label.matches(Regex("^段落\\s*\\d+$"))
+            }
+
+            if (realStructures.isNotEmpty()) {
+                val addedLines = mutableSetOf<Int>()
+
+                for (structure in realStructures) {
+                    val startTimeAttr = TimestampUtils.fromMillis(structure.startTime)
+                    val endTimeAttr = TimestampUtils.fromMillis(structure.endTime)
+
+                    sb.append("""${indent}${indent}<div itunes:songPart="${escapeXml(structure.label)}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
+
+                    // 添加该结构时间范围内的歌词行
+                    for ((index, line) in lyrics.lines.withIndex()) {
+                        if (index in addedLines) continue
+                        if (line.startTime in structure.startTime until structure.endTime) {
+                            appendLyricLine(sb, line, index, indent, formatted)
+                            addedLines.add(index)
+                        }
+                    }
+
+                    sb.append("""${indent}${indent}</div>$lineBreak""")
+                }
+
+                // 没有被任何结构覆盖的剩余歌词行
+                if (addedLines.size < lyrics.lines.size) {
+                    sb.append("""${indent}${indent}<div>$lineBreak""")
+                    for ((index, line) in lyrics.lines.withIndex()) {
+                        if (index !in addedLines) {
+                            appendLyricLine(sb, line, index, indent, formatted)
+                        }
+                    }
+                    sb.append("""${indent}${indent}</div>$lineBreak""")
+                }
+            } else {
+                // 只有推断结构（间奏等），没有真实段落标记 → 使用单个 div
+                sb.append("""${indent}${indent}<div>$lineBreak""")
+                lyrics.lines.forEachIndexed { index, line ->
+                    appendLyricLine(sb, line, index, indent, formatted)
+                }
+                sb.append("""${indent}${indent}</div>$lineBreak""")
+            }
+        } else {
             // 没有结构信息，使用单个 div 包含所有歌词
             sb.append("""${indent}${indent}<div>$lineBreak""")
             lyrics.lines.forEachIndexed { index, line ->
                 appendLyricLine(sb, line, index, indent, formatted)
             }
             sb.append("""${indent}${indent}</div>$lineBreak""")
-//        }
+        }
         
         // 关闭 body 和 tt 标签
         sb.append("""${indent}</body>$lineBreak""")

@@ -4,6 +4,7 @@ import io.github.zeehan2005.scoremuse.global.LyricLine
 import io.github.zeehan2005.scoremuse.global.SongStructure
 import io.github.zeehan2005.scoremuse.global.SongStructureType
 import org.w3c.dom.Document
+import org.w3c.dom.Node
 import timber.log.Timber
 
 /**
@@ -19,17 +20,21 @@ object SongStructureParser {
     private const val INTERLUDE_THRESHOLD_MS = 4000L
 
     /**
-     * 从歌词行解析歌曲结构（如果提供了 metadataStructure，优先使用并补充间奏/尾奏）。
+     * 解析歌曲结构。
      *
-     * 修复：即使有 metadataStructure（如 itunes:songPart），也会同时从歌词行时间间隔
-     * 检测间奏（interlude），因为 songPart 不会记录两个段落之间的纯器乐间隔。
+     * 步骤：
+     * 1. 始终检测间奏（前奏/间奏/尾奏）—— 独立函数，与 metadata 无关
+     * 2. 如果有 metadata（来自 TTML div 的 songPart）：
+     *    a. 合并 metadata 段落标签与检测到的间奏（去重）
+     *    b. 在合并结果后补全尾奏（以 merge 后最后一个结构的结束时间为准）
+     * 3. 如果没有 metadata（非 TTML 源）：
+     *    仅返回检测到的间奏，不生成"段落 X"回退标签
      */
     fun parseStructure(
         lyricsLines: List<LyricLine>,
         metadataStructure: List<SongStructure>? = null,
         songDuration: Long = 0L
     ): List<SongStructure> {
-        // 计算有效的 songDuration（多级 fallback）
         val effectiveDuration = if (songDuration > 0) {
             songDuration
         } else {
@@ -37,30 +42,31 @@ object SongStructureParser {
             if (inferred > 0) inferred + 5_000L else 0L
         }
 
+        // 步骤1: 始终检测间奏，与 metadata 是否存在无关
+        val interludes = detectInterludes(lyricsLines, effectiveDuration)
+        Timber.d("[SongStructure] Detected ${interludes.size} interludes")
+
         if (metadataStructure.isNullOrEmpty()) {
-            Timber.v("[SongStructure] Fallback triggered: no metadata structures")
-            return inferStructureFromLyrics(lyricsLines, effectiveDuration)
+            Timber.v("[SongStructure] No metadata structures, returning ${interludes.size} interludes only")
+            return interludes
         }
 
-        // 有 metadata：保留 songPart + 补全间奏 + 补全尾奏
-        val withOutro = ensureOutro(metadataStructure, lyricsLines, effectiveDuration)
-        return mergeWithInterludes(withOutro, lyricsLines, effectiveDuration)
+        // 步骤2: 有 metadata — 合并段落标签 + 间奏，然后补齐尾奏
+        val merged = mergeWithInterludes(metadataStructure, interludes)
+        return ensureOutro(merged, effectiveDuration)
     }
 
     /**
-     * 在保留已有结构（如 songPart）的基础上，补充从歌词行推断出的间奏和尾奏。
+     * 在保留已有结构（如 songPart）的基础上，合并前奏/间奏/尾奏。
+     * interludes 由上层统一调用 [detectInterludes] 生成，避免重复计算。
      */
     private fun mergeWithInterludes(
         baseStructures: List<SongStructure>,
-        lyricsLines: List<LyricLine>,
-        songDuration: Long
+        interludes: List<SongStructure>
     ): List<SongStructure> {
-        if (lyricsLines.isEmpty()) return baseStructures
-
-        val interludes = detectInterludes(lyricsLines, songDuration)
         if (interludes.isEmpty()) return baseStructures
 
-        // 去重：过滤掉与 baseStructures 中已有结构时间重叠的间奏。
+        // 过滤掉与 baseStructures 中已有结构时间重叠的间奏。
         // 这避免了当 parseStructure() 被多次调用时（如 TTMLParser 合并一次，
         // updateSongStructures 再用合并后的结果作为 metadataStructures 传入），
         // 同一间奏被重复添加。
@@ -71,102 +77,35 @@ object SongStructureParser {
         }
         if (newInterludes.isEmpty()) return baseStructures
 
-        // 合并：baseStructures + 新增间奏/尾奏，按 startTime 排序
         return (baseStructures + newInterludes).sortedBy { it.startTime }
     }
 
     /**
-     * 确保元数据结构后面追加强制尾奏（如果元数据未覆盖到歌曲末尾）。
+     * 确保合并后的结构末尾有尾奏（如果未覆盖到歌曲末尾）。
+     * 以合并后最后一个结构的结束时间为尾奏起点，而非原始 metadata。
      */
     private fun ensureOutro(
-        metadataStructure: List<SongStructure>,
-        lyricsLines: List<LyricLine>,
+        baseStructures: List<SongStructure>,
         songDuration: Long
     ): List<SongStructure> {
-        if (songDuration <= 0 || metadataStructure.isEmpty()) {
-            return metadataStructure
-        }
+        if (songDuration <= 0 || baseStructures.isEmpty()) return baseStructures
 
-        val lastStructure = metadataStructure.maxByOrNull { it.endTime } ?: return metadataStructure
+        val lastStructure = baseStructures.maxByOrNull { it.endTime } ?: return baseStructures
         val outroStart = lastStructure.endTime
         val outroDuration = songDuration - outroStart
 
-        if (outroDuration < INTERLUDE_THRESHOLD_MS) return metadataStructure
+        if (outroDuration < INTERLUDE_THRESHOLD_MS) return baseStructures
         if (lastStructure.type == SongStructureType.OUTRO_INST ||
             lastStructure.type == SongStructureType.OUTRO_PARA
-        ) return metadataStructure
+        ) return baseStructures
 
         Timber.d("[SongStructure] Appending OUTRO_INST: last.endTime=${outroStart}ms, songDuration=${songDuration}ms, gap=${outroDuration}ms")
-        return metadataStructure + SongStructure(
+        return baseStructures + SongStructure(
             label = SongStructureType.OUTRO_INST.displayName,
             startTime = outroStart,
             endTime = songDuration,
             type = SongStructureType.OUTRO_INST
         )
-    }
-
-    /**
-     * 从歌词行自动推断歌曲结构。
-     */
-    private fun inferStructureFromLyrics(lines: List<LyricLine>, songDuration: Long = 0L): List<SongStructure> {
-        if (lines.isEmpty()) {
-            Timber.w("[SongStructure] 歌词行为空，返回空结构")
-            return emptyList()
-        }
-
-        val structures = mutableListOf<SongStructure>()
-        val interludes = detectInterludes(lines, songDuration)
-
-        if (interludes.isEmpty()) {
-            structures.add(
-                SongStructure(
-                    label = "段落 1",
-                    startTime = lines.first().startTime,
-                    endTime = lines.last().endTime,
-                    type = SongStructureType.UNKNOWN
-                )
-            )
-        } else {
-            var paragraphIndex = 1
-            var lastEndTime: Long = 0
-
-            for (interlude in interludes) {
-                if (interlude.startTime > lastEndTime) {
-                    val paragraphLines = lines.filter {
-                        it.startTime >= lastEndTime && it.endTime <= interlude.startTime
-                    }
-
-                    if (paragraphLines.isNotEmpty()) {
-                        structures.add(
-                            SongStructure(
-                                label = "段落 $paragraphIndex",
-                                startTime = paragraphLines.first().startTime,
-                                endTime = paragraphLines.last().endTime,
-                                type = SongStructureType.UNKNOWN
-                            )
-                        )
-                        paragraphIndex++
-                    }
-                }
-
-                structures.add(interlude)
-                lastEndTime = interlude.endTime
-            }
-
-            val remainingLines = lines.filter { it.startTime >= lastEndTime }
-            if (remainingLines.isNotEmpty()) {
-                structures.add(
-                    SongStructure(
-                        label = "段落 $paragraphIndex",
-                        startTime = remainingLines.first().startTime,
-                        endTime = remainingLines.last().endTime,
-                        type = SongStructureType.UNKNOWN
-                    )
-                )
-            }
-        }
-
-        return structures
     }
 
     /**
@@ -246,10 +185,17 @@ object SongStructureParser {
      */
     fun parseStructuresFromDivs(doc: Document): List<SongStructure> {
         return try {
-            // Android 的 DocumentBuilderFactory 默认是 namespace-unaware，
-            // 直接使用 getElementsByTagName 即可匹配 div 元素
-            val divs = doc.getElementsByTagName("div")
-            Timber.d("[SongStructure] Searching div elements: found ${divs.length}")
+            // 只查找 <tt> 根元素下的直接 <body> 子元素，避免从 rawXmlMetadata
+            // 嵌入的文档中获取重复的 div（旧缓存可能在 <metadata> 中嵌入了整份 TTML）。
+            val root = doc.getDocumentElement()
+            val body = (0 until root.childNodes.length)
+                .map { root.childNodes.item(it) }
+                .filter { it.nodeType == Node.ELEMENT_NODE }
+                .map { it as org.w3c.dom.Element }
+                .firstOrNull { it.tagName == "body" }
+                ?: return emptyList()
+            val divs = body.getElementsByTagName("div")
+            Timber.d("[SongStructure] Searching div elements inside body: found ${divs.length}")
 
             val structures = mutableListOf<SongStructure>()
             for (i in 0 until divs.length) {
