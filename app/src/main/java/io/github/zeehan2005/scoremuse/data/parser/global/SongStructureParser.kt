@@ -22,13 +22,12 @@ object SongStructureParser {
     /**
      * 解析歌曲结构。
      *
-     * 步骤：
-     * 1. 始终检测间奏（前奏/间奏/尾奏）—— 独立函数，与 metadata 无关
-     * 2. 如果有 metadata（来自 TTML div 的 songPart）：
-     *    a. 合并 metadata 段落标签与检测到的间奏（去重）
-     *    b. 在合并结果后补全尾奏（以 merge 后最后一个结构的结束时间为准）
-     * 3. 如果没有 metadata（非 TTML 源）：
-     *    仅返回检测到的间奏，不生成"段落 X"回退标签
+     * - TTML 源有真实 <div itunes:songPart>（metadataStructure 非空）：
+     *     保留段落标签 + 合并间奏 + 补全尾奏。不 fallback。
+     * - 其他所有情况（TTML 无 songPart、非 TTML 源等）：
+     *     fallback 从歌词行推断段落结构。
+     *
+     * 间奏（前奏/间奏/尾奏）始终独立检测，避免在各分支中重复计算。
      */
     fun parseStructure(
         lyricsLines: List<LyricLine>,
@@ -42,18 +41,84 @@ object SongStructureParser {
             if (inferred > 0) inferred + 5_000L else 0L
         }
 
-        // 步骤1: 始终检测间奏，与 metadata 是否存在无关
+        // 始终检测间奏，与 metadata 是否存在无关
         val interludes = detectInterludes(lyricsLines, effectiveDuration)
         Timber.d("[SongStructure] Detected ${interludes.size} interludes")
 
         if (metadataStructure.isNullOrEmpty()) {
-            Timber.v("[SongStructure] No metadata structures, returning ${interludes.size} interludes only")
-            return interludes
+            Timber.v("[SongStructure] No TTML paragraph markers, fallback inference")
+            return inferFallbackSections(lyricsLines, interludes)
         }
 
-        // 步骤2: 有 metadata — 合并段落标签 + 间奏，然后补齐尾奏
+        // 有真实 TTML 段落标记：保留标签 + 合并间奏 + 补全尾奏
         val merged = mergeWithInterludes(metadataStructure, interludes)
         return ensureOutro(merged, effectiveDuration)
+    }
+
+    /**
+     * 从歌词行推断段落结构（"段落 1"、"段落 2"…），用于没有 TTML songPart 的场景。
+     * 间奏已由 [detectInterludes] 预先计算好，直接在此填入段落标签。
+     */
+    private fun inferFallbackSections(
+        lines: List<LyricLine>,
+        interludes: List<SongStructure>
+    ): List<SongStructure> {
+        if (lines.isEmpty()) {
+            Timber.w("[SongStructure] 歌词行为空，返回空结构")
+            return emptyList()
+        }
+
+        val result = mutableListOf<SongStructure>()
+
+        if (interludes.isEmpty()) {
+            result.add(
+                SongStructure(
+                    label = "段落 1",
+                    startTime = lines.first().startTime,
+                    endTime = lines.last().endTime,
+                    type = SongStructureType.UNKNOWN
+                )
+            )
+            return result
+        }
+
+        var paragraphIndex = 1
+        var lastEndTime: Long = 0
+
+        for (interlude in interludes) {
+            if (interlude.startTime > lastEndTime) {
+                val paragraphLines = lines.filter {
+                    it.startTime >= lastEndTime && it.endTime <= interlude.startTime
+                }
+                if (paragraphLines.isNotEmpty()) {
+                    result.add(
+                        SongStructure(
+                            label = "段落 $paragraphIndex",
+                            startTime = paragraphLines.first().startTime,
+                            endTime = paragraphLines.last().endTime,
+                            type = SongStructureType.UNKNOWN
+                        )
+                    )
+                    paragraphIndex++
+                }
+            }
+            result.add(interlude)
+            lastEndTime = interlude.endTime
+        }
+
+        val remainingLines = lines.filter { it.startTime >= lastEndTime }
+        if (remainingLines.isNotEmpty()) {
+            result.add(
+                SongStructure(
+                    label = "段落 $paragraphIndex",
+                    startTime = remainingLines.first().startTime,
+                    endTime = remainingLines.last().endTime,
+                    type = SongStructureType.UNKNOWN
+                )
+            )
+        }
+
+        return result
     }
 
     /**
