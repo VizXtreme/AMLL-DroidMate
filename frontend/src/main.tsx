@@ -35,6 +35,10 @@ declare global {
     setEnableRomanLine?: (enabled: boolean) => void // 启用/禁用罗马音行
     setEnableSwapTransRomanLine?: (enabled: boolean) => void // 交换翻译和罗马音的位置
     setAdvanceLyricDynamicLyricTime?: (enabled: boolean) => void // 启用歌词提前量优化
+    applyFontSettings?: (config: {
+      effectiveFamily?: string
+      files?: Array<{ familyName: string, uri: string }>
+    }) => void // 应用字体设置：注入 @font-face 规则并设置 CSS 变量
     rebuildLyricsDom?: (reason?: string) => boolean // 强制重构歌词 DOM（处理布局异常）
 
     // Android 原生通过 JavascriptInterface 注入的对象
@@ -461,6 +465,44 @@ window.setAdvanceLyricDynamicLyricTime = (enabled: boolean) => {
     setCSSVar('--amll-advance-dynamic-time', enabled)
     state.pendingLyricOptions.advanceDynamicTime = enabled
   }
+}
+
+/**
+ * 应用字体设置：动态注入 @font-face 规则并更新 CSS 变量
+ * @param config 包含 effectiveFamily（字体栈）和 files（字体文件列表）
+ */
+window.applyFontSettings = (config: any) => {
+  const { effectiveFamily, files = [] } = config || {}
+
+  // 创建或更新动态 font-face 样式元素
+  const styleId = 'amll-dynamic-font-face-style'
+  let styleNode = document.getElementById(styleId) as HTMLStyleElement | null
+  if (!styleNode) {
+    styleNode = document.createElement('style')
+    styleNode.id = styleId
+    document.head.appendChild(styleNode)
+  }
+
+  // 构建 @font-face 规则
+  let css = ''
+  if (Array.isArray(files)) {
+    for (const item of files) {
+      if (!item?.familyName || !item?.uri) continue
+      if (item.uri.startsWith('data:image/svg+xml')) continue
+      css += `@font-face{font-family:"${item.familyName}";src:url("${item.uri}");font-display:swap;}`
+    }
+  }
+  styleNode.textContent = css
+
+  // 应用 CSS 变量
+  setCSSVar('--amll-user-font-family', effectiveFamily || '')
+  setCSSVar('--amll-lp-font-family', effectiveFamily ? 'var(--amll-user-font-family)' : '')
+
+  // 应用到歌词播放器元素
+  const players = document.querySelectorAll('.amll-lyric-player')
+  players.forEach((el) => {
+    ;(el as HTMLElement).style.fontFamily = effectiveFamily ? 'var(--amll-lp-font-family)' : ''
+  })
 }
 
 // --- 其他占位或转发接口 ---

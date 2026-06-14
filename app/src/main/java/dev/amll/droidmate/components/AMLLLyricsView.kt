@@ -115,8 +115,8 @@ fun AMLLLyricsView(
 
     var lastMotionConfigValue by remember { mutableStateOf<String?>(null) }
 
-//    // 字体配置相关状态
-//    var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
+    // 字体配置相关状态
+    var lastFontConfigSignature by remember { mutableStateOf<String?>(null) }
 //    var lastBackgroundConfigValue by remember { mutableStateOf<String?>(null) }
 
     // ==================== 时间���新节流 ====================
@@ -157,23 +157,23 @@ fun AMLLLyricsView(
 //            // 将外部字体文件映射到 https://appassets.androidplatform.net/fonts/
             val assetLoader = WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
-//                .addPathHandler("/fonts/") { path ->
-//                    // 根据路径中的 ID 查找对应的字体文件
-//                    val fontId = path.substringBefore('/')
-//                    val fontFile = AMLLSettings.getAmllFontFiles(context).find { it.id == fontId }
-//                    if (fontFile != null) {
-//                        val file = File(fontFile.absolutePath)
-//                        if (file.exists()) {
-//                            try {
-//                                // 统一以 font/ttf 类型返回，现代浏览器通常能自动识别具体格式
-//                                WebResourceResponse("font/ttf", null, file.inputStream())
-//                            } catch (e: Exception) {
-//                                Timber.e("[AMLLLyrics] Failed to load font through AssetLoader: $path $e")
-//                                null
-//                            }
-//                        } else null
-//                    } else null
-//                }
+                .addPathHandler("/fonts/") { path ->
+                    // 根据路径中的 ID 查找对应的字体文件
+                    val fontId = path.substringBefore('/')
+                    val fontFile = AMLLSettings.getAmllFontFiles(context).find { it.id == fontId }
+                    if (fontFile != null) {
+                        val file = File(fontFile.absolutePath)
+                        if (file.exists()) {
+                            try {
+                                // 统一以 font/ttf 类型返回，现代浏览器通常能自动识别具体格式
+                                WebResourceResponse("font/ttf", null, file.inputStream())
+                            } catch (e: Exception) {
+                                Timber.e("[AMLLLyrics] Failed to load font through AssetLoader: $path $e")
+                                null
+                            }
+                        } else null
+                    } else null
+                }
                 .build()
 
             WebView(context).apply {
@@ -586,66 +586,74 @@ fun AMLLLyricsView(
                 }
             }
 
-//            // ==================== 字体配置应用 ====================
-//            /** 获取用户配置的字体家族名称 */
-//            val configuredFontFamily = AMLLSettings.getAmllFontFamily(view.context)
-//            /** 获取已安装的字体文件列表 */
-//            val fontFiles = AMLLSettings.getAmllFontFiles(view.context)
-//                .filter { it.absolutePath.isNotBlank() }
-//                .mapNotNull { item ->
-//                    val file = File(item.absolutePath)
-//                    if (!file.exists()) return@mapNotNull null
-//                    FontWebEntry(
-//                        id = item.id,
-//                        sortKey = item.fontFamilyName,
-//                        familyName = buildRuntimeFontFamilyName(item.fontFamilyName),
-//                        // 使用 WebViewAssetLoader 的虚拟域名来加载本地字体文件，
-//                        // 避免从 https://appassets.androidplatform.net 访问 file:// 协议导致的跨域错误。
-//                        uri = "https://appassets.androidplatform.net/fonts/${item.id}"
-//                    )
-//                }
-//
-//            // 获取启用的字体 ID 列表
-//            val enabledIds = AMLLSettings.getEnabledAmllFontFileIds(view.context)
-//            // 解析用户偏好的字体顺序
-//            val preferredOrder = parsePreferredFontOrder(configuredFontFamily)
-//            // 根据偏好排序启用的字体
-//            val enabledFamilies = fontFiles
-//                .filter { enabledIds.contains(it.id) }
-//                .sortedWith(
-//                    compareBy<FontWebEntry> { fontSortPriority(it.sortKey, preferredOrder) }
-//                        .thenBy { it.sortKey.lowercase() }
-//                        .thenBy { it.id }
-//                )
-//                .map { it.familyName }
-//                .distinct()
-//
-//            // 构建最终使用的字体家族栈
-//            val effectiveFamily = if (enabledFamilies.isNotEmpty()) {
-//                val enabledStack = enabledFamilies.joinToString(", ") { "\"$it\"" }
-//                if (configuredFontFamily != null) "$enabledStack, $configuredFontFamily" else enabledStack
-//            } else {
-//                configuredFontFamily
-//            }
-//
-//            // 构建字体配置签名（用于检测变化）
-//            val fontSignature = buildString {
-//                append(effectiveFamily)
-//                append("|")
-//                append(fontFiles.joinToString(";") { "${it.id}:${it.familyName}:${it.uri}" })
-//                append("|")
-//                append(enabledFamilies.joinToString(","))
-//            }
-//
-//            // 如果字体配置发生变化，应用新的字体设置
-//            if (lastFontConfigSignature != fontSignature) {
-//                val script = buildApplyFontScript(effectiveFamily, fontFiles)
-//                Timber.d(
-//                    "[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyFontSettings(enabled=${enabledFamilies.size}, files=${fontFiles.size})"
-//                )
-//                view.evaluateJavascript(script, null)
-//                lastFontConfigSignature = fontSignature
-//            }
+            // ==================== 字体配置应用 ====================
+            /** 获取用户配置的字体家族名称 */
+            val configuredFontFamily = AMLLSettings.getAmllFontFamily(view.context)
+            /** 获取已安装的字体文件列表 */
+            val fontFiles = AMLLSettings.getAmllFontFiles(view.context)
+                .filter { it.absolutePath.isNotBlank() }
+                .mapNotNull { item ->
+                    val file = File(item.absolutePath)
+                    if (!file.exists()) return@mapNotNull null
+                    FontWebEntry(
+                        id = item.id,
+                        sortKey = item.fontFamilyName,
+                        familyName = item.fontFamilyName,
+                        // 使用 WebViewAssetLoader 的虚拟域名来加载本地字体文件
+                        uri = "https://appassets.androidplatform.net/fonts/${item.id}"
+                    )
+                }
+
+            // 获取启用的字体 ID 列表
+            val enabledIds = AMLLSettings.getEnabledAmllFontFileIds(view.context)
+            // 解析用户偏好的字体顺序
+            val preferredOrder = parsePreferredFontOrder(configuredFontFamily)
+            // 根据偏好排序启用的字体
+            val enabledFamilies = fontFiles
+                .filter { enabledIds.contains(it.id) }
+                .sortedWith(
+                    compareBy<FontWebEntry> { fontSortPriority(it.sortKey, preferredOrder) }
+                        .thenBy { it.sortKey.lowercase() }
+                        .thenBy { it.id }
+                )
+                .map { it.familyName }
+                .distinct()
+
+            // 构建最终使用的字体家族栈
+            val effectiveFamily = if (enabledFamilies.isNotEmpty()) {
+                val enabledStack = enabledFamilies.joinToString(", ") { "\"$it\"" }
+                if (configuredFontFamily != AMLLSettings.DEFAULT_AMLL_FONT_FAMILY)
+                    "$enabledStack, $configuredFontFamily"
+                else enabledStack
+            } else {
+                configuredFontFamily
+            }
+
+            // 构建字体配置签名（用于检测变化）
+            val fontSignature = buildString {
+                append(effectiveFamily)
+                append("|")
+                append(fontFiles.joinToString(";") { "${it.id}:${it.familyName}:${it.uri}" })
+                append("|")
+                append(enabledFamilies.joinToString(","))
+            }
+
+            // 如果字体配置发生变化，应用新的字体设置
+            if (lastFontConfigSignature != fontSignature) {
+                val enabledFontFiles = fontFiles.filter { enabledIds.contains(it.id) }
+                val filesJson = enabledFontFiles.joinToString(",") { entry ->
+                    """{familyName:"${escapeJsString(entry.familyName)}",uri:"${escapeJsString(entry.uri)}"}"""
+                }
+                val escapedFamily = escapeJsString(effectiveFamily)
+                Timber.d(
+                    "[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyFontSettings(enabled=${enabledFamilies.size}, files=${fontFiles.size})"
+                )
+                view.evaluateJavascript(
+                    """window.applyFontSettings && window.applyFontSettings({effectiveFamily:"$escapedFamily",files:[$filesJson]});""",
+                    null
+                )
+                lastFontConfigSignature = fontSignature
+            }
         },
         // ==================== WebView 销毁回调 ====================
         // 当组件被销毁时，销毁 WebView 以避免内存泄漏
@@ -661,78 +669,39 @@ fun AMLLLyricsView(
     )
 }
 
-//private data class FontWebEntry(
-//    val id: String,
-//    val sortKey: String,
-//    val familyName: String,
-//    val uri: String
-//)
-//
-//private fun buildRuntimeFontFamilyName(baseFamilyName: String): String {
-//    // 直接使用原始字体名称，以便与 CSS 中的 font-family 匹配
-//    return baseFamilyName
-//}
-//
-//private fun parsePreferredFontOrder(configuredFontFamily: String?): List<String> {
-//    if (configuredFontFamily == null) return emptyList()
-//    return configuredFontFamily
-//        .split(',')
-//        .map { normalizeFontToken(it) }
-//        .filter { it.isNotBlank() }
-//}
-//
-//private fun fontSortPriority(sortKey: String, preferredOrder: List<String>): Int {
-//    if (preferredOrder.isEmpty()) return Int.MAX_VALUE
-//    val normalizedSortKey = normalizeFontToken(sortKey)
-//    for (index in preferredOrder.indices) {
-//        val preferred = preferredOrder[index]
-//        if (preferred.isBlank()) continue
-//        if (normalizedSortKey.contains(preferred) || preferred.contains(normalizedSortKey)) {
-//            return index
-//        }
-//    }
-//    return Int.MAX_VALUE
-//}
-//
-//private fun normalizeFontToken(value: String): String {
-//    return value
-//        .lowercase()
-//        .replace(Regex("[^a-z0-9]"), "")
-//}
-//
-//private fun buildApplyFontScript(effectiveFamily: String?, files: List<FontWebEntry>): String {
-//    // 将字体家族名称转换为 JSON 安全的字符串
-//    val familyJson = if (effectiveFamily != null) "\"${escapeJsStringForJson(effectiveFamily)}\"" else "null"
-//
-//    // 构建文件数组的 JSON 表示
-//    val filesArrayJson = if (files.isEmpty()) {
-//        "[]"
-//    } else {
-//        val filesEntries = files.joinToString(",") { entry ->
-//            "{id:\"${escapeJsStringForJson(entry.id)}\",familyName:\"${escapeJsStringForJson(entry.familyName)}\",uri:\"${escapeJsStringForJson(entry.uri)}\"}"
-//        }
-//        "[$filesEntries]"
-//    }
-//
-//    return buildString {
-//        append("(function(){")
-//        append("var effectiveFamily=$familyJson;")
-//        append("var files=$filesArrayJson;")
-//        append("var styleId='amll-dynamic-font-face-style';")
-//        append("var styleNode=document.getElementById(styleId);")
-//        append("if(!styleNode){styleNode=document.createElement('style');styleNode.id=styleId;document.head.appendChild(styleNode);}")
-//        append("var css='';")
-//        append("for(var i=0;i<files.length;i+=1){var item=files[i];if(!item||!item.familyName||!item.uri)continue;if(item.uri.indexOf('data:image/svg+xml')===0)continue;css+='@font-face{font-family:\"'+item.familyName+'\";src:url(\"'+item.uri+'\");font-display:swap;}';}")
-//        append("styleNode.textContent=css;")
-//        append("if(effectiveFamily){")
-//        append("document.documentElement.style.setProperty('--amll-user-font-family',effectiveFamily);")
-//        append("document.documentElement.style.setProperty('--amll-lp-font-family','var(--amll-user-font-family)');")
-//        append("}")
-//        append("var players=document.querySelectorAll('.amll-lyric-player');")
-//        append("for(var j=0;j<players.length;j+=1){players[j].style.fontFamily='var(--amll-lp-font-family)';}")
-//        append("})();")
-//    }
-//}
+private data class FontWebEntry(
+    val id: String,
+    val sortKey: String,
+    val familyName: String,
+    val uri: String
+)
+
+private fun parsePreferredFontOrder(configuredFontFamily: String?): List<String> {
+    if (configuredFontFamily == null) return emptyList()
+    return configuredFontFamily
+        .split(',')
+        .map { normalizeFontToken(it) }
+        .filter { it.isNotBlank() }
+}
+
+private fun fontSortPriority(sortKey: String, preferredOrder: List<String>): Int {
+    if (preferredOrder.isEmpty()) return Int.MAX_VALUE
+    val normalizedSortKey = normalizeFontToken(sortKey)
+    for (index in preferredOrder.indices) {
+        val preferred = preferredOrder[index]
+        if (preferred.isBlank()) continue
+        if (normalizedSortKey.contains(preferred) || preferred.contains(normalizedSortKey)) {
+            return index
+        }
+    }
+    return Int.MAX_VALUE
+}
+
+private fun normalizeFontToken(value: String): String {
+    return value
+        .lowercase()
+        .replace(Regex("[^a-z0-9]"), "")
+}
 
 
 private fun escapeJsString(value: String): String {

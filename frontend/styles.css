@@ -3,6 +3,11 @@
    ============================================================================ */
 
 /* ==================== 根元素适配 ==================== */
+:root {
+  --amll-user-font-family: "SF Pro Display", "PingFang SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --amll-lp-font-family: var(--amll-user-font-family);
+}
+
 html, body {
   margin: 0 !important;
   padding: 0 !important;
@@ -31,6 +36,7 @@ html, body {
 
 .amll-lyric-player {
   pointer-events: auto;
+  font-family: var(--amll-lp-font-family);
 }
 
 /* ==================== 滚动条隐藏 ==================== */

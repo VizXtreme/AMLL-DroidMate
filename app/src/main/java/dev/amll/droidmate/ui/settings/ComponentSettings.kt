@@ -1,5 +1,9 @@
 package dev.amll.droidmate.ui.settings
 
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,11 +11,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledIconButton
@@ -19,6 +26,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -47,6 +56,8 @@ import io.github.zeehan2005.scoremuse.global.LyricWord
 import io.github.zeehan2005.scoremuse.global.LyricsMetadata
 import io.github.zeehan2005.scoremuse.global.NowPlayingMusic
 import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
+import java.io.File
+import java.io.IOException
 
 class ComponentSettings : BaseComposeActivity() {
     @Composable
@@ -77,6 +88,45 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
     }
     var backgroundRendererEnabled by remember {
         mutableStateOf(AMLLSettings.isAmllBackgroundRendererEnabled(context) ?: true)
+    }
+
+    // 字体设置状态
+    var amllFontFamily by remember { mutableStateOf(AMLLSettings.getAmllFontFamily(context)) }
+    var importedFonts by remember {
+        mutableStateOf(
+            AMLLSettings.getAmllFontFiles(context).filter { File(it.absolutePath).exists() }
+        )
+    }
+    var enabledFontIds by remember { mutableStateOf(AMLLSettings.getEnabledAmllFontFileIds(context).toSet()) }
+    var fontStatusMessage by remember { mutableStateOf<String?>(null) }
+
+    val importFontLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+
+        try {
+            var importedCount = 0
+            val newEnabled = enabledFontIds.toMutableSet()
+
+            uris.forEach { uri ->
+                val result = importFontToInternalStorage(context, uri)
+                val updated = AMLLSettings.upsertAmllFontFile(
+                    context = context,
+                    absolutePath = result.absolutePath,
+                    displayName = result.displayName
+                )
+                updated.firstOrNull { it.absolutePath == result.absolutePath }?.id?.let { newEnabled.add(it) }
+                importedCount += 1
+            }
+
+            importedFonts = AMLLSettings.getAmllFontFiles(context).filter { File(it.absolutePath).exists() }
+            enabledFontIds = newEnabled
+            AMLLSettings.setEnabledAmllFontFileIds(context, newEnabled.toList())
+            fontStatusMessage = "已导入 $importedCount 个字体文件"
+        } catch (e: Exception) {
+            fontStatusMessage = "导入失败: ${e.message ?: "未知错误"}"
+        }
     }
 
     val previewWordDurationMs = 500L
@@ -301,6 +351,189 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                     )
                 }
             }
+
+            // ==================== 字体设置 ====================
+            Text(
+                text = "字体设置",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            OutlinedTextField(
+                value = amllFontFamily,
+                onValueChange = { amllFontFamily = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("font-family") },
+                singleLine = false,
+                maxLines = 3
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = {
+                        AMLLSettings.setAmllFontFamily(context, amllFontFamily)
+                        fontStatusMessage = "font-family 设置已保存"
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("保存")
+                }
+
+                Button(
+                    onClick = {
+                        importFontLauncher.launch(arrayOf("font/*"))
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("导入字体")
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        AMLLSettings.resetAmllFontSettings(context)
+                        amllFontFamily = AMLLSettings.getDefaultAmllFontFamily()
+                        enabledFontIds = emptySet()
+                        importedFonts = emptyList()
+                        fontStatusMessage = "已还原为默认 font-family 设置"
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("还原")
+                }
+            }
+
+            // 已导入字体列表
+            val sortedFonts = importedFonts.sortedBy { it.fontFamilyName.lowercase() }
+            if (sortedFonts.isEmpty()) {
+                Text(
+                    text = "未导入字体文件",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            } else {
+                Text(
+                    text = "已导入的字体",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                sortedFonts.forEach { font ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth(0.55f)
+                                .heightIn(min = 48.dp),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = font.displayName,
+                                maxLines = 1,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "删除",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier
+                                    .clickable {
+                                        File(font.absolutePath).takeIf { it.exists() }?.delete()
+                                        importedFonts = AMLLSettings.removeAmllFontFile(context, font.id)
+                                        val next = enabledFontIds.toMutableSet().apply { remove(font.id) }
+                                        enabledFontIds = next
+                                        AMLLSettings.setEnabledAmllFontFileIds(context, next.toList())
+                                        fontStatusMessage = "已删除字体: ${font.displayName}"
+                                    }
+                                    .padding(8.dp)
+                            )
+
+                            SwitchWithIcon(
+                                checked = enabledFontIds.contains(font.id),
+                                onCheckedChange = { enabled ->
+                                    val next = enabledFontIds.toMutableSet()
+                                    if (enabled) {
+                                        next.add(font.id)
+                                    } else {
+                                        next.remove(font.id)
+                                    }
+                                    enabledFontIds = next
+                                    AMLLSettings.setEnabledAmllFontFileIds(context, next.toList())
+                                    fontStatusMessage = if (enabled) {
+                                        "已启用字体: ${font.displayName}"
+                                    } else {
+                                        "已停用字体: ${font.displayName}"
+                                    }
+                                },
+                                colors = switchColors
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 字体状态消息
+            if (!fontStatusMessage.isNullOrBlank()) {
+                Text(
+                    text = fontStatusMessage ?: "",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
+}
+
+private data class ImportedFontResult(
+    val absolutePath: String,
+    val displayName: String
+)
+
+@Throws(IOException::class)
+private fun importFontToInternalStorage(context: android.content.Context, sourceUri: Uri): ImportedFontResult {
+    val resolver = context.contentResolver
+    val rawName = queryDisplayName(context, sourceUri) ?: "custom_font_${System.currentTimeMillis()}.ttf"
+    val safeName = rawName.replace(Regex("[^A-Za-z0-9._-]"), "_")
+
+    val fontDir = File(context.filesDir, "amll_fonts")
+    if (!fontDir.exists()) {
+        fontDir.mkdirs()
+    }
+
+    val outFile = File(fontDir, "${System.currentTimeMillis()}_$safeName")
+    resolver.openInputStream(sourceUri).use { input ->
+        if (input == null) throw IOException("无法打开字体文件")
+        outFile.outputStream().use { output ->
+            input.copyTo(output)
+        }
+    }
+
+    // 尝试读取内部族名，失败则回退到原始文件名
+    val internalName = AMLLSettings.readFontFamilyName(outFile)
+    val displayName = internalName ?: rawName
+
+    return ImportedFontResult(
+        absolutePath = outFile.absolutePath,
+        displayName = displayName
+    )
+}
+
+private fun queryDisplayName(context: android.content.Context, uri: Uri): String? {
+    val resolver = context.contentResolver
+    resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        if (nameIndex != -1 && cursor.moveToFirst()) {
+            return cursor.getString(nameIndex)
+        }
+    }
+    return null
 }
