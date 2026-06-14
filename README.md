@@ -1,3 +1,7 @@
+>[!Warning]
+>
+>前往 [Issues/Bug](https://github.com/Zeehan2005/AMLL-DroidMate/issues?q=is%3Aissue%20state%3Aopen%20label%3Abug) 查看已知问题。
+
 >[!Important]
 >
 >本项目的维护可能时有时无，并且不做任何稳定性保证，望您知悉。
