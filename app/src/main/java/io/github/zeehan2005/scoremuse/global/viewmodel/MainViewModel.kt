@@ -522,7 +522,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     "none"
                 } else {
                     structures.mapIndexed { index, structure ->
-                        "[$index] ${structure.label} (${structure.type.displayName}): ${formatTime(structure.startTime)} - ${formatTime(structure.endTime)}"
+                        "[$index] ${structure.label}: ${formatTime(structure.startTime)} - ${formatTime(structure.endTime)}"
                     }.joinToString("; ")
                 }
                 Timber.d("[SongStructure] Parsed ${structures.size} structures (source=$source): $summary")

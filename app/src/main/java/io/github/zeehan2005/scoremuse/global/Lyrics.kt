@@ -111,38 +111,18 @@ data class LyricsMetadata(
 )
 
 /**
- * 歌曲结构类型
- *
- * 用于标识歌曲的不同段落，如主歌 (Verse)、副歌 (Chorus) 等。
- * 这些结构信息可以帮助用户更好地理解歌曲编排，也便于在 UI 中展示歌曲进度条上的标记。
- */
-enum class SongStructureType(val displayName: String) {
-    VERSE("Verse"),         // 主歌
-    CHORUS("Chorus"),       // 副歌
-    BRIDGE("Bridge"),       // 桥段（连接段落）
-    PRE_CHORUS("Pre-Chorus"), // 预副歌
-    INTRO_INST("Intro"),     // 前奏（纯音乐）
-    INTRO_PARA("Intro"),     // 引子（有歌词）
-    INTERLUDE("Interlude"), // 间奏
-    OUTRO_INST("Outro"),     // 尾奏（纯音乐）
-    OUTRO_PARA("Outro"),     // 尾声（有歌词）
-    SOLO("Solo"),           // 独奏/独唱
-    BREAK("Break"),         // 停顿/休止
-    UNKNOWN("Unknown")      // 未知类型
-}
-
-/**
  * 歌曲结构段落
  *
- * 表示歌曲中某个特定段落的详细信息，包括时间范围和类型。
+ * 表示歌曲中某个特定段落的详细信息，包括时间范围。
+ * label 字段直接保留原始 songpart 值（"Verse"、"Chorus"、"Tag" 等），
+ * 前奏/间奏/尾奏等纯音乐段落统一标记为 "Interlude"。
  */
 @Stable
 @Serializable
 data class SongStructure(
-    val label: String,        // 段落标签（例如 "Verse 1", "Chorus"）
+    val label: String,        // 段落标签（例如 "Verse 1", "Chorus", "Interlude"）
     val startTime: Long,      // 段落开始时间（毫秒）
-    val endTime: Long,        // 段落结束时间（毫秒）
-    val type: SongStructureType = SongStructureType.UNKNOWN  // 段落类型
+    val endTime: Long         // 段落结束时间（毫秒）
 ) {
     /** 计算段落持续时间 */
     val duration: Long

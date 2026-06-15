@@ -103,7 +103,7 @@ object UnifiedLyricsParser {
 //                        if (!songStructures.isNullOrEmpty()) {
 //                            Timber.d("[SongStructure] Parsed ${songStructures.size} structures from ScoreMuse XML metadata")
 //                            songStructures.forEachIndexed { index, structure ->
-//                                Timber.d("[SongStructure] [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms")
+//                                Timber.d("[SongStructure] [$index] ${structure.label}: ${structure.startTime}ms - ${structure.endTime}ms")
 //                            }
 //                        } else {
 //                            Timber.i("[SongStructure] No song structures found in ScoreMuse XML metadata")
@@ -184,7 +184,7 @@ object UnifiedLyricsParser {
                     if (!songStructures.isNullOrEmpty()) {
                         Timber.d("[SongStructure] Parsed ${songStructures.size} structures from $format metadata")
                         songStructures.forEachIndexed { index, structure ->
-                            Timber.d("[SongStructure] [$index] ${structure.label} (${structure.type.displayName}): ${structure.startTime}ms - ${structure.endTime}ms")
+                            Timber.d("[SongStructure] [$index] ${structure.label}: ${structure.startTime}ms - ${structure.endTime}ms")
                         }
                     } else {
                         Timber.i("[SongStructure] No song structures found in $format metadata")

@@ -14,7 +14,6 @@ import io.github.zeehan2005.scoremuse.global.LyricLine
 import io.github.zeehan2005.scoremuse.global.LyricsFeature
 import io.github.zeehan2005.scoremuse.global.LyricsResult
 import io.github.zeehan2005.scoremuse.global.LyricsSearchResult
-import io.github.zeehan2005.scoremuse.global.SongStructureType
 import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 import io.github.zeehan2005.scoremuse.global.AppSettings
 import io.github.zeehan2005.scoremuse.global.SongStructure
@@ -2194,29 +2193,19 @@ open class LyricsRepository(
             /** Check if structures have meaningful vocal section labels */
             val hasRealVocalStructureLabels = songStructures.any { structure ->
                 val label = structure.label.trim()
-                val type = structure.type
-                
+
                 // Exclude generic fallback labels like "段落 1", "段落 2"
                 if (label.matches(Regex("^段落\\s*\\d+$"))) {
                     return@any false
                 }
-                
+
                 // Exclude pure instrumental sections (no vocals)
-                // Only count sections that typically contain lyrics
-                when (type) {
-                    SongStructureType.INTRO_INST,
-                    SongStructureType.INTERLUDE,
-                    SongStructureType.OUTRO_INST,
-                    SongStructureType.SOLO -> {
-                        // These are instrumental sections, skip them
-                        return@any false
-                    }
-                    else -> {
-                        // Verse, Chorus, Bridge, Pre-Chorus, Break, Unknown with custom label, etc.
-                        // These typically contain vocals
-                        return@any true
-                    }
+                if (label in listOf("Interlude", "Solo")) {
+                    return@any false
                 }
+
+                // Verse, Chorus, Bridge, Pre-Chorus, Break, custom label, etc.
+                return@any true
             }
             if (hasRealVocalStructureLabels) {
                 features.add(LyricsFeature.STRUCTURE)
