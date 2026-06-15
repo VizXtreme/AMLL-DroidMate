@@ -40,7 +40,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.zeehan2005.scoremuse.global.SongStructure
-import io.github.zeehan2005.scoremuse.global.SongStructureType
 import io.github.zeehan2005.scoremuse.ui.formatTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -259,9 +258,8 @@ fun SongStructureBar(
             itemsIndexed(
                 structures,
                 // 修复：原 key 使用 startTime，但当 songPart 包含从 0 开始的段落时，
-                // 会与 INTRO_INST（startTime=0）冲突。改用唯一组合 key。
                 key = { index, structure ->
-                    "${structure.type.name}-${structure.startTime}-${structure.endTime}-$index"
+                    "${structure.label}-${structure.startTime}-${structure.endTime}-$index"
                 }
             ) { index, structure ->
                 val expandedWidthPx = expandedChipWidthsPx[index]
@@ -332,11 +330,7 @@ fun SongStructureChip(
     }
 
     /** 纯音乐类型（只显示音符符号，不显示文字和时间） */
-    val isInstrumentalType = structure.type in listOf(
-        SongStructureType.INTERLUDE,
-        SongStructureType.INTRO_INST,
-        SongStructureType.OUTRO_INST
-    )
+    val isInstrumentalType = structure.label == "Interlude"
 
     Surface(
         modifier = modifier
@@ -359,7 +353,7 @@ fun SongStructureChip(
                 if (isInstrumentalType) {
                     Icon(
                         imageVector = Icons.Default.MusicNote,
-                        contentDescription = structure.type.displayName,
+                        contentDescription = structure.label,
                         tint = contentColor, // 使用内容颜色，保持单色
                         modifier = Modifier.size(28.dp) // 增大音符图标
                     )

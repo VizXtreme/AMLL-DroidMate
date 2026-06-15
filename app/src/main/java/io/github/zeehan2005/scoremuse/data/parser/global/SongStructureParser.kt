@@ -2,7 +2,6 @@ package io.github.zeehan2005.scoremuse.data.parser.global
 
 import io.github.zeehan2005.scoremuse.global.LyricLine
 import io.github.zeehan2005.scoremuse.global.SongStructure
-import io.github.zeehan2005.scoremuse.global.SongStructureType
 import org.w3c.dom.Document
 import org.w3c.dom.Node
 import timber.log.Timber
@@ -12,7 +11,7 @@ import timber.log.Timber
  *
  * 工作原理：
  * 1. 优先使用 TTML <div> 元素中的 itunes:songPart 属性（最准确）
- * 2. 否则，从歌词行自动推断结构（前奏、间奏、尾奏等）
+ * 2. 否则，从歌词行自动推断结构（间奏等）
  */
 object SongStructureParser {
 
@@ -27,7 +26,7 @@ object SongStructureParser {
      * - 其他所有情况（TTML 无 songPart、非 TTML 源等）：
      *     fallback 从歌词行推断段落结构。
      *
-     * 间奏（前奏/间奏/尾奏）始终独立检测，避免在各分支中重复计算。
+     * 间奏始终独立检测，避免在各分支中重复计算。
      */
     fun parseStructure(
         lyricsLines: List<LyricLine>,
@@ -75,8 +74,7 @@ object SongStructureParser {
                 SongStructure(
                     label = "段落 1",
                     startTime = lines.first().startTime,
-                    endTime = lines.last().endTime,
-                    type = SongStructureType.UNKNOWN
+                    endTime = lines.last().endTime
                 )
             )
             return result
@@ -95,8 +93,7 @@ object SongStructureParser {
                         SongStructure(
                             label = "段落 $paragraphIndex",
                             startTime = paragraphLines.first().startTime,
-                            endTime = paragraphLines.last().endTime,
-                            type = SongStructureType.UNKNOWN
+                            endTime = paragraphLines.last().endTime
                         )
                     )
                     paragraphIndex++
@@ -112,8 +109,7 @@ object SongStructureParser {
                 SongStructure(
                     label = "段落 $paragraphIndex",
                     startTime = remainingLines.first().startTime,
-                    endTime = remainingLines.last().endTime,
-                    type = SongStructureType.UNKNOWN
+                    endTime = remainingLines.last().endTime
                 )
             )
         }
@@ -122,7 +118,7 @@ object SongStructureParser {
     }
 
     /**
-     * 在保留已有结构（如 songPart）的基础上，合并前奏/间奏/尾奏。
+     * 在保留已有结构（如 songPart）的基础上，合并间奏。
      * interludes 由上层统一调用 [detectInterludes] 生成，避免重复计算。
      */
     private fun mergeWithInterludes(
@@ -160,21 +156,19 @@ object SongStructureParser {
         val outroDuration = songDuration - outroStart
 
         if (outroDuration < INTERLUDE_THRESHOLD_MS) return baseStructures
-        if (lastStructure.type == SongStructureType.OUTRO_INST ||
-            lastStructure.type == SongStructureType.OUTRO_PARA
-        ) return baseStructures
+        if (lastStructure.label == "Interlude") return baseStructures
 
-        Timber.d("[SongStructure] Appending OUTRO_INST: last.endTime=${outroStart}ms, songDuration=${songDuration}ms, gap=${outroDuration}ms")
+        Timber.d("[SongStructure] Appending outro Interlude: last.endTime=${outroStart}ms, songDuration=${songDuration}ms, gap=${outroDuration}ms")
         return baseStructures + SongStructure(
-            label = SongStructureType.OUTRO_INST.displayName,
+            label = "Interlude",
             startTime = outroStart,
-            endTime = songDuration,
-            type = SongStructureType.OUTRO_INST
+            endTime = songDuration
         )
     }
 
     /**
      * 检测歌词行之间的间奏/前奏/尾奏。
+     * 前奏和尾奏统一标记为 "Interlude"。
      */
     private fun detectInterludes(lyricLines: List<LyricLine>, songDuration: Long = 0L): List<SongStructure> {
         val interludes = mutableListOf<SongStructure>()
@@ -186,15 +180,14 @@ object SongStructureParser {
         if (firstLine.startTime >= INTERLUDE_THRESHOLD_MS) {
             interludes.add(
                 SongStructure(
-                    label = SongStructureType.INTRO_INST.displayName,
+                    label = "Interlude",
                     startTime = 0L,
-                    endTime = firstLine.startTime,
-                    type = SongStructureType.INTRO_INST
+                    endTime = firstLine.startTime
                 )
             )
         }
 
-        // 检测歌词行之间的间奏（统一为 INTERLUDE，尾奏由 songDuration 单独处理）
+        // 检测歌词行之间的间奏
         for (i in 0 until lyricLines.size - 1) {
             val currentLine = lyricLines[i]
             val nextLine = lyricLines[i + 1]
@@ -203,10 +196,9 @@ object SongStructureParser {
             if (gap >= INTERLUDE_THRESHOLD_MS) {
                 interludes.add(
                     SongStructure(
-                        label = SongStructureType.INTERLUDE.displayName,
+                        label = "Interlude",
                         startTime = currentLine.endTime,
-                        endTime = nextLine.startTime,
-                        type = SongStructureType.INTERLUDE
+                        endTime = nextLine.startTime
                     )
                 )
             }
@@ -220,10 +212,9 @@ object SongStructureParser {
             if (outroDuration >= INTERLUDE_THRESHOLD_MS) {
                 interludes.add(
                     SongStructure(
-                        label = SongStructureType.OUTRO_INST.displayName,
+                        label = "Interlude",
                         startTime = lastLine.endTime,
-                        endTime = songDuration,
-                        type = SongStructureType.OUTRO_INST
+                        endTime = songDuration
                     )
                 )
             }
@@ -283,8 +274,7 @@ object SongStructureParser {
                     SongStructure(
                         label = songPart,
                         startTime = startTime,
-                        endTime = endTime,
-                        type = mapLabelToStructureType(songPart)
+                        endTime = endTime
                     )
                 )
                 Timber.d("[SongStructure] div itunes:songPart parsed: '$songPart' ${startTime}ms-${endTime}ms")
@@ -293,25 +283,6 @@ object SongStructureParser {
         } catch (e: Exception) {
             Timber.w("[SongStructure] Failed to parse div itunes:songPart: $e")
             emptyList()
-        }
-    }
-
-    /**
-     * 将文本标签映射到 SongStructureType
-     */
-    private fun mapLabelToStructureType(label: String): SongStructureType {
-        val normalized = label.trim().lowercase()
-        return when {
-            normalized.contains("intro") -> SongStructureType.INTRO_INST
-            normalized.contains("outro") || normalized.contains("ending") -> SongStructureType.OUTRO_INST
-            normalized.contains("chorus") || normalized.contains("hook") -> SongStructureType.CHORUS
-            normalized.contains("verse") -> SongStructureType.VERSE
-            normalized.contains("bridge") -> SongStructureType.BRIDGE
-            normalized.contains("pre-chorus") || normalized.contains("prechorus") -> SongStructureType.PRE_CHORUS
-            normalized.contains("interlude") || normalized.contains("instrumental") -> SongStructureType.INTERLUDE
-            normalized.contains("solo") -> SongStructureType.SOLO
-            normalized.contains("break") -> SongStructureType.BREAK
-            else -> SongStructureType.UNKNOWN
         }
     }
 

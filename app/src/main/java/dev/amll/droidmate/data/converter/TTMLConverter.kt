@@ -1,7 +1,6 @@
 package dev.amll.droidmate.data.converter
 
 import io.github.zeehan2005.scoremuse.global.LyricLine
-import io.github.zeehan2005.scoremuse.global.SongStructureType
 import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 import io.github.zeehan2005.scoremuse.data.parser.global.TimestampUtils
 import io.github.zeehan2005.scoremuse.data.parser.global.UnifiedLyricsParser
@@ -145,9 +144,7 @@ object TTMLConverter {
         val structures = lyrics.metadata.songStructures
         if (!structures.isNullOrEmpty()) {
             val realStructures = structures.filter { structure ->
-                structure.type != SongStructureType.INTRO_INST &&
-                structure.type != SongStructureType.INTERLUDE &&
-                structure.type != SongStructureType.OUTRO_INST &&
+                structure.label != "Interlude" &&
                 !structure.label.matches(Regex("^段落\\s*\\d+$"))
             }
 
