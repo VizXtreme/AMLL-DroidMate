@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import io.github.zeehan2005.scoremuse.global.NowPlayingMusic
+import io.github.zeehan2005.scoremuse.global.ScreenRefreshRate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -59,6 +60,15 @@ class MediaInfoService(private val context: Context) {
 
     /** 上一次专辑图强制刷新请求的来源标识，用于去重和避免重复重拉 */
     private var lastAlbumArtRefreshKey: String? = null
+
+    /**
+     * 轮询更新间隔（毫秒）- 与屏幕刷新率同步
+     * 根据当前设备的屏幕刷新率动态计算。
+     * 60Hz → 16ms, 90Hz → 11ms, 120Hz → 8ms
+     */
+    private val updateIntervalMs: Long by lazy {
+        ScreenRefreshRate.getFrameIntervalMs(context)
+    }
 
 
 
@@ -388,7 +398,7 @@ class MediaInfoService(private val context: Context) {
         serviceScope.launch {
             while (isActive) {
                 updateMediaInfo()
-                delay(UPDATE_INTERVAL_MS)
+                delay(updateIntervalMs)
             }
         }
     }
@@ -437,9 +447,5 @@ class MediaInfoService(private val context: Context) {
     fun rewind() {
         currentController?.transportControls?.rewind()
         Timber.i("[PlaybackControl] Rewind command sent")
-    }
-
-    companion object {
-        private const val UPDATE_INTERVAL_MS = 500L  // 每 500ms 更新一次，降低专辑图写入压力
     }
 }

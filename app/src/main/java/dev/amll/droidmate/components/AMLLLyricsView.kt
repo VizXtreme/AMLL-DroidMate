@@ -28,8 +28,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import dev.amll.droidmate.global.AMLLSettings
+import io.github.zeehan2005.scoremuse.global.ScreenRefreshRate
 import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
 import org.json.JSONObject
 import timber.log.Timber
@@ -126,10 +128,14 @@ fun AMLLLyricsView(
     var lastTimeUpdateTimestamp by remember { mutableLongStateOf(0L) }
 
     /**
-     * 时间更新间隔（毫秒）- 减少频繁的 JS 调用
-     * 优化：增加到 100ms，因为人眼难以感知 10fps 以下的差异
-     * */
-    val timeUpdateIntervalMs = 100L
+     * 时间更新间隔（毫秒）- 与屏幕刷新率同步
+     * 根据当前设备的屏幕刷新率动态计算，保证每帧更新一次 JS 时间。
+     * 60Hz → 16ms, 90Hz → 11ms, 120Hz → 8ms
+     */
+    val context = LocalContext.current
+    val timeUpdateIntervalMs = remember {
+        ScreenRefreshRate.getFrameIntervalMs(context)
+    }
     
     // ==================== 播放状态节流 ====================
     // 避免每次 recompose 都调用 JS
