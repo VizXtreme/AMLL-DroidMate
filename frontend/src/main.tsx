@@ -216,12 +216,17 @@ function initAMLL() {
     window.__amll = { player: state.player, backgroundRender: state.background }
 
     // 启动持续更新循环，用于刷新帧和动画效果
+    // 优化：只在实际播放时才推进播放器 tick，暂停时跳过节省 CPU
     let lastTime = performance.now()
     const tick = (now: number) => {
       const delta = now - lastTime
       lastTime = now
-      state.player?.update?.(delta)
-      state.background?.update?.(delta)
+      // 不要仅在播放状态下调用 player.update，否则暂停时用户无法进行正常交互
+      if (state.player) {
+        state.player.update(delta)
+      }
+      // 背景渲染器仅在有内容变化时需要 update — 静态背景不需要每帧重绘
+      // 由 setAlbum / configureBackgroundEffect 等 API 在内容变更时主动调用
       requestAnimationFrame(tick)
     }
     requestAnimationFrame(tick)

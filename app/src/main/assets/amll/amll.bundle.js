@@ -25551,11 +25551,11 @@ function initAMLL() {
     window.__amll = { player: state.player, backgroundRender: state.background };
     let lastTime = performance.now();
     const tick = (now) => {
-      var _a3, _b2, _c2, _d2;
       const delta = now - lastTime;
       lastTime = now;
-      (_b2 = (_a3 = state.player) == null ? void 0 : _a3.update) == null ? void 0 : _b2.call(_a3, delta);
-      (_d2 = (_c2 = state.background) == null ? void 0 : _c2.update) == null ? void 0 : _d2.call(_c2, delta);
+      if (state.player) {
+        state.player.update(delta);
+      }
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -25602,7 +25602,6 @@ window.updateLyrics = (payload) => {
   }
 };
 window.updateTime = (timeMs) => {
-  var _a2;
   if (state.hasPlaybackState && !state.isPlaying) return;
   const t2 = Math.trunc(timeMs);
   if (state.currentTime === t2) return;
@@ -25615,7 +25614,6 @@ window.updateTime = (timeMs) => {
     } else if (p2.seek) {
       p2.seek(t2);
     }
-    (_a2 = p2.update) == null ? void 0 : _a2.call(p2, 0);
   } catch (e2) {
     log(`updateTime error: ${e2.message}`, "error");
   }

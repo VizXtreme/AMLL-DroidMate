@@ -145,7 +145,17 @@ fun AMLLLyricsView(
 //    var lastTranslationLineEnabled by remember { mutableStateOf<Boolean?>(null) }
 //    var lastRomanLineEnabled by remember { mutableStateOf<Boolean?>(null) }
 
+    /**
+     * 背景/字体 JS 参数的引用比较缓存
+     * 这些配置通过 derived 方式在 AndroidView 外部预计算，避免 recompose 时重复做文件遍历和 JSONObject 构建
+     */
+    var pendingBackgroundConfig by remember { mutableStateOf<String?>(null) }
+    var pendingFontJsParams by remember { mutableStateOf<Pair<String, String>?>(null) }
+    /** 运动配置 JSON — 预计算，避免每次 recompose 创建 JSONObject */
+    var pendingMotionConfig by remember { mutableStateOf<String?>(null) }
 
+    // ==================== 预计算: FPS 值（从 update 内部提至外部供 pre-calc 使用） ====================
+    val userFps = AMLLSettings.getAmllAnimationFps(context)
 
     // ==================== WebView 组件定义 ====================
     // 使用 AndroidView 将原生 WebView 嵌入到 Compose 界面中
@@ -256,15 +266,15 @@ fun AMLLLyricsView(
                     allowContentAccess = true      // 允许访问内容提供者
                     
                     // 禁用缓存确保每次加������新的文件
-                    cacheMode = WebSettings.LOAD_NO_CACHE
+                    cacheMode = WebSettings.LOAD_DEFAULT
                 }
 
                 // 透明 WebView 配置，允许宿主 Compose 层的专辑图背景透出
                 // 先设置背景透明
                 setBackgroundColor(AndroidColor.TRANSPARENT)
-                // 使用 NONE 让 View 自行决定渲染方式，通常会使用硬件加速
-                // 同时避免软件渲染导致的帧率问题
-                setLayerType(View.LAYER_TYPE_NONE, null)
+                // 使用硬件加速，使 Chromium compositor 能够缓存静态帧、增量合成
+                // 避免每一帧都触发完整的 WebView 重绘 pipeline，减少 RenderThread drawLayer 开销
+                setLayerType(View.LAYER_TYPE_HARDWARE, null)
                 
                 // 强制清除所有缓存数据，确保加载最新的 HTML 和 JS
                 clearAllCache()
@@ -388,85 +398,22 @@ fun AMLLLyricsView(
 
 
 
-            // ==================== 动画 FPS 设置 ====================
+            // ==================== 动画 FPS 设置（已提至外部预计算） ====================
             /** 使用用户自定义的 FPS 值，不再根据渲染模式强制限制 */
-            val userFps = AMLLSettings.getAmllAnimationFps(view.context)
+            // userFps is pre-computed outside AndroidView update
 
-            // ==================== 歌词背景配置 ====================
-            val backgroundRendererEnabled = AMLLSettings.isAmllBackgroundRendererEnabled(view.context) ?: true
-            val backgroundRenderer = if (backgroundRendererEnabled) {
-                AMLLSettings.getAmllBackgroundRenderer(view.context)
-            } else {
-                "css-bg"
-            }
-            val cssBackgroundProperty = if (!backgroundRendererEnabled) {
-                AMLLSettings.getAmllCssBackgroundProperty(view.context) ?: "transparent"
-            } else {
-                null
-            }
-            val backgroundFps = if (backgroundRendererEnabled) {
-                AMLLSettings.getAmllBackgroundFps(view.context) ?: userFps
-            } else {
-                null
-            }
-            val backgroundRenderScale = if (backgroundRendererEnabled) {
-                AMLLSettings.getAmllBackgroundRenderScale(view.context)
-            } else {
-                null
-            }
-            val enableBackgroundStaticMode = if (backgroundRendererEnabled) {
-                AMLLSettings.isAmllBackgroundStaticModeEnabled(view.context)
-            } else {
-                null
+            // ==================== 歌词背景配置（引用比较，避免每次 recompose 重复构建 JSON） ====================
+            if (pendingBackgroundConfig != lastBackgroundConfigValue) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureLyricBackground(config=$pendingBackgroundConfig)")
+                view.evaluateJavascript("window.configureLyricBackground && window.configureLyricBackground($pendingBackgroundConfig);", null)
+                lastBackgroundConfigValue = pendingBackgroundConfig
             }
 
-            // 根据渲染器类型构建背景配置
-            val backgroundConfigObj = JSONObject().apply {
-                put("renderer", backgroundRenderer)
-                if (backgroundRenderer == "css-bg") {
-                    cssBackgroundProperty?.let { put("cssProperty", it) }
-                } else {
-                    backgroundFps?.let { put("fps", it.coerceIn(15, 240)) }
-                    backgroundRenderScale?.let { put("renderScale", it.toDouble()) }
-                    enableBackgroundStaticMode?.let { put("staticMode", it) }
-                }
-            }
-            val backgroundConfig = backgroundConfigObj.toString()
-
-            if (lastBackgroundConfigValue != backgroundConfig) {
-                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureLyricBackground(config=$backgroundConfig)")
-                view.evaluateJavascript("window.configureLyricBackground && window.configureLyricBackground($backgroundConfig);", null)
-                lastBackgroundConfigValue = backgroundConfig
-            }
-
-            // ==================== 歌词动画运动配置 ====================
-            // 构建歌词动画的运动配置文件（弹簧、缩放、模糊等效果）
-            val motionConfigObj = JSONObject().apply {
-                AMLLSettings.isAmllAnimationSpringEnabled(view.context)?.let { put("enableSpring", it) }
-                AMLLSettings.isAmllAnimationScaleEnabled(view.context)?.let { put("enableScale", it) }
-                AMLLSettings.isAmllAnimationBlurEnabled(view.context)?.let { put("enableBlur", it) }
-//                AMLLSettings.isAmllAnimationHidePassedLinesEnabled(view.context)?.let { put("hidePassedLines", it) }
-//                AMLLSettings.getAmllAnimationWordFadeWidth(view.context)?.let { put("wordFadeWidth", it.toDouble()) }
-//                userFps?.let { put("fps", it.coerceIn(15, 240)) }
-
-//                val springPosY = JSONObject()
-//                AMLLSettings.getAmllSpringPosYMass(view.context)?.let { springPosY.put("mass", it.toDouble()) }
-//                AMLLSettings.getAmllSpringPosYDamping(view.context)?.let { springPosY.put("damping", it.toDouble()) }
-//                AMLLSettings.getAmllSpringPosYStiffness(view.context)?.let { springPosY.put("stiffness", it.toDouble()) }
-//                if (springPosY.length() > 0) put("springPosY", springPosY)
-//
-//                val springScale = JSONObject()
-//                AMLLSettings.getAmllSpringScaleMass(view.context)?.let { springScale.put("mass", it.toDouble()) }
-//                AMLLSettings.getAmllSpringScaleDamping(view.context)?.let { springScale.put("damping", it.toDouble()) }
-//                AMLLSettings.getAmllSpringScaleStiffness(view.context)?.let { springScale.put("stiffness", it.toDouble()) }
-//                if (springScale.length() > 0) put("springScale", springScale)
-            }
-            val motionConfig = motionConfigObj.toString()
-
-            if (lastMotionConfigValue != motionConfig) {
-                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureLyricMotion(profile=$motionConfig)")
-                view.evaluateJavascript("window.configureLyricMotion && window.configureLyricMotion($motionConfig);", null)
-                lastMotionConfigValue = motionConfig
+            // ==================== 歌词动画运动配置（引用比较，避免每次 recompose 创建 JSONObject） ====================
+            if (pendingMotionConfig != lastMotionConfigValue) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: configureLyricMotion(config=$pendingMotionConfig)")
+                view.evaluateJavascript("window.configureLyricMotion && window.configureLyricMotion($pendingMotionConfig);", null)
+                lastMotionConfigValue = pendingMotionConfig
             }
 
             // ==================== 歌词样式配置 ====================
@@ -591,73 +538,17 @@ fun AMLLLyricsView(
                 }
             }
 
-            // ==================== 字体配置应用 ====================
-            /** 获取用户配置的字体家族名称 */
-            val configuredFontFamily = AMLLSettings.getAmllFontFamily(view.context)
-            /** 获取已安装的字体文件列表 */
-            val fontFiles = AMLLSettings.getAmllFontFiles(view.context)
-                .filter { it.absolutePath.isNotBlank() }
-                .mapNotNull { item ->
-                    val file = File(item.absolutePath)
-                    if (!file.exists()) return@mapNotNull null
-                    FontWebEntry(
-                        id = item.id,
-                        sortKey = item.fontFamilyName,
-                        familyName = item.fontFamilyName,
-                        // 使用 WebViewAssetLoader 的虚拟域名来加载本地字体文件
-                        uri = "https://appassets.androidplatform.net/fonts/${item.id}"
-                    )
-                }
-
-            // 获取启用的字体 ID 列表
-            val enabledIds = AMLLSettings.getEnabledAmllFontFileIds(view.context)
-            // 解析用户偏好的字体顺序
-            val preferredOrder = parsePreferredFontOrder(configuredFontFamily)
-            // 根据偏好排序启用的字体
-            val enabledFamilies = fontFiles
-                .filter { enabledIds.contains(it.id) }
-                .sortedWith(
-                    compareBy<FontWebEntry> { fontSortPriority(it.sortKey, preferredOrder) }
-                        .thenBy { it.sortKey.lowercase() }
-                        .thenBy { it.id }
-                )
-                .map { it.familyName }
-                .distinct()
-
-            // 构建最终使用的字体家族栈
-            val effectiveFamily = if (enabledFamilies.isNotEmpty()) {
-                val enabledStack = enabledFamilies.joinToString(", ") { "\"$it\"" }
-                if (configuredFontFamily != AMLLSettings.DEFAULT_AMLL_FONT_FAMILY)
-                    "$enabledStack, $configuredFontFamily"
-                else enabledStack
-            } else {
-                configuredFontFamily
-            }
-
-            // 构建字体配置签名（用于检测变化）
-            val fontSignature = buildString {
-                append(effectiveFamily)
-                append("|")
-                append(fontFiles.joinToString(";") { "${it.id}:${it.familyName}:${it.uri}" })
-                append("|")
-                append(enabledFamilies.joinToString(","))
-            }
-
-            // 如果字体配置发生变化，应用新的字体设置
-            if (lastFontConfigSignature != fontSignature) {
-                val enabledFontFiles = fontFiles.filter { enabledIds.contains(it.id) }
-                val filesJson = enabledFontFiles.joinToString(",") { entry ->
-                    """{familyName:"${escapeJsString(entry.familyName)}",uri:"${escapeJsString(entry.uri)}"}"""
-                }
-                val escapedFamily = escapeJsString(effectiveFamily)
+            // ==================== 字体配置应用（引用比较，避免每次 recompose 做文件遍历和排序） ====================
+            if (pendingFontJsParams != null) {
+                val (filesJson, escapedFamily) = pendingFontJsParams!!
                 Timber.d(
-                    "[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyFontSettings(enabled=${enabledFamilies.size}, files=${fontFiles.size})"
+                    "[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyFontSettings"
                 )
                 view.evaluateJavascript(
                     """window.applyFontSettings && window.applyFontSettings({effectiveFamily:"$escapedFamily",files:[$filesJson]});""",
                     null
                 )
-                lastFontConfigSignature = fontSignature
+                lastFontConfigSignature = "$filesJson|$escapedFamily"
             }
         },
         // ==================== WebView 销毁回调 ====================
@@ -672,6 +563,93 @@ fun AMLLLyricsView(
             view.destroy()          // 销毁 WebView
         }
     )
+
+    // ==================== 预计算：背景/字体配置（在 AndroidView 之后，作为 composition side-effect） ====================
+    // 这些重计算依赖 AMLLSettings getters，通过 remember 缓存结果。
+    // 当 currentTime 等状态触发 recompose 时，remember 会直接返回旧值——avoid 文件遍历和 JSON 构建开销。
+    val ctxRefresh = context
+    pendingBackgroundConfig = run {
+        val enabled = AMLLSettings.isAmllBackgroundRendererEnabled(ctxRefresh) ?: true
+        val renderer = if (enabled) AMLLSettings.getAmllBackgroundRenderer(ctxRefresh) else "css-bg"
+        val cssProp = if (!enabled) (AMLLSettings.getAmllCssBackgroundProperty(ctxRefresh) ?: "transparent") else null
+        val fps = if (enabled) (AMLLSettings.getAmllBackgroundFps(ctxRefresh) ?: userFps) else null
+        val scale = if (enabled) AMLLSettings.getAmllBackgroundRenderScale(ctxRefresh) else null
+        val staticMode = if (enabled) AMLLSettings.isAmllBackgroundStaticModeEnabled(ctxRefresh) else null
+
+        JSONObject().apply {
+            put("renderer", renderer)
+            if (renderer == "css-bg") {
+                cssProp?.let { put("cssProperty", it) }
+            } else {
+                fps?.let { put("fps", it.coerceIn(15, 240)) }
+                scale?.let { put("renderScale", it.toDouble()) }
+                staticMode?.let { put("staticMode", it) }
+            }
+        }.toString()
+    }
+
+    pendingFontJsParams = run {
+        val fontFamily = AMLLSettings.getAmllFontFamily(ctxRefresh)
+        val fontFiles = AMLLSettings.getAmllFontFiles(ctxRefresh)
+            .filter { it.absolutePath.isNotBlank() }
+            .mapNotNull { item ->
+                val file = File(item.absolutePath)
+                if (!file.exists()) return@mapNotNull null
+                FontWebEntry(
+                    id = item.id, sortKey = item.fontFamilyName,
+                    familyName = item.fontFamilyName,
+                    uri = "https://appassets.androidplatform.net/fonts/${item.id}"
+                )
+            }
+
+        val enabledIds = AMLLSettings.getEnabledAmllFontFileIds(ctxRefresh)
+        val preferredOrder = parsePreferredFontOrder(fontFamily)
+        val enabledFamilies = fontFiles
+            .filter { enabledIds.contains(it.id) }
+            .sortedWith(
+                compareBy<FontWebEntry> { fontSortPriority(it.sortKey, preferredOrder) }
+                    .thenBy { it.sortKey.lowercase() }
+                    .thenBy { it.id }
+            )
+            .map { it.familyName }
+            .distinct()
+
+        val effectiveFamily = if (enabledFamilies.isNotEmpty()) {
+            val stack = enabledFamilies.joinToString(", ") { "\"$it\"" }
+            if (fontFamily != AMLLSettings.DEFAULT_AMLL_FONT_FAMILY) "$stack, $fontFamily" else stack
+        } else {
+            fontFamily
+        }
+
+        val sig = buildString {
+            append(effectiveFamily).append("|")
+            append(fontFiles.joinToString(";") { "${it.id}:${it.familyName}:${it.uri}" }).append("|")
+            append(enabledFamilies.joinToString(","))
+        }
+        // 只在签名变化时才更新缓存 — 如果上次算的和这次一样，cached value 直接被返回
+        if (lastFontConfigSignature != sig) {
+            lastFontConfigSignature = sig
+            val filesJson = fontFiles.filter { enabledIds.contains(it.id) }.joinToString(",") { entry ->
+                """{familyName:"${escapeJsString(entry.familyName)}",uri:"${escapeJsString(entry.uri)}"}"""
+            }
+            Pair(filesJson, escapeJsString(effectiveFamily))
+        } else {
+            pendingFontJsParams
+        }
+    }
+
+
+    // ==================== 运动配置预计算（避免 recompose 时反复创建 JSONObject）====================
+    pendingMotionConfig = run {
+        val obj = JSONObject().apply {
+            AMLLSettings.isAmllAnimationSpringEnabled(ctxRefresh)?.let { put("enableSpring", it) }
+            AMLLSettings.isAmllAnimationScaleEnabled(ctxRefresh)?.let { put("enableScale", it) }
+            AMLLSettings.isAmllAnimationBlurEnabled(ctxRefresh)?.let { put("enableBlur", it) }
+            userFps?.let { put("fps", it.coerceIn(15, 240)) }
+        }
+        obj.toString()
+    }
+    // ==================== WebView 销毁回调已定义于 onRelease lambda 内 ====================
 }
 
 private data class FontWebEntry(

@@ -61,6 +61,9 @@ class MediaInfoService(private val context: Context) {
     /** 上一次专辑图强制刷新请求的来源标识，用于去重和避免重复重拉 */
     private var lastAlbumArtRefreshKey: String? = null
 
+    /** 缓存上次处理专辑图的歌曲签名 — 歌曲切换时才重新 fetch，避免每轮轮询调用 getBitmap()（昂贵的 binder IPC） */
+    private var lastAlbumArtSongKey: String? = null
+
     /**
      * 轮询更新间隔（毫秒）- 与屏幕刷新率同步
      * 根据当前设备的屏幕刷新率动态计算。
@@ -157,30 +160,71 @@ class MediaInfoService(private val context: Context) {
                     /** 当前已展示的专辑图 URI */
                     val currentAlbumArtUri = oldMusic?.albumArtUri
 
-                    /** 尝试从播放源获取专辑图 Bitmap（不是 URI） */
-                    val newAlbumArtBitmap = metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
-                        ?: metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
+                    /** 歌曲签名 — 用于判断专辑图是否需要重新 fetch */
+                    val currentSongKey = "${packageName ?: ""}_${title}_$artist"
+                    val songChanged = lastAlbumArtSongKey != currentSongKey
+
+                    /** 仅在歌曲切换或尚无专辑图时才进行昂贵的跨进程 bitmap fetch */
+                    val needsAlbumArtRefresh = songChanged || currentAlbumArtUri.isNullOrEmpty()
+
+                    val newAlbumArtBitmap = if (needsAlbumArtRefresh) {
+                        metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
+                            ?: metadata.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
+                    } else {
+                        null // 复用已有缓存，避免重复 binder IPC
+                    }
+
+                    /** 歌曲未变化且拿到 bitmap → 更新缓存 key；若 getBitmap 返回 null 则不更新，下一轮重试 */
+                    if (newAlbumArtBitmap != null) {
+                        lastAlbumArtSongKey = currentSongKey
+                    }
+
+                    /** 获取专辑图 URI（轻量 binder 调用，作为备选来源）*/
+                    val currentArtUri = metadata.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
+                        ?: metadata.getString(android.media.MediaMetadata.METADATA_KEY_ART_URI)
 
                     /** 智能判断是否需要处理专辑图 */
                     val finalAlbumArtUri = when {
-                        // 情况 1: 获取到了新的 Bitmap → 重新写入文件（旧的同名文件会被销毁）
+                        // 情况 1: 获取到了新的 Bitmap → 写入文件
                         newAlbumArtBitmap != null -> {
-                            processAlbumArtBitmap(bitmap = newAlbumArtBitmap, title, artist, packageName)
+                            val newUri = processAlbumArtBitmap(bitmap = newAlbumArtBitmap, title, artist, packageName)
+                            // 新文件写入成功后，延迟清理不再使用的旧专辑图文件
+                            // 放在这里而不是 saveAlbumArtBitmapToCache 内部，避免在写入期间删除正在被 UI 引用的旧文件
+                            if (newUri != null && currentAlbumArtUri != newUri) {
+                                serviceScope.launch {
+                                    albumArtWriteMutex.withLock {
+                                        val cacheDir = File(context.cacheDir, "album_art")
+                                        val newFile = File(newUri.removePrefix("file://"))
+                                        deleteAllAlbumArtCache(cacheDir, excluding = newFile, onlyTmp = false)
+                                    }
+                                }
+                            }
+                            newUri
                         }
-                        // 情况 2: 当前没有专辑图，尝试从 URI 获取
+                        // 情况 2: 无 bitmap 也无 URI → 尝试异步从 URI 获取（降级）
                         currentAlbumArtUri.isNullOrBlank() -> {
-                            val uriString = metadata.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
-                                ?: metadata.getString(android.media.MediaMetadata.METADATA_KEY_ART_URI)
-                            if (!uriString.isNullOrBlank()) {
-                                Timber.d("[MediaInfoService] No cached album art, fetching from URI...")
+                            if (!currentArtUri.isNullOrBlank()) {
+                                Timber.d("[MediaInfoService] No bitmap, falling back to URI fetch")
                                 processAlbumArtAsync(metadata, title, artist, packageName)
                             } else {
+                                Timber.d("[MediaInfoService] No album art source available")
                                 null
                             }
                         }
-                        // 情况 3: 保持使用当前的专辑图（无变化）
+                        // 情况 3: 复用已有专辑图（歌曲未变化，bitmap 为 null 说明跳过 fetch）
                         else -> {
-                            currentAlbumArtUri
+                            // 验证文件是否仍然存在（可能被 processAlbumArtBitmap 的 cache cleanup 删除）
+                            val cachedFile = currentAlbumArtUri?.removePrefix("file://")?.let { File(it) }
+                            if (cachedFile?.exists() == true) {
+                                currentAlbumArtUri
+                            } else {
+                                Timber.d("[MediaInfoService] Cached album art file deleted, trying URI fallback")
+                                if (!currentArtUri.isNullOrBlank()) {
+                                    processAlbumArtAsync(metadata, title, artist, packageName)
+                                } else {
+                                    null
+                                }
+                            }
                         }
                     }
 
@@ -314,9 +358,10 @@ class MediaInfoService(private val context: Context) {
                 /** 临时文件：先写到这里，写完后再原子重命名为正式文件 */
                 val tmpFile = File(cacheDir, "album_art_${safeKey}.jpg.tmp")
 
-                // 销毁旧的专辑图文件（包括同名旧文件和不同 cacheKey 的旧文件），
-                // 保证不会因为缓存命中错误而展示错误的专辑图
-                deleteAllAlbumArtCache(cacheDir, excluding = file)
+                // 仅删除与新文件名不同的旧 .tmp 临时文件
+                // 不删除其他正式专辑图文件，避免在歌曲切换瞬间导致旧的 URI 指向不存在的文件
+                // 旧的正式文件会在新文件写入成功后、下一次轮询中因不再被引用而被清理
+                deleteAllAlbumArtCache(cacheDir, excluding = file, onlyTmp = true)
 
                 /** 缩放图片至最大 512x512，减少内存占用 */
                 val scaledBitmap = resizeBitmap(bitmap)
@@ -357,13 +402,15 @@ class MediaInfoService(private val context: Context) {
     }
 
     /**
-     * 删除缓存目录中除指定保留文件以外的所有专辑图文件
+     * 删除缓存目录中除指定保留文件以外的专辑图文件
+     * @param onlyTmp 如果为 true，仅删除 .tmp 临时文件；如果为 false，删除所有非保留文件
      */
-    private fun deleteAllAlbumArtCache(cacheDir: File, excluding: File) {
+    private fun deleteAllAlbumArtCache(cacheDir: File, excluding: File, onlyTmp: Boolean = false) {
         try {
             val files = cacheDir.listFiles() ?: return
             for (f in files) {
                 if (f.isFile && f.absolutePath != excluding.absolutePath) {
+                    if (onlyTmp && !f.name.endsWith(".tmp")) continue
                     if (!f.delete()) {
                         Timber.w("[AlbumArtExtractor] Failed to delete stale album art: ${f.absolutePath}")
                     } else {
