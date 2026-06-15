@@ -2077,20 +2077,19 @@ open class LyricsRepository(
                     ?: lyrics
                 
                 /**
-                 * 3. 储存到本地缓存（如果配置了缓存仓库）
-                 * 这样后续 fetchLyricsAuto 的优先读取缓存逻辑就能生效
+                 * 3. 注意：不在此处写入缓存。
+                 *
+                 * 此函数使用的 title/artist 来自搜索候选结果，可能与调用方持有的
+                 * 系统媒体信息（NowPlayingMusic.title/artist）不一致（例如搜索返回了
+                 * "Song (Live)" 而系统信息是 "Song"）。
+                 * 若在此缓存则会被 upsert() 视为不同条目，导致同一首歌在缓存页面
+                 * 出现重复条目（一条 source 为原始提供者名如 "KUGOU"，另一条为
+                 * 调用方写入的格式化来源名如 "酷狗音乐"）。
+                 *
+                 * 所有调用路径（MainViewModel.fetchLyrics / applyCustomLyricsInput）
+                 * 已在外层通过 applyLyricsToState() 统一使用规范 title/artist 写入缓存，
+                 * 此处不再重复缓存。
                  */
-                val finalTitle = title ?: stableLyrics.metadata.title
-                val finalArtist = artist ?: stableLyrics.metadata.artist
-                if (finalTitle.isNotBlank() && finalArtist.isNotBlank()) {
-                    cacheRepo?.upsert(
-                        title = finalTitle,
-                        artist = finalArtist,
-                        source = provider.uppercase(),
-                        xmlContent = ttmlContent
-                    )
-                    Timber.i("[LyricsRepository] Automatically cached lyrics for: $finalTitle - $finalArtist")
-                }
 
                 LyricsResult(
                     isSuccess = true,

@@ -3,6 +3,7 @@ package io.github.zeehan2005.scoremuse.data.repository
 import android.content.Context
 import io.github.zeehan2005.scoremuse.global.CachedLyricEntry
 import kotlinx.serialization.json.Json
+import timber.log.Timber
 import java.util.Map.entry
 import java.util.UUID
 
@@ -30,6 +31,12 @@ class LyricsCacheRepository(context: Context) {
      * 同一首歌（normalize 后的 title+artist）只保留最新一条，
      * 防止历史遗留的重复条目出现在 UI 中。
      *
+     * 额外清理旧版 [LyricsRepository.getLyrics] 遗留的"内层缓存"条目。
+     * 该函数曾以搜索候选结果的 title/artist + 原始提供者名（如 "KUGOU"）写入缓存，
+     * 而调用方又以系统媒体信息的 title/artist + 格式化来源名（如 "酷狗音乐"）再次写入。
+     * 当两者 title/artist 不一致时，同一首歌产生了两个缓存条目。
+     * 此处删除被规范化条目替代了的旧原始提供者名条目。
+     *
      * @return 按更新时间降序排列的列表（最新的在前）
      */
     fun getAll(): List<CachedLyricEntry> {
@@ -40,7 +47,71 @@ class LyricsCacheRepository(context: Context) {
             val key = "${normalize(entry.title)}|${normalize(entry.artist)}"
             seen.add(key)
         }
-        return deduped
+        return cleanupStaleRawProviderEntries(all, deduped)
+    }
+
+    /**
+     * 清理旧版 getLyrics() 遗留的原始提供者名缓存条目。
+     *
+     * 在此修复之前，getLyrics() 会以 provider.uppercase()（如 "KUGOU"、"QQ"）作为 source
+     * 写入缓存，而调用方随后又以 formatAutoSource 的格式化名称（如 "酷狗音乐"）写入。
+     * 若搜索候选结果中的 title/artist 与系统媒体信息不同，则产生两条缓存——
+     * 一条 source 为原始提供者名，另一条为格式化来源名。
+     *
+     * 此方法识别这些被替代的旧条目并将其从持久化存储中删除。
+     */
+    private fun cleanupStaleRawProviderEntries(
+        all: List<CachedLyricEntry>,
+        visible: List<CachedLyricEntry>
+    ): List<CachedLyricEntry> {
+        val rawProviders = setOf("AMLL", "NETEASE", "NCM", "QQ", "QQMUSIC", "KUGOU")
+        val toRemove = mutableSetOf<String>()
+
+        // 遍历所有可见条目，找出那些 source 是原始提供者名的
+        for (entry in visible) {
+            if (entry.source.uppercase() in rawProviders) {
+                // 检查是否有另一条"规范化"条目（非原始提供者名 source）
+                // 且属于同一首歌（artist 相同、title 通过后缀剥离后匹配）
+                val hasCanonical = visible.any { other ->
+                    other.id != entry.id &&
+                        normalize(other.artist) == normalize(entry.artist) &&
+                        titleMatchesAfterStrippingSuffix(normalize(entry.title), normalize(other.title))
+                }
+                if (hasCanonical) {
+                    toRemove.add(entry.id)
+                }
+            }
+        }
+
+        if (toRemove.isNotEmpty()) {
+            Timber.i("[LyricsCache] Removing ${toRemove.size} stale cache entries with raw provider source: $toRemove")
+            val cleaned = all.filter { it.id !in toRemove }
+            writeAll(cleaned)
+            return visible.filter { it.id !in toRemove }
+        }
+
+        return visible
+    }
+
+    /**
+     * 判断两个标题在剥离常见后缀后是否相同。
+     *
+     * 不同歌词来源可能在搜索结果中附加 "(Live)"、"(Remix)" 等后缀，
+     * 导致同一首歌在缓存中出现不同标题。此方法剥离这些后缀后比较。
+     */
+    private fun titleMatchesAfterStrippingSuffix(a: String, b: String): Boolean {
+        if (a == b) return true
+        val stripped = a.replace(SUFFIX_PATTERN, "").trimEnd()
+        val strippedOther = b.replace(SUFFIX_PATTERN, "").trimEnd()
+        return stripped == strippedOther
+    }
+
+    private companion object {
+        private const val PREFS_NAME = "ScoreMuse_lyrics_cache"
+        private const val KEY_CACHE_JSON = "lyrics_cache_json"
+
+        /** 匹配尾部括号后缀，如 (live)、(remix)、(feat.xxx) 等 */
+        private val SUFFIX_PATTERN = Regex("""\s*\([^)]*\)\s*$""", RegexOption.IGNORE_CASE)
     }
 
     /**
@@ -159,10 +230,5 @@ class LyricsCacheRepository(context: Context) {
 
     private fun normalize(value: String): String {
         return value.trim().lowercase()
-    }
-
-    private companion object {
-        private const val PREFS_NAME = "ScoreMuse_lyrics_cache"
-        private const val KEY_CACHE_JSON = "lyrics_cache_json"
     }
 }
