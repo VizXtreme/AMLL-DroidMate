@@ -149,6 +149,7 @@ private fun LyricsCachePage(
 
     val handleDeleteSelected = {
         selectedEntries.forEach { repository.deleteById(it) }
+        cacheEntries = repository.getAll()
         selectedEntries = emptySet()
         isSelectionMode = false
     }
@@ -319,7 +320,7 @@ private fun LyricsCachePage(
 
     if (showClearDialog) {
         AlertDialog(
-            onDismissRequest = { },
+            onDismissRequest = { showClearDialog = false },
             title = { Text("清空缓存") },
             text = { Text("确认删除全部缓存歌词吗？") },
             containerColor = MaterialTheme.colorScheme.background,
@@ -327,13 +328,15 @@ private fun LyricsCachePage(
                 TextButton(
                     onClick = {
                         repository.clearAll()
+                        cacheEntries = repository.getAll()
+                        showClearDialog = false
                     }
                 ) {
                     Text("删除全部")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { }) {
+                TextButton(onClick = { showClearDialog = false }) {
                     Text("取消")
                 }
             }
