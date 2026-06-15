@@ -96,7 +96,8 @@ object TTMLParser {
     private data class ParsedParagraph(
         val mainLine: LyricLine?,
         val bgLine: LyricLine?,
-        val agent: String?
+        val agent: String?,
+        val key: String? = null
     )
 
     private data class ParagraphParseBuffer(
@@ -134,6 +135,17 @@ object TTMLParser {
                 metadata = LyricsMetadata(title = "Unknown", artist = "Unknown"),
                 lines = emptyList()
             )
+        }
+
+        /** 解析 <iTunesMetadata><translations> 中的翻译，匹配到对应的歌词行 */
+        try {
+            val translationMap = extractITunesTranslations(doc)
+            if (translationMap.isNotEmpty()) {
+                Timber.i("[TTMLParser] Found ${translationMap.size} translations in <iTunesMetadata>, applying to paragraphs")
+                applyITunesTranslations(parsedParagraphs, translationMap)
+            }
+        } catch (e: Exception) {
+            Timber.w("[TTMLParser] Failed to process iTunes translations $e")
         }
 
         val normalizedAgents = parsedParagraphs.map { normalizeAgent(it.agent) }
@@ -238,6 +250,7 @@ object TTMLParser {
             }
 
             val agent = readAgentAttr(pElement)
+            val itunesKey = pElement.getAttribute("itunes:key").ifBlank { null }
             val buffer = ParagraphParseBuffer()
 
             parseNodeChildren(
@@ -297,7 +310,7 @@ object TTMLParser {
             if (mainLine == null && bgLine == null) {
                 null
             } else {
-                ParsedParagraph(mainLine = mainLine, bgLine = bgLine, agent = agent)
+                ParsedParagraph(mainLine = mainLine, bgLine = bgLine, agent = agent, key = itunesKey)
             }
         } catch (e: Exception) {
             Timber.w("[TTMLParser] Failed to parse paragraph $e")
@@ -734,6 +747,152 @@ object TTMLParser {
         }
 
         return sanitized
+    }
+
+    /**
+     * 从 <iTunesMetadata><translations> 中提取翻译信息。
+     *
+     * 格式：
+     *   <iTunesMetadata>
+     *     <translations>
+     *       <translation xml:lang="zh-Hans" type="subtitle">
+     *         <text for="L1">翻译文本<span ttm:role="x-bg">背景音翻译</span></text>
+     *       </translation>
+     *     </translations>
+     *   </iTunesMetadata>
+     *
+     * 每个 <text> 的 for 属性引用对应 <p> 的 itunes:key。
+     * 方法返回 Map<key, (mainTranslation, bgTranslation)>。
+     *
+     * @param doc 已解析的 TTML Document
+     * @return 翻译映射表，key=itunes:key 值 → (主翻译, 背景翻译)
+     */
+    private fun extractITunesTranslations(doc: Document): Map<String, Pair<String?, String?>> {
+        val result = mutableMapOf<String, Pair<String?, String?>>()
+
+        val head = doc.getElementsByTagName("head").item(0) as? Element ?: return result
+        val metadataElement = head.getElementsByTagName("metadata").item(0) as? Element ?: return result
+        val itunesMetadataList = metadataElement.getElementsByTagName("iTunesMetadata")
+        if (itunesMetadataList.length == 0) return result
+
+        val itunesMetadata = itunesMetadataList.item(0) as? Element ?: return result
+        val translationsList = itunesMetadata.getElementsByTagName("translations")
+        if (translationsList.length == 0) return result
+
+        val translations = translationsList.item(0) as? Element ?: return result
+        val translationElements = translations.getElementsByTagName("translation")
+
+        for (i in 0 until translationElements.length) {
+            val translation = translationElements.item(i) as? Element ?: continue
+            val xmlLang = translation.getAttribute("xml:lang")
+
+            val textElements = translation.getElementsByTagName("text")
+            for (j in 0 until textElements.length) {
+                val text = textElements.item(j) as? Element ?: continue
+                val forAttr = text.getAttribute("for").ifBlank { continue }
+                // 避免重复覆盖，第一个遇到的翻译优先级最高
+                if (forAttr in result) continue
+
+                val mainTranslation = extractTextTranslation(text)
+                val bgTranslation = extractTextBgTranslation(text)
+
+                if (mainTranslation != null || bgTranslation != null) {
+                    Timber.d("[TTMLParser] iTunes translation: key=$forAttr lang=$xmlLang main='$mainTranslation' bg='$bgTranslation'")
+                    result[forAttr] = Pair(mainTranslation, bgTranslation)
+                }
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * 从 <text> 元素中提取主翻译文本，排除 <span ttm:role="x-bg"> 子元素的内容。
+     *
+     * 例如：<text for="L3">那天是我结婚的日子<span ttm:role="x-bg">那天是我们结婚的日子</span></text>
+     * 返回："那天是我结婚的日子"
+     */
+    private fun extractTextTranslation(element: Element): String? {
+        val sb = StringBuilder()
+        val children = element.childNodes
+        for (i in 0 until children.length) {
+            val node = children.item(i)
+            when (node.nodeType) {
+                Node.TEXT_NODE -> sb.append(node.nodeValue ?: "")
+                Node.ELEMENT_NODE -> {
+                    val child = node as Element
+                    val role = readRoleAttr(child)
+                    // 跳过 x-bg 背景翻译，只提取主翻译
+                    if (role != "x-bg") {
+                        sb.append(child.textContent ?: "")
+                    }
+                }
+            }
+        }
+        val text = normalizeAuxiliaryText(sb.toString())
+        return text.takeIf { it.isNotEmpty() }
+    }
+
+    /**
+     * 从 <text> 元素中提取背景翻译文本（<span ttm:role="x-bg"> 的内容）。
+     *
+     * 例如：<text for="L3">那天是我结婚的日子<span ttm:role="x-bg">那天是我们结婚的日子</span></text>
+     * 返回："那天是我们结婚的日子"
+     */
+    private fun extractTextBgTranslation(element: Element): String? {
+        val children = element.childNodes
+        for (i in 0 until children.length) {
+            val node = children.item(i)
+            if (node.nodeType != Node.ELEMENT_NODE) continue
+            val child = node as Element
+            val role = readRoleAttr(child)
+            if (role == "x-bg") {
+                val text = normalizeAuxiliaryText(child.textContent ?: "")
+                if (text.isNotEmpty()) return text
+            }
+        }
+        return null
+    }
+
+    /**
+     * 将 <iTunesMetadata> 中解析出的翻译应用到对应的 ParsedParagraph。
+     *
+     * 通过匹配 ParsedParagraph.key（即 itunes:key）与 translationMap 的 key。
+     * 仅在该行尚未有翻译（translation == null）时应用，避免覆盖行内
+     * <span ttm:role="x-translation"> 中已有的翻译。
+     */
+    private fun applyITunesTranslations(
+        paragraphs: MutableList<ParsedParagraph>,
+        translationMap: Map<String, Pair<String?, String?>>
+    ) {
+        var appliedCount = 0
+        for (index in paragraphs.indices) {
+            val parsed = paragraphs[index]
+            val key = parsed.key ?: continue
+            val (mainTranslation, bgTranslation) = translationMap[key] ?: continue
+
+            var changed = false
+
+            val newMainLine = if (mainTranslation != null && parsed.mainLine?.translation == null) {
+                changed = true
+                parsed.mainLine?.copy(translation = mainTranslation)
+            } else {
+                parsed.mainLine
+            }
+
+            val newBgLine = if (bgTranslation != null && parsed.bgLine?.translation == null) {
+                changed = true
+                parsed.bgLine?.copy(translation = bgTranslation)
+            } else {
+                parsed.bgLine
+            }
+
+            if (changed) {
+                paragraphs[index] = parsed.copy(mainLine = newMainLine, bgLine = newBgLine)
+                appliedCount++
+            }
+        }
+        Timber.i("[TTMLParser] Applied $appliedCount translations from <iTunesMetadata> to paragraphs")
     }
 
 }
