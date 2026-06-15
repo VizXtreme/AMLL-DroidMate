@@ -40,10 +40,10 @@ Android 端外置歌词显示器：AMLL + ScoreMuse
 
 ## 参考和接入的项目
 
-- 核心动效：[Apple Music-like Lyrics （AMLL） `amll-dev/applemusic-like-lyrics`](https://github.com/amll-dev/applemusic-like-lyrics) (已存入本仓库`applemusic-like-lyrics`文件夹内以更好的参考)
+- 核心动效：[Apple Music-like Lyrics （AMLL） `amll-dev/applemusic-like-lyrics`](https://github.com/amll-dev/applemusic-like-lyrics)
 - Android 应用程序：基于 [ScoreMuse `Zeehan2005/ScoreMuse`](https://github.com/Zeehan2005/ScoreMuse)
 - 多源歌词匹配：[Unilyric `apoint123/Unilyric`](https://github.com/apoint123/Unilyric)
 - 优质歌词来源：[AMLL TTML DB `amll-dev/amll-ttml-db`](https://github.com/amll-dev/amll-ttml-db)
+- 示例专辑图：[Background, Blue, Black royalty-free stock illustration](https://pixabay.com/zh/illustrations/background-blue-black-light-1591226/) by frankeh in pixabay under [pixabay content license](https://pixabay.com/service/license-summary/). 
 
-## 提示
-本项目目前 100% HITL Vibe coding。
+
