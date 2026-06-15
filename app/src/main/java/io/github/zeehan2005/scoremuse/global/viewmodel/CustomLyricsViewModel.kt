@@ -187,6 +187,21 @@ class CustomLyricsViewModel @JvmOverloads constructor(
         _candidates.value = currentList
     }
 
+    /** 用新 features 更新候选后重新排序，确保 feature 数量影响排列顺序 */
+    private fun updateFeaturesAndReSort(
+        provider: String,
+        songId: String,
+        feats: Set<LyricsFeature>
+    ) {
+        _candidates.value = _candidates.value
+            .map {
+                if (it.provider.equals(provider, true) && it.songId == songId) {
+                    it.copy(features = feats)
+                } else it
+            }
+            .sortedWith(combinedComparator)
+    }
+
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching
 
@@ -260,13 +275,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                             }
                         }.getOrDefault(emptySet())
                         if (currentSongKey == songKey) {
-                            _candidates.value = _candidates.value
-                                .map {
-                                    if (it.provider.equals(candidate.provider, true) && it.songId == candidate.songId) {
-                                        it.copy(features = feats)
-                                    } else it
-                                }
-                            // 特性更新时不重新排序，因为特性数量对排序影响较小，减少排序频率
+                            updateFeaturesAndReSort(candidate.provider, candidate.songId, feats)
                         }
                     }
                 }
