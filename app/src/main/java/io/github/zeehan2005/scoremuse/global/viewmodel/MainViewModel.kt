@@ -388,7 +388,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     LyricsFormat.SCOREMUSE_XML, LyricsFormat.TTML -> {
                         Timber.d("[SongStructure] TTML/XML format detected, parsing directly to preserve metadata")
                         try {
-                            parsed = TTMLConverter.fromLyrics(trimmed)
+                            parsed = TTMLConverter.fromLyrics(trimmed, processMetadata = true)
                             cachedXmlContent = trimmed
                         } catch (e: Exception) {
                             Timber.e(e, "[TTMLConverter] Failed to parse TTML/XML directly")
