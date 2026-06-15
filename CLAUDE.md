@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Run
 
+**Do NOT auto-compile after code changes.** The user compiles manually — it's fast. Only compile if explicitly asked.
+
 ```bash
 # Build the full project (frontend assets + Android APK)
 ./gradlew assembleDebug
