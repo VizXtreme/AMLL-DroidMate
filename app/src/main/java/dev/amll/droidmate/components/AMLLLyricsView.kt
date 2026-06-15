@@ -541,9 +541,9 @@ fun AMLLLyricsView(
             // ==================== 字体配置应用（引用比较，避免每次 recompose 做文件遍历和排序） ====================
             if (pendingFontJsParams != null) {
                 val (filesJson, escapedFamily) = pendingFontJsParams!!
-                Timber.d(
-                    "[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyFontSettings"
-                )
+//                Timber.d(
+//                    "[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyFontSettings"
+//                )
                 view.evaluateJavascript(
                     """window.applyFontSettings && window.applyFontSettings({effectiveFamily:"$escapedFamily",files:[$filesJson]});""",
                     null
