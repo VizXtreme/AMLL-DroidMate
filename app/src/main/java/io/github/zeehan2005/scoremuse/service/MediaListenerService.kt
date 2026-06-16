@@ -26,7 +26,7 @@ class MediaListenerService : NotificationListenerService() {
         super.onNotificationPosted(sbn)
         if (sbn == null) return
         // 当有新的媒体通知时记录日志（用于调试）
-        Timber.i("[MediaListenerService] Notification posted from package: ${sbn.packageName}")
+//        Timber.i("[MediaListenerService] Notification posted from package: ${sbn.packageName}")
     }
 
     override fun onListenerDisconnected() {

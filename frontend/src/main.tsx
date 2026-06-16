@@ -131,7 +131,7 @@ function createBackgroundRenderer(core: any, root: HTMLElement, selectedRenderer
       const instance = Background.new(RendererCtor)
       const element = instance.getElement()
       attachElementToRoot(root, element, '-1') // 放在最底层
-      log(`Created BackgroundRender with ${RendererCtor?.name || 'renderer'}`, 'info')
+      log(`Created BackgroundRender with ${RendererCtor?.name || 'renderer'}`, 'debug')
       return instance
     } catch (e) {
       log(`BackgroundRender init failed with ${RendererCtor?.name || 'renderer'}: ${(e as Error).message}`, 'warn')
@@ -201,7 +201,7 @@ function initAMLL() {
         }
         state.player.addEventListener?.('line-click', onLineClick)
         el?.addEventListener?.('line-click', onLineClick)
-        log('Created and attached DomLyricPlayer', 'info')
+        log('Created and attached DomLyricPlayer', 'debug')
       } catch (e) {
         log(`Failed to instantiate DomLyricPlayer: ${(e as Error).message}`, 'error')
       }
@@ -243,7 +243,7 @@ function initAMLL() {
       }
     }
 
-    log('AMLL core WebView initialized', 'info')
+    log('AMLL core WebView initialized', 'debug')
     // 通知 Android 端页面已就绪
     window.Android?.onPageReady?.()
   } catch (error) {

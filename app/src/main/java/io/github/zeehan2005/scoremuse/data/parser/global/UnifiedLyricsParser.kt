@@ -83,7 +83,7 @@ object UnifiedLyricsParser {
             Timber.d("[UnifiedLyricsParser] Normalized lyrics content by stripping leading BOM/whitespace")
         }
 
-        Timber.d("[UnifiedLyricsParser] Lyrics content preview (first 300 chars): ${normalizedContent.take(300)}")
+        Timber.v("[UnifiedLyricsParser] Lyrics content preview (first 300 chars): ${normalizedContent.take(300)}")
         
         return try {
             /** 检测格式（使用归一化内容来避免 BOM 等前缀影响检测） */
@@ -188,7 +188,7 @@ object UnifiedLyricsParser {
                         }
                     } else {
                         Timber.i("[SongStructure] No song structures found in $format metadata")
-                        Timber.d("[SongStructure] Input preview: ${normalizedContent.take(500)}...")
+                        Timber.v("[SongStructure] Input preview: ${normalizedContent.take(500)}...")
                     }
                     
                     Timber.d("[UnifiedLyricsParser] $format parsed summary: ${summarizeBgLines(unifiedLyrics.lines)}")

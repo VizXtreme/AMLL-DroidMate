@@ -53,7 +53,7 @@ object ScreenRefreshRate {
     fun getFrameIntervalMs(context: Context): Long {
         val rate = getRefreshRate(context)
         val interval = (1000f / rate).toLong().coerceAtLeast(1L)
-        Timber.d("[ScreenRefreshRate] Frame interval: ${interval}ms (${rate}Hz)")
+        Timber.i("[ScreenRefreshRate] Frame interval: ${interval}ms (${rate}Hz)")
         return interval
     }
 }

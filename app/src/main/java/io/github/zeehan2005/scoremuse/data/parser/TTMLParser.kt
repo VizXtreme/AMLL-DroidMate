@@ -151,7 +151,7 @@ object TTMLParser {
         val normalizedAgents = parsedParagraphs.map { normalizeAgent(it.agent) }
         val uniqueAgents = normalizedAgents.filterNotNull().distinct()
 
-        Timber.i("[AgentAnalyzer] Total lines: ${parsedParagraphs.size}, unique agents: ${uniqueAgents.size}, agents: $uniqueAgents")
+        Timber.d("[AgentAnalyzer] Total lines: ${parsedParagraphs.size}, unique agents: ${uniqueAgents.size}, agents: $uniqueAgents")
 
         val duetFlags = when {
             uniqueAgents.size <= 1 -> {

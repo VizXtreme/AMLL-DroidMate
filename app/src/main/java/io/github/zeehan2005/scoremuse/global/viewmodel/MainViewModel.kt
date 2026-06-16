@@ -207,7 +207,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                     lyricsMutable.value = null
                     _songStructures.value = emptyList()
-                    Timber.i("[LyricsMatcher] Music changed, auto-fetching lyrics...")
+                    Timber.d("[LyricsMatcher] Music changed, auto-fetching lyrics...")
                     fetchLyrics()
                 }
             }
@@ -250,7 +250,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 kotlinx.coroutines.currentCoroutineContext().ensureActive()
 
-                Timber.i("[LyricsMatcher] Fetching lyrics for: ${music.title} - ${music.artist}")
+                Timber.d("[LyricsMatcher] Fetching lyrics for: ${music.title} - ${music.artist}")
 
                 val sourceName = getAppNameFromPackage(context, music.packageName)
                 val result = lyricsRepository.fetchLyricsAuto(
@@ -503,7 +503,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     ?: lyrics.metadata.duration.takeIf { it > 0 }
                     ?: inferredEndTime.takeIf { it > 0 }?.plus(5_000L)
                     ?: 0L
-                Timber.v("[SongStructure] Using songDuration=${songDuration}ms (nowPlaying=${nowPlayingMusicMutable.value?.duration}, meta=${lyrics.metadata.duration}, inferred=${inferredEndTime})")
+                Timber.d("[SongStructure] Using songDuration=${songDuration}ms (nowPlaying=${nowPlayingMusicMutable.value?.duration}, meta=${lyrics.metadata.duration}, inferred=${inferredEndTime})")
 
                 val metadataStructures = lyrics.metadata.songStructures
                 val source = if (!metadataStructures.isNullOrEmpty()) "metadata" else "inferred"

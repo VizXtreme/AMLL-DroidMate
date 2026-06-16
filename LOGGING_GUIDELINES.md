@@ -165,6 +165,7 @@ Timber.i("[DownloadManager] Download completed: ${file.size} bytes")  // 阶段�
 - **目的**：避免 logcat 被大量 debug 日志刷屏，保持日志可读性
 - **禁止逐行发送**：除非是分步执行的操作，否则不应一行发送一次日志，应当使用换行符 `\n` 合并多条信息
 - **等级限制**：展示长内容的日志等级不得高于 Debug（即只能使用 `d` 或 `v`，不能使用 `i`、`w`、`e`）
+- **禁止轮询使用**：常态化轮询不需要输出日志
 
 **示例：**
 ```kotlin
@@ -220,12 +221,13 @@ if (lines.size > 10) {
 ---
 
 ### ⚪ `Timber.v()` - 详细 (Verbose)
-**定义：** 持续性的检查但是发现没有变动，或超出debug行数限制的长内容
+**定义：** 持续性的检查但是发现没有变动，或超出debug行数限制的长内容，以及接口原始内容的预览
 
 **使用场景：**
 - 高频次的轮询检查
 - 状态未改变的重复验证
 - 超出debug行数限制的长内容
+- 接口内容的预览
 
 **示例：**
 ```kotlin
@@ -237,6 +239,9 @@ Timber.v("[Validation] Validation passed (same as previous)")
 
 // 心跳检测
 Timber.v("[WebSocket] Heartbeat check: connection stable")
+
+// 接口内容预览
+Timber.v("preview='${preview}'")
 
 ```
 

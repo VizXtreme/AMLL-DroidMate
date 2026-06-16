@@ -214,7 +214,8 @@ open class LyricsRepository(
             
             val json = Json { ignoreUnknownKeys = true }
             val responseBody = response.body<String>()
-            Timber.d("[LyricsRepository] QQ Music lyrics API response length=${responseBody.length}, preview='${responseBody.take(2000)}'")
+            Timber.d("[LyricsRepository] QQ Music lyrics API response length=${responseBody.length}")
+            Timber.v("preview='${responseBody.take(2000)}'")
             val responseJson = json.parseToJsonElement(responseBody).jsonObject
             
             /** 获取标准LRC格式歌词 */
@@ -231,12 +232,14 @@ open class LyricsRepository(
 
             /** 额外 debug：输出一下内容长度和前缀，方便排查 “QRC 变成 0” 以及其他无效数据的情况 */
             if (!qrcContent.isNullOrBlank()) {
-                Timber.d("[LyricsRepository] QQ Music QRC raw content length=${qrcContent.length}, preview='${qrcContent.take(80)}'")
+                Timber.d("[LyricsRepository] QQ Music QRC raw content length=${qrcContent.length}")
+                Timber.v("preview='${qrcContent.take(80)}'")
             } else {
                 Timber.d("[LyricsRepository] QQ Music QRC raw content is blank or '0' (len=${qrcContent?.length ?: 0})")
             }
             if (!lyricContent.isNullOrBlank()) {
-                Timber.d("[LyricsRepository] QQ Music LRC raw content length=${lyricContent.length}, preview='${lyricContent.take(80)}'")
+                Timber.d("[LyricsRepository] QQ Music LRC raw content length=${lyricContent.length}")
+                Timber.v("preview='${lyricContent.take(80)}'")
             }
 
             val transContent = responseJson["req_1"]
@@ -404,14 +407,16 @@ open class LyricsRepository(
                 return null
             }
             val body = response.body<String>().trim().removePrefix("<!--").removeSuffix("-->").trim()
-            Timber.d("[LyricsRepository] lyric_download.fcg response length=${body.length}, preview='${body.take(2000)}'")
+            Timber.d("[LyricsRepository] lyric_download.fcg response length=${body.length}")
+            Timber.v("preview='${body.take(2000)}'")
 
             val mainEncrypted = extractXmlCData(body, "content")
             val transEncrypted = extractXmlCData(body, "contentts")
             val romaEncrypted = extractXmlCData(body, "contentroma")
 
             /** Debug: log full encrypted payload so we can inspect the exact hex string returned by QQ. */
-            Timber.d("[LyricsRepository] lyric_download.fcg payload (content) length=${mainEncrypted?.length ?: 0}, payload=$mainEncrypted")
+            Timber.d("[LyricsRepository] lyric_download.fcg payload (content) length=${mainEncrypted?.length ?: 0}")
+            Timber.v("payload=${mainEncrypted}")
 
             if (mainEncrypted.isNullOrBlank()) {
                 Timber.w("[LyricsRepository] lyric_download.fcg returned no <content> CDATA (mainEncrypted empty)")
@@ -614,7 +619,7 @@ open class LyricsRepository(
             Timber.d("[LyricsRepository] Netease response fields - yrc: ${if (yrcContent.isNullOrBlank()) "EMPTY" else "HAS_DATA(${yrcContent.length})"}, lrc: ${if (lyricContent.isNullOrBlank()) "EMPTY" else "HAS_DATA(${lyricContent.length})"}")
             if (!lyricContent.isNullOrBlank()) {
                 val preview = lyricContent.take(500)
-                Timber.d("[LyricsRepository] LRC field content preview (500 chars): $preview")
+                Timber.v("[LyricsRepository] LRC field content preview (500 chars): $preview")
                 val detectedFormat = LyricsFormat.detect(lyricContent)
                 Timber.d("[LyricsRepository] LRC field detected format: $detectedFormat")
                 /** 查找第一个歌词行（非元数据行） */
@@ -629,7 +634,7 @@ open class LyricsRepository(
             }
             if (!yrcContent.isNullOrBlank()) {
                 val preview = yrcContent.take(200)
-                Timber.d("[LyricsRepository] YRC field content preview: $preview")
+                Timber.v("[LyricsRepository] YRC field content preview: $preview")
             }
 
             if (lyricContent.isNullOrBlank() && yrcContent.isNullOrBlank()) {
@@ -1019,7 +1024,7 @@ open class LyricsRepository(
             
             val json = Json { ignoreUnknownKeys = true }
             val searchBody = searchResponse.body<String>()
-            Timber.d("[Kugou] Kugou lyrics search response (first 1000 chars): ${searchBody.take(1000)}")
+            Timber.v("[Kugou] Kugou lyrics search response (first 1000 chars): ${searchBody.take(1000)}")
             
             val searchJson = json.parseToJsonElement(searchBody).jsonObject
             val status = searchJson["status"]?.jsonPrimitive?.intOrNull ?: -1
@@ -1089,7 +1094,7 @@ open class LyricsRepository(
                 return null
             }
             
-            Timber.d("[Kugou] Decrypted Kugou lyrics (first 500 chars): ${decryptedLyrics.take(500)}")
+            Timber.v("[Kugou] Decrypted Kugou lyrics (first 500 chars): ${decryptedLyrics.take(500)}")
             
             /** Step 5: 使用统一解析器处理 KRC/LRC 格式 */
             val ttml = UnifiedLyricsParser.parse(
@@ -1479,11 +1484,11 @@ open class LyricsRepository(
         val durationWeight = 0.8 // use duration but not dominant
         val maxSingle = 7.0
 
-        Timber.d("[MatchEvaluator]     compareTrack details:")
-        Timber.d("[MatchEvaluator]       Title comparison: '$searchTitle' vs '$resultTitle' -> ${titleMatch?.name}(${titleMatch?.score ?: 0})")
-        Timber.d("[MatchEvaluator]       Artist comparison: '$searchArtist' vs '$resultArtist' -> ${artistMatch?.name}(${artistMatch?.score ?: 0})")
-        Timber.d("[MatchEvaluator]       Album comparison: '$searchAlbum' vs '$resultAlbum' -> ${albumMatch?.name}(${albumMatch?.score ?: 0})")
-        Timber.d("[MatchEvaluator]       Duration comparison: ${searchDurationMs}ms vs ${resultDurationMs}ms -> ${durationMatch?.name}(${durationMatch?.score ?: 0})")
+        Timber.v("[MatchEvaluator]     compareTrack details:")
+        Timber.v("[MatchEvaluator]       Title comparison: '$searchTitle' vs '$resultTitle' -> ${titleMatch?.name}(${titleMatch?.score ?: 0})")
+        Timber.v("[MatchEvaluator]       Artist comparison: '$searchArtist' vs '$resultArtist' -> ${artistMatch?.name}(${artistMatch?.score ?: 0})")
+        Timber.v("[MatchEvaluator]       Album comparison: '$searchAlbum' vs '$resultAlbum' -> ${albumMatch?.name}(${albumMatch?.score ?: 0})")
+        Timber.v("[MatchEvaluator]       Duration comparison: ${searchDurationMs}ms vs ${resultDurationMs}ms -> ${durationMatch?.name}(${durationMatch?.score ?: 0})")
 
         var totalScore = (durationMatch?.score ?: 0).toDouble() * durationWeight
         totalScore += (albumMatch?.score ?: 0).toDouble() * albumWeight
@@ -1958,7 +1963,7 @@ open class LyricsRepository(
         // 本地缓存短路由调用方（MainViewModel.fetchLyrics）统一处理，
         // 这里不再重复检查，避免与上层逻辑产生竞争。
         try {
-            Timber.i("[SearchService] Auto-fetching lyrics for: $title - $artist")
+            Timber.d("[SearchService] Auto-fetching lyrics for: $title - $artist")
 
             /** 1. 多源并发搜索 */
             val searchResults = searchLyrics(title, artist)
@@ -2271,7 +2276,7 @@ open class LyricsRepository(
                 /** 检查是否有解析到的歌曲结构 */
                 val songStructures = parsedLyrics.metadata.songStructures
                 if (!songStructures.isNullOrEmpty()) {
-                    Timber.v("[SongStructure] LyricsRepository parsed structures: ${songStructures.size}")
+                    Timber.d("[SongStructure] LyricsRepository parsed structures: ${songStructures.size}")
                 }
                 
                 /** 如果提供了自定义标题或艺术家，覆盖元数据（但保留 songStructures） */

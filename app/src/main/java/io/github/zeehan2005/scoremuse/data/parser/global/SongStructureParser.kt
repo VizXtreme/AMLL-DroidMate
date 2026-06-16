@@ -45,7 +45,7 @@ object SongStructureParser {
         Timber.d("[SongStructure] Detected ${interludes.size} interludes")
 
         if (metadataStructure.isNullOrEmpty()) {
-            Timber.v("[SongStructure] No TTML paragraph markers, fallback inference")
+            Timber.d("[SongStructure] No TTML paragraph markers, fallback inference")
             return inferFallbackSections(lyricsLines, interludes)
         }
 

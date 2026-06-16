@@ -163,7 +163,7 @@ fun AMLLLyricsView(
         modifier = modifier,  // 应用传入的修饰符
         factory = { context ->
             // WebView 工厂函数：创建并配置 WebView 实例
-            Timber.i("[AMLLLyrics] [$debugSource#$instanceId] Creating AMLL WebView, onLineSeek=${onLineSeekState.value != null}")
+            Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Creating AMLL WebView, onLineSeek=${onLineSeekState.value != null}")
             
             // 启用 WebView 调试功能（可在 Chrome DevTools 中调试）
             WebView.setWebContentsDebuggingEnabled(true)

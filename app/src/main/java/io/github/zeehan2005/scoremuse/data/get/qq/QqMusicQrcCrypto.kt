@@ -47,7 +47,7 @@ object QqMusicQrcCrypto {
      */
     fun decryptQrcHex(encryptedText: String): String {
         Timber.d("[QqMusicQrcCrypto] Starting Hex+3DES+Zlib decryption, input length: ${encryptedText.length}")
-        Timber.d("[QqMusicQrcCrypto] Input preview (first 200 chars): ${encryptedText.take(200)}")
+        Timber.v("[QqMusicQrcCrypto] Input preview (first 200 chars): ${encryptedText.take(200)}")
 
         // 优先使用 Rust 原生解码器（与上游 Unilyric 逻辑一致，性能更好）
         runCatching {
@@ -83,13 +83,15 @@ object QqMusicQrcCrypto {
         // 如果解密后的内容看起来像可打印字符，尝试 Base64 解码
         if (looksLikeMostlyPrintable(decrypted)) {
             val candidate = String(decrypted, Charsets.UTF_8).trim()
-            Timber.d("[QqMusicQrcCrypto] Decrypted output looks like text (len=${candidate.length}), preview=${candidate.take(200)}")
+            Timber.d("[QqMusicQrcCrypto] Decrypted output looks like text (len=${candidate.length})")
+            Timber.v("preview=${candidate.take(200)}")
             val base64Regex = Regex("^[A-Za-z0-9+/=\\s]+$")
             if (candidate.length % 4 == 0 && base64Regex.matches(candidate)) {
                 try {
                     val decoded = Base64.decode(candidate, Base64.DEFAULT)
                     val decodedText = String(decoded, Charsets.UTF_8)
-                    Timber.d("[QqMusicQrcCrypto] Interpreted decrypted output as Base64; decoded text preview=${decodedText.take(200)}")
+                    Timber.d("[QqMusicQrcCrypto] Interpreted decrypted output as Base64")
+                    Timber.v("decoded text preview=${decodedText.take(200)}")
                     return decodedText  // Base64 解码成功，直接返回
                 } catch (e: Exception) {
                     Timber.w("[QqMusicQrcCrypto] Base64 decode of decrypted content failed $e")
@@ -104,7 +106,7 @@ object QqMusicQrcCrypto {
             decompress(decrypted)
         }
         Timber.d("[QqMusicQrcCrypto] After Zlib decompress: ${decompressed.size} bytes")
-        Timber.d("[QqMusicQrcCrypto] Decompressed preview (first 200 chars): ${String(decompressed.take(200).toByteArray(), Charsets.UTF_8)}")
+        Timber.v("[QqMusicQrcCrypto] Decompressed preview (first 200 chars): ${String(decompressed.take(200).toByteArray(), Charsets.UTF_8)}")
         
         val payload = if (
             decompressed.size >= 3 &&
@@ -126,14 +128,16 @@ object QqMusicQrcCrypto {
             Timber.i("[QqMusicQrcCrypto] UTF-8 decoding produced replacement chars; retrying with GB18030")
             try {
                 val gb18030 = payload.toString(Charset.forName("GB18030"))
-                Timber.d("[QqMusicQrcCrypto] Final result length (GB18030): ${gb18030.length}, preview (first 300 chars): ${gb18030.take(300)}")
+                Timber.d("[QqMusicQrcCrypto] Final result length (GB18030): ${gb18030.length}")
+                Timber.v("preview (first 300 chars): ${gb18030.take(300)}")
                 return gb18030
             } catch (e: Exception) {
                 Timber.i("[QqMusicQrcCrypto] GB18030 decode failed; falling back to UTF-8 $e")
             }
         }
 
-        Timber.d("[QqMusicQrcCrypto] Final result length: ${utf8Result.length}, preview (first 300 chars): ${utf8Result.take(300)}")
+        Timber.d("[QqMusicQrcCrypto] Final result length: ${utf8Result.length}")
+        Timber.v("preview (first 300 chars): ${utf8Result.take(300)}")
         return utf8Result
     }
 
