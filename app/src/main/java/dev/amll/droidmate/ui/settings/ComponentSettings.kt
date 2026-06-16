@@ -81,13 +81,13 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
     )
 
     var blurEnabled by remember {
-        mutableStateOf(AMLLSettings.isAmllAnimationBlurEnabled(context) ?: true)
+        mutableStateOf(AMLLSettings.isAmllAnimationBlurEnabled(context) ?: false)
     }
     var springEnabled by remember {
         mutableStateOf(AMLLSettings.isAmllAnimationSpringEnabled(context) ?: true)
     }
     var backgroundRendererEnabled by remember {
-        mutableStateOf(AMLLSettings.isAmllBackgroundRendererEnabled(context) ?: true)
+        mutableStateOf(AMLLSettings.isAmllBackgroundRendererEnabled(context) ?: false)
     }
 
     // 字体设置状态
