@@ -318,8 +318,8 @@ fun SongStructureChip(
 
     val brush = Brush.verticalGradient(
         colors = listOf(
-            chipBaseColor.copy(alpha = 0.8f),
-            chipBaseColor.copy(alpha = 0.95f)
+            chipBaseColor,
+            chipBaseColor
         )
     )
 

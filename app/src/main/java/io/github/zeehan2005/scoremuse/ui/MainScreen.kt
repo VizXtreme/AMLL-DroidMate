@@ -213,7 +213,7 @@ fun MainScreen() {
      * derived background color used by both now playing card and dropdown menu
      * always use the darker alpha so light mode matches dark mode
      */
-    val cardBg = rippleColor.value.copy(alpha = 0.3f)
+    val cardBg = rippleColor.value
 /**
  * // 菜单背景：在容器表面色基础上叠加 15% 的主题色，保持不透明的同时跟随主题色变化
  * val menuBg = rippleColor.value.copy(alpha = 0.15f).compositeOver(MaterialTheme.colorScheme.surfaceContainerHigh)
