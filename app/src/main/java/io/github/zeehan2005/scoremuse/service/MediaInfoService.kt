@@ -23,6 +23,7 @@ import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import androidx.core.graphics.scale
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * 媒体信息监听服务 - 获取当前播放的歌曲信息
@@ -214,8 +215,8 @@ class MediaInfoService(private val context: Context) {
                         // 情况 3: 复用已有专辑图（歌曲未变化，bitmap 为 null 说明跳过 fetch）
                         else -> {
                             // 验证文件是否仍然存在（可能被 processAlbumArtBitmap 的 cache cleanup 删除）
-                            val cachedFile = currentAlbumArtUri?.removePrefix("file://")?.let { File(it) }
-                            if (cachedFile?.exists() == true) {
+                            val cachedFile = File(currentAlbumArtUri.removePrefix("file://"))
+                            if (cachedFile.exists()) {
                                 currentAlbumArtUri
                             } else {
                                 Timber.d("[MediaInfoService] Cached album art file deleted, trying URI fallback")
@@ -445,7 +446,7 @@ class MediaInfoService(private val context: Context) {
         serviceScope.launch {
             while (isActive) {
                 updateMediaInfo()
-                delay(updateIntervalMs)
+                delay(updateIntervalMs.milliseconds)
             }
         }
     }
