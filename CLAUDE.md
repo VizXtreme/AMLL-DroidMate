@@ -2,9 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Token 节省策略
+
+**本项目的 CLAUDE.md 已较大，优先复用当前上下文中已有的信息，而非重读文件。** 遵循以下原则：
+
+- **简单操作说步骤** — 如果某个操作逻辑简单但需要大量 token（如批量搜索/读取多个小文件），直接描述步骤让用户自行处理，不要实际执行。
+- **不 Read 刚写过的文件** — Edit/Write 失败会报错，成功即确认，无需再 Read 验证。
+- **精准搜索** — 优先用 `Grep` 定位内容，而非 `Glob` + 逐个 `Read`。有明确目标时先试精确路径或关键词。
+- **不读大全文** — 用 `limit`/`offset` 分段读取，或先用 `Grep` 定位行号再局部读取。
+- **不重复已知** — 已从上下文或工具结果获得的信息不再二次确认。
+- **不自动编译** — 不得运行任何编译命令，除非用户明确要求。
+
 ## Build & Run
 
-**Do NOT auto-compile after code changes.** The user compiles manually — it's fast. Only compile if explicitly asked.
+**不要编译。** 用户自行编译，只需说明编译命令即可。只有用户明确要求时才运行编译。
 
 ```bash
 # Build the full project (frontend assets + Android APK)
