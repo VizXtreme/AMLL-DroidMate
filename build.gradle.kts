@@ -31,6 +31,9 @@ plugins {
     // version: Compose 编译器版本
     id("org.jetbrains.kotlin.plugin.compose") version "2.3.21" apply false
 }
+repositories {
+    google()
+}
 
 
 
