@@ -1,6 +1,5 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Token 节省策略
 
@@ -17,27 +16,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **不要编译。** 用户自行编译，只需说明编译命令即可。只有用户明确要求时才运行编译。
 
-```bash
-# Build the full project (frontend assets + Android APK)
-./gradlew assembleDebug
-
-# Build only frontend assets (npm install + vite build → app/src/main/assets/amll/)
-./gradlew buildFrontend
-
-# Install debug APK to connected device
-./gradlew installDebug
-
-# Run unit tests
-./gradlew test
-
-# Run connected Android instrumentation tests
-./gradlew connectedAndroidTest
-
-# Frontend dev server (for browser-based development)
-cd frontend && npm run dev        # Vite dev server on port 5173
-```
-
-The `buildFrontend` Gradle task (defined in `app/build.gradle.kts`) runs automatically before `preBuild`. It executes `npm install` then `npm run build` in the `frontend/` directory, then syncs `frontend/dist/` to `app/src/main/assets/amll/`. The frontend is built as an ES module library (`amll.bundle.js`) loaded by `index.html` inside a WebView.
 
 ## Architecture
 
@@ -85,25 +63,5 @@ Music app playing → MediaInfoService (MediaSession callback) → MainViewModel
 
 ## Logging conventions
 
-This project uses **Timber** with strict conventions defined in `LOGGING_GUIDELINES.md`:
+This project uses **Timber** with strict conventions defined in `LOGGING_GUIDELINES.md`.
 
-- `Timber.wtf()` — Fatal errors that crash the app
-- `Timber.e()` — Functional errors (network failures, parse errors)
-- `Timber.w()` — Non-critical issues, fallbacks triggered
-- `Timber.i()` — Phase completions, state transitions, reasonable edge cases
-- `Timber.d()` — Internal processing steps (max 10 lines per log; excess → `Timber.v()`)
-- `Timber.v()` — Polling/no-change checks, long content overflow from debug
-
-Every log line **must** begin with a `[ModuleName]` tag (e.g., `[WebSocket]`, `[LyricsMatcher]`, `[AMLLLyrics]`). Exception parameters always go last: `Timber.e("[Module] message", e)`.
-
-**Do not** include explanatory/educational content in logs (no "可能原因:", "请检查:", etc.).
-
-## Important notes
-
-- The project uses **Aliyun Maven mirrors** for all dependencies (configured in `settings.gradle.kts`).
-- `local.properties` is gitignored — it contains SDK paths. Android Studio generates it automatically.
-- Debug signing config is committed (keystore at root `sign.jks`). This is intentional for a solo developer project.
-- `android.useAndroidX=true` and `android.enableJetifier=false` in `gradle.properties`.
-- AGP 9.2.1 with Kotlin 2.3.21 and Compose compiler plugin. Configuration cache is enabled.
-- Min SDK 26 (Android 8.0), target/compile SDK 37.
-- The README notes this is "100% HITL Vibe coding" (human-in-the-loop AI-assisted development).
