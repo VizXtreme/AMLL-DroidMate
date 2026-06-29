@@ -96,6 +96,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -226,6 +227,12 @@ fun MainScreen() {
     val currentTime by remember {
         derivedStateOf {
             nowPlaying?.currentPosition ?: 0L
+        }
+    }
+    /** 歌曲结构当前索引，仅在跨越段落边界时变化，避免 SongStructureBarSection 频繁重组 */
+    val currentStructureIndex by remember(songStructures) {
+        derivedStateOf {
+            songStructures.indexOfFirst { currentTime in it.startTime..it.endTime }
         }
     }
     /** Apply user-configured lyric timing offsets when updating the lyric view */
@@ -500,7 +507,7 @@ fun MainScreen() {
                                     isLoading = isLoading,
                                     isSongStructureBarEnabled = isSongStructureBarEnabled,
                                     songStructures = songStructures,
-                                    currentTime = currentTime,
+                                    currentStructureIndex = currentStructureIndex,
                                     onSeekTo = { viewModel.seekTo(it); resetHideTimer() },
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                                 )
@@ -649,7 +656,7 @@ fun MainScreen() {
                                 isLoading = isLoading,
                                 isSongStructureBarEnabled = isSongStructureBarEnabled,
                                 songStructures = songStructures,
-                                currentTime = currentTime,
+                                currentStructureIndex = currentStructureIndex,
                                 onSeekTo = { viewModel.seekTo(it) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -817,7 +824,7 @@ fun MainScreen() {
                                         isLoading = isLoading,
                                         isSongStructureBarEnabled = isSongStructureBarEnabled,
                                         songStructures = songStructures,
-                                        currentTime = currentTime,
+                                        currentStructureIndex = currentStructureIndex,
                                         onSeekTo = { viewModel.seekTo(it); resetHideTimer() },
                                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                                     )
@@ -868,7 +875,7 @@ fun MainScreen() {
                         isLoading = isLoading,
                         isSongStructureBarEnabled = isSongStructureBarEnabled,
                         songStructures = songStructures,
-                        currentTime = currentTime,
+                        currentStructureIndex = currentStructureIndex,
                         onSeekTo = { viewModel.seekTo(it) },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -1080,12 +1087,16 @@ private fun SongStructureBarSection(
     isLoading: Boolean,
     isSongStructureBarEnabled: Boolean,
     songStructures: List<SongStructure>,
-    currentTime: Long,
+    currentStructureIndex: Int,
     onSeekTo: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (!isSongStructureBarEnabled && !isLoading) return
     if (!isLoading && songStructures.isEmpty()) return
+
+    // 稳定 onSeekTo lambda，避免因 lambda 引用变化导致不必要的重组
+    val currentOnSeekTo by rememberUpdatedState(onSeekTo)
+    val stableOnSeekTo = remember { { time: Long -> currentOnSeekTo(time) } }
 
     if (isLoading) {
         Box(modifier = Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) {
@@ -1094,8 +1105,8 @@ private fun SongStructureBarSection(
     } else {
         SongStructureBar(
             structures = songStructures,
-            currentTime = currentTime,
-            onSeekTo = onSeekTo,
+            currentStructureIndex = currentStructureIndex,
+            onSeekTo = stableOnSeekTo,
             modifier = modifier
         )
     }

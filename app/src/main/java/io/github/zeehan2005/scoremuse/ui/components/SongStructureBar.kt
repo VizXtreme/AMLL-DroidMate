@@ -67,7 +67,7 @@ import kotlin.collections.plus
  * 5. 自动滚动使当前播放段落在视野中心
  *
  * @param structures 歌曲结构列表（包含类型、时间范围、标签等信息）
- * @param currentTime 当前播放时间（毫秒），用于高亮当前段落
+ * @param currentStructureIndex 当前播放段落的索引，用于高亮当前段落
  * @param onSeekTo 用户点击段落时的跳转回调（传入目标时间）
  * @param modifier Compose 修饰符（用于调整大小、背景等）
  * @param baseColor 基础颜色，用于生成非活动状态的渐变背景
@@ -75,7 +75,7 @@ import kotlin.collections.plus
 @Composable
 fun SongStructureBar(
     structures: List<SongStructure>,
-    currentTime: Long,
+    currentStructureIndex: Int,
     onSeekTo: (Long) -> Unit,
     modifier: Modifier = Modifier,
     baseColor: Color = MaterialTheme.colorScheme.surfaceVariant
@@ -190,13 +190,6 @@ fun SongStructureBar(
         }
     }
 
-    /** 计算当前应该显示的 structure 索引 */
-    val currentStructureIndex by remember(structures, currentTime) {
-        derivedStateOf {
-            structures.indexOfFirst { currentTime in it.startTime..it.endTime }
-        }
-    }
-
     // 当 structures 变化时，重置 chip 宽度测量状态
     LaunchedEffect(structuresKey) {
         // 清空旧的测量数据，让新歌词/chips 重新测量
@@ -266,7 +259,7 @@ fun SongStructureBar(
 
                 SongStructureChip(
                     structure = structure,
-                    isCurrent = currentTime in structure.startTime..structure.endTime,
+                    isCurrent = index == currentStructureIndex,
                     onClick = { onSeekTo(structure.startTime) },
                     baseColor = baseColor,
                     modifier = Modifier
