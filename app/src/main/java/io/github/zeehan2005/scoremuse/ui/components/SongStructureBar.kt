@@ -67,7 +67,7 @@ import kotlin.collections.plus
  * 5. 自动滚动使当前播放段落在视野中心
  *
  * @param structures 歌曲结构列表（包含类型、时间范围、标签等信息）
- * @param currentStructureIndex 当前播放段落的索引，用于高亮当前段落
+ * @param currentTime 当前播放时间（毫秒），用于计算当前段落索引和高亮
  * @param onSeekTo 用户点击段落时的跳转回调（传入目标时间）
  * @param modifier Compose 修饰符（用于调整大小、背景等）
  * @param baseColor 基础颜色，用于生成非活动状态的渐变背景
@@ -75,7 +75,7 @@ import kotlin.collections.plus
 @Composable
 fun SongStructureBar(
     structures: List<SongStructure>,
-    currentStructureIndex: Int,
+    currentTime: Long,
     onSeekTo: (Long) -> Unit,
     modifier: Modifier = Modifier,
     baseColor: Color = MaterialTheme.colorScheme.surfaceVariant
@@ -84,6 +84,13 @@ fun SongStructureBar(
     // 如果没有歌曲结构信息，直接返回不显示任何内容
     if (structures.isEmpty()) {
         return
+    }
+
+    // 根据当前播放时间计算当前段落索引（避免在 MainScreen 中重复计算）
+    val currentStructureIndex by remember(currentTime, structures) {
+        derivedStateOf {
+            structures.indexOfFirst { currentTime in it.startTime..it.endTime }
+        }
     }
 
     /** LazyRow 的状态管理：用于控制横向滚动 */

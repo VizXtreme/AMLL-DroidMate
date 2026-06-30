@@ -37,7 +37,7 @@ abstract class BuildFrontendTask @Inject constructor(
     // ==================== 任务输入输出配置 ====================
 
     /**
-     * 前端源代码目录（增量构建的输入）
+     * 前端源码目录（增量构建的输入，包含 src/ 下所有文件）
      *
      * Gradle 会监控这个目录的变化，只有文件变化时才执行任务
      * PathSensitivity.RELATIVE: 只关心相对路径，不关心绝对路径
@@ -45,6 +45,15 @@ abstract class BuildFrontendTask @Inject constructor(
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val frontendSrcDir: DirectoryProperty
+
+    /**
+     * styles.css 文件（位于 frontend/ 根目录，不在 frontendSrcDir 范围内）
+     *
+     * 单独列为输入，确保修改 styles.css 时也能触发重建
+     */
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val stylesCss: RegularFileProperty
 
     /**
      * 输出目录（用于 up-to-date 检查）
@@ -137,8 +146,10 @@ abstract class BuildFrontendTask @Inject constructor(
 // ============================================================================
 val buildFrontendProvider = tasks.register("buildFrontend", BuildFrontendTask::class.java) {
     description = "Build frontend assets using npm and sync to Android assets directory"
-    // 只设置前端源码目录为输入 - 这是我们要监控变化的内容
+    // 设置前端源码目录为输入 - src/ 下文件变化会触发重建
     frontendSrcDir.set(File(rootProject.projectDir, "frontend/src"))
+    // styles.css 也在 frontend/ 根目录，单独列为输入
+    stylesCss.set(File(rootProject.projectDir, "frontend/styles.css"))
 
     // 设置输出目录用于 up-to-date 检查
     outputDir.set(File(rootProject.projectDir, "app/src/main/assets/amll"))
@@ -282,6 +293,8 @@ dependencies {
     
     // WebView 支持（用于 AMLL 歌词渲染）
     implementation("androidx.webkit:webkit:latest.release")
+    // Jetpack WindowManager：Activity Embedding / 大屏分屏支持
+    implementation("androidx.window:window:latest.release")
     // ==================== Jetpack Compose UI ====================
     // 版本号由 BOM 统一管理，不需要单独指定
     // Compose UI 核心功能
@@ -292,6 +305,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     // Material Design 3 组件库
     implementation("androidx.compose.material3:material3")
+    // Material3 自适应布局（WindowSizeClass 等自适应基元）
+    implementation("androidx.compose.material3.adaptive:adaptive")
     // Google Material 设计组件（非 Compose 版本）
     implementation("com.google.android.material:material:latest.release")
     // Material 图标扩展库（更多图标选择）

@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
         if (Timber.treeCount == 0) {
             Timber.plant(io.github.zeehan2005.scoremuse.components.LogHelper.LogHelperTree())
         }
-        
+
         // 启用边缘到边缘显示（全面屏设计）
         enableEdgeToEdge()
         // 设置系统栏不遮挡内容

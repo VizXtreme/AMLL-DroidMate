@@ -80,12 +80,19 @@
       ~ - usesCleartextTraffic: 允许 HTTP 明文流量（⚠️ 仅限本地 WebSocket 使用）
       -->
     <application
+        android:name="io.github.zeehan2005.scoremuse.ScoreMuseApplication"
         android:allowBackup="true"
         android:icon='@mipmap/ic_launcher'
         android:label="@string/app_name"
+        android:resizeableActivity="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.ScoreMuse"
         android:usesCleartextTraffic="true">
+
+        <!-- Activity Embedding 前置条件：未设置此属性时拆分规则不会生效 -->
+        <property
+            android:name="android.window.PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED"
+            android:value="true" />
 
         <!--
           ~ 主 Activity
