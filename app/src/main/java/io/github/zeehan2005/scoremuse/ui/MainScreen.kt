@@ -1207,7 +1207,7 @@ fun LyricsVisualLayer(
         key(webViewReloadKey) {
             AMLLLyricsView(
                 lyrics = lyrics,
-                currentTime = currentTime,
+                currentStructureIndex = currentStructureIndex,
                 albumArtUri = effectiveAlbumArtUri,
                 debugSource = debugSource,
                 onLyricsClick = onFullscreenTap,
