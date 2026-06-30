@@ -4,19 +4,19 @@
 
 >[!Important]
 >
->本项目的维护可能时有时无，并且不做任何稳定性保证，望您知悉。
-
->[!Note]
->
->当前 Alpha 开发版与 Latest 稳定版已经有较大的差异，但部分功能仍未完工，达不到稳定版的要求。如欲体验新功能，请前往 [Releases](https://github.com/Zeehan2005/AMLL-DroidMate/releases) 中的 Pre-Release 下载 Alpha 开发版。
+>本项目为为爱发电，维护可能时有时无，并且不做任何稳定性保证，望您知悉。
 
 # AMLL DroidMate
 
-Android 端外置歌词显示器：AMLL + ScoreMuse
+即开即用 Android 端外置歌词显示器，集成 AMLL 风格渲染与多源歌词检索能力。
 
 <img width="640" height="1339" alt="Image" src="https://github.com/user-attachments/assets/b28b17e9-f73b-426e-b1aa-8b6ed8eb487d" />
 
+<img width="1280" height="800" alt="Image" src="https://github.com/user-attachments/assets/ec272e93-29d0-4b5f-b1f2-7591f3079341" />
 
+<img width="1280" height="800" alt="Image" src="https://github.com/user-attachments/assets/23da7bfc-dc8b-4093-98b7-3c067cd0a79e" />
+
+<img width="1280" height="800" alt="Image" src="https://github.com/user-attachments/assets/39bd873f-7810-49ff-a842-8b9beda0c893" />
 
 ## 核心特性
 
@@ -32,9 +32,10 @@ Android 端外置歌词显示器：AMLL + ScoreMuse
   - 应用内可直接拖动进度条，暂停/播放，上下首等，而无需回到音乐源
     - 可选功能：按“上一首”时回到0:00处
   - 歌词结构显示：轻松跳转到喜欢的段落 
-  - 多源歌词检索（酷狗、网易云、QQ），找到最符合且功能最多的歌词文件
+  - 多源歌词检索（酷狗、网易云），找到最符合且功能最多的歌词文件
   - 常驻通知实时歌词：可选常驻通知实时显示当前句歌词，并支持锁屏显示
   - 精美的 Material Design 3 UI
+  - 为平板横屏布局适配
   - 应用全局颜色根据专辑图变换
   - 可设置基于歌曲和输出设备的歌词偏移，轻松解决延迟问题。
 
@@ -47,3 +48,15 @@ Android 端外置歌词显示器：AMLL + ScoreMuse
 - 示例专辑图：[Background, Blue, Black royalty-free stock illustration](https://pixabay.com/zh/illustrations/background-blue-black-light-1591226/) by frankeh in pixabay under [pixabay content license](https://pixabay.com/service/license-summary/). 
 
 
+# Star & Donation
+为爱发电项目！阁下可否点点小星星支持一下？
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Zeehan2005/AMLL-DroidMate&type=date&theme=dark&legend=top-left" />
+  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Zeehan2005/AMLL-DroidMate&type=date&legend=top-left" />
+  <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Zeehan2005/AMLL-DroidMate&type=date&legend=top-left" />
+</picture>
+
+众所周知，本项目使用较多的AI辅助。Claude正在侵蚀主播的钱包！给主播捐点tokens修修bug？
+
+<img width="1037" height="1037" alt="Image" src="https://github.com/user-attachments/assets/5a61a8d6-2694-42c0-9da3-14ea7917b03c" />
