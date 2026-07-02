@@ -56,7 +56,8 @@ Music app playing → MediaInfoService (MediaSession callback) → MainViewModel
 
 - **`src/main.tsx`** — Entry point. Initializes `DomLyricPlayer` from `@applemusic-like-lyrics/core`. Exposes `window.updateLyrics`, `window.updateTime`, `window.updateAlbumArt`, `window.setPaused`, `window.configureLyricMotion`, etc. for the Android bridge. Runs a `requestAnimationFrame` tick loop.
 - **Vite config** — Library mode build (`amll.bundle.js`), CSS inlined into JS bundle, WASM + top-level-await plugins. Built output goes to `dist/` then Gradle copies to `app/src/main/assets/amll/`.
-- **❗ `app/src/main/assets/amll/amll.bundle.js` 是构建产物，不要直接修改它。** 正确的修改流程：改 `frontend/src/main.tsx` → `cd frontend && npx vite build` → 产物自动写入 `dist/`，Gradle 复制到 assets。直接改 bundle 文件会被构建覆盖，不会生效。
+- **❗ `app/src/main/assets/amll/amll.bundle.js` 是构建产物，不要直接修改它。**
+- **前端构建流程：** `cd frontend && npm run build` → `vite build` 生成 `dist/amll.bundle.js` → `postbuild` 自动运行 `scripts/patch-bundle.cjs` 修补产物。`build:android` 等效。Gradle 会从 `dist/` 复制到 assets。要测试修改：改 `main.tsx` → `npm run build` → 重新打包 APK。
 
 ### Data model
 
