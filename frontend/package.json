@@ -18,15 +18,19 @@
     "@applemusic-like-lyrics/lyric": "latest",
     "@pixi/core": "latest",
     "@pixi/utils": "latest",
-    "vite": "^6.0.0"
+    "vite": "latest"
   },
   "devDependencies": {
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "rollup": "latest",
     "terser": "latest",
     "typescript": "latest",
-    "rollup": "^4.0.0",
     "vite-plugin-top-level-await": "latest",
     "vite-plugin-wasm": "latest"
+  },
+  "allowScripts": {
+    "@swc/core@1.15.40": true,
+    "esbuild@0.25.12": true
   }
 }
