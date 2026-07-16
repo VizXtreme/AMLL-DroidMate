@@ -57,6 +57,7 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import io.github.zeehan2005.scoremuse.service.LyricNotificationManager
 import io.github.zeehan2005.scoremuse.global.AppSettings
+import io.github.zeehan2005.scoremuse.ui.settings.ApiTestActivity
 import io.github.zeehan2005.scoremuse.global.CardClickAction
 import io.github.zeehan2005.scoremuse.global.UpdateChannel
 import io.github.zeehan2005.scoremuse.ui.components.SwitchWithIcon
@@ -737,6 +738,30 @@ private fun SettingsPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("查看日志", color = MaterialTheme.colorScheme.onSurface)
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "进入",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        context.startActivity(Intent(context, ApiTestActivity::class.java))
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("API 检测", color = MaterialTheme.colorScheme.onSurface)
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = "进入",

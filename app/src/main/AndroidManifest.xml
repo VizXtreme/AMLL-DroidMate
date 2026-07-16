@@ -160,6 +160,12 @@
             android:exported="false"
             android:theme="@style/Theme.ScoreMuse" />
 
+        <!-- API 检测：手动测试外部 API -->
+        <activity
+            android:name="io.github.zeehan2005.scoremuse.ui.settings.ApiTestActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ScoreMuse" />
+
         <!--
           ~ 媒体监听服务（通知监听权限）
           ~ 
