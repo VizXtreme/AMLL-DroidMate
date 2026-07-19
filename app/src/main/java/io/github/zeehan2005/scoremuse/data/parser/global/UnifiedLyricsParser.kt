@@ -4,7 +4,6 @@ import androidx.compose.ui.input.key.Key.Companion.Music
 import io.github.zeehan2005.scoremuse.data.parser.EnhancedLrcParser
 import io.github.zeehan2005.scoremuse.data.parser.KrcParser
 import io.github.zeehan2005.scoremuse.data.parser.LrcParser
-import io.github.zeehan2005.scoremuse.data.parser.QrcParser
 import io.github.zeehan2005.scoremuse.data.parser.TTMLParser
 import io.github.zeehan2005.scoremuse.data.parser.YrcParser
 import io.github.zeehan2005.scoremuse.data.parser.global.LyricsFormat.*
@@ -134,12 +133,6 @@ object UnifiedLyricsParser {
 //                        return null
 //                    }
 //                }
-                QRC -> {
-                    val parsed = QrcParser.parse(normalizedContent)
-                    val firstLineWords = parsed.firstOrNull()?.words?.size ?: 0
-                    Timber.d("[UnifiedLyricsParser] QRC parsed ${parsed.size} lines, first line word count=$firstLineWords")
-                    parsed
-                }
                 KRC -> {
                     val parsed = KrcParser.parse(normalizedContent)
                     Timber.d("[UnifiedLyricsParser] KRC parsed ${parsed.size} lines, first line words: ${parsed.firstOrNull()?.words?.size ?: 0}")
