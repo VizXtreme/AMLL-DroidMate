@@ -3,37 +3,21 @@ package io.github.zeehan2005.scoremuse.ui.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -43,64 +27,42 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import io.github.zeehan2005.scoremuse.service.MediaInfoService
 import io.github.zeehan2005.scoremuse.global.AppSettings
+import io.github.zeehan2005.scoremuse.service.MediaInfoService
 import io.github.zeehan2005.scoremuse.ui.BaseComposeActivity
+import io.github.zeehan2005.scoremuse.ui.components.FabData
+import io.github.zeehan2005.scoremuse.ui.components.ManagementCard
+import io.github.zeehan2005.scoremuse.ui.components.ManagementConfig
+import io.github.zeehan2005.scoremuse.ui.components.ManagementPage
 import kotlinx.coroutines.launch
 
 /**
  * 歌词时间偏移管理界面
  *
- * 这个 Activity 允许用户查看和管理所有已保存的歌词时间偏移配置。
- * 用户可以：
- * - 查看不同歌曲/设备的偏移设置
- * - 搜索特定的偏移记录
- * - 手动添加新的偏移配置
- * - 删除不需要的偏移记录
- * - 批量清空所有偏移
+ * 允许用户查看、搜索、添加、编辑和删除歌词时间偏移配置。
  *
- * **使用场景**：
- * 当用户使用不同的音频设备（如蓝牙耳机、有线音箱）时，
- * 由于硬件延迟不同，歌词可能会与音乐不同步。
- * 通过这个界面，用户可以为每个设备单独配置偏移值，
- * 应用会自动识别并应用正确的偏移。
+ * @see ManagementPage 底层使用通用管理模板
  */
 class LyricOffsetManagementActivity : BaseComposeActivity() {
     @Composable
     override fun RenderContent() {
-        // 渲染歌词偏移管理页面
         LyricOffsetManagementPage(onBack = { finish() })
     }
 }
-
 
 @Composable
 private fun LyricOffsetManagementPage(onBack: () -> Unit) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
     val mediaInfoService = remember { MediaInfoService(context) }
 
     var offsets by remember { mutableStateOf(AppSettings.getLyricTimingOffsets(context)) }
-    var query by remember { mutableStateOf("") }
-    var showClearDialog by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
 
-    val displayOffsets = if (query.isBlank()) {
-        offsets
-    } else {
-        offsets.filter { entry ->
-            val lowerQuery = query.trim().lowercase()
-            entry.title.lowercase().contains(lowerQuery) ||
-                entry.artist.lowercase().contains(lowerQuery) ||
-                entry.device.lowercase().contains(lowerQuery) ||
-                entry.source.lowercase().contains(lowerQuery)
-        }
-    }
-
+    // — 表单状态（供添加/编辑对话框用）
+    var editTarget: AppSettings.LyricTimingOffset? by remember { mutableStateOf(null) }
     var title by remember { mutableStateOf("") }
     var artist by remember { mutableStateOf("") }
     var device by remember { mutableStateOf("") }
@@ -114,6 +76,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
     }
 
     fun openDialog(entry: AppSettings.LyricTimingOffset? = null) {
+        editTarget = entry
         title = entry?.title?.takeIf { it != "*" } ?: ""
         artist = entry?.artist?.takeIf { it != "*" } ?: ""
         device = entry?.device?.takeIf { it != "*" } ?: ""
@@ -140,247 +103,178 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                 artist.trim(),
                 device.trim(),
                 ms,
-                source.trim()
+                source.trim(),
             )
             showDialog = false
+            offsets = AppSettings.getLyricTimingOffsets(context)
         }
     }
 
-            val topAppBarState = rememberTopAppBarState()
-            val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topAppBarState)
-
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            LargeTopAppBar(
-                title = { Text("管理时间轴偏移") },
-                navigationIcon = {
-                    FilledIconButton(
-                        onClick = onBack,
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        )
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.background
-                ),
-                actions = {
-                    FilledIconButton(
-                        onClick = { },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        )
-                    ) {
-                        Icon(Icons.Default.DeleteSweep, contentDescription = "删除所有")
-                    }
-                },
-                scrollBehavior = scrollBehavior,
-                modifier = Modifier.statusBarsPadding()
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { openDialog(null) },
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "添加偏移")
-            }
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+    ManagementPage(
+        entries = offsets,
+        config = ManagementConfig.build(
+            title = "管理时间轴偏移",
+            itemKey = { "${it.title}|${it.artist}|${it.device}|${it.source}" },
         ) {
-            Text(
-                "所有匹配的偏移规则将会叠加。",
-                style = MaterialTheme.typography.bodySmall
+            searchPlaceholder = "搜索 ( 歌曲 / 歌手 / 设备 / 来源 )"
+            emptyText = "当前没有已保存的偏移设置。"
+
+            headerContent = {
+                Text(
+                    "所有匹配的偏移规则将会叠加。",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            searchPredicate = { entry, query ->
+                entry.title.lowercase().contains(query) ||
+                    entry.artist.lowercase().contains(query) ||
+                    entry.device.lowercase().contains(query) ||
+                    entry.source.lowercase().contains(query)
+            }
+
+            fabData = FabData(
+                icon = Icons.Default.Add,
+                onClick = { openDialog(null) },
             )
 
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = { Text("搜索 ( 歌曲 / 歌手 / 设备 / 来源 )") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "搜索"
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = CircleShape,
-                singleLine = true
-            )
-
-            Text(
-                text = "共 ${displayOffsets.size} 条",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(vertical = 4.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-
-            if (displayOffsets.isEmpty()) {
-                Text("当前没有已保存的偏移设置。", style = MaterialTheme.typography.bodyMedium)
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+            topBarActions = { showClear ->
+                FilledIconButton(
+                    onClick = showClear,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
                 ) {
-                    items(
-                        displayOffsets,
-                        key = { "${it.title}-${it.artist}-${it.device}-${it.source}" }) { entry ->
-                        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(
-                                        "${entry.title} — ${entry.artist}",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                    Text(
-                                        "设备: ${entry.device}",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                    Text(
-                                        "来源: ${entry.source}",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                    Text(
-                                        "偏移: ${entry.offsetMs} ms",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    IconButton(onClick = { openDialog(entry) }) {
-                                        Icon(Icons.Default.Edit, contentDescription = "编辑")
-                                    }
-                                    IconButton(onClick = {
-                                        coroutineScope.launch {
-                                            AppSettings.removeLyricTimingOffset(
-                                                context,
-                                                entry.title,
-                                                entry.artist,
-                                                entry.device,
-                                                entry.source
-                                            )
-                                        }
-                                    }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "删除")
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    Icon(Icons.Default.DeleteSweep, contentDescription = "删除所有")
                 }
             }
-        }
 
-        if (showClearDialog) {
-            AlertDialog(
-                onDismissRequest = { showClearDialog = false },
-                title = { Text("清空偏移设置") },
-                text = { Text("确认删除所有时间轴偏移设置吗？") },
-                containerColor = MaterialTheme.colorScheme.background,
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                AppSettings.clearLyricTimingOffsets(context)
-                                showClearDialog = false
-                            }
+            onClearAll = {
+                coroutineScope.launch {
+                    AppSettings.clearLyricTimingOffsets(context)
+                    offsets = AppSettings.getLyricTimingOffsets(context)
+                }
+            }
+
+            renderItem = { entry, _, _, _ ->
+                OffsetEntryCard(
+                    entry = entry,
+                    onEdit = { openDialog(entry) },
+                    onDelete = {
+                        coroutineScope.launch {
+                            AppSettings.removeLyricTimingOffset(
+                                context,
+                                entry.title,
+                                entry.artist,
+                                entry.device,
+                                entry.source,
+                            )
+                            offsets = AppSettings.getLyricTimingOffsets(context)
                         }
-                    ) {
-                        Text("删除全部")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showClearDialog = false }) {
-                        Text("取消")
+                    },
+                )
+            }
+        },
+        onBack = onBack,
+    )
+
+    // ===== 添加 / 编辑对话框（独立于模板，保持特定领域逻辑）=====
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            containerColor = MaterialTheme.colorScheme.background,
+            title = { Text(if (editTarget != null) "编辑偏移" else "添加偏移") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "填入歌曲、歌手、输出设备、来源（支持 * 通配符）。所有匹配规则将叠加。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    )
+                    Text(
+                        "对于输出设备，请按照引号规则填写。\n扬声器: \"Speaker\"\n有线音频: \"Wired\"\n蓝牙设备: \"Bluetooth (设备名称)\"\n英文括号，括号前有空格。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    )
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("歌曲名称") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = artist,
+                        onValueChange = { artist = it },
+                        label = { Text("歌手") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = device,
+                        onValueChange = { device = it },
+                        label = { Text("输出设备") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = source,
+                        onValueChange = { source = it },
+                        label = { Text("来源包名 (如: com.netease.cloudmusic、com.tencent.qqmusic)") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = offsetMsText,
+                        onValueChange = { offsetMsText = it },
+                        label = { Text("偏移 (毫秒)") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    errorMessage?.takeIf { it.isNotBlank() }?.let {
+                        Text(text = it, color = MaterialTheme.colorScheme.error)
                     }
                 }
-            )
-        }
+            },
+            confirmButton = {
+                TextButton(onClick = { saveEntry() }) { Text("保存") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("取消") }
+            },
+        )
+    }
+}
 
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false; },
-                containerColor = MaterialTheme.colorScheme.background,
-                title = { Text("编辑偏移") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            "填入歌曲、歌手、输出设备、来源（支持 * 通配符）。所有匹配规则将叠加。",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            "对于输出设备，请按照引号规则填写。\n扬声器: \"Speaker\"\n有线音频: \"Wired\"\n蓝牙设备: \"Bluetooth (设备名称)\"\n英文括号，括号前有空格。",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                        OutlinedTextField(
-                            value = title,
-                            onValueChange = { title = it },
-                            label = { Text("歌曲名称") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = artist,
-                            onValueChange = { artist = it },
-                            label = { Text("歌手") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = device,
-                            onValueChange = { device = it },
-                            label = { Text("输出设备") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = source,
-                            onValueChange = { source = it },
-                            label = { Text("来源包名 (如: com.netease.cloudmusic、com.tencent.qqmusic)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = offsetMsText,
-                            onValueChange = { offsetMsText = it },
-                            label = { Text("偏移 (毫秒)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+// ====================
+// 子组件
+// ====================
 
-                        errorMessage?.takeIf { it.isNotBlank() }?.let {
-                            Text(text = it, color = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { saveEntry() }) {
-                        Text("保存")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = {
-                        showDialog = false
-                    }) {
-                        Text("取消")
-                    }
+@Composable
+private fun OffsetEntryCard(
+    entry: AppSettings.LyricTimingOffset,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    ManagementCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "${entry.title} — ${entry.artist}",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text("设备: ${entry.device}", style = MaterialTheme.typography.bodySmall)
+                Text("来源: ${entry.source}", style = MaterialTheme.typography.bodySmall)
+                Text("偏移: ${entry.offsetMs} ms", style = MaterialTheme.typography.bodySmall)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, contentDescription = "编辑")
                 }
-            )
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "删除")
+                }
+            }
         }
     }
 }
