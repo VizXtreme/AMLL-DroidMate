@@ -333,6 +333,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun wasmFormatFor(format: LyricsFormat): String? = when (format) {
         LyricsFormat.LRC -> "lrc"
         LyricsFormat.ENHANCED_LRC -> "enhanced_lrc"
+        LyricsFormat.QRC -> "qrc"
         LyricsFormat.KRC -> "krc"
         LyricsFormat.YRC -> "yrc"
         LyricsFormat.TTML -> "ttml"
