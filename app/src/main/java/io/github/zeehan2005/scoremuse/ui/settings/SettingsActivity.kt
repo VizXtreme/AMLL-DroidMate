@@ -35,6 +35,7 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SwitchColors
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -220,149 +221,51 @@ private fun SettingsPage(
                 .padding(innerPadding),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "常驻通知实时歌词",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            SettingsHeader("常驻通知实时歌词")
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        if (!lyricNotificationEnabled) {
-                            if (needsNotificationPermission() && !hasNotificationPermission(context)) {
-                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            } else {
-                                lyricNotificationEnabled = true
-                                AppSettings.setLyricNotificationEnabled(context, true)
-                            }
+            SettingsToggleItem(
+                title = "常驻通知实时歌词",
+                description = "需要通知权限。获得锁屏权限后可锁屏显示。",
+                checked = lyricNotificationEnabled,
+                onCheckedChange = { enabled ->
+                    if (!enabled) {
+                        lyricNotificationEnabled = false
+                        AppSettings.setLyricNotificationEnabled(context, false)
+                        LyricNotificationManager(context).cancel()
+                    } else {
+                        if (needsNotificationPermission() && !hasNotificationPermission(context)) {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                         } else {
-                            lyricNotificationEnabled = false
-                            AppSettings.setLyricNotificationEnabled(context, false)
-                            LyricNotificationManager(context).cancel()
+                            lyricNotificationEnabled = true
+                            AppSettings.setLyricNotificationEnabled(context, true)
                         }
-                    },
-                // ensure the card stands out in light theme as well
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth(0.78f)) {
-                        Text("常驻通知实时歌词", color = MaterialTheme.colorScheme.onSurface)
-                        Text(
-                            text = """需要通知权限。获得锁屏权限后可锁屏显示。""",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
                     }
-                    SwitchWithIcon(
-                        checked = lyricNotificationEnabled,
-                        onCheckedChange = { enabled ->
-                            if (!enabled) {
-                                lyricNotificationEnabled = false
-                                AppSettings.setLyricNotificationEnabled(context, false)
-                                LyricNotificationManager(context).cancel()
-                            } else {
-                                if (needsNotificationPermission() && !hasNotificationPermission(
-                                        context
-                                    )
-                                ) {
-                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                } else {
-                                    lyricNotificationEnabled = true
-                                    AppSettings.setLyricNotificationEnabled(context, true)
-                                }
-                            }
-                        },
-                        colors = switchColors
-                    )
-                }
-            }
-
-            Text(
-                text = "歌曲结构显示条",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                },
+                switchColors = switchColors
             )
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        val newState = !songStructureBarEnabled
-                        songStructureBarEnabled = newState
-                        AppSettings.setSongStructureBarEnabled(context, newState)
-                    },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("歌曲结构显示条", color = MaterialTheme.colorScheme.onSurface)
+            SettingsHeader("歌曲结构显示条")
 
-                    }
-                    SwitchWithIcon(
-                        checked = songStructureBarEnabled,
-                        onCheckedChange = { enabled ->
-                            songStructureBarEnabled = enabled
-                            AppSettings.setSongStructureBarEnabled(context, enabled)
-                        },
-                        colors = switchColors
-                    )
-                }
-            }
-
-            Text(
-                text = "歌词组件设置",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
+            SettingsToggleItem(
+                title = "歌曲结构显示条",
+                checked = songStructureBarEnabled,
+                onCheckedChange = { enabled ->
+                    songStructureBarEnabled = enabled
+                    AppSettings.setSongStructureBarEnabled(context, enabled)
+                },
+                switchColors = switchColors
             )
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        context.startActivity(
-                            Intent(
-                                context,
-                                ComponentSettings::class.java
-                            )
-                        )
-                    },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("歌词组件设置", color = MaterialTheme.colorScheme.onSurface)
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "进入",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
+            SettingsHeader("歌词组件设置")
 
-            Text(
-                text = "“正在播放”卡片点击行为",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
+            SettingsNavigateItem(
+                title = "歌词组件设置",
+                onClick = {
+                    context.startActivity(Intent(context, ComponentSettings::class.java))
+                }
             )
+
+            SettingsHeader("\"正在播放\"卡片点击行为")
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -399,47 +302,18 @@ private fun SettingsPage(
                 }
             }
 
-            Text(
-                text = "辅助功能",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            SettingsHeader("辅助功能")
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        val newState = !skipPreviousRewinds
-                        skipPreviousRewinds = newState
-                        AppSettings.setSkipPreviousRewindsEnabled(context, newState)
-                    },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("点击上一首回到 0:00", color = MaterialTheme.colorScheme.onSurface)
-                        Text(
-                            text = "点击上一首按钮会先回到歌曲开头，而不是直接跳转到上一首。",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    }
-                    SwitchWithIcon(
-                        checked = skipPreviousRewinds,
-                        onCheckedChange = { enabled ->
-                            skipPreviousRewinds = enabled
-                            AppSettings.setSkipPreviousRewindsEnabled(context, enabled)
-                        },
-                        colors = switchColors
-                    )
-                }
-            }
+            SettingsToggleItem(
+                title = "点击上一首回到 0:00",
+                description = "点击上一首按钮会先回到歌曲开头，而不是直接跳转到上一首。",
+                checked = skipPreviousRewinds,
+                onCheckedChange = { enabled ->
+                    skipPreviousRewinds = enabled
+                    AppSettings.setSkipPreviousRewindsEnabled(context, enabled)
+                },
+                switchColors = switchColors
+            )
 
 
 
@@ -516,54 +390,19 @@ private fun SettingsPage(
 //            }
 
 
-            Text(
-                text = "歌词时间轴偏移",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Text(
-                text = "歌曲偏移 + 设备偏移",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        context.startActivity(
-                            Intent(
-                                context,
-                                LyricOffsetSettingsActivity::class.java
-                            )
-                        )
-                    },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("歌词时间轴偏移设置", color = MaterialTheme.colorScheme.onSurface)
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "进入",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+            SettingsHeader("歌词时间轴偏移")
+            SettingsLabel("歌曲偏移 + 设备偏移")
+            SettingsNavigateItem(
+                title = "歌词时间轴偏移设置",
+                onClick = {
+                    context.startActivity(Intent(context, LyricOffsetSettingsActivity::class.java))
                 }
-            }
-
-
-
-
-            Text(
-                text = "版本更新",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
             )
+
+
+
+
+            SettingsHeader("版本更新")
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -677,104 +516,31 @@ private fun SettingsPage(
                 }
             }
 
-            Text(
-                text = "通知访问权限",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
+            SettingsHeader("通知访问权限")
+            SettingsDescription("必需权限。用于获取正在播放信息。")
+            SettingsDescription("滥用通知使用权危及安全，因此系统可能会弹窗阻止。本应用是开源软件，您可以查看本应用的执行逻辑，因此在应用来源可靠的情况下无需感到担忧。")
+            SettingsNavigateItem(
+                title = "转至“读取、回复和控制通知”",
+                onClick = onOpenNotificationSettings
             )
-            Text(
-                text = "必需权限。用于获取正在播放信息。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-            Text(
-                text = "滥用通知使用权危及安全，因此系统可能会弹窗阻止。本应用是开源软件，您可以查看本应用的执行逻辑，因此在应用来源可靠的情况下无需感到担忧。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onOpenNotificationSettings()
-                    },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("转至“读取、回复和控制通知”", color = MaterialTheme.colorScheme.onSurface)
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "进入",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+
+            SettingsHeader("开发者工具")
+
+            SettingsNavigateItem(
+                title = "查看日志",
+                onClick = {
+                    context.startActivity(Intent(context, LogDisplayActivity::class.java))
                 }
-            }
-
-            Text(
-                text = "开发者工具",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
             )
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        context.startActivity(Intent(context, LogDisplayActivity::class.java))
-                    },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("查看日志", color = MaterialTheme.colorScheme.onSurface)
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "进入",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+            SettingsNavigateItem(
+                title = "API 检测",
+                onClick = {
+                    context.startActivity(Intent(context, ApiTestActivity::class.java))
                 }
-            }
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        context.startActivity(Intent(context, ApiTestActivity::class.java))
-                    },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("API 检测", color = MaterialTheme.colorScheme.onSurface)
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "进入",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-
-            Text(
-                text = "项目与贡献",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
             )
+
+            SettingsHeader("项目与贡献")
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -852,6 +618,125 @@ private fun SettingsPage(
                         }
                     }
                 }
+            )
+        }
+    }
+}
+
+// ── 设置页面通用组件 ─────────────────────────────────────────────────
+
+/**
+ * 设置分组节标题
+ */
+@Composable
+private fun SettingsHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+}
+
+/**
+ * 设置项描述文字
+ */
+@Composable
+private fun SettingsDescription(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    )
+}
+
+/**
+ * 设置项小标签
+ */
+@Composable
+private fun SettingsLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    )
+}
+
+/**
+ * 开关切换设置项卡片。点击卡片或开关都会触发切换。
+ *
+ * @param title 主标题
+ * @param description 可选描述文字（非 null 时显示）
+ * @param checked 当前开关状态
+ * @param onCheckedChange 切换回调（接收新状态）
+ * @param switchColors 开关配色
+ */
+@Composable
+private fun SettingsToggleItem(
+    title: String,
+    description: String? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    switchColors: SwitchColors,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) },
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.fillMaxWidth(if (description != null) 0.75f else 0.78f)) {
+                Text(title, color = MaterialTheme.colorScheme.onSurface)
+                if (description != null) {
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
+            }
+            SwitchWithIcon(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                colors = switchColors
+            )
+        }
+    }
+}
+
+/**
+ * 导航型设置项卡片，右侧显示箭头。
+ */
+@Composable
+private fun SettingsNavigateItem(
+    title: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(title, color = MaterialTheme.colorScheme.onSurface)
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "进入",
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
     }
