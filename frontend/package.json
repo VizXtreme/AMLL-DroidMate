@@ -6,9 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "node scripts/patch-bundle.cjs",
     "preview": "vite preview",
-    "build:android": "vite build && node scripts/patch-bundle.cjs"
+    "build:android": "vite build"
   },
   "keywords": [],
   "author": "",

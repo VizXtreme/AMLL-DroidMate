@@ -215,7 +215,6 @@ function initAMLL() {
     // 暴露内部实例以便调试
     window.__amll = { player: state.player, backgroundRender: state.background }
 
-
     // 启动持续更新循环，用于刷新帧和动画效果
     // 优化：只在实际播放时才推进播放器 tick，暂停时跳过节省 CPU
     let lastTime = performance.now()
@@ -310,7 +309,7 @@ window.updateTime = (timeMs: number) => {
     } else if (p.seek) {
       p.seek(t)
     }
-    // 同步渲染当前时间点（脏检查会跳过无变化的DOM写入，几乎零开销）
+    // 调用 update(0) 强制渲染当前时间点的帧，但不推进时间
     p.update?.(0)
   } catch (e) {
     log(`updateTime error: ${(e as Error).message}`, 'error')
