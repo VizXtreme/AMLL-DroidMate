@@ -27,7 +27,7 @@ object ScreenRefreshRate {
             val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
             if (windowManager != null) {
                 val rate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    context.display?.refreshRate ?: 60f
+                    context.display.refreshRate
                 } else {
                     @Suppress("DEPRECATION")
                     windowManager.defaultDisplay.refreshRate

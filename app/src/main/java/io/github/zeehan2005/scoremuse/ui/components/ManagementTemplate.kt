@@ -112,8 +112,8 @@ class ManagementConfig<T> @PublishedApi internal constructor(
          */
         fun <T> build(
             title: String,
-            noinline itemKey: (T) -> String,
-            noinline block: Builder<T>.() -> Unit,
+            itemKey: (T) -> String,
+            block: Builder<T>.() -> Unit,
         ): ManagementConfig<T> = Builder<T>().apply {
             this.title = title
             this.itemKey = itemKey
