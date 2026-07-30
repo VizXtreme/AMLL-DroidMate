@@ -160,18 +160,43 @@ fun mergeLyricLines(
             ?.text
 
         /** 检查当前罗马音行是否与主歌词时间匹配 */
-        val romanization = roman.getOrNull(romanIndex)
+        val romanizationLine = roman.getOrNull(romanIndex)
             ?.takeIf { abs(it.startTime - main.startTime) <= TOLERANCE_MS }
-            ?.text
+        val romanization = romanizationLine?.text
 
         // 如果匹配成功，移动索引到下一行
         if (translation != null) transIndex += 1
         if (romanization != null) romanIndex += 1
 
         // 创建新的歌词行，包含主歌词 + 翻译 + 罗马音
+        // 将罗马音逐词按位置匹配到主歌词逐词，填充 romanWord
+        val updatedMainWords = if (romanizationLine != null && main.words.isNotEmpty()) {
+            val romajiWords = romanizationLine.words
+            if (romajiWords.isNotEmpty()) {
+                main.words.mapIndexed { idx, mainWord ->
+                    val romaText = romajiWords.getOrNull(idx)?.word?.trim()
+                    if (romaText.isNullOrEmpty() && idx > 0) {
+                        // 如果当前词无匹配，用上一个匹配值填充
+                        val lastWord = main.words[idx - 1]
+                        mainWord.copy(romanWord = lastWord.romanWord)
+                    } else if (!romaText.isNullOrEmpty()) {
+                        mainWord.copy(romanWord = romaText)
+                    } else {
+                        mainWord
+                    }
+                }
+            } else {
+                main.words
+            }
+        } else {
+            main.words
+        }
+
         main.copy(
+            words = updatedMainWords,
             translation = translation ?: main.translation,
-            transliteration = romanization ?: main.transliteration
+            transliteration = romanization ?: main.transliteration,
+            transliterationWords = romanizationLine?.words?.takeIf { it.isNotEmpty() }
         )
     }
 }

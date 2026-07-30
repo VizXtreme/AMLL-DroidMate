@@ -34,7 +34,8 @@ data class NowPlayingMusic(
 data class LyricWord(
     val word: String,           // 歌词文本（可以是一个字、一个词或带空格的短语）
     val startTime: Long,        // 开始时间（毫秒）
-    val endTime: Long           // 结束时间（毫秒）
+    val endTime: Long,          // 结束时间（毫秒）
+    val romanWord: String? = null  // 单词的音译内容（如粤拼、罗马音等）
 )
 
 /**
@@ -56,6 +57,7 @@ data class LyricLine(
     val text: String,               // 主歌词文本
     val translation: String? = null,   // 翻译（可选）
     val transliteration: String? = null,  // 音译（可选）
+    val transliterationWords: List<LyricWord>? = null,  // 逐词音译时间（可选，用于 AMLL TTML <text> 格式）
     val words: List<LyricWord> = emptyList(),  // 逐词信息（用于逐字高亮）
     val isBG: Boolean = false,      // 是否为背景音声（例如和声、伴唱）
     val isDuet: Boolean = false,    // 是否为合唱（双人/多人演唱部分）

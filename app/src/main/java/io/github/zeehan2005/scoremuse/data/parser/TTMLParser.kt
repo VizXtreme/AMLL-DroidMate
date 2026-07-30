@@ -148,6 +148,13 @@ object TTMLParser {
             Timber.w("[TTMLParser] Failed to process iTunes translations $e")
         }
 
+        /** 解析 AMLL TTML DB 格式的逐词音译块 <text for="Lx">，匹配到对应段落 */
+        try {
+            applyTextForRomanization(parsedParagraphs, doc)
+        } catch (e: Exception) {
+            Timber.w("[TTMLParser] Failed to process <text> romanization blocks $e")
+        }
+
         val normalizedAgents = parsedParagraphs.map { normalizeAgent(it.agent) }
         val uniqueAgents = normalizedAgents.filterNotNull().distinct()
 
@@ -414,10 +421,14 @@ object TTMLParser {
                             if (hasBeginAttr && hasEndAttr && end >= begin && !hasDirectTimedSpanChild(element)) {
                                 val text = normalizeLyricTextPreservingSpaces(element.textContent ?: "")
                                 if (text.isNotEmpty()) {
+                                    val romanAttr = element.getAttribute("romanWord")
+                                        .ifBlank { element.getAttribute("romanword") }
+                                        .takeIf { it.isNotBlank() }
                                     val word = LyricWord(
                                         word = if (inBackground) cleanBackgroundText(text) else text,
                                         startTime = begin,
-                                        endTime = maxOf(begin + 1, end) // 确保持续时间至少为 1ms，防止 JS 侧计算 NaN
+                                        endTime = maxOf(begin + 1, end), // 确保持续时间至少为 1ms，防止 JS 侧计算 NaN
+                                        romanWord = romanAttr
                                     )
                                     if (inBackground) {
                                         buffer.bgWords.add(word)
@@ -771,8 +782,7 @@ object TTMLParser {
         val result = mutableMapOf<String, Pair<String?, String?>>()
 
         val head = doc.getElementsByTagName("head").item(0) as? Element ?: return result
-        val metadataElement = head.getElementsByTagName("metadata").item(0) as? Element ?: return result
-        val itunesMetadataList = metadataElement.getElementsByTagName("iTunesMetadata")
+        val itunesMetadataList = head.getElementsByTagName("iTunesMetadata")
         if (itunesMetadataList.length == 0) return result
 
         val itunesMetadata = itunesMetadataList.item(0) as? Element ?: return result
@@ -895,4 +905,60 @@ object TTMLParser {
         Timber.i("[TTMLParser] Applied $appliedCount translations from <iTunesMetadata> to paragraphs")
     }
 
+    private fun applyTextForRomanization(
+        paragraphs: MutableList<ParsedParagraph>,
+        doc: Document
+    ) {
+        // 在 <head>/<iTunesMetadata>/<transliterations>/<transliteration> 中查找
+        val head = doc.getElementsByTagName("head").item(0) as? Element ?: return
+        val itunesMetadata = head.getElementsByTagNameNS(
+            "http://music.apple.com/lyric-ttml-internal", "iTunesMetadata"
+        ).item(0) as? Element
+        ?: head.getElementsByTagName("iTunesMetadata").item(0) as? Element
+        ?: return
+
+        val transliterations = itunesMetadata.getElementsByTagName("transliterations").item(0) as? Element ?: return
+        val transliteration = transliterations.getElementsByTagName("transliteration").item(0) as? Element ?: return
+        val textElements = transliteration.getElementsByTagName("text")
+        if (textElements.length == 0) return
+
+        val romanizationBlocks = mutableMapOf<String, List<LyricWord>>()
+        for (i in 0 until textElements.length) {
+            val textElement = textElements.item(i) as? Element ?: continue
+            val forAttr = textElement.getAttribute("for").ifBlank { continue }
+
+            val words = mutableListOf<LyricWord>()
+            val spanElements = textElement.getElementsByTagName("span")
+            for (j in 0 until spanElements.length) {
+                val span = spanElements.item(j) as? Element ?: continue
+                val beginMs = timeStrToMillis(span.getAttribute("begin"))
+                val endMs = timeStrToMillis(span.getAttribute("end"))
+                val text = normalizeAuxiliaryText(span.textContent ?: "")
+                if (text.isEmpty()) continue
+                words.add(LyricWord(word = text, startTime = beginMs, endTime = maxOf(beginMs + 1, endMs)))
+            }
+
+            if (words.isNotEmpty()) {
+                romanizationBlocks[forAttr] = words
+                Timber.d("[TTMLParser] Parsed romanization block for='$forAttr' with ${words.size} words")
+            }
+        }
+
+        if (romanizationBlocks.isEmpty()) return
+        Timber.d("[TTMLParser] Found ${romanizationBlocks.size} romanization blocks to apply")
+
+        var appliedCount = 0
+        for (index in paragraphs.indices) {
+            val parsed = paragraphs[index]
+            val key = parsed.key ?: continue
+            val romaWords = romanizationBlocks[key] ?: continue
+            val newMainLine = parsed.mainLine?.copy(transliterationWords = romaWords)
+            val newBgLine = parsed.bgLine?.copy(transliterationWords = romaWords)
+            if (newMainLine != parsed.mainLine || newBgLine != parsed.bgLine) {
+                paragraphs[index] = parsed.copy(mainLine = newMainLine, bgLine = newBgLine)
+                appliedCount++
+            }
+        }
+        Timber.d("[TTMLParser] Applied $appliedCount romanization blocks to paragraphs")
+    }
 }

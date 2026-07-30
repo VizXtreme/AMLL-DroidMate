@@ -4,6 +4,7 @@ import io.github.zeehan2005.scoremuse.data.parser.global.processSyllableText
 import io.github.zeehan2005.scoremuse.global.LyricLine
 import io.github.zeehan2005.scoremuse.global.LyricWord
 import timber.log.Timber
+import java.io.File.separator
 
 /**
  * QQ 音乐 QRC 格式解析器（逐字歌词格式）
@@ -62,9 +63,9 @@ object QrcParser {
         for (raw in rawContent.lines()) {
             val line = raw.trim()
             if (line.isEmpty()) continue
-            // 使用统一的元数据检测函数
-            // TEMPORARILY DISABLED: MetadataStripper.isMetadataLine(line)
-            // if (MetadataStripper.isMetadataLine(line)) continue
+            // 跳过 LRC 元数据标签（如 [ti:...], [ar:...], [kana:...] 等）
+            // 这些以 [字母: 开头的行不是 QRC 歌词行，保留 [数字,数字] 格式的歌词行
+            if (Regex("""^\[[a-zA-Z]+:.*\]$""").matches(line)) continue
 
             // 解析单行并添加到结果列表
             parseSingleLine(line)?.let { finalLines.add(it) }
@@ -225,7 +226,8 @@ object QrcParser {
 
         // 如果成功提取了内容，用换行符拼接并返回
         if (extracted.isNotEmpty()) {
-            Timber.d("[QrcParser] Extracted $extracted.size LyricContent entries from QRC XML (regex): ${extracted.joinToString("\\n").take(500)}")
+            Timber.d("[QrcParser] Extracted LyricContent entries from QRC XML (regex)")
+            Timber.v(extracted.joinToString("\\n").take(500))
             return extracted.joinToString(separator = "\n")
         }
 
@@ -252,7 +254,8 @@ object QrcParser {
                 return content
             }
             
-            Timber.d("[QrcParser] Extracted $lyricContents.size LyricContent entries from QRC XML (DOM)")
+            Timber.d("[QrcParser] Extracted LyricContent entries from QRC XML (DOM)")
+            Timber.v("$lyricContents")
             lyricContents.joinToString(separator = "\n")
         } catch (e: Exception) {
             Timber.w("[QrcParser] Failed to parse QRC XML content; falling back to raw content $e")

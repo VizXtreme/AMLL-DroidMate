@@ -162,14 +162,14 @@ class WasmLyricParser(private val context: Context) {
             /** 等待解析结果 (增加超时) */
             val resultJson = withTimeoutOrNull(10000) { deferred.await() }
             if (resultJson == null) {
-                Timber.e("[WasmLyricParser] Parsing timed out or failed to return result")
+                Timber.w("[WasmLyricParser] Parsing timed out or failed to return result")
                 return null
             }
 
             // 将 JSON 结果转换为 Kotlin 对象
             return decodeJsonResult(resultJson)
         } catch (e: Exception) {
-            Timber.e(e, "[WasmLyricParser] Error during parsing execution")
+            Timber.w(e, "[WasmLyricParser] Error during parsing execution")
             return null
         } finally {
             pendingResult = null

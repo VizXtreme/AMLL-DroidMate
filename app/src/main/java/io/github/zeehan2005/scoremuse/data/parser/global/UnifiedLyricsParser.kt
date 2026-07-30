@@ -83,7 +83,8 @@ object UnifiedLyricsParser {
             Timber.d("[UnifiedLyricsParser] Normalized lyrics content by stripping leading BOM/whitespace")
         }
 
-        Timber.v("[UnifiedLyricsParser] Lyrics content preview (first 300 chars): ${normalizedContent.take(300)}")
+        Timber.v("[UnifiedLyricsParser] Lyrics content preview:")
+        Timber.v(normalizedContent)
         
         return try {
             /** 检测格式（使用归一化内容来避免 BOM 等前缀影响检测） */

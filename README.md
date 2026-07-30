@@ -32,7 +32,7 @@
   - 应用内可直接拖动进度条，暂停/播放，上下首等，而无需回到音乐源
     - 可选功能：按“上一首”时回到0:00处
   - 歌词结构显示：轻松跳转到喜欢的段落 
-  - 多源歌词检索（酷狗、网易云），找到最符合且功能最多的歌词文件
+  - 多源歌词检索（QQ音乐、酷狗、网易云），找到最符合且功能最多的歌词文件
   - 常驻通知实时歌词：可选常驻通知实时显示当前句歌词，并支持锁屏显示
   - 精美的 Material Design 3 UI
   - 为平板横屏布局适配
@@ -44,6 +44,7 @@
 - 核心动效：[Apple Music-like Lyrics （AMLL） `amll-dev/applemusic-like-lyrics`](https://github.com/amll-dev/applemusic-like-lyrics)
 - Android 应用程序：基于 [ScoreMuse `Zeehan2005/ScoreMuse`](https://github.com/Zeehan2005/ScoreMuse)
 - 多源歌词匹配：[Unilyric `apoint123/Unilyric`](https://github.com/apoint123/Unilyric)
+- QQ音乐歌词获取与解密：参照 [`L-1124/QQMusicApi`](https://github.com/L-1124/QQMusicApi) 及其上游项目算法
 - 优质歌词来源：[AMLL TTML DB `amll-dev/amll-ttml-db`](https://github.com/amll-dev/amll-ttml-db)
 - 示例专辑图：[Background, Blue, Black royalty-free stock illustration](https://pixabay.com/zh/illustrations/background-blue-black-light-1591226/) by frankeh in pixabay under [pixabay content license](https://pixabay.com/service/license-summary/). 
 

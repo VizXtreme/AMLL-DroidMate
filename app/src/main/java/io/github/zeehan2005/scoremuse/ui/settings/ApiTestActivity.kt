@@ -76,6 +76,8 @@ private data class ApiOperation(
 private val operations = listOf(
     ApiOperation("QQ音乐 - 搜索歌曲", "POST", "https://u.y.qq.com/cgi-bin/musicu.fcg", "关键词") { m, _ -> qqSearch(m) },
     ApiOperation("QQ音乐 - 获取歌词 (musicu.fcg)", "GET", "https://u.y.qq.com/cgi-bin/musicu.fcg", "歌曲 mid") { m, _ -> qqGetLyrics(m) },
+    ApiOperation("QQ音乐 - 获取歌词含QRC (musicu.fcg)", "GET", "https://u.y.qq.com/cgi-bin/musicu.fcg?crypt=1&qrc=1", "歌曲 mid") { m, _ -> qqGetLyricsWithQrc(m) },
+    ApiOperation("QQ音乐 - QRC Hex 解密测试", "DECRYPT", "3DES+Zlib → 明文", "QRC Hex 字符串") { m, _ -> qqDecryptQrcHex(m) },
     ApiOperation("QQ音乐 - 获取歌词 (lyric_download.fcg)", "POST", "https://c.y.qq.com/qqmusic/fcgi-bin/lyric_download.fcg", "歌曲数字 musicId") { m, _ -> qqLyricDownload(m) },
     ApiOperation("网易云音乐 - 搜索歌曲", "POST", "https://interface.music.163.com/eapi/cloudsearch/pc", "关键词") { m, _ -> neteaseSearch(m) },
     ApiOperation("网易云音乐 - 获取歌词", "POST", "https://interface3.music.163.com/eapi/song/lyric/v1", "歌曲数字 ID") { m, _ -> neteaseGetLyrics(m) },

@@ -33,6 +33,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import dev.amll.droidmate.global.AMLLSettings
 import io.github.zeehan2005.scoremuse.global.ScreenRefreshRate
 import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
+import io.github.zeehan2005.scoremuse.global.LyricWord
 import org.json.JSONObject
 import timber.log.Timber
 import java.io.File
@@ -724,6 +725,44 @@ private fun cleanBackgroundText(text: String): String {
     return text
 }
 
+/**
+ * 将音译逐词与主歌词逐词按时间轴匹配，为每个主词生成 romanWord
+ *
+ * 匹配规则：找到所有在 mainWord 时间窗口 [startTime, endTime) 内开始或重叠的 romaji 词，
+ * 按顺序拼接为以空格分隔的音译字符串。
+ *
+ * @param mainWords 主歌词的逐词列表（已按时间排序）
+ * @param romajiWords 音译的逐词列表（已按时间排序，来自 QRC roma 轨道）
+ * @return Map<单词索引, 匹配到的音译文本>
+ */
+private fun mapRomanizationToWords(
+    mainWords: List<LyricWord>,
+    romajiWords: List<LyricWord>
+): Map<Int, String> {
+    if (romajiWords.isEmpty()) return emptyMap()
+    val result = mutableMapOf<Int, String>()
+    var rIdx = 0
+    // 跳过所有在主歌词开始之前就已结束的 romaji 词
+    val firstMainStart = mainWords.firstOrNull()?.startTime ?: 0L
+    while (rIdx < romajiWords.size && romajiWords[rIdx].endTime <= firstMainStart) {
+        rIdx++
+    }
+    for ((mIdx, mainWord) in mainWords.withIndex()) {
+        val matched = mutableListOf<String>()
+        while (rIdx < romajiWords.size && romajiWords[rIdx].startTime < mainWord.endTime) {
+            // 只取与 mainWord 时间窗口有重叠的 romaji 词
+            if (romajiWords[rIdx].endTime > mainWord.startTime) {
+                matched.add(romajiWords[rIdx].word.trim())
+            }
+            rIdx++
+        }
+        if (matched.isNotEmpty()) {
+            result[mIdx] = matched.joinToString(" ")
+        }
+    }
+    return result
+}
+
 private fun buildLyricsJson(lyrics: UnifiedLyrics): String {
     val bgLines = lyrics.lines.filter { it.isBG }
     val bgWithTranslation = bgLines.count { !it.translation.isNullOrBlank() }
@@ -733,8 +772,17 @@ private fun buildLyricsJson(lyrics: UnifiedLyrics): String {
 
     /** 调试日志：限制在 10 行以内，超出的降级为 v 级别 */
     var debugCount = 0
-    
-    val linesJson = lyrics.lines.joinToString(",") { line ->
+
+    /** 预计算所有行的 romanWord 映射（将音译逐词按时间轴匹配到主歌词逐词） */
+    val romanWordMaps = lyrics.lines.map { line ->
+        if (!line.transliterationWords.isNullOrEmpty()) {
+            mapRomanizationToWords(line.words, line.transliterationWords)
+        } else {
+            emptyMap<Int, String>()
+        }
+    }
+
+    val linesJson = lyrics.lines.withIndex().joinToString(",") { (lineIdx, line) ->
         /** 背景歌词清洗：移除第一个 "(" 和最后一个 ")" */
         val cleanedText = if (line.isBG) {
             cleanBackgroundText(line.text)
@@ -746,9 +794,10 @@ private fun buildLyricsJson(lyrics: UnifiedLyrics): String {
         val translation = line.translation?.replace("\\", "\\\\")?.replace("\"", "\\\"") ?: ""
         val transliteration = line.transliteration?.replace("\\", "\\\\")?.replace("\"", "\\\"") ?: ""
         
-        /** 构建 words 数组 */
+        /** 构建 words 数组（含 AMLL core 兼容的逐词音译 romanWord） */
+        val romanMap = romanWordMaps.getOrElse(lineIdx) { emptyMap() }
         val wordsJson = if (line.words.isNotEmpty()) {
-            line.words.joinToString(",") { word ->
+            line.words.withIndex().joinToString(",") { (wordIdx, word) ->
                 /** 背景歌词的单词也需要清洗 */
                 val wordText = if (line.isBG) {
                     cleanBackgroundText(word.word).replace("\\", "\\\\").replace("\"", "\\\"")
@@ -758,7 +807,11 @@ private fun buildLyricsJson(lyrics: UnifiedLyrics): String {
                 /** 增加防御性检查：确保 endTime > startTime，防止 JS 计算 progress 时出现 NaN (0/0) 或 Infinity (1/0)
                 // 这修复了 "Invalid keyframe value for property maskPosition: NaNpx 0" 的报错 */
                 val wordEndTime = if (word.endTime <= word.startTime) word.startTime + 1 else word.endTime
-                """{"word":"$wordText","startTime":${word.startTime},"endTime":$wordEndTime}"""
+                val romanWordPart = romanMap[wordIdx]?.let { rw ->
+                    val escaped = rw.replace("\\", "\\\\").replace("\"", "\\\"")
+                    ""","romanWord":"$escaped""""
+                } ?: ""
+                """{"word":"$wordText","startTime":${word.startTime},"endTime":$wordEndTime$romanWordPart}"""
             }
         } else {
             /** 如果没有逐词信息，则使用整行文本作为单词 */

@@ -410,7 +410,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             parsed = wasmParsed
                             cachedXmlContent = TTMLConverter.toTTMLString(wasmParsed)
                         } else {
-                            Timber.d("[CustomLyrics] WASM parse unavailable, using Kotlin parser ($format)")
+                            Timber.i("[CustomLyrics] WASM parse unavailable, using Kotlin parser ($format)")
                             parsed = TTMLConverter.fromLyrics(
                                 content = trimmed,
                                 title = title.ifBlank { "自选歌词" },

@@ -1,4 +1,4 @@
-package dev.amll.droidmate.data.converter
+﻿package dev.amll.droidmate.data.converter
 
 import io.github.zeehan2005.scoremuse.global.LyricLine
 import io.github.zeehan2005.scoremuse.global.UnifiedLyrics
@@ -9,40 +9,40 @@ import timber.log.Timber
 import java.util.Locale
 
 /**
- * TTML 转换器 - 将歌词转换为 TTML 格式
+ * TTML 杞崲鍣?- 灏嗘瓕璇嶈浆鎹负 TTML 鏍煎紡
  * 
- * 这个对象提供了一系列方法，用于在内部歌词模型和 TTML (Timed Text Markup Language)
- * 标准格式之间进行转换。TTML 是一种基于 XML 的字幕格式，广泛用于视频和音乐行业。
+ * 杩欎釜瀵硅薄鎻愪緵浜嗕竴绯诲垪鏂规硶锛岀敤浜庡湪鍐呴儴姝岃瘝妯″瀷鍜?TTML (Timed Text Markup Language)
+ * 鏍囧噯鏍煎紡涔嬮棿杩涜杞崲銆俆TML 鏄竴绉嶅熀浜?XML 鐨勫瓧骞曟牸寮忥紝骞挎硾鐢ㄤ簬瑙嗛鍜岄煶涔愯涓氥€?
  * 
- * 主要功能：
- * - 导出：将应用内部的歌词数据转换为标准 TTML 格式
- * - 导入：解析外部 TTML 文件为内部数据结构
- * - XML 转义：防止特殊字符破坏 XML 结构
- * - 元数据保留：保持歌曲信息、结构标记等
+ * 涓昏鍔熻兘锛?
+ * - 瀵煎嚭锛氬皢搴旂敤鍐呴儴鐨勬瓕璇嶆暟鎹浆鎹负鏍囧噯 TTML 鏍煎紡
+ * - 瀵煎叆锛氳В鏋愬閮?TTML 鏂囦欢涓哄唴閮ㄦ暟鎹粨鏋?
+ * - XML 杞箟锛氶槻姝㈢壒娈婂瓧绗︾牬鍧?XML 缁撴瀯
+ * - 鍏冩暟鎹繚鐣欙細淇濇寔姝屾洸淇℃伅銆佺粨鏋勬爣璁扮瓑
  * 
- * 注意：本转换器的所有方法均通过反射调用，因此需要保留 @Suppress("unused")
- * 这些方法在运行时被动态调用，用于歌词格式的导入/导出功能
+ * 娉ㄦ剰锛氭湰杞崲鍣ㄧ殑鎵€鏈夋柟娉曞潎閫氳繃鍙嶅皠璋冪敤锛屽洜姝ら渶瑕佷繚鐣?@Suppress("unused")
+ * 杩欎簺鏂规硶鍦ㄨ繍琛屾椂琚姩鎬佽皟鐢紝鐢ㄤ簬姝岃瘝鏍煎紡鐨勫鍏?瀵煎嚭鍔熻兘
  */
 object TTMLConverter {
 
     /**
-     * 转义 XML 特殊字符
+     * 杞箟 XML 鐗规畩瀛楃
      * 
-     * XML 中有 5 个特殊字符必须进行转义，否则会破坏文档结构：
-     * - & (和号) → &amp;  ⭐ 必须最先转义，否则会导致双重转义
-     * - < (小于号) → &lt;
-     * - > (大于号) → &gt;
-     * - " (双引号) → &quot;
-     * - ' (单引号) → &apos;
+     * XML 涓湁 5 涓壒娈婂瓧绗﹀繀椤昏繘琛岃浆涔夛紝鍚﹀垯浼氱牬鍧忔枃妗ｇ粨鏋勶細
+     * - & (鍜屽彿) 鈫?&amp;  猸?蹇呴』鏈€鍏堣浆涔夛紝鍚﹀垯浼氬鑷村弻閲嶈浆涔?
+     * - < (灏忎簬鍙? 鈫?&lt;
+     * - > (澶т簬鍙? 鈫?&gt;
+     * - " (鍙屽紩鍙? 鈫?&quot;
+     * - ' (鍗曞紩鍙? 鈫?&apos;
      * 
-     * 例如歌词中的 "A&B" 如果不转义，会被 XML 解析器误认为是实体引用。
+     * 渚嬪姝岃瘝涓殑 "A&B" 濡傛灉涓嶈浆涔夛紝浼氳 XML 瑙ｆ瀽鍣ㄨ璁や负鏄疄浣撳紩鐢ㄣ€?
      * 
-     * @param text 原始文本
-     * @return 转义后的安全文本
+     * @param text 鍘熷鏂囨湰
+     * @return 杞箟鍚庣殑瀹夊叏鏂囨湰
      */
     private fun escapeXml(text: String?): String? {
         return text
-            ?.replace("&", "&amp;")   // 必须第一个转义，避免双重转义
+            ?.replace("&", "&amp;")   // 蹇呴』绗竴涓浆涔夛紝閬垮厤鍙岄噸杞箟
             ?.replace("<", "&lt;")
             ?.replace(">", "&gt;")
             ?.replace("\"", "&quot;")
@@ -50,21 +50,21 @@ object TTMLConverter {
     }
 
     /**
-     * 将歌词行列表转换为 TTML 字符串
+     * 灏嗘瓕璇嶈鍒楄〃杞崲涓?TTML 瀛楃涓?
      * 
-     * 这是 TTML 导出的核心方法。它会将内部的歌词数据结构转换为标准的 TTML XML 格式。
+     * 杩欐槸 TTML 瀵煎嚭鐨勬牳蹇冩柟娉曘€傚畠浼氬皢鍐呴儴鐨勬瓕璇嶆暟鎹粨鏋勮浆鎹负鏍囧噯鐨?TTML XML 鏍煎紡銆?
      * 
-     * 生成的 TTML 包含：
-     * - XML 声明和命名空间定义
-     * - 元数据区域（标题、艺术家等）
-     * - 歌词主体区域（包含时间戳的逐行歌词）
-     * - 可选的格式化（缩进和换行，便于阅读）
+     * 鐢熸垚鐨?TTML 鍖呭惈锛?
+     * - XML 澹版槑鍜屽懡鍚嶇┖闂村畾涔?
+     * - 鍏冩暟鎹尯鍩燂紙鏍囬銆佽壓鏈绛夛級
+     * - 姝岃瘝涓讳綋鍖哄煙锛堝寘鍚椂闂存埑鐨勯€愯姝岃瘝锛?
+     * - 鍙€夌殑鏍煎紡鍖栵紙缂╄繘鍜屾崲琛岋紝渚夸簬闃呰锛?
      * 
-     * ⭐ 修复关键：所有字符串值必须进行 XML 转义，防止解析失败
+     * 猸?淇鍏抽敭锛氭墍鏈夊瓧绗︿覆鍊煎繀椤昏繘琛?XML 杞箟锛岄槻姝㈣В鏋愬け璐?
      * 
-     * @param lyrics 要转换的歌词对象
-     * @param formatted 是否格式化输出（添加缩进和换行）
-     * @return TTML 格式的 XML 字符串
+     * @param lyrics 瑕佽浆鎹㈢殑姝岃瘝瀵硅薄
+     * @param formatted 鏄惁鏍煎紡鍖栬緭鍑猴紙娣诲姞缂╄繘鍜屾崲琛岋級
+     * @return TTML 鏍煎紡鐨?XML 瀛楃涓?
      */
     fun toTTMLString(
         lyrics: UnifiedLyrics,
@@ -72,11 +72,11 @@ object TTMLConverter {
     ): String {
         val sb = StringBuilder()
         
-        // XML 头
+        // XML 澶?
         sb.append("""<?xml version="1.0" encoding="UTF-8"?>""")
         if (formatted) sb.append("\n")
         
-        /** TTML 核心 */
+        /** TTML 鏍稿績 */
         val indent = if (formatted) "  " else ""
         val lineBreak = if (formatted) "\n" else ""
         
@@ -90,23 +90,23 @@ object TTMLConverter {
         // Head
         sb.append("${indent}<head>$lineBreak")
         
-        /** ✅ 如果有原始 XML metadata，直接使用它（保留所有未使用的 XML 信息）*/
+        /** 鉁?濡傛灉鏈夊師濮?XML metadata锛岀洿鎺ヤ娇鐢ㄥ畠锛堜繚鐣欐墍鏈夋湭浣跨敤鐨?XML 淇℃伅锛?*/
         val rawXmlMetadata = lyrics.metadata.rawXmlMetadata
         if (!rawXmlMetadata.isNullOrBlank()) {
             Timber.d("[TTMLConverter] Using preserved raw XML metadata for serialization")
             sb.append("${indent}${indent}$rawXmlMetadata$lineBreak")
         } else {
-            // 否则，重新构建 metadata（向后兼容）
+            // 鍚﹀垯锛岄噸鏂版瀯寤?metadata锛堝悜鍚庡吋瀹癸級
             sb.append("${indent}${indent}<metadata>")
             if (formatted) sb.append("\n")
             
             // Metadata
             with(lyrics.metadata) {
-                // ✅ 添加主唱 agent 定义（必须放在其他 meta 之前，让 Rust 解析器正确识别）
+                // 鉁?娣诲姞涓诲敱 agent 瀹氫箟锛堝繀椤绘斁鍦ㄥ叾浠?meta 涔嬪墠锛岃 Rust 瑙ｆ瀽鍣ㄦ纭瘑鍒級
                 sb.append("""${indent}${indent}${indent}<ttm:agent type="person" xml:id="v1" />""")
                 if (formatted) sb.append("\n")
                 
-                /** 检查是否有对唱歌词，如果有则添加 v2 agent 定义 */
+                /** 妫€鏌ユ槸鍚︽湁瀵瑰敱姝岃瘝锛屽鏋滄湁鍒欐坊鍔?v2 agent 瀹氫箟 */
                 val hasDuet = lyrics.lines.any { it.isDuet }
                 if (hasDuet) {
                     sb.append("""${indent}${indent}${indent}<ttm:agent type="other" xml:id="v2" />""")
@@ -130,22 +130,49 @@ object TTMLConverter {
             sb.append("""${indent}${indent}</metadata>$lineBreak""")
         }
         
+
+        /** Generate <iTunesMetadata><transliterations> per-word romanization blocks */
+        val hasTransliterationWords = lyrics.lines.any { !it.transliterationWords.isNullOrEmpty() }
+        if (hasTransliterationWords) {
+            sb.append("""${indent}${indent}<iTunesMetadata xmlns="http://music.apple.com/lyric-ttml-internal">$lineBreak""")
+            sb.append("""${indent}${indent}${indent}<transliterations>$lineBreak""")
+            sb.append("""${indent}${indent}${indent}${indent}<transliteration xml:lang="ja-Latn">$lineBreak""")
+            lyrics.lines.forEachIndexed { index, line ->
+                if (line.transliterationWords.isNullOrEmpty()) return@forEachIndexed
+                val lineNum = "L${index + 1}"
+                sb.append("""${indent}${indent}${indent}${indent}${indent}<text for="$lineNum">$lineBreak""")
+                line.transliterationWords.forEachIndexed { wIndex, word ->
+                    val wBegin = TimestampUtils.fromMillis(word.startTime)
+                    val wEnd = TimestampUtils.fromMillis(word.endTime)
+                    val wText = word.word.trim()
+                    if (wText.isEmpty()) return@forEachIndexed
+                    if (wIndex > 0) sb.append(" ")
+                    sb.append("""${indent}${indent}${indent}${indent}${indent}${indent}<span begin="$wBegin" end="$wEnd" xmlns="http://www.w3.org/ns/ttml">${escapeXml(wText)}</span>""")
+                    if (formatted) sb.append("\n")
+                }
+                sb.append("""${indent}${indent}${indent}${indent}${indent}</text>$lineBreak""")
+            }
+            sb.append("""${indent}${indent}${indent}${indent}</transliteration>$lineBreak""")
+            sb.append("""${indent}${indent}${indent}</transliterations>$lineBreak""")
+            sb.append("""${indent}${indent}</iTunesMetadata>$lineBreak""")
+        }
+
         sb.append("""${indent}</head>$lineBreak""")
         
         /** Body */
         val duration = TimestampUtils.fromMillis(lyrics.lines.lastOrNull()?.endTime ?: 0L)
         sb.append("""${indent}<body dur="$duration">$lineBreak""")
 
-        /** ✅ 将 songStructures 序列化为 <div itunes:songPart="...">，确保缓存再解析时能恢复结构。
-         *  只保留"真实"的段落标记（来自 TTML 原数据的 songPart），排除：
-         *  - 推断的间奏/前奏/尾奏（INTRO_INST、INTERLUDE、OUTRO_INST）
-         *  - SongStructureParser 回退推断的 "段落 X" 标签
+        /** 鉁?灏?songStructures 搴忓垪鍖栦负 <div itunes:songPart="...">锛岀‘淇濈紦瀛樺啀瑙ｆ瀽鏃惰兘鎭㈠缁撴瀯銆?
+         *  鍙繚鐣?鐪熷疄"鐨勬钀芥爣璁帮紙鏉ヨ嚜 TTML 鍘熸暟鎹殑 songPart锛夛紝鎺掗櫎锛?
+         *  - 鎺ㄦ柇鐨勯棿濂?鍓嶅/灏惧锛圛NTRO_INST銆両NTERLUDE銆丱UTRO_INST锛?
+         *  - SongStructureParser 鍥為€€鎺ㄦ柇鐨?"娈佃惤 X" 鏍囩
          */
         val structures = lyrics.metadata.songStructures
         if (!structures.isNullOrEmpty()) {
             val realStructures = structures.filter { structure ->
                 structure.label != "Interlude" &&
-                !structure.label.matches(Regex("^段落\\s*\\d+$"))
+                !structure.label.matches(Regex("^娈佃惤\\s*\\d+$"))
             }
 
             if (realStructures.isNotEmpty()) {
@@ -157,7 +184,7 @@ object TTMLConverter {
 
                     sb.append("""${indent}${indent}<div itunes:songPart="${escapeXml(structure.label)}" begin="$startTimeAttr" end="$endTimeAttr">$lineBreak""")
 
-                    // 添加该结构时间范围内的歌词行
+                    // 娣诲姞璇ョ粨鏋勬椂闂磋寖鍥村唴鐨勬瓕璇嶈
                     for ((index, line) in lyrics.lines.withIndex()) {
                         if (index in addedLines) continue
                         if (line.startTime in structure.startTime until structure.endTime) {
@@ -169,7 +196,7 @@ object TTMLConverter {
                     sb.append("""${indent}${indent}</div>$lineBreak""")
                 }
 
-                // 没有被任何结构覆盖的剩余歌词行
+                // 娌℃湁琚换浣曠粨鏋勮鐩栫殑鍓╀綑姝岃瘝琛?
                 if (addedLines.size < lyrics.lines.size) {
                     sb.append("""${indent}${indent}<div>$lineBreak""")
                     for ((index, line) in lyrics.lines.withIndex()) {
@@ -180,7 +207,7 @@ object TTMLConverter {
                     sb.append("""${indent}${indent}</div>$lineBreak""")
                 }
             } else {
-                // 只有推断结构（间奏等），没有真实段落标记 → 使用单个 div
+                // 鍙湁鎺ㄦ柇缁撴瀯锛堥棿濂忕瓑锛夛紝娌℃湁鐪熷疄娈佃惤鏍囪 鈫?浣跨敤鍗曚釜 div
                 sb.append("""${indent}${indent}<div>$lineBreak""")
                 lyrics.lines.forEachIndexed { index, line ->
                     appendLyricLine(sb, line, index, indent, formatted)
@@ -188,7 +215,7 @@ object TTMLConverter {
                 sb.append("""${indent}${indent}</div>$lineBreak""")
             }
         } else {
-            // 没有结构信息，使用单个 div 包含所有歌词
+            // 娌℃湁缁撴瀯淇℃伅锛屼娇鐢ㄥ崟涓?div 鍖呭惈鎵€鏈夋瓕璇?
             sb.append("""${indent}${indent}<div>$lineBreak""")
             lyrics.lines.forEachIndexed { index, line ->
                 appendLyricLine(sb, line, index, indent, formatted)
@@ -196,7 +223,7 @@ object TTMLConverter {
             sb.append("""${indent}${indent}</div>$lineBreak""")
         }
         
-        // 关闭 body 和 tt 标签
+        // 鍏抽棴 body 鍜?tt 鏍囩
         sb.append("""${indent}</body>$lineBreak""")
         sb.append("</tt>")
         
@@ -204,7 +231,7 @@ object TTMLConverter {
     }
     
     /**
-     * 辅助方法：追加歌词行到 StringBuilder
+     * 杈呭姪鏂规硶锛氳拷鍔犳瓕璇嶈鍒?StringBuilder
      */
     private fun appendLyricLine(
         sb: StringBuilder,
@@ -217,7 +244,7 @@ object TTMLConverter {
         val end = TimestampUtils.fromMillis(line.endTime)
         val lineNum = "L${lineIndex + 1}"
                 
-        /** ✅ 优先使用 agent 字段，如果没有则根据 isDuet 推断*/
+        /** 鉁?浼樺厛浣跨敤 agent 瀛楁锛屽鏋滄病鏈夊垯鏍规嵁 isDuet 鎺ㄦ柇*/
         val agentValue = line.agent ?: if (line.isDuet) "v2" else "v1"
         val agentAttr = if (agentValue.isNotEmpty()) " ttm:agent=\"$agentValue\"" else ""
                 
@@ -239,10 +266,10 @@ object TTMLConverter {
             lineContentIndent
         }
             
-        // Main lyrics - 如果有 words 数组则逐词输出，否则整行输出
+        // Main lyrics - 濡傛灉鏈?words 鏁扮粍鍒欓€愯瘝杈撳嚭锛屽惁鍒欐暣琛岃緭鍑?
         if (line.words.isNotEmpty()) {
-            // 警示后人：<p>/<span> 内空格是可见歌词语义，不能对词文本做 trim。
-            // 这里最多仅清理换行控制字符，避免导出后把 "a b" 变成 "ab"。
+            // 璀︾ず鍚庝汉锛?p>/<span> 鍐呯┖鏍兼槸鍙姝岃瘝璇箟锛屼笉鑳藉璇嶆枃鏈仛 trim銆?
+            // 杩欓噷鏈€澶氫粎娓呯悊鎹㈣鎺у埗瀛楃锛岄伩鍏嶅鍑哄悗鎶?"a b" 鍙樻垚 "ab"銆?
             line.words.forEachIndexed inner@{ wordIndex, word ->
                 val wordBegin = TimestampUtils.fromMillis(word.startTime)
                 val wordEnd = TimestampUtils.fromMillis(word.endTime)
@@ -250,12 +277,9 @@ object TTMLConverter {
                 val spanText = word.word
                     .replace("\r", "")
                     .replace("\n", "")
-                
-                // ⭐ 修复关键：对歌词内容进行 XML 转义，防止特殊字符导致解析失败
-                escapeXml(spanText)
 
                 if (spanText.isEmpty()) {
-                    // 保留空白词节点的最小分隔语义，避免词间被完全粘连。
+                    // 淇濈暀绌虹櫧璇嶈妭鐐圭殑鏈€灏忓垎闅旇涔夛紝閬垮厤璇嶉棿琚畬鍏ㄧ矘杩炪€?
                     if (!formatted && wordIndex < line.words.lastIndex) {
                         sb.append(" ")
                     }
@@ -267,13 +291,13 @@ object TTMLConverter {
                 if (formatted) sb.append("\n")
             }
         } else {
-            // 整行输出
+            // 鏁磋杈撳嚭
             sb.append("""$spanIndent<span begin="$begin" end="$end">${escapeXml(line.text)}</span>""")
             if (formatted) sb.append("\n")
         }
 
         if (line.isBG) {
-            // BG 行的翻译与音译应作为 x-bg 的子节点，避免二次解析时被当作主歌词翻译。
+            // BG 琛岀殑缈昏瘧涓庨煶璇戝簲浣滀负 x-bg 鐨勫瓙鑺傜偣锛岄伩鍏嶄簩娆¤В鏋愭椂琚綋浣滀富姝岃瘝缈昏瘧銆?
             line.translation?.let {
                 sb.append("""$spanIndent<span ttm:role="x-translation" xml:lang="zh-CN">${escapeXml(it)}</span>""")
                 if (formatted) sb.append("\n")
@@ -305,7 +329,7 @@ object TTMLConverter {
     }
 
     /**
-     * 将歌词行列表转换为完整的 TTML 对象
+     * 灏嗘瓕璇嶈鍒楄〃杞崲涓哄畬鏁寸殑 TTML 瀵硅薄
      */
     fun fromLyricLines(
         lines: List<LyricLine>,
@@ -326,9 +350,9 @@ object TTMLConverter {
     }
 
     /**
-     * 格式化时间为 TTML 格式
-     * 格式：mm:ss.msms
-     * @deprecated 使用 TimestampUtils.fromMillis() 代替
+     * 鏍煎紡鍖栨椂闂翠负 TTML 鏍煎紡
+     * 鏍煎紡锛歮m:ss.msms
+     * @deprecated 浣跨敤 TimestampUtils.fromMillis() 浠ｆ浛
      */
     @Deprecated("Use TimestampUtils.fromMillis()", ReplaceWith("TimestampUtils.fromMillis(millis, TimestampUtils.Format.MM_SS_MS)"))
     fun formatTime(millis: Long): String {
@@ -341,9 +365,9 @@ object TTMLConverter {
     }
 
     /**
-     * 将时间字符串转换为毫秒
-     * 支持：mm:ss.mmm 或 mm:ss
-     * @deprecated 使用 TimestampUtils.toMillis() 代替
+     * 灏嗘椂闂村瓧绗︿覆杞崲涓烘绉?
+     * 鏀寔锛歮m:ss.mmm 鎴?mm:ss
+     * @deprecated 浣跨敤 TimestampUtils.toMillis() 浠ｆ浛
      */
     @Deprecated("Use TimestampUtils.toMillis()", ReplaceWith("TimestampUtils.toMillis(timeStr)"))
     fun timeToMillis(timeStr: String): Long {
@@ -367,15 +391,15 @@ object TTMLConverter {
     }
 
     /**
-     * 从多种格式解析歌词到 TTML（使用 Unilyric 规则）
-     * 支持：LRC, Enhanced LRC, QRC, KRC, YRC
+     * 浠庡绉嶆牸寮忚В鏋愭瓕璇嶅埌 TTML锛堜娇鐢?Unilyric 瑙勫垯锛?
+     * 鏀寔锛歀RC, Enhanced LRC, QRC, KRC, YRC
      * 
-     * @param content 歌词内容
-     * @param title 歌曲标题（可选）
-     * @param artist 艺术家（可选）
-     * @param album 专辑（可选）
-     * @param processMetadata 是否处理元数据（默认禁用，防止强行处理导致翻译/音译错位）
-     * @return UnifiedLyrics 对象，如果解析失败则返回 null
+     * @param content 姝岃瘝鍐呭
+     * @param title 姝屾洸鏍囬锛堝彲閫夛級
+     * @param artist 鑹烘湳瀹讹紙鍙€夛級
+     * @param album 涓撹緫锛堝彲閫夛級
+     * @param processMetadata 鏄惁澶勭悊鍏冩暟鎹紙榛樿绂佺敤锛岄槻姝㈠己琛屽鐞嗗鑷寸炕璇?闊宠瘧閿欎綅锛?
+     * @return UnifiedLyrics 瀵硅薄锛屽鏋滆В鏋愬け璐ュ垯杩斿洖 null
      */
     fun fromLyrics(
         content: String,
@@ -399,8 +423,8 @@ object TTMLConverter {
     }
     
     /**
-     * 从 LRC 格式转换到 TTML（保留用于向后兼容）
-     * @deprecated 使用 fromLyrics() 代替，它支持更多格式
+     * 浠?LRC 鏍煎紡杞崲鍒?TTML锛堜繚鐣欑敤浜庡悜鍚庡吋瀹癸級
+     * @deprecated 浣跨敤 fromLyrics() 浠ｆ浛锛屽畠鏀寔鏇村鏍煎紡
      */
     @Deprecated(
         message = "Use fromLyrics() instead for better format support",
@@ -410,3 +434,4 @@ object TTMLConverter {
         return fromLyrics(lrcContent)
     }
 }
+

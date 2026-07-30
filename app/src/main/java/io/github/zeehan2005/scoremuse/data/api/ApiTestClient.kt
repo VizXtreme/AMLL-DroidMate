@@ -1,5 +1,6 @@
 package io.github.zeehan2005.scoremuse.data.api
 
+import io.github.zeehan2005.scoremuse.data.get.qq.QqMusicQrcCrypto
 import io.github.zeehan2005.scoremuse.data.get.netease.NeteaseEapiCrypto
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -49,6 +50,52 @@ class ApiTestClient(private val httpClient: HttpClient) {
             parameter("data", lyricData.toString())
             parameter("format", "json")
         }
+    }
+
+    /**
+     * 获取 QQ 音乐歌词（含 QRC 字段参数）
+     * 与普通获取歌词的区别：添加 crypt=1, qrc=1 让服务器返回加密的 QRC 逐字歌词
+     */
+    suspend fun qqGetLyricsWithQrc(songMid: String): ApiTestResult {
+        val lyricData = buildJsonObject {
+            putJsonObject("comm") { put("ct", 19); put("cv", 1859) }
+            putJsonObject("req_1") {
+                put("module", "music.musichallSong.PlayLyricInfo")
+                put("method", "GetPlayLyricInfo")
+                putJsonObject("param") {
+                    put("songMID", songMid); put("songID", 0)
+                    put("crypt", 1); put("qrc", 1); put("qrc_t", 0)
+                }
+            }
+        }
+        return get("https://u.y.qq.com/cgi-bin/musicu.fcg") {
+            parameter("data", lyricData.toString())
+            parameter("format", "json")
+        }
+    }
+
+    /**
+     * 测试 QRC Hex 解密
+     * 输入 QQ 音乐返回的 hex 加密字符串，尝试 3DES+Zlib 解密
+     */
+    suspend fun qqDecryptQrcHex(hexInput: String): ApiTestResult {
+        val (result, dur) = measureTimedValue { runCatching {
+            QqMusicQrcCrypto.decryptQrcHex(hexInput)
+        }}
+        return result.fold({ decrypted ->
+            ApiTestResult(
+                responseBody = decrypted,
+                durationMs = dur.inWholeMilliseconds,
+                requestUrl = "QRC Hex Decrypt (${hexInput.take(40)}...)",
+                requestMethod = "DECRYPT"
+            )
+        }, { e ->
+            ApiTestResult(
+                requestUrl = "QRC Hex Decrypt",
+                errorMessage = e.message,
+                durationMs = dur.inWholeMilliseconds
+            )
+        })
     }
 
     suspend fun qqLyricDownload(musicId: String): ApiTestResult {
