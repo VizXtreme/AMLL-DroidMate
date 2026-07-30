@@ -147,7 +147,7 @@ private fun ApiTestPage(onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
                     OutlinedTextField(value = op.label, onValueChange = {}, readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(), singleLine = true)
+                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth(), singleLine = true)
                     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         operations.forEachIndexed { i, o ->
                             DropdownMenuItem(text = { Text(o.label) }, onClick = { sel = i; extra = ""; result = null; expanded = false },

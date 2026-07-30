@@ -110,7 +110,7 @@ class ManagementConfig<T> @PublishedApi internal constructor(
          * @param itemKey 从条目中提取唯一标识的 lambda（必填）
          * @param block DSL 配置块
          */
-        inline fun <T> build(
+        fun <T> build(
             title: String,
             noinline itemKey: (T) -> String,
             noinline block: Builder<T>.() -> Unit,

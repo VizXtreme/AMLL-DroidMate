@@ -1,6 +1,7 @@
 package io.github.zeehan2005.scoremuse.global
 
 import android.content.Context
+import android.os.Build
 import android.view.WindowManager
 import timber.log.Timber
 
@@ -25,7 +26,12 @@ object ScreenRefreshRate {
         return try {
             val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
             if (windowManager != null) {
-                val rate = windowManager.defaultDisplay.refreshRate
+                val rate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    context.display?.refreshRate ?: 60f
+                } else {
+                    @Suppress("DEPRECATION")
+                    windowManager.defaultDisplay.refreshRate
+                }
                 Timber.d("[ScreenRefreshRate] Detected refresh rate: ${rate}Hz")
                 rate.coerceAtLeast(1f)
             } else {
