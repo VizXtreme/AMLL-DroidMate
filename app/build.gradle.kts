@@ -2,31 +2,31 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// ============================================================================
-// DroidMate Android 应用构建配置
-// ============================================================================
-// 这个文件定义了 Android 应用的编译、打包和依赖配置。
-// 
-// **主要功能**：
-// 1. 自定义 Gradle 任务（构建前端资源）
-// 2. Android 编译配置（SDK 版本、Java 版本等）
-// 3. 依赖管理（库版本控制）
-// 4. APK 命名和版本号生成
-// 
-// **关键插件**：
-// - com.android.application: Android 应用插件
-// - kotlin("plugin.serialization"): Kotlin 序列化支持
-// - kotlin("plugin.compose"): Jetpack Compose 支持
-// ============================================================================
+/**
+ * DroidMate Android 应用构建配置
+ *
+ * 这个文件定义了 Android 应用的编译、打包和依赖配置。
+ *
+ * **主要功能**：
+ * # 自定义 Gradle 任务（构建前端资源）
+ * # Android 编译配置（SDK 版本、Java 版本等）
+ * # 依赖管理（库版本控制）
+ * # APK 命名和版本号生成
+ *
+ * **关键插件**：
+ * - com.android.application: Android 应用插件
+ * - kotlin("plugin.serialization"): Kotlin 序列化支持
+ * - kotlin("plugin.compose"): Jetpack Compose 支持
+ */
 
 plugins {
-    // Android 应用插件：将 Kotlin 项目编译为 Android APK
+    /** Android 应用插件：将 Kotlin 项目编译为 Android APK */
     id("com.android.application")
     
-    // Kotlin 序列化插件：支持 @Serializable 注解
+    /** Kotlin 序列化插件：支持 @Serializable 注解 */
     kotlin("plugin.serialization")
     
-    // Jetpack Compose 插件：支持 Compose UI
+    /** Jetpack Compose 插件：支持 Compose UI */
     kotlin("plugin.compose")
 }
 
@@ -141,9 +141,7 @@ abstract class BuildFrontendTask @Inject constructor(
     }
 }
 
-// ============================================================================
-// 注册并配置 buildFrontend 任务
-// ============================================================================
+/** 注册并配置 buildFrontend 任务 */
 val buildFrontendProvider = tasks.register("buildFrontend", BuildFrontendTask::class.java) {
     description = "Build frontend assets using npm and sync to Android assets directory"
     // 设置前端源码目录为输入 - src/ 下文件变化会触发重建
@@ -158,25 +156,26 @@ val buildFrontendProvider = tasks.register("buildFrontend", BuildFrontendTask::c
     rootProjectDir.set(rootProject.layout.projectDirectory)
 }
 
-// ============================================================================
-// 构建依赖关系：在 preBuild 之前先执行 buildFrontend
-// ============================================================================
-// preBuild 是 Android 构建的标准前置任务，在它之前先构建前端资源
+/** 构建依赖关系：在 preBuild 之前先执行 buildFrontend
+ *
+ * preBuild 是 Android 构建的标准前置任务，在它之前先构建前端资源 */
 tasks.named("preBuild") {
     dependsOn(buildFrontendProvider)
 }
 
 
 
-// ============================================================================
-// 版本号生成器（使用时间戳）
-// ============================================================================
-// 确保每次构建都重新计算时间戳
-// 直接定义为一个函数，每次调用都会重新计算
+/** 版本号生成器（使用时间戳）
+ *
+ * 确保每次构建都重新计算时间戳
+ *
+ * 直接定义为一个函数，每次调用都会重新计算 */
 fun getBuildTimestamp(): String {
     // 格式：yyyyMMddHHmmss (例如：20260401123456)
     return SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(Date())
 }
+/** 正式版版本号 */
+val customVersion = ""
 
 // ============================================================================
 // Android 应用配置
@@ -211,7 +210,7 @@ android {
         
         // 版本名称：显示给用户的版本信息（使用时间戳格式）
         versionName = "Alpha ${getBuildTimestamp()}" // 开发版
-//        versionName = "v1.0.0" // 正式版
+//        versionName = customVersion // 正式版
 
     }
 
@@ -251,7 +250,7 @@ androidComponents {
             (output as? com.android.build.api.variant.impl.VariantOutputImpl)?.outputFileName?.set(
                 // 版本号
                 "AMLL-DroidMate-Alpha-${getBuildTimestamp()}.apk" // 开发版
-//                "AMLL-DroidMate-v1.0.0.apk" // 正式版
+//                "AMLL-DroidMate-$customVersion.apk" // 正式版
             )
         }
     }
