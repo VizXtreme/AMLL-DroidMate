@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -149,7 +150,7 @@ private fun ApiTestPage(onBack: () -> Unit) {
                     OutlinedTextField(value = op.label, onValueChange = {}, readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                         modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true).fillMaxWidth(), singleLine = true)
-                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         operations.forEachIndexed { i, o ->
                             DropdownMenuItem(text = { Text(o.label) }, onClick = { sel = i; extra = ""; result = null; expanded = false },
                                 contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding)
