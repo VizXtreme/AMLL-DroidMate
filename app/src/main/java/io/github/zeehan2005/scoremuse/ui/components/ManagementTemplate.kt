@@ -58,11 +58,11 @@ import androidx.activity.compose.BackHandler
  * @param T 列表条目类型
  * @property title 页面标题（显示在 TopAppBar 上）
  * @property itemKey 从条目中提取唯一标识的 lambda（用于 LazyColumn key 和选择集）
- * @property searchPredicate 搜索过滤逻辑；(条目, 用户输入的小写文本) → 是否匹配
- * @property searchPlaceholder 搜索框占位文本
+ * @property searchPredicate Search过滤逻辑；(条目, 用户输入的小写文本) → 是否匹配
+ * @property searchPlaceholder Search框占位文本
  * @property emptyText 列表为空时显示的文本
  * @property countText 条目数量显示模板（默认 "共 {count} 条"）
- * @property headerContent 搜索栏上方可选的内容（如提示文字），会在条目计数之前渲染
+ * @property headerContent Search栏上方可选的内容（如提示文字），会在条目计数之前渲染
  * @property clearDialogTitle 清空确认对话框标题
  * @property clearDialogMessage 清空确认对话框消息
  * @property selectable 是否支持选择模式（默认 false）
@@ -70,7 +70,7 @@ import androidx.activity.compose.BackHandler
  * @property topBarActions 非选择模式下 TopAppBar 右侧额外操作按钮的 compose
  * @property selectionActions 选择模式下 TopAppBar 右侧操作按钮的 compose；不提供时使用默认的全选+删除
  * @property fabData 可选的浮动操作按钮配置（图标 + 点击回调）
- * @property onClearAll 清空全部的回调；提供后会在 TopAppBar 操作区显示"删除全部"图标 + 弹出确认对话框
+ * @property onClearAll 清空全部的回调；提供后会在 TopAppBar 操作区显示"Delete All"图标 + 弹出确认对话框
  * @property onDeleteSelected 删除选中条目的回调（传入选中 ID 集合）；提供后会在选择模式下显示删除按钮
  * @property renderItem 渲染单条列表项的 composable，接收 (item, isSelectionMode, isSelected, onSelect)
  */
@@ -126,7 +126,7 @@ class ManagementConfig<T> @PublishedApi internal constructor(
 data class FabData(
     val icon: ImageVector,
     val onClick: () -> Unit,
-    val contentDescription: String = "添加",
+    val contentDescription: String = "Add",
 )
 
 // ================
@@ -135,7 +135,7 @@ data class FabData(
 
 /** 选择模式下返回键关闭选择的方式 */
 enum class SelectionBackBehaviour {
-    /** 仅取消选择，不触发返回 */
+    /** 仅Cancel选择，不触发返回 */
     CLEAR,
     /** 直接调用 onBack */
     FINISH,
@@ -146,12 +146,12 @@ class Builder<T> {
     lateinit var itemKey: (T) -> String
 
     var searchPredicate: ((T, String) -> Boolean)? = null
-    var searchPlaceholder: String = "搜索"
-    var emptyText: String = "当前没有数据。"
-    var countText: (count: Int) -> String = { "共 $it 条" }
+    var searchPlaceholder: String = "Search"
+    var emptyText: String = "No data currently."
+    var countText: (count: Int) -> String = { "$it items" }
     var headerContent: (@Composable () -> Unit)? = null
-    var clearDialogTitle: String = "清空数据"
-    var clearDialogMessage: String = "确认删除全部数据吗？"
+    var clearDialogTitle: String = "Clear Data"
+    var clearDialogMessage: String = "Are you sure you want to delete all data?"
     var selectable: Boolean = false
     var selectionBackBehaviour: SelectionBackBehaviour = SelectionBackBehaviour.CLEAR
     var topBarActions: (@Composable ((showClearDialog: () -> Unit) -> Unit))? = null
@@ -184,7 +184,7 @@ class Builder<T> {
             ) {
                 Icon(
                     imageVector = if (isAll) Icons.Default.Deselect else Icons.Default.SelectAll,
-                    contentDescription = if (isAll) "取消全选" else "全选",
+                    contentDescription = if (isAll) "Deselect All" else "Select All",
                 )
             }
             if (onDeleteSelected != null) {
@@ -195,7 +195,7 @@ class Builder<T> {
                         contentColor = MaterialTheme.colorScheme.onSurface,
                     ),
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = "删除")
+                    Icon(Icons.Default.Delete, contentDescription = "Delete")
                 }
             }
         }
@@ -229,7 +229,7 @@ class Builder<T> {
 /**
  * 通用管理页面。
  *
- * 封装了折叠 TopAppBar、搜索栏、条目计数、LazyColumn、选择模式（多选+批量删除）、
+ * 封装了折叠 TopAppBar、Search栏、条目计数、LazyColumn、选择模式（多选+批量删除）、
  * 清空确认对话框、FAB 等常见管理页面的基础设施。
  *
  * 业务页面只需通过 [ManagementConfig] 注入数据和渲染逻辑：
@@ -325,7 +325,7 @@ fun <T> ManagementPage(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = if (isSelectionMode) "取消" else "返回",
+                            contentDescription = if (isSelectionMode) "Cancel" else "Back",
                         )
                     }
                 },
@@ -346,7 +346,7 @@ fun <T> ManagementPage(
                                     contentColor = MaterialTheme.colorScheme.onSurface,
                                 ),
                             ) {
-                                Icon(Icons.Default.ChecklistRtl, contentDescription = "选择")
+                                Icon(Icons.Default.ChecklistRtl, contentDescription = "Select")
                             }
                         }
                         config.topBarActions?.invoke({ showClearDialog = true })
@@ -374,16 +374,16 @@ fun <T> ManagementPage(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // 头部内容（搜索栏上方）
+            // 头部内容（Search栏上方）
             config.headerContent?.invoke()
 
-            // 搜索栏
+            // Search栏
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
                 placeholder = { Text(config.searchPlaceholder) },
                 leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = "搜索")
+                    Icon(Icons.Default.Search, contentDescription = "Search")
                 },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 shape = CircleShape,
@@ -445,12 +445,12 @@ fun <T> ManagementPage(
                     config.onClearAll?.invoke()
                     showClearDialog = false
                 }) {
-                    Text("删除全部")
+                    Text("Delete All")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearDialog = false }) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             },
         )

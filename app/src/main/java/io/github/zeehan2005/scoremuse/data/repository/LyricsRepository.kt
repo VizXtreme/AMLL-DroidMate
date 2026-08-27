@@ -1186,9 +1186,9 @@ open class LyricsRepository(
             "orchestral", "demo", "remaster", "ringtone", "slowed", "sped up", "slow", "fast",
             "tiktok", 
             // Chinese equivalents / additional keywords
-            "混音", "现场", "演唱会", "晚会", "伴奏", "广播", "卡拉OK", "纯音乐", "加长", "重混",
-            "重制", "改编", "重编辑", "不插电", "钢琴", "弦乐", "管弦乐", "演示", "重新制作", "片段",
-            "铃声", "慢速", "快速", "加速", "减速", "抖音", "卫视"
+            "Remix", "Live", "Live Concert", "Gala Version", "Instrumental", "Broadcast", "Karaoke", "Instrumental", "Extend", "Remix",
+            "Remake", "Arrangement", "Re-edit", "Acoustic", "Piano", "Strings", "Orchestral", "Demo", "Remake", "Clip",
+            "Ringtone", "Slow", "Fast", "Speed up", "Slow down", "TikTok", "TV Version"
         )
         val lower = s.lowercase()
 
@@ -1212,10 +1212,10 @@ open class LyricsRepository(
             .map { it.groupValues[1] }
             .toList()
         for (content in parenthesized) {
-            val likelyVersion = content.contains("version") || content.endsWith("版")
+            val likelyVersion = content.contains("version") || content.endsWith(" Version")
             if (likelyVersion &&
                 !content.contains("album version") && !content.contains("single version") &&
-                !content.contains("专辑版本") && !content.contains("单曲版本")) {
+                !content.contains("Album Version") && !content.contains("Single Version")) {
                 matches.add(content)
             }
         }
@@ -1341,8 +1341,8 @@ open class LyricsRepository(
         val n2 = normalizeConjunctions(list2)
         if (list1.isEmpty() || list2.isEmpty()) return null
 
-        val l1Various = list1.any { it.contains("various") || it.contains("群星") }
-        val l2Various = list2.any { it.contains("various") || it.contains("群星") }
+        val l1Various = list1.any { it.contains("various") || it.contains("Various Artists") }
+        val l2Various = list2.any { it.contains("various") || it.contains("Various Artists") }
         if ((l1Various && (l2Various || list2.size > 4)) || (l2Various && list1.size > 4)) {
             return ArtistMatchType.HIGH
         }
@@ -1910,7 +1910,7 @@ open class LyricsRepository(
                 Timber.w("[SearchService] No search results found for: $title - $artist")
                 return LyricsResult(
                     isSuccess = false,
-                    errorMessage = "未找到歌曲,请检查歌曲名和歌手名"
+                    errorMessage = "Song not found. Please check song title and artist name"
                 )
             }
 
@@ -1957,7 +1957,7 @@ open class LyricsRepository(
             Timber.e("[SearchService] Error in auto-fetch lyrics $e")
             return LyricsResult(
                 isSuccess = false,
-                errorMessage = "获取歌词时发生错误：${e.message}"
+                errorMessage = "Error fetching lyrics：${e.message}"
             )
         }
     }
@@ -2000,7 +2000,7 @@ open class LyricsRepository(
                     Timber.e("[SearchService] Unknown provider: $provider")
                     return LyricsResult(
                         isSuccess = false,
-                        errorMessage = "不支持的歌词来源：$provider"
+                        errorMessage = "Unsupported lyrics source: $provider"
                     )
                 }
             }
@@ -2027,7 +2027,7 @@ open class LyricsRepository(
                  * "Song (Live)" 而系统信息是 "Song"）。
                  * 若在此缓存则会被 upsert() 视为不同条目，导致同一首歌在缓存页面
                  * 出现重复条目（一条 source 为原始提供者名如 "KUGOU"，另一条为
-                 * 调用方写入的格式化来源名如 "酷狗音乐"）。
+                 * 调用方写入的格式化来源名如 "Kugou Music"）。
                  *
                  * 所有调用路径（MainViewModel.fetchLyrics / applyCustomLyricsInput）
                  * 已在外层通过 applyLyricsToState() 统一使用规范 title/artist 写入缓存，
@@ -2043,9 +2043,9 @@ open class LyricsRepository(
                 LyricsResult(
                     isSuccess = false,
                     errorMessage = if (normalizedProvider == "amll") {
-                        lastAmlLError ?: "从 $provider 获取歌词失败"
+                        lastAmlLError ?: "Failed to get lyrics from $provider"
                     } else {
-                        "从 $provider 获取歌词失败"
+                        "Failed to get lyrics from $provider"
                     }
                 )
             }
@@ -2053,7 +2053,7 @@ open class LyricsRepository(
             Timber.e("[SearchService] Error getting lyrics from $provider $e")
             LyricsResult(
                 isSuccess = false,
-                errorMessage = "获取歌词出错：${e.message}"
+                errorMessage = "Error fetching lyrics：${e.message}"
             )
         }
     }
@@ -2138,7 +2138,7 @@ open class LyricsRepository(
                 val label = structure.label.trim()
 
                 // Exclude generic fallback labels like "段落 1", "段落 2"
-                if (label.matches(Regex("^段落\\s*\\d+$"))) {
+                if (label.matches(Regex("^Paragraph\\s*\\d+$"))) {
                     return@any false
                 }
 
@@ -2172,9 +2172,9 @@ open class LyricsRepository(
         ): String {
             var providerName = when (provider.lowercase()) {
                 "amll" -> "AMLL TTML DB"
-                "netease", "ncm" -> "网易云音乐"
-                "qq", "qqmusic" -> "QQ音乐"
-                "kugou" -> "酷狗音乐"
+                "netease", "ncm" -> "Netease Music"
+                "qq", "qqmusic" -> "QQ Music"
+                "kugou" -> "Kugou Music"
                 else -> provider.uppercase()
             }
             var idPart = songId ?: ""
@@ -2185,9 +2185,9 @@ open class LyricsRepository(
                 providerName = "$providerName($plat)"
             }
             if (metadataMatch) {
-                providerName = "$providerName (基于歌名)"
+                providerName = "$providerName (based on title)"
             }
-            return "自动识别:$providerName：$title - $artist($idPart)"
+            return "Auto recognized:$providerName：$title - $artist($idPart)"
         }
 
         /**

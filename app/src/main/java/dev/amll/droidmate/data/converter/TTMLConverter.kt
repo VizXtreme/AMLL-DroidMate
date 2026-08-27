@@ -172,7 +172,7 @@ object TTMLConverter {
         if (!structures.isNullOrEmpty()) {
             val realStructures = structures.filter { structure ->
                 structure.label != "Interlude" &&
-                !structure.label.matches(Regex("^娈佃惤\\s*\\d+$"))
+                !structure.label.matches(Regex("^(?:娈佃惤|段落|Paragraph)\\s*\\d+$"))
             }
 
             if (realStructures.isNotEmpty()) {

@@ -380,7 +380,7 @@ private object Tripledes {
  */
 fun decrypt3DesEde(encryptedBytes: ByteArray): ByteArray {
     require(encryptedBytes.size % 8 == 0) {
-        "数据长度 ${encryptedBytes.size} 不是 8 的倍数"
+        "Data length ${encryptedBytes.size} is not a multiple of 8"
     }
     val schedule = Tripledes.tripledesKeySetup(Tripledes.KEY_24, Tripledes.DECRYPT)
     val result = ByteArray(encryptedBytes.size)

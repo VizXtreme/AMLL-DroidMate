@@ -123,9 +123,9 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
             importedFonts = AMLLSettings.getAmllFontFiles(context).filter { File(it.absolutePath).exists() }
             enabledFontIds = newEnabled
             AMLLSettings.setEnabledAmllFontFileIds(context, newEnabled.toList())
-            fontStatusMessage = "已导入 $importedCount 个字体文件"
+            fontStatusMessage = "Imported $importedCount font files"
         } catch (e: Exception) {
-            fontStatusMessage = "导入失败: ${e.message ?: "未知错误"}"
+            fontStatusMessage = "Import failed: ${e.message ?: "未知错误"}"
         }
     }
 
@@ -154,10 +154,10 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                 LyricLine(
                     startTime = 0L,
                     endTime = 2 * previewWordDurationMs + previewLongWordDurationMs,
-                    text = "欢迎使用 DroidMate",
+                    text = "Welcome to DroidMate",
                     words = listOf(
-                        LyricWord("欢迎", 0L, previewWordDurationMs),
-                        LyricWord("使用 ", previewWordDurationMs, 2 * previewWordDurationMs),
+                        LyricWord("Welcome", 0L, previewWordDurationMs),
+                        LyricWord("use ", previewWordDurationMs, 2 * previewWordDurationMs),
                         LyricWord("DroidMate", 2 * previewWordDurationMs, 2 * previewWordDurationMs + previewLongWordDurationMs)
                     )
                 ),
@@ -192,7 +192,7 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("歌词组件设置") },
+                title = { Text("Lyric Component Settings") },
                 navigationIcon = {
                     FilledIconButton(
                         onClick = onBack,
@@ -203,7 +203,7 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -243,7 +243,7 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
             }
 
             Text(
-                text = "歌词动画",
+                text = "Lyric Animation",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -266,7 +266,7 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("歌词模糊", color = MaterialTheme.colorScheme.onSurface)
+                        Text("Lyric Blur", color = MaterialTheme.colorScheme.onSurface)
                     }
                     SwitchWithIcon(
                         checked = blurEnabled,
@@ -297,7 +297,7 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("歌词弹簧", color = MaterialTheme.colorScheme.onSurface)
+                        Text("Lyric Spring Physics", color = MaterialTheme.colorScheme.onSurface)
                     }
                     SwitchWithIcon(
                         checked = springEnabled,
@@ -311,7 +311,7 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
             }
 
             Text(
-                text = "背景",
+                text = "Background",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -334,9 +334,9 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                        Text("AMLL 背景渲染器", color = MaterialTheme.colorScheme.onSurface)
+                        Text("AMLL Background Renderer", color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            text = "关闭后使用 Android 实现模糊",
+                            text = "Use Android to implement blur when closed",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -354,7 +354,7 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
 
             // ==================== 字体设置 ====================
             Text(
-                text = "字体设置",
+                text = "Font Settings",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -375,11 +375,11 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                 Button(
                     onClick = {
                         AMLLSettings.setAmllFontFamily(context, amllFontFamily)
-                        fontStatusMessage = "font-family 设置已保存"
+                        fontStatusMessage = "font-family settings saved"
                     },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("保存")
+                    Text("Save")
                 }
 
                 Button(
@@ -388,7 +388,7 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                     },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("导入字体")
+                    Text("Import Font")
                 }
 
                 OutlinedButton(
@@ -397,11 +397,11 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                         amllFontFamily = AMLLSettings.getDefaultAmllFontFamily()
                         enabledFontIds = emptySet()
                         importedFonts = emptyList()
-                        fontStatusMessage = "已还原为默认 font-family 设置"
+                        fontStatusMessage = "Restored to default font-family settings"
                     },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("还原")
+                    Text("Restore")
                 }
             }
 
@@ -409,13 +409,13 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
             val sortedFonts = importedFonts.sortedBy { it.fontFamilyName.lowercase() }
             if (sortedFonts.isEmpty()) {
                 Text(
-                    text = "未导入字体文件",
+                    text = "No font file imported",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             } else {
                 Text(
-                    text = "已导入的字体",
+                    text = "Imported Fonts",
                     style = MaterialTheme.typography.titleMedium
                 )
                 sortedFonts.forEach { font ->
@@ -443,7 +443,7 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
-                                contentDescription = "删除",
+                                contentDescription = "Delete",
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier
                                     .clickable {
@@ -452,7 +452,7 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                                         val next = enabledFontIds.toMutableSet().apply { remove(font.id) }
                                         enabledFontIds = next
                                         AMLLSettings.setEnabledAmllFontFileIds(context, next.toList())
-                                        fontStatusMessage = "已删除字体: ${font.displayName}"
+                                        fontStatusMessage = "Deleted font: ${font.displayName}"
                                     }
                                     .padding(8.dp)
                             )
@@ -469,9 +469,9 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                                     enabledFontIds = next
                                     AMLLSettings.setEnabledAmllFontFileIds(context, next.toList())
                                     fontStatusMessage = if (enabled) {
-                                        "已启用字体: ${font.displayName}"
+                                        "Enabled font: ${font.displayName}"
                                     } else {
-                                        "已停用字体: ${font.displayName}"
+                                        "Disabled font: ${font.displayName}"
                                     }
                                 },
                                 colors = switchColors
@@ -511,7 +511,7 @@ private fun importFontToInternalStorage(context: android.content.Context, source
 
     val outFile = File(fontDir, "${System.currentTimeMillis()}_$safeName")
     resolver.openInputStream(sourceUri).use { input ->
-        if (input == null) throw IOException("无法打开字体文件")
+        if (input == null) throw IOException("Cannot open font file")
         outFile.outputStream().use { output ->
             input.copyTo(output)
         }

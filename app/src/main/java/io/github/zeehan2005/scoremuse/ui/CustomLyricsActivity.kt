@@ -152,7 +152,7 @@ private fun CustomLyricsPage(
                         val fileContent = inputStream.bufferedReader().use { it.readText() }
                         withContext(Dispatchers.Main) {
                             manualText = fileContent
-                            // 自动应用导入的歌词
+                            // 自动Apply导入的歌词
                             vm.applyManualInput(fileContent, title, artist)
                         }
                     } else {
@@ -183,7 +183,7 @@ private fun CustomLyricsPage(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("歌词管理") },
+                title = { Text("Lyrics Management") },
                 navigationIcon = {
                     androidx.compose.material3.FilledIconButton(
                         onClick = onBack,
@@ -194,7 +194,7 @@ private fun CustomLyricsPage(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -214,7 +214,7 @@ private fun CustomLyricsPage(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.FormatListBulleted,
-                            contentDescription = "管理缓存歌词"
+                            contentDescription = "Manage Cached Lyrics"
                         )
                     }
                 },
@@ -234,19 +234,19 @@ private fun CustomLyricsPage(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(text = title.ifBlank { "未识别歌曲" }, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                    Text(text = artist.ifBlank { "未知歌手" }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(text = title.ifBlank { "Unrecognized Song" }, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(text = artist.ifBlank { "Unknown Artist" }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
 
             Text(
-                text = "选择歌词来源",
+                text = "Select lyrics source",
                 style = MaterialTheme.typography.titleMedium
             )
 
             // new explanatory subtitle
             Text(
-                text = "按照推荐排序，因此新出现的选项也可能出现在上方。",
+                text = "Sorted by recommendations, so new options may also appear at the top.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -259,7 +259,7 @@ private fun CustomLyricsPage(
                 ) {
                     LoadingIndicator(modifier = Modifier.size(16.dp))
                     Text(
-                        text = "正在查询...",
+                        text = "Querying...",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -310,7 +310,7 @@ private fun CustomLyricsPage(
                                     .distinct()
                                 providers.forEach { prov -> vm.loadMore(prov) }
                             }) {
-                                Text("查询更多选项")
+                                Text("Query More Options")
                             }
                         }
                     }
@@ -321,7 +321,7 @@ private fun CustomLyricsPage(
             OutlinedTextField(
                 value = manualText,
                 onValueChange = { manualText = it },
-                placeholder = { Text("长按以粘贴") },
+                placeholder = { Text("Long press to paste") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -339,14 +339,14 @@ private fun CustomLyricsPage(
                     enabled = manualText.isNotBlank() && !isApplying,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(if (isApplying) "处理中..." else "应用")
+                    Text(if (isApplying) "Processing..." else "Apply")
                 }
                 Button(
                     onClick = { filePickerLauncher.launch("*/*") },
                     enabled = !isApplying,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("从文件导入")
+                    Text("Import from file")
                 }
             }
 
@@ -390,12 +390,12 @@ private fun CandidateItem(
             )
             val detailsText = remember(candidate) {
                 buildString {
-                    append("匹配度: ${(candidate.confidence * 100).toInt()}%")
+                    append("Confidence: ${(candidate.confidence * 100).toInt()}%")
                     if (candidate.matchType.isNotBlank()) {
                         append(" (${candidate.matchType})")
                     }
                     if (candidate.features.isNotEmpty()) {
-                        append(" | 支持: ")
+                        append(" | Support: ")
                         append(candidate.features.joinToString(separator = ", ") {
                             it.displayName
                         })
@@ -413,7 +413,7 @@ private fun CandidateItem(
                 enabled = !isApplying,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("应用")
+                Text("Apply")
             }
         }
     }

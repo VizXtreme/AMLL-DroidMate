@@ -120,7 +120,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
      * 当多个歌词候选的置信度和特性完全相同时，
      * 会使用这个信息来决定优先显示哪个来源的歌词。
      * 
-     * @param name 播放源名称（例如 "QQ 音乐"、"网易云音乐"）
+     * @param name 播放源名称（例如 "QQ 音乐"、"Netease Music"）
      */
     fun updateCurrentSource(name: String?) {
         currentSourceName = name
@@ -251,7 +251,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                                 artist = cached.artist,
                                 confidence = 1.0f,
                                 matchType = "",
-                                displayName = "本地缓存"
+                                displayName = "Local Cache"
                             )
                         )
                     }
@@ -282,7 +282,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
 
             } catch (e: Exception) {
                 Timber.e(e, "[LyricsViewModel] Failed to search candidates")
-                _errorMessage.value = "搜索候选歌词失败: ${e.message}"
+                _errorMessage.value = "Failed to search candidate lyrics: ${e.message}"
             } finally {
                 _isSearching.value = false
             }
@@ -308,7 +308,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                             _appliedLyricsText.value = cached.xmlContent
                         }
                     } else {
-                        _errorMessage.value = "缓存歌词不存在或内容为空"
+                        _errorMessage.value = "Cached lyrics do not exist or are empty"
                     }
                 } else {
                     /** 传递候选歌词的 title 和 artist 以确保正确的元数据 */
@@ -336,12 +336,12 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                             _appliedLyricsText.value = result.lyrics.rawContent ?: TTMLConverter.toTTMLString(result.lyrics)
                         }
                     } else {
-                        _errorMessage.value = result.errorMessage ?: "应用候选歌词失败"
+                        _errorMessage.value = result.errorMessage ?: "Failed to apply candidate lyrics"
                     }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "[LyricsViewModel] Failed to apply candidate")
-                _errorMessage.value = "应用候选歌词失败: ${e.message}"
+                _errorMessage.value = "Failed to apply candidate lyrics: ${e.message}"
             } finally {
                 _isApplying.value = false
             }
@@ -388,7 +388,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                 providerName = "$providerName($plat)"
             }
             if (metadataMatch) {
-                providerName = "$providerName (基于歌名)"
+                providerName = "$providerName (based on title)"
             }
             return "$providerName：$title - $artist($idPart)"
         }
@@ -408,9 +408,9 @@ class CustomLyricsViewModel @JvmOverloads constructor(
              * surfaced elsewhere if needed so drop it from the display name.
              */
             val base = when (provider.lowercase()) {
-                "netease", "ncm" -> "网易云音乐"
-                "qq", "qqmusic" -> "QQ音乐"
-                "kugou" -> "酷狗音乐"
+                "netease", "ncm" -> "Netease Music"
+                "qq", "qqmusic" -> "QQ Music"
+                "kugou" -> "Kugou Music"
                 "amll" -> "AMLL TTML DB"
                 else -> provider.uppercase()
             }
@@ -466,19 +466,19 @@ class CustomLyricsViewModel @JvmOverloads constructor(
                     /** 对于纯文本，仍然进行一次转换以确保基本结构 */
                     val parsed = TTMLConverter.fromLyrics(
                         content = input,
-                        title = title.ifBlank { "自选歌词" },
+                        title = title.ifBlank { "Custom Lyrics" },
                         artist = artist.ifBlank { "Unknown" }
                     )
                     if (parsed != null) {
                         _appliedLyricsSource.value = "manual"
                         _appliedLyricsText.value = TTMLConverter.toTTMLString(parsed)
                     } else {
-                        _errorMessage.value = "无法识别歌词格式"
+                        _errorMessage.value = "Unsupported lyrics format"
                     }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "[LyricsViewModel] Failed to parse manual lyrics")
-                _errorMessage.value = "解析歌词失败：${e.message}"
+                _errorMessage.value = "Failed to parse lyrics：${e.message}"
             } finally {
                 _isApplying.value = false
             }
@@ -496,7 +496,7 @@ class CustomLyricsViewModel @JvmOverloads constructor(
          * those are not useful in the UI, so clear them.
          */
         val displayName = if (provider.equals("amll", true) && metadataMatch) {
-            "AMLL TTML DB (基于歌名)"
+            "AMLL TTML DB (based on title)"
         } else {
             providerDisplayName(provider)
         }

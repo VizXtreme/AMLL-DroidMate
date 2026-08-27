@@ -110,7 +110,7 @@ object GitHubUpdateChecker {
                     hasUpdate = false,
                     currentVersionName = currentVersionName,
                     selectedChannel = channel,
-                    reason = "未找到可用发布版本"
+                    reason = "No available release version found"
                 )
 
             val hasUpdate = isRemoteNewer(installed, resolved)
@@ -124,11 +124,11 @@ object GitHubUpdateChecker {
                 resolvedReleaseNotes = resolved.notes,
                 resolvedPublishedAt = resolved.publishedAt,
                 reason = if (hasUpdate) {
-                    "发现新版本"
+                    "New version found"
                 } else if (sameVersion) {
-                    "已是最新版本，版本号是 ${resolved.tagName}"
+                    "Already latest version, version is ${resolved.tagName}"
                 } else {
-                    "当前版本更领先，符合条件的版本是 ${resolved.tagName}"
+                    "Current version is ahead, eligible version is ${resolved.tagName}"
                 }
             )
         } catch (e: Exception) {
@@ -136,7 +136,7 @@ object GitHubUpdateChecker {
                 hasUpdate = false,
                 currentVersionName = currentVersionName,
                 selectedChannel = channel,
-                reason = "检查失败: ${e.message ?: "未知错误"}"
+                reason = "Check failed: ${e.message ?: "Unknown error"}"
             )
         }
     }

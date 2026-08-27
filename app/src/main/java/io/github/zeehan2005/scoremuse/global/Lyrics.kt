@@ -138,13 +138,13 @@ data class SongStructure(
  * UI 可以根据这些功能显示相应的图标或提示。
  */
 enum class LyricsFeature(val displayName: String) {
-    DUET("对唱"),           // 多人合唱
-    BACKGROUND("背景"),     // 背景音声
-    OVERLAP("重叠"),        // 重叠歌词（同时显示多行）
-    TRANSLATION("翻译"),    // 多语言翻译
-    TRANSLITERATION("音译"), // 发音标注（假名、拼音等）
-    WORDS("逐字"),          // 逐字高亮
-    STRUCTURE("结构标记")   // 歌词结构标记（主歌、副歌等段落结构，仅在解析 TTML 格式并检测到有效的 songPart 元数据时启用）
+    DUET("Duet"),           // 多人合唱
+    BACKGROUND("Background"),     // 背景音声
+    OVERLAP("Overlay"),        // 重叠歌词（同时显示多行）
+    TRANSLATION("Translation"),    // 多语言翻译
+    TRANSLITERATION("Transliteration"), // 发音标注（假名、拼音等）
+    WORDS("Word-by-word"),          // 逐字高亮
+    STRUCTURE("Structure Tag")   // 歌词结构标记（主歌、副歌等段落结构，仅在解析 TTML 格式并检测到有效的 songPart 元数据时启用）
 }
 
 /**

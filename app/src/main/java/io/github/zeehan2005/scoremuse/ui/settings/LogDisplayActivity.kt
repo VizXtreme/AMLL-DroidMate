@@ -135,7 +135,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
         uri?.let {
             context.contentResolver.openOutputStream(it)?.use { outputStream ->
                 val logText = buildString {
-                    appendLine("=== ScoreMuse 日志导出 ===")
+                    appendLine("=== ScoreMuse Log Export ===")
                     appendLine(
                         "导出时间：${
                             SimpleDateFormat(
@@ -144,7 +144,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                             ).format(Date())
                         }"
                     )
-                    appendLine("日志条数：${logEntries.size}")
+                    appendLine("Log count: ${logEntries.size}")
                     appendLine("========================\n")
 
                     logEntries.forEach { entry ->
@@ -153,10 +153,10 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                 }
 
                 outputStream.write(logText.toByteArray())
-                Toast.makeText(context, "日志已保存", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Log saved", Toast.LENGTH_SHORT).show()
             }
         } ?: run {
-            Toast.makeText(context, "保存取消", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Save cancelled", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -204,9 +204,9 @@ private fun LogDisplayPage(onBack: () -> Unit) {
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("应用日志")
+                        Text("App Logs")
                         Text(
-                            text = "共 ${stats.total} 条 | V:${stats.verboseCount} D:${stats.debugCount} I:${stats.infoCount} W:${stats.warnCount} E:${stats.errorCount}",
+                            text = " ${stats.total} items | V:${stats.verboseCount} D:${stats.debugCount} I:${stats.infoCount} W:${stats.warnCount} E:${stats.errorCount}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -222,7 +222,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -238,7 +238,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                         ) {
                             Icon(
                                 imageVector = Icons.Default.FilterList,
-                                contentDescription = "筛选日志",
+                                contentDescription = "Filter Logs",
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -250,7 +250,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                             containerColor = MaterialTheme.colorScheme.background
                         ) {
                             Text(
-                                text = "日志等级",
+                                text = "Log Level",
                                 modifier = Modifier.padding(
                                     horizontal = 16.dp,
                                     vertical = 8.dp
@@ -261,11 +261,11 @@ private fun LogDisplayPage(onBack: () -> Unit) {
 
                             /** 各个等级选项（按等级排序） */
                             val levels = listOf(
-                                "V" to "详细 (全部)",
-                                "D" to "调试",
-                                "I" to "信息",
-                                "W" to "警告",
-                                "E" to "错误"
+                                "V" to "Verbose (All)",
+                                "D" to "Debug",
+                                "I" to "Info",
+                                "W" to "Warning",
+                                "E" to "Error"
                             )
 
                             levels.forEach { (level, label) ->
@@ -320,8 +320,8 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                             isLoggingPaused = !isLoggingPaused
                             // 保存到持久化存储
                             LogHelper.setLoggingPaused(isLoggingPaused)
-                            val action = if (isLoggingPaused) "暂停" else "继续"
-                            Toast.makeText(context, "已$action 记录日志", Toast.LENGTH_SHORT).show()
+                            val action = if (isLoggingPaused) "Pause" else "Resume"
+                            Toast.makeText(context, "$action logging", Toast.LENGTH_SHORT).show()
                         },
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -330,7 +330,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = if (isLoggingPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
-                            contentDescription = if (isLoggingPaused) "继续记录" else "暂停记录",
+                            contentDescription = if (isLoggingPaused) "Resume Recording" else "Pause Recording",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -341,7 +341,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                             LogHelper.clearLogs()
                             logEntries = emptyList()
                             stats = LogHelper.getLogStats()
-                            Toast.makeText(context, "日志已清除", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Logs cleared", Toast.LENGTH_SHORT).show()
                         },
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -350,7 +350,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "清除日志",
+                            contentDescription = "Clear Logs",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -368,7 +368,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = Icons.Default.FileDownload,
-                            contentDescription = "导出日志"
+                            contentDescription = "Export Logs"
                         )
                     }
                 },
@@ -380,7 +380,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
             )
         },
         floatingActionButton = {
-            // 屏幕底部“滚动到底部”按钮
+            // 屏幕底部“Scroll to bottom”按钮
             SmallFloatingActionButton(
                 onClick = {
                     // 恢复自动滚动
@@ -398,7 +398,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = "滚动到底部"
+                    contentDescription = "Scroll to bottom"
                 )
             }
         }
@@ -421,7 +421,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (isPaused) "已暂停自动滚动" else "自动滚动已关闭",
+                        text = if (isPaused) "Auto-scroll paused" else "Auto-scroll turned off",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -439,12 +439,12 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                         }) {
                             Icon(
                                 imageVector = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
-                                contentDescription = if (isPaused) "恢复滚动" else "暂停滚动",
+                                contentDescription = if (isPaused) "Resume Scroll" else "Pause Scroll",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
-                        // 立即滚动到底部按钮
+                        // 立即Scroll to bottom按钮
                         IconButton(onClick = {
                             scope.launch {
                                 if (logEntries.isNotEmpty()) {
@@ -454,7 +454,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                         }) {
                             Icon(
                                 imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = "滚动到底部",
+                                contentDescription = "Scroll to bottom",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -481,7 +481,7 @@ private fun LogDisplayPage(onBack: () -> Unit) {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "暂无日志",
+                                text = "No logs",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                             )

@@ -95,9 +95,9 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
 
     /** 转换设备名称用于显示 */
     val displayDeviceName = when {
-        currentDeviceName.startsWith("Bluetooth") -> currentDeviceName.replaceFirst("Bluetooth", "蓝牙")
-        currentDeviceName == "Wired" -> "有线音频"
-        currentDeviceName == "Speaker" -> "扬声器"
+        currentDeviceName.startsWith("Bluetooth") -> currentDeviceName.replaceFirst("Bluetooth", "Bluetooth")
+        currentDeviceName == "Wired" -> "Wired Audio"
+        currentDeviceName == "Speaker" -> "Speaker"
         else -> currentDeviceName
     }
 
@@ -139,7 +139,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
     fun saveSongOffset() {
         val ms = songOffsetText.toLongOrNull()
         if (ms == null) {
-            songOffsetError = "请输入有效的毫秒值"
+            songOffsetError = "Please enter a valid millisecond value"
             return
         }
         songOffsetError = null
@@ -152,7 +152,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
     fun saveDeviceOffset() {
         val ms = deviceOffsetText.toLongOrNull()
         if (ms == null) {
-            deviceOffsetError = "请输入有效的毫秒值"
+            deviceOffsetError = "Please enter a valid millisecond value"
             return
         }
         deviceOffsetError = null
@@ -166,7 +166,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("歌词时间轴偏移") },
+                title = { Text("Lyric Timeline Offset") },
                 navigationIcon = {
                     FilledIconButton(
                         onClick = onBack,
@@ -175,7 +175,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                             contentColor = MaterialTheme.colorScheme.onSurface
                         )
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -199,7 +199,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.FormatListBulleted,
-                            contentDescription = "管理"
+                            contentDescription = "Manage"
                         )
                     }
                 },
@@ -216,7 +216,7 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
         ) {
             item {
                 Text(
-                    text = "所有匹配的偏移规则将会叠加。",
+                    text = "All matching offset rules will be stacked.",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -228,16 +228,16 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            "基于当前歌曲",
+                            "Based on current song",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "当前歌曲：${nowPlaying?.title ?: "未知"} — ${nowPlaying?.artist ?: "未知"}",
+                            "Current Song: ${nowPlaying?.title ?: "Unknown"} — ${nowPlaying?.artist ?: "Unknown"}",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            "来源：${appName ?: nowPlaying?.packageName ?: "*"}",
+                            "Source：${appName ?: nowPlaying?.packageName ?: "*"}",
                             style = MaterialTheme.typography.bodySmall
                         )
 
@@ -269,12 +269,12 @@ private fun LyricOffsetSettingsPage(onBack: () -> Unit) {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            "基于输出设备",
+                            "Based on output device",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "当前设备：$displayDeviceName",
+                            "Current Device: $displayDeviceName",
                             style = MaterialTheme.typography.bodySmall
                         )
 
@@ -338,7 +338,7 @@ private fun CapsuleOffsetControl(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "减少 100ms",
+                        contentDescription = "Decrease 100ms",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -375,7 +375,7 @@ private fun CapsuleOffsetControl(
                             scaleX = -1f // Flip horizontally
                         },
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "增加 100ms",
+                        contentDescription = "Increase 100ms",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -390,6 +390,6 @@ private fun CapsuleOffsetControl(
             .fillMaxWidth()
             .padding(top = 8.dp)
     ) {
-        Text("保存")
+        Text("Save")
     }
 }

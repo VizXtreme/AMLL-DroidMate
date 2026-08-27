@@ -216,7 +216,7 @@ fun MainScreen() {
      */
     val cardBg = rippleColor.value
 /**
- * // 菜单背景：在容器表面色基础上叠加 15% 的主题色，保持不透明的同时跟随主题色变化
+ * // Menu背景：在容器表面色基础上叠加 15% 的主题色，保持不透明的同时跟随主题色变化
  * val menuBg = rippleColor.value.copy(alpha = 0.15f).compositeOver(MaterialTheme.colorScheme.surfaceContainerHigh)
  */
     val lyrics by viewModel.lyrics.collectAsState()
@@ -317,7 +317,7 @@ fun MainScreen() {
                 viewModel.applyCustomLyricsInput(
                     content = lyricsText,
                     title = data?.getStringExtra(CustomLyricsActivity.EXTRA_TITLE)
-                        ?: nowPlaying?.title ?: "自选歌词",
+                        ?: nowPlaying?.title ?: "Custom Lyrics",
                     artist = data?.getStringExtra(CustomLyricsActivity.EXTRA_ARTIST)
                         ?: nowPlaying?.artist ?: "Unknown",
                     source = data?.getStringExtra(CustomLyricsActivity.EXTRA_SOURCE) ?: "manual"
@@ -374,9 +374,9 @@ fun MainScreen() {
                 val updateChannel = AppSettings.getUpdateChannel(context)
                 val result = GitHubUpdateChecker.check(context, updateChannel)
                 if (result.hasUpdate) {
-                    autoUpdateDialogTitle = "发现新版本: ${result.resolvedReleaseTag ?: "未知版本"}"
+                    autoUpdateDialogTitle = "New version found: ${result.resolvedReleaseTag ?: "未知版本"}"
                     autoUpdateDialogMessage =
-                        "当前版本: ${result.currentVersionName}\n\n${result.resolvedReleaseNotes ?: "暂无更新说明"}"
+                        "Current version: ${result.currentVersionName}\n\n${result.resolvedReleaseNotes ?: "暂无更新说明"}"
                     autoUpdateDialogUrl = result.resolvedReleaseUrl
                     showAutoUpdateDialog = true
                 }
@@ -421,7 +421,7 @@ fun MainScreen() {
                                     contentColor = MaterialTheme.colorScheme.onSurface
                                 )
                             ) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "菜单")
+                                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
                             }
 
                             DropdownMenu(
@@ -493,7 +493,7 @@ fun MainScreen() {
                                 .padding(top = 40.dp, start = 8.dp)
                                 .alpha(controlsAlpha)
                         ) {
-                            Icon(Icons.Default.FullscreenExit, contentDescription = "退出全屏", tint = Color.White.copy(alpha = 0.9f))
+                            Icon(Icons.Default.FullscreenExit, contentDescription = "Exit Fullscreen", tint = Color.White.copy(alpha = 0.9f))
                         }
 
                         nowPlaying?.let { _ ->
@@ -592,7 +592,7 @@ fun MainScreen() {
                                     ) {
                                         Icon(
                                             Icons.Default.MoreVert,
-                                            contentDescription = "菜单",
+                                            contentDescription = "Menu",
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -775,7 +775,7 @@ fun MainScreen() {
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "正在匹配更优歌词",
+                                    text = "Matching better lyrics...",
                                     color = MaterialTheme.colorScheme.onPrimary,
                                     fontSize = 14.sp
                                 )
@@ -793,7 +793,7 @@ fun MainScreen() {
                                         contentColor = MaterialTheme.colorScheme.onPrimary
                                     ),
                                     shape = RoundedCornerShape(8.dp)
-                                ) { Text("自选歌词", fontSize = 14.sp) }
+                                ) { Text("Custom Lyrics", fontSize = 14.sp) }
                             }
                         }
 
@@ -808,7 +808,7 @@ fun MainScreen() {
                             ) {
                                 Icon(
                                     Icons.Default.FullscreenExit,
-                                    contentDescription = "退出全屏",
+                                    contentDescription = "Exit Fullscreen",
                                     tint = Color.White.copy(alpha = 0.9f)
                                 )
                             }
@@ -954,17 +954,17 @@ fun MainScreen() {
 
         // 对话框逻辑
         if (showOpenAppDialog) {
-            val sourceAppName = getAppNameFromPackage(context, nowPlaying?.packageName) ?: "播放源应用"
+            val sourceAppName = getAppNameFromPackage(context, nowPlaying?.packageName) ?: "Source App"
             AlertDialog(
                 onDismissRequest = { showOpenAppDialog = false },
-                title = { Text("打开 $sourceAppName？") },
-                text = { Text("您可进入设置调整点击卡片的默认行为。") },
+                title = { Text("Open $sourceAppName?") },
+                text = { Text("You can go to Settings to adjust the default card click action.") },
                 containerColor = MaterialTheme.colorScheme.background,
                 confirmButton = {
-                    TextButton(onClick = { openSourceApp(context, nowPlaying?.packageName); showOpenAppDialog = false }) { Text("打开") }
+                    TextButton(onClick = { openSourceApp(context, nowPlaying?.packageName); showOpenAppDialog = false }) { Text("Open") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showOpenAppDialog = false }) { Text("忽略") }
+                    TextButton(onClick = { showOpenAppDialog = false }) { Text("Ignore") }
                 }
             )
         }
@@ -979,13 +979,13 @@ fun MainScreen() {
                     TextButton(onClick = {
                         autoUpdateDialogUrl?.let { context.startActivity(Intent(Intent.ACTION_VIEW, it.toUri())) }
                         showAutoUpdateDialog = false
-                    }) { Text("去更新") }
+                    }) { Text("Go to Update") }
                 },
                 dismissButton = {
                     TextButton(onClick = {
                         AppSettings.setLastUpdateLaterAt(context, System.currentTimeMillis())
                         showAutoUpdateDialog = false
-                    }) { Text("稍后") }
+                    }) { Text("Later") }
                 }
             )
         }
@@ -998,7 +998,7 @@ fun MainScreen() {
 // Shared helper composables used across modes
 // ──────────────────────────────────────────────
 
-/** 下拉菜单内容：歌词管理、刷新、设置 */
+/** 下拉Menu内容：歌词管理、刷新、设置 */
 @Composable
 private fun MainMenuDropdownContent(
     nowPlaying: NowPlayingMusic?,
@@ -1014,7 +1014,7 @@ private fun MainMenuDropdownContent(
 ) {
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         DropdownMenuItem(
-            text = { Text("歌词管理", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("Lyrics Management", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface) },
             trailingIcon = {
                 Icon(Icons.AutoMirrored.Filled.TextSnippet, contentDescription = null, modifier = Modifier.size(20.dp))
             },
@@ -1033,13 +1033,13 @@ private fun MainMenuDropdownContent(
             )
         )
         DropdownMenuItem(
-            text = { Text("刷新", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("Refresh", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface) },
             trailingIcon = {
                 Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(20.dp))
             },
             onClick = {
                 scope.launch {
-                    Timber.d("[UI] 刷新按钮被点击：开始重新拉取歌词 + 重新识别/推断 SongStructure")
+                    Timber.d("[UI] Refresh button clicked: re-fetching lyrics + re-identifying/inferring SongStructure")
                     viewModel.fetchLyrics()
                     webViewReloadKey()
                     viewModel.refreshAlbumArt()
@@ -1055,7 +1055,7 @@ private fun MainMenuDropdownContent(
                         rippleColor.value = initialPrimary
                     }
                     onDismiss()
-                    Timber.d("[UI] 刷新按钮处理完成")
+                    Timber.d("[UI] Refresh button processing complete")
                 }
             },
             colors = MenuDefaults.itemColors(
@@ -1064,7 +1064,7 @@ private fun MainMenuDropdownContent(
             )
         )
         DropdownMenuItem(
-            text = { Text("设置", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("Settings", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface) },
             trailingIcon = {
                 Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(20.dp))
             },
@@ -1116,7 +1116,7 @@ private fun SongStructureBarSection(
 @Composable
 private fun LyricsEmptyState() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "选择歌词来显示", color = Color.White.copy(alpha = 0.8f), fontSize = 16.sp, textAlign = TextAlign.Center)
+        Text(text = "Select lyrics to display", color = Color.White.copy(alpha = 0.8f), fontSize = 16.sp, textAlign = TextAlign.Center)
     }
 }
 
@@ -1697,12 +1697,12 @@ fun PermissionStatusCard(onOpenNotificationAccessSettings: () -> Unit, modifier:
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                "需要通知访问权限才能正常使用此应用。",
+                "Notification access permission is required to use this app normally.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
             Text(
-                "滥用通知使用权危及安全，因此系统可能会弹窗阻止。本应用是开源软件，您可以查看本应用的执行逻辑，因此在应用来源可靠的情况下无需感到担忧。",
+                "Abusing notification access can endanger security, so the system might pop up a block. Since this app is open source, you can review its code execution logic, and there is no need to worry if the app source is trusted.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
             )
@@ -1716,7 +1716,7 @@ fun PermissionStatusCard(onOpenNotificationAccessSettings: () -> Unit, modifier:
                         containerColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("去授权", color = MaterialTheme.colorScheme.onError)
+                    Text("Grant permission", color = MaterialTheme.colorScheme.onError)
                 }
             }
         }

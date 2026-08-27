@@ -30,9 +30,9 @@ object LyricsCandidateRanker {
     private val providerPriority = mapOf(
         "cache" to -1,   // 本地缓存（速度最快，无需网络）
         "amll" to 0,     // AMLL TTML DB
-        "kugou" to 1,    // 酷狗
-        "netease" to 2,  // 网易云
-        "ncm" to 2,      // 网易云别名
+        "kugou" to 1,    // Kugou
+        "netease" to 2,  // Netease云
+        "ncm" to 2,      // Netease云别名
         "qq" to 3,       // QQ 音乐
         "qqmusic" to 3   // QQ 音乐别名
     )
@@ -80,10 +80,10 @@ object LyricsCandidateRanker {
         if (!currentSourceName.isNullOrBlank()) {
             val lower = currentSourceName.lowercase()
             val preferred = when {
-                lower.contains("qq") && !lower.contains("酷狗") -> setOf("qq", "qqmusic")
-                lower.contains("酷狗") && !lower.contains("qq") -> setOf("kugou")
-                lower.contains("qq") && lower.contains("酷狗") -> setOf("qq", "qqmusic", "kugou")
-                lower.contains("网易") -> setOf("netease", "ncm")
+                lower.contains("qq") && !lower.contains("Kugou") -> setOf("qq", "qqmusic")
+                lower.contains("Kugou") && !lower.contains("qq") -> setOf("kugou")
+                lower.contains("qq") && lower.contains("Kugou") -> setOf("qq", "qqmusic", "kugou")
+                lower.contains("Netease") -> setOf("netease", "ncm")
                 else -> emptySet()
             }
             if (preferred.isNotEmpty()) {
@@ -98,9 +98,9 @@ object LyricsCandidateRanker {
                 if (parts.size < 2) return false
                 val prefix = parts[0].lowercase()
                 return when {
-                    lower.contains("网易") -> prefix == "netease" || prefix == "ncm"
+                    lower.contains("Netease") -> prefix == "netease" || prefix == "ncm"
                     lower.contains("qq") -> prefix == "qq" || prefix == "qqmusic"
-                    lower.contains("酷狗") -> prefix == "kugou"
+                    lower.contains("Kugou") -> prefix == "kugou"
                     else -> false
                 }
             }
@@ -114,11 +114,11 @@ object LyricsCandidateRanker {
         val lowerB = b.provider.lowercase()
         val bothTme = lowerA in setOf("qq", "kugou") && lowerB in setOf("qq", "kugou")
         val tmeSource = !currentSourceName.isNullOrBlank() &&
-            (currentSourceName.contains("qq", ignoreCase = true) || currentSourceName.contains("酷狗"))
+            (currentSourceName.contains("qq", ignoreCase = true) || currentSourceName.contains("Kugou"))
         if (bothTme && tmeSource) {
             val lowerSource = currentSourceName.lowercase()
-            val preferKugou = lowerSource.contains("酷狗") && !lowerSource.contains("qq")
-            val preferQQ = lowerSource.contains("qq") && !lowerSource.contains("酷狗")
+            val preferKugou = lowerSource.contains("Kugou") && !lowerSource.contains("qq")
+            val preferQQ = lowerSource.contains("qq") && !lowerSource.contains("Kugou")
             if (preferKugou) {
                 if (lowerA == "kugou" && lowerB == "qq") return -1
                 if (lowerA == "qq" && lowerB == "kugou") return 1

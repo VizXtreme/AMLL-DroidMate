@@ -190,7 +190,7 @@ private fun SettingsPage(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("设置") },
+                title = { Text("Settings") },
                 navigationIcon = {
                     FilledIconButton(
                         onClick = onBack,
@@ -201,7 +201,7 @@ private fun SettingsPage(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -221,11 +221,11 @@ private fun SettingsPage(
                 .padding(innerPadding),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SettingsHeader("常驻通知实时歌词")
+            SettingsHeader("Ongoing Notification Lyrics")
 
             SettingsToggleItem(
-                title = "常驻通知实时歌词",
-                description = "需要通知权限。获得锁屏权限后可锁屏显示。",
+                title = "Ongoing Notification Lyrics",
+                description = "Notification permission is required. Can be shown on the lock screen after acquiring lock screen permission.",
                 checked = lyricNotificationEnabled,
                 onCheckedChange = { enabled ->
                     if (!enabled) {
@@ -244,10 +244,10 @@ private fun SettingsPage(
                 switchColors = switchColors
             )
 
-            SettingsHeader("歌曲结构显示条")
+            SettingsHeader("Song Structure Bar")
 
             SettingsToggleItem(
-                title = "歌曲结构显示条",
+                title = "Song Structure Bar",
                 checked = songStructureBarEnabled,
                 onCheckedChange = { enabled ->
                     songStructureBarEnabled = enabled
@@ -256,16 +256,16 @@ private fun SettingsPage(
                 switchColors = switchColors
             )
 
-            SettingsHeader("歌词组件设置")
+            SettingsHeader("Lyric Component Settings")
 
             SettingsNavigateItem(
-                title = "歌词组件设置",
+                title = "Lyric Component Settings",
                 onClick = {
                     context.startActivity(Intent(context, ComponentSettings::class.java))
                 }
             )
 
-            SettingsHeader("\"正在播放\"卡片点击行为")
+            SettingsHeader("\"Now Playing\" Card Click Action")
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -276,7 +276,7 @@ private fun SettingsPage(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     CardClickActionOption(
-                        title = "直接打开播放源应用",
+                        title = "Directly open source app",
                         selected = selectedAction == CardClickAction.DIRECT_OPEN,
                         onClick = {
                             selectedAction = CardClickAction.DIRECT_OPEN
@@ -284,7 +284,7 @@ private fun SettingsPage(
                         }
                     )
                     CardClickActionOption(
-                        title = "询问",
+                        title = "Ask",
                         selected = selectedAction == CardClickAction.ASK,
                         onClick = {
                             selectedAction = CardClickAction.ASK
@@ -292,7 +292,7 @@ private fun SettingsPage(
                         }
                     )
                     CardClickActionOption(
-                        title = "不操作",
+                        title = "Do nothing",
                         selected = selectedAction == CardClickAction.NONE,
                         onClick = {
                             selectedAction = CardClickAction.NONE
@@ -302,11 +302,11 @@ private fun SettingsPage(
                 }
             }
 
-            SettingsHeader("辅助功能")
+            SettingsHeader("Accessibility")
 
             SettingsToggleItem(
-                title = "点击上一首回到 0:00",
-                description = "点击上一首按钮会先回到歌曲开头，而不是直接跳转到上一首。",
+                title = "Click Previous to go to 0:00",
+                description = "Clicking the previous button will first go back to the beginning of the song, rather than directly jumping to the previous one.",
                 checked = skipPreviousRewinds,
                 onCheckedChange = { enabled ->
                     skipPreviousRewinds = enabled
@@ -390,10 +390,10 @@ private fun SettingsPage(
 //            }
 
 
-            SettingsHeader("歌词时间轴偏移")
-            SettingsLabel("歌曲偏移 + 设备偏移")
+            SettingsHeader("Lyric Timeline Offset")
+            SettingsLabel("Song Offset + Device Offset")
             SettingsNavigateItem(
-                title = "歌词时间轴偏移设置",
+                title = "Lyric Timeline Offset Settings",
                 onClick = {
                     context.startActivity(Intent(context, LyricOffsetSettingsActivity::class.java))
                 }
@@ -402,7 +402,7 @@ private fun SettingsPage(
 
 
 
-            SettingsHeader("版本更新")
+            SettingsHeader("Version Updates")
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -413,7 +413,7 @@ private fun SettingsPage(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        "当前版本: ${getCurrentVersionName(context)}",
+                        "Current version: ${getCurrentVersionName(context)}",
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
@@ -428,9 +428,9 @@ private fun SettingsPage(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                            Text("自动检查更新", color = MaterialTheme.colorScheme.onSurface)
+                            Text("Automatically check for updates", color = MaterialTheme.colorScheme.onSurface)
                             Text(
-                                text = "自动检查 GitHub Release",
+                                text = "Automatically check GitHub Releases",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
@@ -446,11 +446,11 @@ private fun SettingsPage(
                     }
 
                     Text(
-                        text = "更新通道",
+                        text = "Update Channel",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     CardClickActionOption(
-                        title = "正式版",
+                        title = "Release",
                         selected = updateChannel == UpdateChannel.STABLE,
                         onClick = {
                             updateChannel = UpdateChannel.STABLE
@@ -458,7 +458,7 @@ private fun SettingsPage(
                         }
                     )
                     CardClickActionOption(
-                        title = "测试版",
+                        title = "Beta",
                         selected = updateChannel == UpdateChannel.BETA,
                         onClick = {
                             updateChannel = UpdateChannel.BETA
@@ -466,7 +466,7 @@ private fun SettingsPage(
                         }
                     )
                     CardClickActionOption(
-                        title = "开发版",
+                        title = "Dev Version",
                         selected = updateChannel == UpdateChannel.ALPHA,
                         onClick = {
                             updateChannel = UpdateChannel.ALPHA
@@ -488,22 +488,22 @@ private fun SettingsPage(
 
                                 if (result.hasUpdate) {
                                     updateDialogTitle =
-                                        "发现新版本: ${result.resolvedReleaseTag ?: "未知版本"}"
+                                        "New version found: ${result.resolvedReleaseTag ?: "未知版本"}"
                                     updateDialogMessage = buildString {
-                                        append("当前版本: ${result.currentVersionName}\n")
+                                        append("Current version: ${result.currentVersionName}\n")
                                         if (result.resolvedPublishedAt != null) {
-                                            append("发布时间: ${formatReleaseTime(result.resolvedPublishedAt)}\n\n")
+                                            append("Publish time: ${formatReleaseTime(result.resolvedPublishedAt)}\n\n")
                                         }
                                         if (!result.resolvedReleaseNotes.isNullOrBlank()) {
                                             append(result.resolvedReleaseNotes)
                                         } else {
-                                            append("暂无更新说明")
+                                            append("No release notes")
                                         }
                                     }
                                     updateDialogUrl = result.resolvedReleaseUrl
                                 } else {
-                                    updateDialogTitle = "检查更新"
-                                    updateDialogMessage = result.reason ?: "当前已是最新版本"
+                                    updateDialogTitle = "Check for Updates"
+                                    updateDialogMessage = result.reason ?: "Already on the latest version"
                                     updateDialogUrl = null
                                 }
                                 showUpdateDialog = true
@@ -511,36 +511,36 @@ private fun SettingsPage(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(if (checkingUpdate) "检查中..." else "检查更新")
+                        Text(if (checkingUpdate) "Checking..." else "Check for Updates")
                     }
                 }
             }
 
-            SettingsHeader("通知访问权限")
-            SettingsDescription("必需权限。用于获取正在播放信息。")
-            SettingsDescription("滥用通知使用权危及安全，因此系统可能会弹窗阻止。本应用是开源软件，您可以查看本应用的执行逻辑，因此在应用来源可靠的情况下无需感到担忧。")
+            SettingsHeader("Notification Access Permission")
+            SettingsDescription("Required permission. Used to get playing information.")
+            SettingsDescription("Abusing notification access can endanger security, so the system might pop up a block. Since this app is open source, you can review its code execution logic, and there is no need to worry if the app source is trusted.")
             SettingsNavigateItem(
-                title = "转至“读取、回复和控制通知”",
+                title = "Go to 'Notification Read, Reply and Control'",
                 onClick = onOpenNotificationSettings
             )
 
-            SettingsHeader("开发者工具")
+            SettingsHeader("Developer Tools")
 
             SettingsNavigateItem(
-                title = "查看日志",
+                title = "View Logs",
                 onClick = {
                     context.startActivity(Intent(context, LogDisplayActivity::class.java))
                 }
             )
 
             SettingsNavigateItem(
-                title = "API 检测",
+                title = "API Testing",
                 onClick = {
                     context.startActivity(Intent(context, ApiTestActivity::class.java))
                 }
             )
 
-            SettingsHeader("项目与贡献")
+            SettingsHeader("Project and Contribution")
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -561,7 +561,7 @@ private fun SettingsPage(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("项目仓库")
+                        Text("Project Repository")
                     }
 
                     TextButton(
@@ -575,7 +575,7 @@ private fun SettingsPage(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("在 AMLL TTML DB 协助改进歌词")
+                        Text("Help improve lyrics in AMLL TTML DB")
                     }
                 }
             }
@@ -600,11 +600,11 @@ private fun SettingsPage(
                                 showUpdateDialog = false
                             }
                         ) {
-                            Text("查看详情")
+                            Text("View Details")
                         }
                     } else {
                         TextButton(onClick = { showUpdateDialog = false }) {
-                            Text("知道了")
+                            Text("Got it")
                         }
                     }
                 },
@@ -614,7 +614,7 @@ private fun SettingsPage(
                             AppSettings.setLastUpdateLaterAt(context, System.currentTimeMillis())
                             showUpdateDialog = false
                         }) {
-                            Text("稍后")
+                            Text("Later")
                         }
                     }
                 }
@@ -735,7 +735,7 @@ private fun SettingsNavigateItem(
             Text(title, color = MaterialTheme.colorScheme.onSurface)
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "进入",
+                contentDescription = "Enter",
                 tint = MaterialTheme.colorScheme.onSurface
             )
         }

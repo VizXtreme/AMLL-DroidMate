@@ -55,7 +55,7 @@ object SongStructureParser {
     }
 
     /**
-     * 从歌词行推断段落结构（"段落 1"、"段落 2"…），用于没有 TTML songPart 的场景。
+     * 从歌词行推断段落结构（"Paragraph 1"、"段落 2"…），用于没有 TTML songPart 的场景。
      * 间奏已由 [detectInterludes] 预先计算好，直接在此填入段落标签。
      */
     private fun inferFallbackSections(
@@ -63,7 +63,7 @@ object SongStructureParser {
         interludes: List<SongStructure>
     ): List<SongStructure> {
         if (lines.isEmpty()) {
-            Timber.w("[SongStructure] 歌词行为空，返回空结构")
+            Timber.w("[SongStructure] Lyric lines are empty, returning empty structure")
             return emptyList()
         }
 
@@ -72,7 +72,7 @@ object SongStructureParser {
         if (interludes.isEmpty()) {
             result.add(
                 SongStructure(
-                    label = "段落 1",
+                    label = "Paragraph 1",
                     startTime = lines.first().startTime,
                     endTime = lines.last().endTime
                 )
@@ -91,7 +91,7 @@ object SongStructureParser {
                 if (paragraphLines.isNotEmpty()) {
                     result.add(
                         SongStructure(
-                            label = "段落 $paragraphIndex",
+                            label = "Paragraph $paragraphIndex",
                             startTime = paragraphLines.first().startTime,
                             endTime = paragraphLines.last().endTime
                         )
@@ -107,7 +107,7 @@ object SongStructureParser {
         if (remainingLines.isNotEmpty()) {
             result.add(
                 SongStructure(
-                    label = "段落 $paragraphIndex",
+                    label = "Paragraph $paragraphIndex",
                     startTime = remainingLines.first().startTime,
                     endTime = remainingLines.last().endTime
                 )

@@ -45,9 +45,9 @@ class LyricsCacheActivity : BaseComposeActivity() {
                 contentResolver.openOutputStream(it)?.use { stream ->
                     stream.write(xmlContent.toByteArray(StandardCharsets.UTF_8))
                 }
-                Toast.makeText(this, "导出成功", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Export Successful", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(this, "导出失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -60,10 +60,10 @@ class LyricsCacheActivity : BaseComposeActivity() {
         ManagementPage(
             entries = cacheEntries,
             config = ManagementConfig.build(
-                title = "管理缓存歌词",
+                title = "Manage Cached Lyrics",
                 itemKey = { it.id },
             ) {
-                searchPlaceholder = "搜索 ( 标题 / 歌手 / 来源 )"
+                searchPlaceholder = "Search ( Title / Artist / Source )"
                 selectable = true
 
                 searchPredicate = { entry, query ->
@@ -128,12 +128,12 @@ private fun CachedEntryCard(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "来源: ${entry.source}",
+                text = "Source: ${entry.source}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             )
             Text(
-                text = "更新时间: ${formatTimestamp(entry.updatedAt)}",
+                text = "Update time: ${formatTimestamp(entry.updatedAt)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             )

@@ -188,9 +188,9 @@ class ApiTestClient(private val httpClient: HttpClient) {
     /** 返回所有 AMLL TTML 端点的格式化标签 */
     fun getAmllEndpointLabels(): List<String> = amllEndpoints.map { tpl ->
         val name = when {
-            tpl.contains("stevexmh") -> "主站"
-            tpl.contains("bikonoo") -> "镜像 1"
-            tpl.contains("dimeta") -> "镜像 2"
+            tpl.contains("stevexmh") -> "Main Site"
+            tpl.contains("bikonoo") -> "Mirror 1"
+            tpl.contains("dimeta") -> "Mirror 2"
             else -> "GitHub Raw"
         }
         "AMLL TTML - $name"

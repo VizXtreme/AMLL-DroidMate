@@ -800,7 +800,7 @@ fun tryZlibDecompress(data: ByteArray): ByteArray {
         .filter { it.value.toInt() and 0xFF == 0x78 }
         .map { it.index }
     if (candidateOffsets.isNotEmpty()) {
-        println("   尝试策略 3: 从偏移 ${candidateOffsets.joinToString()} 开始解压...")
+        println("   尝试策略 3: 从Offset ${candidateOffsets.joinToString()} 开始解压...")
         for (offset in candidateOffsets) {
             if (offset + 1 >= data.size) continue
             val second = data[offset + 1].toInt() and 0xFF
@@ -810,10 +810,10 @@ fun tryZlibDecompress(data: ByteArray): ByteArray {
                     val result = InflaterInputStream(
                         ByteArrayInputStream(data.copyOfRange(offset, data.size))
                     ).use { it.readBytes() }
-                    println("   ✅ 策略 3 (偏移 $offset) 成功: ${result.size} 字节")
+                    println("   ✅ 策略 3 (Offset $offset) 成功: ${result.size} 字节")
                     return result
                 } catch (e: Exception) {
-                    println("   ❌ 策略 3 (偏移 $offset) 失败: $e")
+                    println("   ❌ 策略 3 (Offset $offset) 失败: $e")
                 }
             }
         }

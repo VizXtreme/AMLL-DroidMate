@@ -89,11 +89,11 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
     fun saveEntry() {
         val ms = offsetMsText.toLongOrNull()
         if (ms == null) {
-            errorMessage = "请输入有效的毫秒值"
+            errorMessage = "Please enter a valid millisecond value"
             return
         }
         if (title.isBlank() || artist.isBlank() || device.isBlank() || source.isBlank()) {
-            errorMessage = "歌曲、歌手、输出设备、来源均不能为空（可用 *）"
+            errorMessage = "Song, artist, output device, and source cannot be empty (use * for all)"
             return
         }
         coroutineScope.launch {
@@ -113,15 +113,15 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
     ManagementPage(
         entries = offsets,
         config = ManagementConfig.build(
-            title = "管理时间轴偏移",
+            title = "Manage Timeline Offset",
             itemKey = { "${it.title}|${it.artist}|${it.device}|${it.source}" },
         ) {
-            searchPlaceholder = "搜索 ( 歌曲 / 歌手 / 设备 / 来源 )"
-            emptyText = "当前没有已保存的偏移设置。"
+            searchPlaceholder = "Search ( Song / Artist / Device / Source )"
+            emptyText = "No saved offset settings currently."
 
             headerContent = {
                 Text(
-                    "所有匹配的偏移规则将会叠加。",
+                    "All matching offset rules will be stacked.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -146,7 +146,7 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                         contentColor = MaterialTheme.colorScheme.onSurface,
                     ),
                 ) {
-                    Icon(Icons.Default.DeleteSweep, contentDescription = "删除所有")
+                    Icon(Icons.Default.DeleteSweep, contentDescription = "Delete All")
                 }
             }
 
@@ -184,47 +184,47 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             containerColor = MaterialTheme.colorScheme.background,
-            title = { Text(if (editTarget != null) "编辑偏移" else "添加偏移") },
+            title = { Text(if (editTarget != null) "Edit Offset" else "Add Offset") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "填入歌曲、歌手、输出设备、来源（支持 * 通配符）。所有匹配规则将叠加。",
+                        "Enter song, artist, output device, source (supports * wildcard). All matching rules will be stacked.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     )
                     Text(
-                        "对于输出设备，请按照引号规则填写。\n扬声器: \"Speaker\"\n有线音频: \"Wired\"\n蓝牙设备: \"Bluetooth (设备名称)\"\n英文括号，括号前有空格。",
+                        "For output devices, please enter according to the quote rules.\nSpeaker: \"Speaker\"\nWired: \"Wired\"\nBluetooth device: \"Bluetooth (device name)\"\nEnglish brackets, with a space before the bracket.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     )
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
-                        label = { Text("歌曲名称") },
+                        label = { Text("Song Name") },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = artist,
                         onValueChange = { artist = it },
-                        label = { Text("歌手") },
+                        label = { Text("Artist") },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = device,
                         onValueChange = { device = it },
-                        label = { Text("输出设备") },
+                        label = { Text("Output Device") },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = source,
                         onValueChange = { source = it },
-                        label = { Text("来源包名 (如: com.netease.cloudmusic、com.tencent.qqmusic)") },
+                        label = { Text("Source Package (e.g., com.netease.cloudmusic, com.tencent.qqmusic)") },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = offsetMsText,
                         onValueChange = { offsetMsText = it },
-                        label = { Text("偏移 (毫秒)") },
+                        label = { Text("Offset (ms)") },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     errorMessage?.takeIf { it.isNotBlank() }?.let {
@@ -233,10 +233,10 @@ private fun LyricOffsetManagementPage(onBack: () -> Unit) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = { saveEntry() }) { Text("保存") }
+                TextButton(onClick = { saveEntry() }) { Text("Save") }
             },
             dismissButton = {
-                TextButton(onClick = { showDialog = false }) { Text("取消") }
+                TextButton(onClick = { showDialog = false }) { Text("Cancel") }
             },
         )
     }
@@ -263,16 +263,16 @@ private fun OffsetEntryCard(
                     "${entry.title} — ${entry.artist}",
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                Text("设备: ${entry.device}", style = MaterialTheme.typography.bodySmall)
-                Text("来源: ${entry.source}", style = MaterialTheme.typography.bodySmall)
-                Text("偏移: ${entry.offsetMs} ms", style = MaterialTheme.typography.bodySmall)
+                Text("Device: ${entry.device}", style = MaterialTheme.typography.bodySmall)
+                Text("Source: ${entry.source}", style = MaterialTheme.typography.bodySmall)
+                Text("Offset: ${entry.offsetMs} ms", style = MaterialTheme.typography.bodySmall)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "编辑")
+                    Icon(Icons.Default.Edit, contentDescription = "Edit")
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "删除")
+                    Icon(Icons.Default.Delete, contentDescription = "Delete")
                 }
             }
         }

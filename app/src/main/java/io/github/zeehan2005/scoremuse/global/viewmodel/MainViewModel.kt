@@ -192,7 +192,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val cached = lyricsCacheRepository.findBySong(music.title, music.artist)
                     if (cached != null) {
                         val shouldBypassCache = cached.source.contains("kugou", ignoreCase = true) ||
-                            cached.source.contains("酷狗")
+                            cached.source.contains("Kugou")
                         if (!shouldBypassCache) {
                             val parsed = LyricsRepository.parseTTML(cached.xmlContent)
                             if (parsed != null) {
@@ -218,7 +218,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun fetchLyrics() {
         val music = nowPlayingMusicMutable.value
         if (music == null) {
-            _errorMessage.value = "未检测到播放信息"
+            _errorMessage.value = "No playback info detected"
             return
         }
 
@@ -272,14 +272,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     )
                     Timber.i("[LyricsMatcher] Successfully fetched lyrics from ${result.source}")
                 } else {
-                    _errorMessage.value = result.errorMessage ?: "获取歌词失败"
+                    _errorMessage.value = result.errorMessage ?: "Failed to fetch lyrics"
                     Timber.e("[LyricsMatcher] Failed to fetch lyrics: ${result.errorMessage}")
                 }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 Timber.i("[LyricsMatcher] fetchLyrics cancelled (isLoading -> false)")
                 throw e
             } catch (e: Exception) {
-                _errorMessage.value = "错误：${e.message}"
+                _errorMessage.value = "Error：${e.message}"
                 Timber.e(e, "[LyricsMatcher] Error fetching lyrics")
             } finally {
                 _isLoading.value = false
@@ -372,7 +372,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 val trimmed = content.trim()
                 if (trimmed.isBlank()) {
-                    _errorMessage.value = "歌词内容为空"
+                    _errorMessage.value = "Lyrics content is empty"
                     return@launch
                 }
 
@@ -401,7 +401,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             parseWithWasmPreferred(
                                 raw = trimmed,
                                 format = format,
-                                title = title.ifBlank { "自选歌词" },
+                                title = title.ifBlank { "Custom Lyrics" },
                                 artist = artist.ifBlank { "Unknown" }
                             )
                         }
@@ -413,7 +413,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             Timber.i("[CustomLyrics] WASM parse unavailable, using Kotlin parser ($format)")
                             parsed = TTMLConverter.fromLyrics(
                                 content = trimmed,
-                                title = title.ifBlank { "自选歌词" },
+                                title = title.ifBlank { "Custom Lyrics" },
                                 artist = artist.ifBlank { "Unknown" }
                             )
                             cachedXmlContent = parsed?.let { TTMLConverter.toTTMLString(it) } ?: ""
@@ -424,16 +424,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (parsed != null && cachedXmlContent.isNotBlank()) {
                     applyLyricsToState(
                         lyrics = parsed,
-                        title = title.ifBlank { "自选歌词" },
+                        title = title.ifBlank { "Custom Lyrics" },
                         artist = artist.ifBlank { "Unknown" },
                         source = source,
                         xmlContent = cachedXmlContent
                     )
                 } else {
-                    _errorMessage.value = "无法识别歌词格式"
+                    _errorMessage.value = "Unsupported lyrics format"
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "应用歌词失败：${e.message}"
+                _errorMessage.value = "Failed to apply lyrics：${e.message}"
                 Timber.e(e, "[CustomLyrics] Error applying custom lyrics input")
             } finally {
                 // 无论成功/失败/早返回，都确保 MainScreen 的 isLoading 指示器会消失
@@ -527,7 +527,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 Timber.d("[SongStructure] Parsed ${structures.size} structures (source=$source): $summary")
 
-                if (structures.size == 1 && structures[0].label == "段落 1") {
+                if (structures.size == 1 && structures[0].label == "Paragraph 1") {
                     Timber.i("[SongStructure] ⚠️ Fallback result: single paragraph structure")
                 }
             } catch (e: Exception) {

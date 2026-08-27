@@ -162,10 +162,10 @@ open class LyricNotificationManager(private val context: Context) {
 
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "实时歌词",
+            "Real-time Lyrics",
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = "显示当前播放歌词行"
+            description = "Show current playing lyric line"
             setShowBadge(false)
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             setSound(null, null)
