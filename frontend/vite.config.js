@@ -13,7 +13,6 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
 import wasm from "vite-plugin-wasm";
-import topLevelAwait from "vite-plugin-top-level-await";
 
 /**
  * 自定义简单 CSS 内联插件
@@ -52,7 +51,6 @@ export default defineConfig({
   // 因此移除 React 插件可以避免把 React 相关运行时打包进最终 bundle。
   plugins: [
     wasm(),
-    topLevelAwait(),
     cssInliner()
   ],
   // ==================== 基础路径 ====================
@@ -67,6 +65,7 @@ export default defineConfig({
   },
   // ==================== 构建设置 ====================
   build: {
+    target: 'esnext',
     outDir: 'dist',  // 构建产物输出目录
     emptyOutDir: true,  // 构建前清空输出目录
     sourcemap: true,  // 生成 Source Map 文件（便于调试）

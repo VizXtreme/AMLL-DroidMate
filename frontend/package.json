@@ -12,7 +12,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@applemusic-like-lyrics/core": "latest",
     "@applemusic-like-lyrics/lyric": "latest",
@@ -28,7 +28,6 @@
     "rollup": "latest",
     "terser": "latest",
     "typescript": "latest",
-    "vite-plugin-top-level-await": "latest",
     "vite-plugin-wasm": "latest"
   },
   "allowScripts": {
