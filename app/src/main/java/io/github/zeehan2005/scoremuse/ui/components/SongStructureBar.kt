@@ -160,16 +160,13 @@ fun SongStructureBar(
             if (!shouldExpand || structures.isEmpty()) {
                 emptyMap()
             } else {
-                // 计算密集型操作，在后台线程执行
-                runBlocking(Dispatchers.Default) {
-                    /** 需要填充的额外宽度 = 可用宽度 - (自然宽度总和 + 间距总和) */
-                    val extraWidthPx = availableWidthPx - totalContentWidthPx
-                    /** 平均分配给每个 chip */
-                    val extraPerChipPx = extraWidthPx / structures.size
-                    // 每个 chip 的最终宽度 = 自然宽度 + 额外分配的宽度
-                    chipNaturalWidthsPx.mapValues { (_, naturalWidthPx) ->
-                        naturalWidthPx + extraPerChipPx
-                    }
+                /** 需要填充的额外宽度 = 可用宽度 - (自然宽度总和 + 间距总和) */
+                val extraWidthPx = availableWidthPx - totalContentWidthPx
+                /** 平均分配给每个 chip */
+                val extraPerChipPx = extraWidthPx / structures.size
+                // 每个 chip 的最终宽度 = 自然宽度 + 额外分配的宽度
+                chipNaturalWidthsPx.mapValues { (_, naturalWidthPx) ->
+                    naturalWidthPx + extraPerChipPx
                 }
             }
         }
@@ -201,47 +198,21 @@ fun SongStructureBar(
         chipNaturalWidthsPx = emptyMap()
     }
 
-    // 当 currentStructureIndex 变化时，自动滚动到该位置并居中
-    LaunchedEffect(currentStructureIndex, containerWidthPx, allChipsMeasured) {
-        if (currentStructureIndex >= 0 && containerWidthPx > 0 && allChipsMeasured) {
-            /** 在后台线程计算滚动位置，避免阻塞UI线程 */
-            val scrollData = withContext(Dispatchers.Default) {
-                /** 获取当前可见 item 的信息，直接读取实际像素位置 */
-                val visibleItem =
-                    listState.layoutInfo.visibleItemsInfo.find { it.index == currentStructureIndex }
-
-                if (visibleItem != null) {
-                    /** 直接从 layoutInfo 获取目标 chip 的实际 position 信息 */
-                    val chipStartOffsetPx = visibleItem.offset // chip 起始位置的偏移量（相对于当前可视区域左边缘）
-                    val chipSizePx = visibleItem.size // chip 的实际大小（宽度）
-
-                    /** 计算 chip 中心点相对于容器左边缘的当前位置 */
-                    val chipCenterCurrentPx = chipStartOffsetPx + (chipSizePx / 2)
-
-                    /**
-                     * 计算需要的滚动距离：让 chip 中心移动到容器中心
-                     * scrollOffset 表示相对于当前滚动位置的额外偏移
-                     */
-                    val targetCenterPx = containerWidthPx / 2
-                    val scrollOffset = chipCenterCurrentPx - targetCenterPx
-
-                    Pair(currentStructureIndex, scrollOffset)
-                } else {
-                    Pair(currentStructureIndex, 0)
-                }
-            }
-
-            // 在UI线程执行滚动操作
-            if (scrollData.second != 0) {
-                // 执行平滑滚动动画
-                listState.animateScrollToItem(
-                    index = scrollData.first,
-                    scrollOffset = scrollData.second
-                )
-            } else {
-                // 如果目标 chip 不在可视区域内，先滚动到大致位置再重新计算
-                listState.scrollToItem(scrollData.first)
-            }
+    // 当 currentStructureIndex 变化时，自动滚动到该位置并居中（仅在内容超出容器需要横向滚动时）
+    LaunchedEffect(currentStructureIndex, containerWidthPx, allChipsMeasured, shouldExpand) {
+        if (currentStructureIndex in structures.indices && containerWidthPx > 0 && allChipsMeasured && !shouldExpand) {
+            val visibleItem = listState.layoutInfo.visibleItemsInfo.find { it.index == currentStructureIndex }
+            val chipWidthPx = visibleItem?.size
+                ?: expandedChipWidthsPx[currentStructureIndex]
+                ?: chipNaturalWidthsPx[currentStructureIndex]
+                ?: 0
+            // 计算居中时 item 左边缘相对于容器左边缘的理想偏移
+            val centerStartPx = maxOf(0, (containerWidthPx - chipWidthPx) / 2)
+            // animateScrollToItem 的 scrollOffset 参数表示 item 相对于视口起点的偏移（负值将 item 向右放置）
+            listState.animateScrollToItem(
+                index = currentStructureIndex,
+                scrollOffset = -centerStartPx
+            )
         }
     }
 

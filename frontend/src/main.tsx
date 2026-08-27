@@ -35,9 +35,11 @@ declare global {
     setEnableRomanLine?: (enabled: boolean) => void // 启用/禁用罗马音行
     setEnableSwapTransRomanLine?: (enabled: boolean) => void // 交换翻译和罗马音的位置
     setAdvanceLyricDynamicLyricTime?: (enabled: boolean) => void // 启用歌词提前量优化
+    applyFontWeight?: (weight: number | string) => void // 设置歌词字重
     applyFontSettings?: (config: {
       effectiveFamily?: string
       files?: Array<{ familyName: string, uri: string }>
+      fontWeight?: number | string
     }) => void // 应用字体设置：注入 @font-face 规则并设置 CSS 变量
     rebuildLyricsDom?: (reason?: string) => boolean // 强制重构歌词 DOM（处理布局异常）
 
@@ -223,7 +225,11 @@ function initAMLL() {
       lastTime = now
       // 不要仅在播放状态下调用 player.update，否则暂停时用户无法进行正常交互
       if (state.player) {
-        state.player.update(delta)
+        try {
+          state.player.update(delta)
+        } catch (e) {
+          // 捕获帧更新中的偶发异常，防止 requestAnimationFrame 循环意外终止
+        }
       }
       // 背景渲染器仅在有内容变化时需要 update — 静态背景不需要每帧重绘
       // 由 setAlbum / configureBackgroundEffect 等 API 在内容变更时主动调用
@@ -467,6 +473,7 @@ window.configureLyricBackground = (options: any) => {
 
 // --- CSS 变量设置项 (CSS Variable Setters) ---
 window.setLyricSizePreset = (preset: string) => { if (preset !== undefined) setCSSVar('--amll-lp-font-size-preset', preset) }
+window.applyFontWeight = (weight: number | string) => { if (weight !== undefined) setCSSVar('--amll-font-weight', weight) }
 window.setEnableTranslationLine = (enabled: boolean) => { if (enabled !== undefined) setCSSVar('--amll-show-translation', enabled) }
 window.setEnableRomanLine = (enabled: boolean) => { if (enabled !== undefined) setCSSVar('--amll-show-roman', enabled) }
 window.setEnableSwapTransRomanLine = (enabled: boolean) => { if (enabled !== undefined) setCSSVar('--amll-swap-trans-roman', enabled) }
@@ -479,10 +486,10 @@ window.setAdvanceLyricDynamicLyricTime = (enabled: boolean) => {
 
 /**
  * 应用字体设置：动态注入 @font-face 规则并更新 CSS 变量
- * @param config 包含 effectiveFamily（字体栈）和 files（字体文件列表）
+ * @param config 包含 effectiveFamily（字体栈）和 files（字体文件列表）以及可选的 fontWeight
  */
 window.applyFontSettings = (config: any) => {
-  const { effectiveFamily, files = [] } = config || {}
+  const { effectiveFamily, files = [], fontWeight } = config || {}
 
   // 创建或更新动态 font-face 样式元素
   const styleId = 'amll-dynamic-font-face-style'
@@ -507,6 +514,9 @@ window.applyFontSettings = (config: any) => {
   // 应用 CSS 变量
   setCSSVar('--amll-user-font-family', effectiveFamily || '')
   setCSSVar('--amll-lp-font-family', effectiveFamily ? 'var(--amll-user-font-family)' : '')
+  if (fontWeight !== undefined) {
+    setCSSVar('--amll-font-weight', fontWeight)
+  }
 
   // 应用到歌词播放器元素
   const players = document.querySelectorAll('.amll-lyric-player')

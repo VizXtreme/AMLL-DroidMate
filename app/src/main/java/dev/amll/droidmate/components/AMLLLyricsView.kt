@@ -142,9 +142,8 @@ fun AMLLLyricsView(
     // 避免每次 recompose 都调用 JS
     var lastIsPlayingValue by remember { mutableStateOf<Boolean?>(null) }
     
-//    // ==================== 歌词开关状态缓存（用于去重） ====================
-//    var lastTranslationLineEnabled by remember { mutableStateOf<Boolean?>(null) }
-//    var lastRomanLineEnabled by remember { mutableStateOf<Boolean?>(null) }
+    var lastLyricSizePreset by remember { mutableStateOf<String?>(null) }
+    var lastFontWeight by remember { mutableIntStateOf(0) }
 
     /**
      * 背景/字体 JS 参数的引用比较缓存
@@ -434,47 +433,24 @@ fun AMLLLyricsView(
 //                }
 //            }
 
-//            // 歌词字体大小预设
-//            val lyricSizePreset = AMLLSettings.getAmllLyricSizePreset(view.context)
-//            if (lyricSizePreset != null && lastLyricSizePreset != lyricSizePreset) {
-//                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setLyricSizePreset($lyricSizePreset)")
-//                view.evaluateJavascript("window.setLyricSizePreset && window.setLyricSizePreset('$lyricSizePreset');", null)
-//                lastLyricSizePreset = lyricSizePreset
-//            }
+            // 歌词字体大小预设
+            val lyricSizePreset = AMLLSettings.getAmllLyricSizePreset(view.context)
+            if (lastLyricSizePreset != lyricSizePreset) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setLyricSizePreset($lyricSizePreset)")
+                view.evaluateJavascript("window.setLyricSizePreset && window.setLyricSizePreset('$lyricSizePreset');", null)
+                lastLyricSizePreset = lyricSizePreset
+            }
 
-//            // 翻译歌词开关（去重优化）
-//            val enableTranslationLine = AMLLSettings.isAmllTranslationLineEnabled(view.context)
-//            if (enableTranslationLine != null && lastTranslationLineEnabled != enableTranslationLine) {
-//                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableTranslationLine($enableTranslationLine)")
-//                view.evaluateJavascript("window.setEnableTranslationLine && window.setEnableTranslationLine($enableTranslationLine);", null)
-//                lastTranslationLineEnabled = enableTranslationLine
-//            }
-
-//            // 音译歌词开关（去重优化）
-//            val enableRomanLine = AMLLSettings.isAmllRomanLineEnabled(view.context)
-//            if (enableRomanLine != null && lastRomanLineEnabled != enableRomanLine) {
-//                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableRomanLine($enableRomanLine)")
-//                view.evaluateJavascript("window.setEnableRomanLine && window.setEnableRomanLine($enableRomanLine);", null)
-//                lastRomanLineEnabled = enableRomanLine
-//            }
-
-//            // 提前歌词行时序
-//            val enableAdvanceDynamicTime = AMLLSettings.isAmllAdvanceDynamicLyricTimeEnabled(view.context)
-//            if (enableAdvanceDynamicTime != null && lastEnableAdvanceDynamicTime != enableAdvanceDynamicTime) {
-//                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setAdvanceLyricDynamicLyricTime($enableAdvanceDynamicTime)")
-//                view.evaluateJavascript("window.setAdvanceLyricDynamicLyricTime && window.setAdvanceLyricDynamicLyricTime($enableAdvanceDynamicTime);", null)
-//                lastEnableAdvanceDynamicTime = enableAdvanceDynamicTime
-//            }
-            
-//            // 字体字重 - 通过 CSS 应用
-//            val fontWeight = AMLLSettings.getAmllFontWeight(view.context)
-//            if (fontWeight != null && fontWeight > 0) {
-//              Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyFontWeight($fontWeight)")
-//              view.evaluateJavascript(
-//                "document.documentElement.style.setProperty('--amll-font-weight', '$fontWeight');",
-//                null
-//              )
-//            }
+            // 字体字重 - 通过 CSS 应用
+            val fontWeight = AMLLSettings.getAmllFontWeight(view.context)
+            if (lastFontWeight != fontWeight && fontWeight > 0) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: applyFontWeight($fontWeight)")
+                view.evaluateJavascript(
+                    "window.applyFontWeight ? window.applyFontWeight($fontWeight) : document.documentElement.style.setProperty('--amll-font-weight', '$fontWeight');",
+                    null
+                )
+                lastFontWeight = fontWeight
+            }
             
 //            // 字符间距 - 通过 CSS 应用
 //            val letterSpacing = AMLLSettings.getAmllLetterSpacing(view.context)

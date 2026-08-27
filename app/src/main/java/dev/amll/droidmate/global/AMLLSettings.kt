@@ -360,4 +360,22 @@ object AMLLSettings {
         prefs(context).putIntAsync(KEY_AMLL_ANIMATION_FPS, fps)
     }
 
+    // === 字体字重与大小预设 ===
+
+    fun getAmllFontWeight(context: Context): Int {
+        return prefs(context).getInt(KEY_AMLL_FONT_WEIGHT, 400)
+    }
+
+    fun setAmllFontWeight(context: Context, weight: Int) {
+        prefs(context).putIntAsync(KEY_AMLL_FONT_WEIGHT, weight)
+    }
+
+    fun getAmllLyricSizePreset(context: Context): String {
+        return prefs(context).getString(KEY_AMLL_LYRIC_SIZE_PRESET, "normal") ?: "normal"
+    }
+
+    fun setAmllLyricSizePreset(context: Context, preset: String) {
+        prefs(context).putStringAsync(KEY_AMLL_LYRIC_SIZE_PRESET, preset)
+    }
+
 }

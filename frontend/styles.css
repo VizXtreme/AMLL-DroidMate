@@ -6,6 +6,7 @@
 :root {
   --amll-user-font-family: "SF Pro Display", "PingFang SC", system-ui, -apple-system, "Segoe UI", sans-serif;
   --amll-lp-font-family: var(--amll-user-font-family);
+  --amll-font-weight: 400;
 }
 
 html, body {
@@ -26,17 +27,21 @@ html, body {
 
 /* ==================== 兼容性修复 ==================== */
 
-/* 强制启用硬件加速，防止滚动动画掉帧 */
+/* 强制启用硬件加速，防止滚动动画掉帧；防止部分字体边缘裁剪 (Issue #77) */
 .amll-lp-line {
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   will-change: transform, opacity;
   pointer-events: auto;
+  overflow: visible !important;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 
 .amll-lyric-player {
   pointer-events: auto;
   font-family: var(--amll-lp-font-family);
+  font-weight: var(--amll-font-weight, 400);
   /* 限制最大字号，避免平板竖屏时因 5vh 公式导致超大文字 */
   --amll-lp-font-size: max(12px, min(8vw, 32px));
 }

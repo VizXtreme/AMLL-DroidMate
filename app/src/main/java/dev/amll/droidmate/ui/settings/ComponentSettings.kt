@@ -22,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeTopAppBar
@@ -89,8 +90,13 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
     var backgroundRendererEnabled by remember {
         mutableStateOf(AMLLSettings.isAmllBackgroundRendererEnabled(context) ?: false)
     }
+    var backgroundStaticMode by remember {
+        mutableStateOf(AMLLSettings.isAmllBackgroundStaticModeEnabled(context) ?: false)
+    }
 
     // 字体设置状态
+    var lyricSizePreset by remember { mutableStateOf(AMLLSettings.getAmllLyricSizePreset(context)) }
+    var fontWeight by remember { mutableStateOf(AMLLSettings.getAmllFontWeight(context)) }
     var amllFontFamily by remember { mutableStateOf(AMLLSettings.getAmllFontFamily(context)) }
     var importedFonts by remember {
         mutableStateOf(
@@ -352,12 +358,94 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                 }
             }
 
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val newState = !backgroundStaticMode
+                        backgroundStaticMode = newState
+                        AMLLSettings.setAmllBackgroundStaticModeEnabled(context, newState)
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth(0.75f)) {
+                        Text("Static Background (Power Saving)", color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            text = "Disable dynamic background animations to save battery",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                    SwitchWithIcon(
+                        checked = backgroundStaticMode,
+                        onCheckedChange = { enabled ->
+                            backgroundStaticMode = enabled
+                            AMLLSettings.setAmllBackgroundStaticModeEnabled(context, enabled)
+                        },
+                        colors = switchColors
+                    )
+                }
+            }
+
             // ==================== 字体设置 ====================
             Text(
                 text = "Font Settings",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
+
+            Text(
+                text = "Font Size Preset",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val presets = listOf("compact" to "Compact", "normal" to "Normal", "large" to "Large", "xlarge" to "X-Large")
+                presets.forEach { (key, label) ->
+                    val isSelected = lyricSizePreset == key
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = {
+                            lyricSizePreset = key
+                            AMLLSettings.setAmllLyricSizePreset(context, key)
+                        },
+                        label = { Text(label) }
+                    )
+                }
+            }
+
+            Text(
+                text = "Font Weight",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val weights = listOf(300 to "Light", 400 to "Regular", 600 to "SemiBold", 700 to "Bold")
+                weights.forEach { (w, label) ->
+                    val isSelected = fontWeight == w
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = {
+                            fontWeight = w
+                            AMLLSettings.setAmllFontWeight(context, w)
+                        },
+                        label = { Text(label) }
+                    )
+                }
+            }
 
             OutlinedTextField(
                 value = amllFontFamily,
