@@ -143,7 +143,7 @@ fun AMLLLyricsView(
     var lastIsPlayingValue by remember { mutableStateOf<Boolean?>(null) }
     
     var lastLyricSizePreset by remember { mutableStateOf<String?>(null) }
-    var lastFontWeight by remember { mutableIntStateOf(0) }
+    var lastFontWeight by remember { mutableStateOf(0) }
 
     /**
      * 背景/字体 JS 参数的引用比较缓存

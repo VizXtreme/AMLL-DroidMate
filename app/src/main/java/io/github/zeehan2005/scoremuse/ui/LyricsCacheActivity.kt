@@ -97,7 +97,7 @@ class LyricsCacheActivity : BaseComposeActivity() {
                         isSelected = isSelected,
                         onSelect = onSelect,
                         onExport = {
-                            exportTtmlContent = entry.lyrics
+                            exportTtmlContent = entry.xmlContent
                             val cleanTitle = entry.title.replace(Regex("[\\\\/:*?\"<>|]"), "_")
                             val cleanArtist = entry.artist.replace(Regex("[\\\\/:*?\"<>|]"), "_")
                             val fileName = if (cleanTitle.isNotBlank()) "$cleanTitle - $cleanArtist.ttml" else "lyrics.ttml"
