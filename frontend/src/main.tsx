@@ -218,21 +218,23 @@ function initAMLL() {
     window.__amll = { player: state.player, backgroundRender: state.background }
 
     // 启动持续更新循环，用于刷新帧和动画效果
-    // 优化：只在实际播放时才推进播放器 tick，暂停时跳过节省 CPU
+    // 渲染平滑优化：每帧根据真实 delta 推进时间并执行物理动画，彻底消除抖动
     let lastTime = performance.now()
     const tick = (now: number) => {
-      const delta = now - lastTime
+      const delta = Math.min(now - lastTime, 100) // 防止退火或切出应用恢复时的巨大跳跃
       lastTime = now
-      // 不要仅在播放状态下调用 player.update，否则暂停时用户无法进行正常交互
       if (state.player) {
         try {
+          if (state.isPlaying && state.currentTime >= 0) {
+            // 在两次 Android 原生同步间隔之间，平滑递增播放器当前时间
+            state.currentTime += delta
+            state.player.setCurrentTime?.(Math.trunc(state.currentTime), false)
+          }
           state.player.update(delta)
         } catch (e) {
           // 捕获帧更新中的偶发异常，防止 requestAnimationFrame 循环意外终止
         }
       }
-      // 背景渲染器仅在有内容变化时需要 update — 静态背景不需要每帧重绘
-      // 由 setAlbum / configureBackgroundEffect 等 API 在内容变更时主动调用
       requestAnimationFrame(tick)
     }
     requestAnimationFrame(tick)
@@ -298,27 +300,23 @@ window.updateLyrics = (payload: any) => {
  * @param timeMs 当前播放位置（毫秒）
  */
 window.updateTime = (timeMs: number) => {
-  // 性能优化：如果处于暂停状态，且已经同步过状态，则忽略细微的时间波动
-  if (state.hasPlaybackState && !state.isPlaying) return
-
-  const t = Math.trunc(timeMs)
-  if (state.currentTime === t) return
-  state.currentTime = t
-
+  const target = Math.trunc(timeMs)
   const p = state.player
-  if (!p) return
 
-  try {
-    // 更新播放器时间
-    if (p.setCurrentTime) {
-      p.setCurrentTime(t, false)
-    } else if (p.seek) {
-      p.seek(t)
-    }
-    // 调用 update(0) 强制渲染当前时间点的帧，但不推进时间
-    p.update?.(0)
-  } catch (e) {
-    log(`updateTime error: ${(e as Error).message}`, 'error')
+  // 暂停状态下直接同步位置
+  if (state.hasPlaybackState && !state.isPlaying) {
+    state.currentTime = target
+    p?.setCurrentTime?.(target, true)
+    return
+  }
+
+  // 播放状态下：若首次同步或差异过大（>300ms，如用户拖动进度条或切歌），直接跳转；否则平滑插值微调
+  if (state.currentTime < 0 || Math.abs(state.currentTime - target) > 300) {
+    state.currentTime = target
+    p?.setCurrentTime?.(target, false)
+  } else {
+    // 渐进修正时间漂移，避免由于原生 Binder IPC 波动产生的瞬时卡顿
+    state.currentTime += (target - state.currentTime) * 0.25
   }
 }
 
@@ -471,10 +469,55 @@ window.configureLyricBackground = (options: any) => {
   }
 }
 
+function getLyricFontSizeFromPreset(preset: string): string {
+  switch ((preset || '').toLowerCase()) {
+    case 'tiny':
+      return 'max(max(2.5vh, 1.25vw), 12px)'
+    case 'extra-small':
+    case 'extrasmall':
+      return 'max(max(3.2vh, 1.6vw), 14px)'
+    case 'small':
+    case 'compact':
+      return 'max(max(3.8vh, 2vw), 16px)'
+    case 'large':
+      return 'max(max(5.8vh, 3.2vw), 24px)'
+    case 'extra-large':
+    case 'extralarge':
+    case 'xlarge':
+      return 'max(max(6.8vh, 3.8vw), 28px)'
+    case 'huge':
+      return 'max(max(8vh, 4.5vw), 34px)'
+    case 'normal':
+    case 'medium':
+    default:
+      return 'max(max(4.8vh, 2.6vw), 20px)'
+  }
+}
+
 // --- CSS 变量设置项 (CSS Variable Setters) ---
-window.setLyricSizePreset = (preset: string) => { if (preset !== undefined) setCSSVar('--amll-lp-font-size-preset', preset) }
+window.setLyricSizePreset = (preset: string) => {
+  if (preset !== undefined) {
+    const size = getLyricFontSizeFromPreset(preset)
+    setCSSVar('--amll-lp-font-size', size)
+    setCSSVar('--amll-lp-font-size-preset', preset)
+    const players = document.querySelectorAll('.amll-lyric-player')
+    players.forEach((el) => {
+      ;(el as HTMLElement).style.setProperty('--amll-lp-font-size', size)
+    })
+    state.player?.calcLayout?.()
+    state.player?.update?.(0)
+  }
+}
 window.applyFontWeight = (weight: number | string) => { if (weight !== undefined) setCSSVar('--amll-font-weight', weight) }
-window.setEnableTranslationLine = (enabled: boolean) => { if (enabled !== undefined) setCSSVar('--amll-show-translation', enabled) }
+window.setEnableTranslationLine = (enabled: boolean) => {
+  if (enabled !== undefined) {
+    setCSSVar('--amll-show-translation', enabled ? '1' : '0')
+    document.documentElement.classList.toggle('hide-translation', !enabled)
+    document.body.classList.toggle('hide-translation', !enabled)
+    state.player?.calcLayout?.()
+    state.player?.update?.(0)
+  }
+}
 window.setEnableRomanLine = (enabled: boolean) => { if (enabled !== undefined) setCSSVar('--amll-show-roman', enabled) }
 window.setEnableSwapTransRomanLine = (enabled: boolean) => { if (enabled !== undefined) setCSSVar('--amll-swap-trans-roman', enabled) }
 window.setAdvanceLyricDynamicLyricTime = (enabled: boolean) => {

@@ -144,6 +144,7 @@ fun AMLLLyricsView(
     
     var lastLyricSizePreset by remember { mutableStateOf<String?>(null) }
     var lastFontWeight by remember { mutableStateOf(0) }
+    var lastTranslationLineEnabled by remember { mutableStateOf<Boolean?>(null) }
 
     /**
      * 背景/字体 JS 参数的引用比较缓存
@@ -439,6 +440,14 @@ fun AMLLLyricsView(
                 Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setLyricSizePreset($lyricSizePreset)")
                 view.evaluateJavascript("window.setLyricSizePreset && window.setLyricSizePreset('$lyricSizePreset');", null)
                 lastLyricSizePreset = lyricSizePreset
+            }
+
+            // 翻译歌词开关
+            val enableTranslationLine = AMLLSettings.isAmllTranslationLineEnabled(view.context)
+            if (lastTranslationLineEnabled != enableTranslationLine) {
+                Timber.d("[AMLLLyrics] [$debugSource#$instanceId] Bridge call: setEnableTranslationLine($enableTranslationLine)")
+                view.evaluateJavascript("window.setEnableTranslationLine && window.setEnableTranslationLine($enableTranslationLine);", null)
+                lastTranslationLineEnabled = enableTranslationLine
             }
 
             // 字体字重 - 通过 CSS 应用

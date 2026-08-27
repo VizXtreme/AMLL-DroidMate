@@ -28,9 +28,12 @@ html, body {
 /* ==================== 兼容性修复 ==================== */
 
 /* 强制启用硬件加速，防止滚动动画掉帧；防止部分字体边缘裁剪 (Issue #77) */
-.amll-lp-line {
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+.amll-lp-line,
+.lyricLine {
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   will-change: transform, opacity;
   pointer-events: auto;
   overflow: visible !important;
@@ -42,8 +45,22 @@ html, body {
   pointer-events: auto;
   font-family: var(--amll-lp-font-family);
   font-weight: var(--amll-font-weight, 400);
-  /* 限制最大字号，避免平板竖屏时因 5vh 公式导致超大文字 */
-  --amll-lp-font-size: max(12px, min(8vw, 32px));
+  font-size: var(--amll-lp-font-size, max(12px, min(8vw, 32px)));
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+}
+
+/* ==================== 翻译隐藏支持 ==================== */
+.hide-translation .lyricSubLine:nth-child(2),
+.hide-translation .lyricLine > div:nth-child(2),
+.hide-translation .amll-lp-line > div:nth-child(2),
+.hide-translation .amll-lp-sub-line,
+:root[style*="--amll-show-translation: 0"] .lyricSubLine:nth-child(2),
+:root[style*="--amll-show-translation: 0"] .lyricLine > div:nth-child(2),
+:root[style*="--amll-show-translation: 0"] .amll-lp-line > div:nth-child(2) {
+  display: none !important;
 }
 
 /* ==================== 滚动条隐藏 ==================== */

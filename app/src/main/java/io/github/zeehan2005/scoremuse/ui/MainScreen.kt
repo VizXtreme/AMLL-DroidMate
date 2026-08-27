@@ -59,6 +59,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -1025,6 +1026,32 @@ private fun MainMenuDropdownContent(
                     putExtra(CustomLyricsActivity.EXTRA_PLAYBACK_SOURCE, getAppNameFromPackage(context, nowPlaying?.packageName) ?: "")
                 }
                 customLyricsLauncher.launch(intent)
+                onDismiss()
+            },
+            colors = MenuDefaults.itemColors(
+                textColor = MaterialTheme.colorScheme.onSurface,
+                trailingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        )
+        val isTranslationEnabled = remember {
+            mutableStateOf(AMLLSettings.isAmllTranslationLineEnabled(context))
+        }
+        DropdownMenuItem(
+            text = {
+                Text(
+                    if (isTranslationEnabled.value) "Hide Translation" else "Show Translation",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            trailingIcon = {
+                Icon(Icons.Default.Translate, contentDescription = null, modifier = Modifier.size(20.dp))
+            },
+            onClick = {
+                val newState = !isTranslationEnabled.value
+                isTranslationEnabled.value = newState
+                AMLLSettings.setAmllTranslationLineEnabled(context, newState)
+                webViewReloadKey()
                 onDismiss()
             },
             colors = MenuDefaults.itemColors(

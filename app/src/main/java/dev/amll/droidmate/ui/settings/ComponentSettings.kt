@@ -87,6 +87,9 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
     var springEnabled by remember {
         mutableStateOf(AMLLSettings.isAmllAnimationSpringEnabled(context) ?: true)
     }
+    var translationEnabled by remember {
+        mutableStateOf(AMLLSettings.isAmllTranslationLineEnabled(context))
+    }
     var backgroundRendererEnabled by remember {
         mutableStateOf(AMLLSettings.isAmllBackgroundRendererEnabled(context) ?: false)
     }
@@ -310,6 +313,42 @@ private fun ComponentSettingsPage(onBack: () -> Unit) {
                         onCheckedChange = { enabled ->
                             springEnabled = enabled
                             AMLLSettings.setAmllAnimationSpringEnabled(context, enabled)
+                        },
+                        colors = switchColors
+                    )
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val newState = !translationEnabled
+                        translationEnabled = newState
+                        AMLLSettings.setAmllTranslationLineEnabled(context, newState)
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth(0.75f)) {
+                        Text("Show Translation", color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            text = "Display translated lyrics when available",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                    SwitchWithIcon(
+                        checked = translationEnabled,
+                        onCheckedChange = { enabled ->
+                            translationEnabled = enabled
+                            AMLLSettings.setAmllTranslationLineEnabled(context, enabled)
                         },
                         colors = switchColors
                     )

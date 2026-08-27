@@ -152,8 +152,17 @@ class MediaInfoService(private val context: Context) {
                     val artist = metadata.getString(android.media.MediaMetadata.METADATA_KEY_ARTIST) ?: "Unknown"
                     val album = metadata.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM)
                     val duration = metadata.getLong(android.media.MediaMetadata.METADATA_KEY_DURATION)
-                    val position = playbackState.position
                     val isPlaying = playbackState.state == android.media.session.PlaybackState.STATE_PLAYING
+                    val rawPosition = playbackState.position
+                    val updateTime = playbackState.lastPositionUpdateTime
+                    val speed = if (isPlaying) playbackState.playbackSpeed.coerceAtLeast(0f) else 0f
+                    val position = if (isPlaying && updateTime > 0L) {
+                        val delta = (android.os.SystemClock.elapsedRealtime() - updateTime).coerceAtLeast(0L)
+                        val extrapolated = rawPosition + (delta * (if (speed > 0f) speed else 1.0f)).toLong()
+                        if (duration > 0) extrapolated.coerceIn(0L, duration) else extrapolated.coerceAtLeast(0L)
+                    } else {
+                        rawPosition.coerceAtLeast(0L)
+                    }
 
                     /** 旧音乐对象（用于对比） */
                     val oldMusic = _nowPlayingMusic.value

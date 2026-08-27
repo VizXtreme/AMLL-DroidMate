@@ -378,4 +378,14 @@ object AMLLSettings {
         prefs(context).putStringAsync(KEY_AMLL_LYRIC_SIZE_PRESET, preset)
     }
 
+    // === 翻译歌词开关 ===
+
+    fun isAmllTranslationLineEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_AMLL_ENABLE_TRANSLATION_LINE, true)
+    }
+
+    fun setAmllTranslationLineEnabled(context: Context, enabled: Boolean) {
+        prefs(context).putBooleanAsync(KEY_AMLL_ENABLE_TRANSLATION_LINE, enabled)
+    }
+
 }
