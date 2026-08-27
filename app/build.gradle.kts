@@ -183,7 +183,7 @@ val customVersion = ""
 android {
     signingConfigs {
         getByName("debug") {
-            storeFile = file("\\sign.jks")
+            storeFile = file("sign.jks")
             storePassword = "AHC8jzFB0nsARVGPsHff"
             keyAlias = "key0"
             keyPassword = "AHC8jzFB0nsARVGPsHff"

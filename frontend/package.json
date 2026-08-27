@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "version": "1.0.0",
-  "description": "AMLL DroidMate React 前端应用",
+  "description": "AMLL DroidMate Frontend App",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
@@ -21,8 +21,10 @@
     "vite": "latest"
   },
   "devDependencies": {
+    "@swc/core": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "esbuild": "latest",
     "rollup": "latest",
     "terser": "latest",
     "typescript": "latest",
